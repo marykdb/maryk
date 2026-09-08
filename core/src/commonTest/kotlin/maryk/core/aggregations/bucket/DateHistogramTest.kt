@@ -14,11 +14,11 @@ import kotlin.test.expect
 
 class DateHistogramTest {
     private val dateHistogram = DateHistogram(
-        TestMarykModel { dateTime::ref },
+        TestMarykModel.ref { dateTime },
         Months,
         Aggregations(
             "total" to Sum(
-                TestMarykModel { double::ref }
+                TestMarykModel.ref { double }
             )
         )
     )

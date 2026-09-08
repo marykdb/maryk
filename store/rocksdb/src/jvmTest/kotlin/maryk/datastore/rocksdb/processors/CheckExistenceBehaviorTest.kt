@@ -68,7 +68,7 @@ class CheckExistenceBehaviorTest {
 
             val response = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = addStatus.version
                 )
             )

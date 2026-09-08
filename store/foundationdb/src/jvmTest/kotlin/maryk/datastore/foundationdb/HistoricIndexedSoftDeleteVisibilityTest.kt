@@ -59,7 +59,7 @@ class HistoricIndexedSoftDeleteVisibilityTest {
 
             val scanAtDelete = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = deleteStatus.version,
                     filterSoftDeleted = false,
                 )
@@ -107,7 +107,7 @@ class HistoricIndexedSoftDeleteVisibilityTest {
 
             val filteredScanAtDelete = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = changeStatus.version,
                 )
             )
@@ -116,7 +116,7 @@ class HistoricIndexedSoftDeleteVisibilityTest {
 
             val scanAtDelete = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = changeStatus.version,
                     filterSoftDeleted = false,
                 )
@@ -158,7 +158,7 @@ class HistoricIndexedSoftDeleteVisibilityTest {
                 store.execute(
                     TestMarykModel.change(
                         addStatus.key.change(
-                            Change(TestMarykModel { int::ref } with 6),
+                            Change(TestMarykModel.ref { int } with 6),
                             ObjectSoftDeleteChange(true),
                         )
                     )
@@ -169,7 +169,7 @@ class HistoricIndexedSoftDeleteVisibilityTest {
                 0,
                 store.execute(
                     TestMarykModel.scan(
-                        where = Equals(TestMarykModel { int::ref } with 5),
+                        where = Equals(TestMarykModel.ref { int } with 5),
                         toVersion = changeStatus.version,
                         filterSoftDeleted = false,
                     )
@@ -178,7 +178,7 @@ class HistoricIndexedSoftDeleteVisibilityTest {
 
             val scanFinalValue = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 6),
+                    where = Equals(TestMarykModel.ref { int } with 6),
                     toVersion = changeStatus.version,
                     filterSoftDeleted = false,
                 )
@@ -218,7 +218,7 @@ class HistoricIndexedSoftDeleteVisibilityTest {
             val tableDirs = store.getTableDirs(TestMarykModel)
             val valueKey = packKey(
                 tableDirs.tablePrefix,
-                addStatus.key.bytes + TestMarykModel { int::ref }.toStorageByteArray()
+                addStatus.key.bytes + TestMarykModel.ref { int }.toStorageByteArray()
             )
 
             store.runTransaction { tr ->
@@ -266,7 +266,7 @@ class HistoricIndexedSoftDeleteVisibilityTest {
             val tableDirs = store.getTableDirs(TestMarykModel)
             val valueKey = packKey(
                 tableDirs.tablePrefix,
-                addStatus.key.bytes + TestMarykModel { int::ref }.toStorageByteArray()
+                addStatus.key.bytes + TestMarykModel.ref { int }.toStorageByteArray()
             )
 
             store.runTransaction { tr ->
@@ -278,7 +278,7 @@ class HistoricIndexedSoftDeleteVisibilityTest {
                 store.execute(
                     TestMarykModel.change(
                         addStatus.key.change(
-                            Change(TestMarykModel { double::ref } with 2.4)
+                            Change(TestMarykModel.ref { double } with 2.4)
                         )
                     )
                 ).statuses.single()

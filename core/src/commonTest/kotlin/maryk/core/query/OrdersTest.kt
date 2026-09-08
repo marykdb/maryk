@@ -15,8 +15,8 @@ import kotlin.test.expect
 
 class OrdersTest {
     private val orders = Orders(
-        SimpleMarykModel { value::ref }.descending(),
-        SimpleMarykModel { value::ref }.ascending(),
+        SimpleMarykModel.ref { value }.descending(),
+        SimpleMarykModel.ref { value }.ascending(),
         Order.ascending,
         Order.descending
     )

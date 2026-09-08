@@ -55,8 +55,8 @@ class MalformedIndexRowFoundationDBTest {
             val scanResponse = store.execute(
                 Person.scan(
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     )
                 )
             )
@@ -109,8 +109,8 @@ class MalformedIndexRowFoundationDBTest {
                 Person.scan(
                     toVersion = addStatus.version,
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     )
                 )
             )
@@ -150,7 +150,7 @@ class MalformedIndexRowFoundationDBTest {
             val tableDirs = store.getTableDirs(Person)
             val surnameValueKey = packKey(
                 tableDirs.tablePrefix,
-                second.bytes + Person { surname::ref }.toStorageByteArray()
+                second.bytes + Person.ref { surname }.toStorageByteArray()
             )
 
             store.runTransaction { tr ->
@@ -162,8 +162,8 @@ class MalformedIndexRowFoundationDBTest {
                 Person.scan(
                     startKey = second,
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     ),
                     select = Person.graph { listOf(firstName) }
                 )
@@ -200,7 +200,7 @@ class MalformedIndexRowFoundationDBTest {
             val historicSurnameKey = packVersionedKey(
                 tableDirs.historicTablePrefix,
                 secondStatus.key.bytes,
-                encodeZeroFreeUsing01(Person { surname::ref }.toStorageByteArray()),
+                encodeZeroFreeUsing01(Person.ref { surname }.toStorageByteArray()),
                 version = HLC.toStorageBytes(HLC(secondStatus.version))
             )
 
@@ -214,8 +214,8 @@ class MalformedIndexRowFoundationDBTest {
                     startKey = secondStatus.key,
                     toVersion = secondStatus.version,
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     ),
                     select = Person.graph { listOf(firstName) }
                 )

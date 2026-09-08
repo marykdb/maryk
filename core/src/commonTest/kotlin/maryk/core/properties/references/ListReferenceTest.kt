@@ -10,12 +10,12 @@ import kotlin.test.assertSame
 import kotlin.test.expect
 
 class ListReferenceTest {
-    private val listReference = TestMarykModel { embeddedValues { marykModel { listOfString::ref } } }
+    private val listReference = TestMarykModel.ref { embeddedValues { marykModel { listOfString } } }
     val cache = WriteCache()
 
     @Test
     fun cacheReferenceTest() {
-        assertSame(listReference, TestMarykModel { embeddedValues { marykModel { listOfString::ref } } })
+        assertSame(listReference, TestMarykModel.ref { embeddedValues { marykModel { listOfString } } })
     }
 
     @Test

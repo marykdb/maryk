@@ -130,8 +130,8 @@ class DataStoreScanOnNormalizeIndexTest(
         val scanResponse = dataStore.execute(
             CaseInsensitivePerson.scan(
                 order = Orders(
-                    CaseInsensitivePerson { surname::ref }.ascending(),
-                    CaseInsensitivePerson { firstName::ref }.ascending()
+                    CaseInsensitivePerson.ref { surname }.ascending(),
+                    CaseInsensitivePerson.ref { firstName }.ascending()
                 )
             )
         )
@@ -182,11 +182,11 @@ class DataStoreScanOnNormalizeIndexTest(
         val scanResponse = dataStore.execute(
             CaseInsensitivePerson.scan(
                 where = Equals(
-                    CaseInsensitivePerson { surname::ref } with "garcia lopez",
+                    CaseInsensitivePerson.ref { surname } with "garcia lopez",
                 ),
                 order = Orders(
-                    CaseInsensitivePerson { surname::ref }.ascending(),
-                    CaseInsensitivePerson { firstName::ref }.ascending()
+                    CaseInsensitivePerson.ref { surname }.ascending(),
+                    CaseInsensitivePerson.ref { firstName }.ascending()
                 ),
             )
         )
@@ -205,11 +205,11 @@ class DataStoreScanOnNormalizeIndexTest(
         val scanResponse = dataStore.execute(
             CaseInsensitivePerson.scan(
                 where = Prefix(
-                    CaseInsensitivePerson { surname::ref } with "van der",
+                    CaseInsensitivePerson.ref { surname } with "van der",
                 ),
                 order = Orders(
-                    CaseInsensitivePerson { surname::ref }.ascending(),
-                    CaseInsensitivePerson { firstName::ref }.ascending()
+                    CaseInsensitivePerson.ref { surname }.ascending(),
+                    CaseInsensitivePerson.ref { firstName }.ascending()
                 ),
             )
         )
@@ -228,11 +228,11 @@ class DataStoreScanOnNormalizeIndexTest(
         val scanResponse = dataStore.execute(
             CaseInsensitivePerson.scan(
                 where = RegEx(
-                    CaseInsensitivePerson { surname::ref } with Regex("^garcia.*$")
+                    CaseInsensitivePerson.ref { surname } with Regex("^garcia.*$")
                 ),
                 order = Orders(
-                    CaseInsensitivePerson { surname::ref }.ascending(),
-                    CaseInsensitivePerson { firstName::ref }.ascending()
+                    CaseInsensitivePerson.ref { surname }.ascending(),
+                    CaseInsensitivePerson.ref { firstName }.ascending()
                 ),
             )
         )
@@ -245,11 +245,11 @@ class DataStoreScanOnNormalizeIndexTest(
         val scanResponse = dataStore.execute(
             CaseInsensitivePerson.scan(
                 where = GreaterThan(
-                    CaseInsensitivePerson { surname::ref } with "garcia"
+                    CaseInsensitivePerson.ref { surname } with "garcia"
                 ),
                 order = Orders(
-                    CaseInsensitivePerson { surname::ref }.ascending(),
-                    CaseInsensitivePerson { firstName::ref }.ascending()
+                    CaseInsensitivePerson.ref { surname }.ascending(),
+                    CaseInsensitivePerson.ref { firstName }.ascending()
                 ),
             )
         )
@@ -271,11 +271,11 @@ class DataStoreScanOnNormalizeIndexTest(
         val scanResponse = dataStore.execute(
             CaseInsensitivePerson.scan(
                 where = GreaterThan(
-                    CaseInsensitivePerson { surname::ref } with "garcia"
+                    CaseInsensitivePerson.ref { surname } with "garcia"
                 ),
                 order = Orders(
-                    CaseInsensitivePerson { surname::ref }.ascending(),
-                    CaseInsensitivePerson { firstName::ref }.ascending()
+                    CaseInsensitivePerson.ref { surname }.ascending(),
+                    CaseInsensitivePerson.ref { firstName }.ascending()
                 ),
                 toVersion = version
             )
@@ -295,12 +295,12 @@ class DataStoreScanOnNormalizeIndexTest(
         val normalizedSurname = dataStore.execute(
             CaseInsensitivePerson.scan(
                 where = Equals(
-                    CaseInsensitivePerson { surname::ref } with "garcia lopez",
-                    CaseInsensitivePerson { firstName::ref } with "José",
+                    CaseInsensitivePerson.ref { surname } with "garcia lopez",
+                    CaseInsensitivePerson.ref { firstName } with "José",
                 ),
                 order = Orders(
-                    CaseInsensitivePerson { surname::ref }.ascending(),
-                    CaseInsensitivePerson { firstName::ref }.ascending()
+                    CaseInsensitivePerson.ref { surname }.ascending(),
+                    CaseInsensitivePerson.ref { firstName }.ascending()
                 ),
             )
         )
@@ -311,12 +311,12 @@ class DataStoreScanOnNormalizeIndexTest(
         val wrongFirstNameNormalization = dataStore.execute(
             CaseInsensitivePerson.scan(
                 where = Equals(
-                    CaseInsensitivePerson { surname::ref } with "garcia lopez",
-                    CaseInsensitivePerson { firstName::ref } with "Jose",
+                    CaseInsensitivePerson.ref { surname } with "garcia lopez",
+                    CaseInsensitivePerson.ref { firstName } with "Jose",
                 ),
                 order = Orders(
-                    CaseInsensitivePerson { surname::ref }.ascending(),
-                    CaseInsensitivePerson { firstName::ref }.ascending()
+                    CaseInsensitivePerson.ref { surname }.ascending(),
+                    CaseInsensitivePerson.ref { firstName }.ascending()
                 ),
             )
         )
@@ -357,7 +357,7 @@ class DataStoreScanOnNormalizeIndexTest(
 
         dataStore.execute(
             CaseInsensitivePerson.change(
-                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Smith"))
+                keys[0].change(Change(CaseInsensitivePerson.ref { surname } with "Smith"))
             )
         )
         assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
@@ -367,7 +367,7 @@ class DataStoreScanOnNormalizeIndexTest(
 
         dataStore.execute(
             CaseInsensitivePerson.change(
-                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Jones"))
+                keys[0].change(Change(CaseInsensitivePerson.ref { surname } with "Jones"))
             )
         )
         assertIs<RemovalUpdate<*>>(responses[2].await()).apply {
@@ -377,7 +377,7 @@ class DataStoreScanOnNormalizeIndexTest(
 
         dataStore.execute(
             CaseInsensitivePerson.change(
-                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Smith"))
+                keys[0].change(Change(CaseInsensitivePerson.ref { surname } with "Smith"))
             )
         )
         assertIs<AdditionUpdate<*>>(responses[3].await()).apply {
@@ -409,7 +409,7 @@ class DataStoreScanOnNormalizeIndexTest(
 
         dataStore.execute(
             CaseInsensitivePerson.change(
-                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Smith"))
+                keys[0].change(Change(CaseInsensitivePerson.ref { surname } with "Smith"))
             )
         )
         assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
@@ -419,7 +419,7 @@ class DataStoreScanOnNormalizeIndexTest(
 
         dataStore.execute(
             CaseInsensitivePerson.change(
-                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Jones"))
+                keys[0].change(Change(CaseInsensitivePerson.ref { surname } with "Jones"))
             )
         )
         assertIs<RemovalUpdate<*>>(responses[2].await()).apply {
@@ -429,7 +429,7 @@ class DataStoreScanOnNormalizeIndexTest(
 
         dataStore.execute(
             CaseInsensitivePerson.change(
-                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Smith"))
+                keys[0].change(Change(CaseInsensitivePerson.ref { surname } with "Smith"))
             )
         )
         assertIs<AdditionUpdate<*>>(responses[3].await()).apply {
@@ -521,7 +521,7 @@ class DataStoreScanOnNormalizeIndexTest(
                         "name" with "mila verh"
                     ),
                     Equals(
-                        CaseInsensitivePerson { firstName::ref } with "Mila"
+                        CaseInsensitivePerson.ref { firstName } with "Mila"
                     )
                 )
             )
@@ -594,7 +594,7 @@ class DataStoreScanOnNormalizeIndexTest(
                         "name" with "mila verh"
                     ),
                     Equals(
-                        CaseInsensitivePerson { firstName::ref } with "Mila"
+                        CaseInsensitivePerson.ref { firstName } with "Mila"
                     )
                 ),
                 toVersion = version
@@ -618,7 +618,7 @@ class DataStoreScanOnNormalizeIndexTest(
             CaseInsensitivePerson.change(
                 keys[6].change(
                     Change(
-                        CaseInsensitivePerson { surname::ref } with "Verhoeven Vermeer"
+                        CaseInsensitivePerson.ref { surname } with "Verhoeven Vermeer"
                     )
                 )
             )
@@ -630,7 +630,7 @@ class DataStoreScanOnNormalizeIndexTest(
             CaseInsensitivePerson.change(
                 keys[6].change(
                     Change(
-                        CaseInsensitivePerson { surname::ref } with "Vermeer"
+                        CaseInsensitivePerson.ref { surname } with "Vermeer"
                     )
                 )
             )
@@ -710,7 +710,7 @@ class DataStoreScanOnNormalizeIndexTest(
         val scanResponse = dataStore.execute(
             CaseInsensitivePerson.scan(
                 where = Equals(
-                    CaseInsensitivePerson { surname::ref } with "garcia",
+                    CaseInsensitivePerson.ref { surname } with "garcia",
                 ),
                 allowTableScan = true
             )

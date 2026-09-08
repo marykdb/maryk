@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class StatsResponseTest {
     private val statsResponse = StatsResponse(
-        reference = TestMarykModel { int::ref },
+        reference = TestMarykModel.ref { int },
         valueCount = 123456uL,
         average = 25435,
         min = 1234,

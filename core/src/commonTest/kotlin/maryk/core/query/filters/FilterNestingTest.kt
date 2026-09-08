@@ -57,7 +57,7 @@ class FilterNestingTest {
     }
 
     private fun nestedNot(depth: Int): Not {
-        var filter: IsFilter = Exists(SimpleMarykModel { value::ref })
+        var filter: IsFilter = Exists(SimpleMarykModel.ref { value })
         repeat(depth) {
             filter = Not(filter)
         }

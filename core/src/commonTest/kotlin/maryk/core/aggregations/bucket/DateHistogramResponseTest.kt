@@ -14,13 +14,13 @@ import kotlin.test.expect
 
 class DateHistogramResponseTest {
     private val dateHistogramResponse = DateHistogramResponse(
-        reference = TestMarykModel { dateTime::ref },
+        reference = TestMarykModel.ref { dateTime },
         buckets = listOf(
             Bucket(
                 LocalDateTime(2010, 1, 1, 0, 0),
                 AggregationsResponse(
                     "total" to SumResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         123456789
                     )
                 ),
@@ -30,7 +30,7 @@ class DateHistogramResponseTest {
                 LocalDateTime(2011, 1, 1, 0, 0),
                 AggregationsResponse(
                     "total" to SumResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         98373
                     )
                 ),

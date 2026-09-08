@@ -12,8 +12,8 @@ import kotlin.test.expect
 
 class OrTest {
     private val or = Or(
-        Exists(SimpleMarykModel { value::ref }),
-        Equals(SimpleMarykModel { value::ref } with "hoi")
+        Exists(SimpleMarykModel.ref { value }),
+        Equals(SimpleMarykModel.ref { value } with "hoi")
     )
 
     private val context = RequestContext(

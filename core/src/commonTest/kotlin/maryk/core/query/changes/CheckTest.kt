@@ -12,8 +12,8 @@ import kotlin.test.expect
 
 class CheckTest {
     private val valueCheck = Check(
-        TestMarykModel { string::ref } with "test",
-        TestMarykModel { int::ref } with 42
+        TestMarykModel.ref { string } with "test",
+        TestMarykModel.ref { int } with 42
     )
 
     private val context = RequestContext(

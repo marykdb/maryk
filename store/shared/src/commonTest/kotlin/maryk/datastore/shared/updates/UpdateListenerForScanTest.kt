@@ -84,7 +84,7 @@ class UpdateListenerForScanTest {
             mapValues with mapOf("z" to "z")
         }
         val select = AnyValueMapIndexModel.graph { listOf(name) }
-        val orderReference = AnyValueMapIndexModel { mapValues.refToAnyKey() }
+        val orderReference = AnyValueMapIndexModel.ref { mapValues.anyKey() }
         val request = AnyValueMapIndexModel.scan(
             select = select,
             order = when (direction) {
@@ -254,7 +254,7 @@ class UpdateListenerForScanTest {
         val newKeyK8 = newIndexKeys.maxWithOrNull { a, b -> a compareTo b }!!
 
         val request = AnyValueMapIndexModel.scanUpdates(
-            order = AnyValueMapIndexModel { mapValues.refToAnyKey() }.ascending(),
+            order = AnyValueMapIndexModel.ref { mapValues.anyKey() }.ascending(),
             limit = 1u
         )
         val response = ValuesResponse(
@@ -377,7 +377,7 @@ class UpdateListenerForScanTest {
         val candidateIndexKey = index.toStorageByteArraysForIndex(candidateValues, changedKey.bytes).single()
 
         val request = AnyValueMapIndexModel.scanUpdates(
-            order = AnyValueMapIndexModel { mapValues.refToAnyKey() }.ascending(),
+            order = AnyValueMapIndexModel.ref { mapValues.anyKey() }.ascending(),
             limit = 1u
         )
         val listener = UpdateListenerForScan(

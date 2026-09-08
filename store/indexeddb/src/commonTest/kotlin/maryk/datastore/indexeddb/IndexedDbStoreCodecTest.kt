@@ -31,7 +31,7 @@ class IndexedDbStoreCodecTest {
 
         requireNotNull(record)
         assertEquals(2uL, record.lastVersion)
-        assertEquals("ha current", record.values[SimpleMarykModel { value::ref }])
+        assertEquals("ha current", record.values[SimpleMarykModel.ref { value }])
         assertEquals(2, store.scanCount)
     }
 }

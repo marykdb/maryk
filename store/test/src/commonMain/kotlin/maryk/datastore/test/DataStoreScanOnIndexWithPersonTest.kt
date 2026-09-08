@@ -75,7 +75,7 @@ class DataStoreScanOnIndexWithPersonTest(
     private suspend fun executeIndexScanRequestWithPerson() {
         val scanResponse = dataStore.execute(
             Person.scan(
-                order = Orders(Person { surname::ref }.ascending(), Person { firstName::ref }.ascending())
+                order = Orders(Person.ref { surname }.ascending(), Person.ref { firstName }.ascending())
             )
         )
 
@@ -110,9 +110,9 @@ class DataStoreScanOnIndexWithPersonTest(
         val scanResponse = dataStore.execute(
             Person.scan(
                 where = Equals(
-                    Person { surname::ref } with "Kastens",
+                    Person.ref { surname } with "Kastens",
                 ),
-                order = Orders(Person { surname::ref }.ascending(), Person { firstName::ref }.ascending()),
+                order = Orders(Person.ref { surname }.ascending(), Person.ref { firstName }.ascending()),
             )
         )
 
@@ -139,8 +139,8 @@ class DataStoreScanOnIndexWithPersonTest(
         val scanResponse = dataStore.execute(
             Person.scan(
                 where = Equals(
-                    Person { firstName::ref } with "Karel",
-                    Person { surname::ref } with "Kastens",
+                    Person.ref { firstName } with "Karel",
+                    Person.ref { surname } with "Kastens",
                 ),
             )
         )
@@ -166,8 +166,8 @@ class DataStoreScanOnIndexWithPersonTest(
         val scanResponse = dataStore.execute(
             Person.scan(
                 where = Equals(
-                    Person { firstName::ref } with "Karel",
-                    Person { surname::ref } with "Kastens",
+                    Person.ref { firstName } with "Karel",
+                    Person.ref { surname } with "Kastens",
                 ),
                 toVersion = highestCreationVersion
             )

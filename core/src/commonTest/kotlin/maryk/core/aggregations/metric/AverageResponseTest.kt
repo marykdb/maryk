@@ -11,13 +11,13 @@ import kotlin.test.expect
 
 class AverageResponseTest {
     private val avgResponse = AverageResponse(
-        reference = TestMarykModel { int::ref },
+        reference = TestMarykModel.ref { int },
         value = 1234,
         valueCount = 32uL
     )
 
     private val avgResponseNull = AverageResponse(
-        reference = TestMarykModel { int::ref },
+        reference = TestMarykModel.ref { int },
         value = null,
         valueCount = 0uL
     )

@@ -81,16 +81,16 @@ class ReadStorageToChangesKtTest {
                     listOf(
                         ObjectCreate,
                         Change(
-                            TestMarykModel { double::ref } with null,
-                            TestMarykModel { dateTime::ref } with LocalDateTime(2018, 7, 18, 0, 0),
-                            TestMarykModel { map refAt LocalTime(10, 14, 1) } with "ten",
-                            TestMarykModel { listOfString refAt 0u } with "v1"
+                            TestMarykModel.ref { double } with null,
+                            TestMarykModel.ref { dateTime } with LocalDateTime(2018, 7, 18, 0, 0),
+                            TestMarykModel.ref { map at LocalTime(10, 14, 1) } with "ten",
+                            TestMarykModel.ref { listOfString at 0u } with "v1"
                         ),
                         SetChange(
-                            TestMarykModel { set::ref }.change(
+                            TestMarykModel.ref { set }.change(
                                 addValues = setOf(LocalDate(2018, 9, 9))
                             ),
-                            TestMarykModel { setOfString::ref }.change(
+                            TestMarykModel.ref { setOfString }.change(
                                 addValues = setOf("abc", "def")
                             )
                         )
@@ -100,19 +100,19 @@ class ReadStorageToChangesKtTest {
                     1234UL,
                     listOf(
                         Change(
-                            TestMarykModel { string::ref } with "hello world",
-                            TestMarykModel { int::ref } with 5,
-                            TestMarykModel { enum::ref } with V2,
-                            TestMarykModel { map refAt LocalTime(11, 22, 33) } with "eleven",
-                            TestMarykModel { map refAt LocalTime(11, 22, 17) } with null,
-                            TestMarykModel { map refAt LocalTime(12, 23, 34) } with "twelve",
-                            TestMarykModel { map refAt LocalTime(12, 15, 2) } with null,
-                            TestMarykModel { embeddedValues { value::ref } } with "test",
-                            TestMarykModel { embeddedValues { model { value::ref } } } with "another test",
-                            TestMarykModel { listOfString refAt 1u } with "v2",
-                            TestMarykModel { listOfString refAt 2u } with "v3",
-                            TestMarykModel { listOfString refAt 3u } with null,
-                            TestMarykModel { listOfString refAt 4u } with null
+                            TestMarykModel.ref { string } with "hello world",
+                            TestMarykModel.ref { int } with 5,
+                            TestMarykModel.ref { enum } with V2,
+                            TestMarykModel.ref { map at LocalTime(11, 22, 33) } with "eleven",
+                            TestMarykModel.ref { map at LocalTime(11, 22, 17) } with null,
+                            TestMarykModel.ref { map at LocalTime(12, 23, 34) } with "twelve",
+                            TestMarykModel.ref { map at LocalTime(12, 15, 2) } with null,
+                            TestMarykModel.ref { embeddedValues { value } } with "test",
+                            TestMarykModel.ref { embeddedValues { model { value } } } with "another test",
+                            TestMarykModel.ref { listOfString at 1u } with "v2",
+                            TestMarykModel.ref { listOfString at 2u } with "v3",
+                            TestMarykModel.ref { listOfString at 3u } with null,
+                            TestMarykModel.ref { listOfString at 4u } with null
                         )
                     )
                 ),
@@ -120,24 +120,24 @@ class ReadStorageToChangesKtTest {
                     1235UL,
                     listOf(
                         Change(
-                            TestMarykModel { string::ref } with "hello universe",
-                            TestMarykModel { int::ref } with 7,
-                            TestMarykModel { uint::ref } with 3u,
-                            TestMarykModel { dateTime::ref } with null,
-                            TestMarykModel { enum::ref } with V0,
-                            TestMarykModel { set refAt LocalDate(1989, 5, 15) } with null,
-                            TestMarykModel { set refAt LocalDate(1989, 5, 16) } with null,
-                            TestMarykModel { map refAt LocalTime(10, 14, 1) } with null,
-                            TestMarykModel { embeddedValues { model { value::ref } } } with null,
-                            TestMarykModel { listOfString.refAt(2u) } with null,
-                            TestMarykModel { setOfString refAt "abc" } with null,
-                            TestMarykModel { setOfString refAt "def" } with null,
+                            TestMarykModel.ref { string } with "hello universe",
+                            TestMarykModel.ref { int } with 7,
+                            TestMarykModel.ref { uint } with 3u,
+                            TestMarykModel.ref { dateTime } with null,
+                            TestMarykModel.ref { enum } with V0,
+                            TestMarykModel.ref { set item LocalDate(1989, 5, 15) } with null,
+                            TestMarykModel.ref { set item LocalDate(1989, 5, 16) } with null,
+                            TestMarykModel.ref { map at LocalTime(10, 14, 1) } with null,
+                            TestMarykModel.ref { embeddedValues { model { value } } } with null,
+                            TestMarykModel.ref { listOfString.at(2u) } with null,
+                            TestMarykModel.ref { setOfString item "abc" } with null,
+                            TestMarykModel.ref { setOfString item "def" } with null,
                         ),
                         SetChange(
-                            TestMarykModel { set::ref }.change(
+                            TestMarykModel.ref { set }.change(
                                 addValues = setOf(LocalDate(1981, 12, 5), LocalDate(1981, 12, 6))
                             ),
-                            TestMarykModel { setOfString::ref }.change(
+                            TestMarykModel.ref { setOfString }.change(
                                 addValues = setOf("ghi")
                             )
                         )
@@ -147,9 +147,9 @@ class ReadStorageToChangesKtTest {
                     1236UL,
                     listOf(
                         Change(
-                            TestMarykModel { set refAt LocalDate(1981, 12, 6) } with null,
-                            TestMarykModel { map::ref } with null,
-                            TestMarykModel { embeddedValues::ref } with null
+                            TestMarykModel.ref { set item LocalDate(1981, 12, 6) } with null,
+                            TestMarykModel.ref { map } with null,
+                            TestMarykModel.ref { embeddedValues } with null
                         )
                     )
                 )

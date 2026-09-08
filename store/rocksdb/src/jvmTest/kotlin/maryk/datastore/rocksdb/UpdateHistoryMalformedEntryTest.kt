@@ -50,7 +50,7 @@ class UpdateHistoryMalformedEntryTest {
                 ).statuses.single()
             )
 
-            val change = Change(TestMarykModel { int::ref } with 6)
+            val change = Change(TestMarykModel.ref { int } with 6)
             val changeStatus = assertIs<ChangeSuccess<TestMarykModel>>(
                 store.execute(
                     TestMarykModel.change(addStatus.key.change(change))

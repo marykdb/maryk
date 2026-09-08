@@ -14,8 +14,8 @@ import kotlin.test.expect
 
 class EqualsTest {
     private val equals = Equals(
-        TestMarykModel { string::ref } with "test",
-        TestMarykModel { int::ref } with 5
+        TestMarykModel.ref { string } with "test",
+        TestMarykModel.ref { int } with 5
     )
 
     private val context = RequestContext(
@@ -28,17 +28,17 @@ class EqualsTest {
     @Test
     fun singleReference() {
         assertNotNull(
-            equals.singleReference { it == TestMarykModel { int::ref } }
+            equals.singleReference { it == TestMarykModel.ref { int } }
         )
 
         assertNull(
-            equals.singleReference { it == TestMarykModel { uint::ref } }
+            equals.singleReference { it == TestMarykModel.ref { uint } }
         )
 
         assertNotNull(
             Equals(
-                TestMarykModel { embeddedValues { value::ref } } with "test"
-            ).singleReference { it == TestMarykModel { embeddedValues::ref } }
+                TestMarykModel.ref { embeddedValues { value } } with "test"
+            ).singleReference { it == TestMarykModel.ref { embeddedValues } }
         )
     }
 

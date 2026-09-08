@@ -32,6 +32,7 @@ data class IncMapDefinitionWrapper<K : Comparable<K>, V : Any, TO : Any, CX : Is
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<IncMapReference<K, V, CX>>,
     IsMapDefinition<K, V, CX> by definition,
     IsMapDefinitionWrapper<K, V, TO, CX, DO> {
     override val graphType = PropRef

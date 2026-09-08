@@ -1,9 +1,11 @@
 package maryk.core.processors.datastore
 
+import maryk.core.properties.references.dsl.item
+
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
-import maryk.core.properties.references.dsl.refAt
-import maryk.core.properties.references.dsl.refAtType
+import maryk.core.properties.references.dsl.at
+import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.MultiTypeChange
@@ -106,43 +108,43 @@ class ReadStorageToChangesComplexKtTest {
                     listOf(
                         ObjectCreate,
                         MultiTypeChange(
-                            ComplexModel { multi::ref } withType T3,
-                            ComplexModel { mapIntMulti.refAt(2u) } withType T3,
-                            ComplexModel { mapIntMulti.refAt(7u) } withType T4,
-                            ComplexModel { mapIntMulti.refAt(8u) } withType T5,
-                            ComplexModel { mapIntMulti.refAt(9u) } withType T6,
-                            ComplexModel { mapIntMulti.refAt(10u) } withType T7
+                            ComplexModel.ref { multi } withType T3,
+                            ComplexModel.ref { mapIntMulti.at(2u) } withType T3,
+                            ComplexModel.ref { mapIntMulti.at(7u) } withType T4,
+                            ComplexModel.ref { mapIntMulti.at(8u) } withType T5,
+                            ComplexModel.ref { mapIntMulti.at(9u) } withType T6,
+                            ComplexModel.ref { mapIntMulti.at(10u) } withType T7
                         ),
                         Change(
-                            ComplexModel { multi.withType(T3) { value::ref } } with "u3",
-                            ComplexModel { multi.withType(T3) { model { value::ref } } } with "ue3",
-                            ComplexModel { mapStringString.refAt("v1") } with "a",
-                            ComplexModel { mapStringString.refAt("v22") } with "b",
-                            ComplexModel { mapIntObject.refAt(1u) } with Unit,
-                            ComplexModel { mapIntObject.at(1u) { value::ref } } with "t1",
-                            ComplexModel { mapIntObject.refAt(2u) } with Unit,
-                            ComplexModel { mapIntObject.at(2u) { value::ref } } with "t2",
-                            ComplexModel { mapIntObject.at(2u) { model { value::ref } } } with "te2",
-                            ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } } with "m3",
-                            ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } } with "me3",
-                            ComplexModel { mapIntMulti.refAt(5u) } with T1("TEST"),
-                            ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(0u) } } } with "a",
-                            ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(1u) } } } with "b",
-                            ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(2u) } } } with null,
-                            ComplexModel { mapIntMulti.at(9u) { atType(T6) { refAt(5u) } } } with "e",
-                            ComplexModel { mapIntMulti.at(9u) { atType(T6) { refAt(6u) }  } } with "f",
-                            ComplexModel { mapIntMulti.at(10u) { atType(T7) { atType(S3) { value::ref } } } } with "g",
-                            ComplexModel { mapWithList.at("a") { refAt(0u) } } with "a1",
-                            ComplexModel { mapWithList.at("a") { refAt(1u) } } with "a2",
-                            ComplexModel { mapWithList.at("a") { refAt(2u) } } with null,
-                            ComplexModel { mapWithSet.at("b") { refAt("b3") } } with null,
-                            ComplexModel { mapWithMap.at("c") { refAt("c1")  }} with "c2",
+                            ComplexModel.ref { multi.withType(T3) { value } } with "u3",
+                            ComplexModel.ref { multi.withType(T3) { model { value } } } with "ue3",
+                            ComplexModel.ref { mapStringString.at("v1") } with "a",
+                            ComplexModel.ref { mapStringString.at("v22") } with "b",
+                            ComplexModel.ref { mapIntObject.at(1u) } with Unit,
+                            ComplexModel.ref { mapIntObject.at(1u) { value } } with "t1",
+                            ComplexModel.ref { mapIntObject.at(2u) } with Unit,
+                            ComplexModel.ref { mapIntObject.at(2u) { value } } with "t2",
+                            ComplexModel.ref { mapIntObject.at(2u) { model { value } } } with "te2",
+                            ComplexModel.ref { mapIntMulti.at(2u) { atType(T3) { value } } } with "m3",
+                            ComplexModel.ref { mapIntMulti.at(2u) { atType(T3) { model { value } } } } with "me3",
+                            ComplexModel.ref { mapIntMulti.at(5u) } with T1("TEST"),
+                            ComplexModel.ref { mapIntMulti.at(7u) { atType(T4) { at(0u) } } } with "a",
+                            ComplexModel.ref { mapIntMulti.at(7u) { atType(T4) { at(1u) } } } with "b",
+                            ComplexModel.ref { mapIntMulti.at(7u) { atType(T4) { at(2u) } } } with null,
+                            ComplexModel.ref { mapIntMulti.at(9u) { atType(T6) { at(5u) } } } with "e",
+                            ComplexModel.ref { mapIntMulti.at(9u) { atType(T6) { at(6u) }  } } with "f",
+                            ComplexModel.ref { mapIntMulti.at(10u) { atType(T7) { atType(S3) { value } } } } with "g",
+                            ComplexModel.ref { mapWithList.at("a") { at(0u) } } with "a1",
+                            ComplexModel.ref { mapWithList.at("a") { at(1u) } } with "a2",
+                            ComplexModel.ref { mapWithList.at("a") { at(2u) } } with null,
+                            ComplexModel.ref { mapWithSet.at("b") { item("b3") } } with null,
+                            ComplexModel.ref { mapWithMap.at("c") { at("c1")  }} with "c2",
                         ),
                         SetChange(
-                            ComplexModel { mapIntMulti.at(8u) { refAtType(T5) } }.change(
+                            ComplexModel.ref { mapIntMulti.at(8u) { atType(T5) } }.change(
                                 addValues = setOf("c", "d")
                             ),
-                            ComplexModel { mapWithSet.refAt("b") }.change(
+                            ComplexModel.ref { mapWithSet.at("b") }.change(
                                 addValues = setOf("b1", "b2")
                             )
                         )

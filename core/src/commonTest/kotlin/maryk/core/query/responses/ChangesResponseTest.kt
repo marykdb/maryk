@@ -27,7 +27,7 @@ import kotlin.test.expect
 class ChangesResponseTest {
     private val key = TestMarykModel.key("AAACKwEAAg")
 
-    private val subModel = TestMarykModel { embeddedValues::ref }
+    private val subModel = TestMarykModel.ref { embeddedValues }
 
     private val objectChangesResponse = ChangesResponse(
         TestMarykModel,
@@ -39,18 +39,18 @@ class ChangesResponseTest {
                         219674127uL,
                         listOf(
                             ObjectSoftDeleteChange(true),
-                            ListChange(TestMarykModel { list::ref }.change()),
-                            SetChange(TestMarykModel { set::ref }.change()),
-                            MultiTypeChange(TestMarykModel { multi::ref } withType S3)
+                            ListChange(TestMarykModel.ref { list }.change()),
+                            SetChange(TestMarykModel.ref { set }.change()),
+                            MultiTypeChange(TestMarykModel.ref { multi } withType S3)
                         )
                     ),
                     VersionedChanges(
                         319674127uL,
                         listOf(
                             ObjectCreate,
-                            Change(EmbeddedMarykModel(subModel) { value::ref } with "new"),
-                            Change(EmbeddedMarykModel(subModel) { value::ref }  with null),
-                            Check(EmbeddedMarykModel(subModel) { value::ref } with "current")
+                            Change(EmbeddedMarykModel.ref(subModel) { value } with "new"),
+                            Change(EmbeddedMarykModel.ref(subModel) { value }  with null),
+                            Check(EmbeddedMarykModel.ref(subModel) { value } with "current")
                         )
                     )
                 )

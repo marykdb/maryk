@@ -42,7 +42,7 @@ class DataStoreBackupRoundTripTest(
         val key = assertStatusIs<AddSuccess<SimpleMarykModel>>(add.statuses.single()).key
         val change = source.execute(
             SimpleMarykModel.change(
-                key.change(Change(SimpleMarykModel { value::ref } with "ha after backup"))
+                key.change(Change(SimpleMarykModel.ref { value } with "ha after backup"))
             )
         )
         assertStatusIs<ChangeSuccess<SimpleMarykModel>>(change.statuses.single())

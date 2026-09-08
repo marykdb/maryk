@@ -34,11 +34,11 @@ internal class TypeReferenceTest {
     }
 
     private val typeReference =
-        TestMarykModel { multi.refToType() }
+        TestMarykModel.ref { multi.type }
 
     @Test
     fun cacheReferenceTest() {
-        assertSame(typeReference, TestMarykModel { multi.refToType() })
+        assertSame(typeReference, TestMarykModel.ref { multi.type })
     }
 
 

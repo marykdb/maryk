@@ -13,7 +13,7 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 class VersionedChangesTest {
-    private val subModelValue = TestMarykModel { embeddedValues { value::ref } }
+    private val subModelValue = TestMarykModel.ref { embeddedValues { value } }
 
     private val versionedChanges = VersionedChanges(
         219674127uL,
@@ -22,8 +22,8 @@ class VersionedChangesTest {
             Change(subModelValue  with null),
             Check(subModelValue with "current"),
             ObjectSoftDeleteChange(true),
-            ListChange(TestMarykModel { list::ref }.change()),
-            SetChange(TestMarykModel { set::ref }.change()),
+            ListChange(TestMarykModel.ref { list }.change()),
+            SetChange(TestMarykModel.ref { set }.change()),
             ObjectCreate
         )
     )

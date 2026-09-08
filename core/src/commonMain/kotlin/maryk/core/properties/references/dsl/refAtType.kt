@@ -8,8 +8,8 @@ import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.TypedValueReference
 
-/** Specific extension to support fetching ref on Typed values by [type] */
-fun <E : TypeEnum<I>, I: Any> IsMultiTypeDefinition<*, *, *>.refAtType(
+/** Select a typed value reference for [type]. */
+infix fun <E : TypeEnum<I>, I: Any> IsMultiTypeDefinition<*, *, *>.atType(
     type: E
 ): (AnyOutPropertyReference?) -> TypedValueReference<E, I, IsPropertyContext> =
     {
@@ -20,3 +20,10 @@ fun <E : TypeEnum<I>, I: Any> IsMultiTypeDefinition<*, *, *>.refAtType(
         @Suppress("UNCHECKED_CAST")
         (this as IsMultiTypeDefinition<E, I, IsPropertyContext>).typedValueRef(type, parent as CanHaveComplexChildReference<*, *, *, *>)
     }
+
+/** @deprecated Use [atType]. */
+@Deprecated("Use atType(type)", ReplaceWith("atType(type)", "maryk.core.properties.references.dsl.atType"))
+fun <E : TypeEnum<I>, I: Any> IsMultiTypeDefinition<*, *, *>.refAtType(
+    type: E
+): (AnyOutPropertyReference?) -> TypedValueReference<E, I, IsPropertyContext> =
+    this.atType(type)

@@ -1,5 +1,7 @@
 package maryk.core.query.changes
 
+import maryk.core.properties.references.dsl.item
+
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -23,8 +25,8 @@ import kotlin.test.expect
 
 class ChangeTest {
     private val valueChange = Change(
-        TestMarykModel { string::ref } with "test",
-        TestMarykModel { int::ref } with 5
+        TestMarykModel.ref { string } with "test",
+        TestMarykModel.ref { int } with 5
     )
 
     private val context = RequestContext(
@@ -36,7 +38,7 @@ class ChangeTest {
 
     @Test
     fun testValueChange() {
-        expect(TestMarykModel { string::ref }) {
+        expect(TestMarykModel.ref { string }) {
             valueChange.referenceValuePairs[0].reference as ValueWithFlexBytesPropertyReference<*, *, *, *>
         }
         expect("test") { valueChange.referenceValuePairs[0].value }
@@ -94,7 +96,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { string::ref } with "hello universe"
+                TestMarykModel.ref { string } with "hello universe"
             )
         )
 
@@ -103,7 +105,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { multi.refAtType(S1) } with "universe"
+                TestMarykModel.ref { multi.atType(S1) } with "universe"
             )
         )
 
@@ -112,7 +114,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { list::ref } with listOf(1, 2)
+                TestMarykModel.ref { list } with listOf(1, 2)
             )
         )
 
@@ -121,7 +123,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { list.refAt(0u) } with 22
+                TestMarykModel.ref { list.at(0u) } with 22
             )
         )
 
@@ -130,7 +132,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { list.refToAny() } with 42
+                TestMarykModel.ref { list.any() } with 42
             )
         )
 
@@ -139,7 +141,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { map.refAt(LocalTime(12, 0)) } with "Bye"
+                TestMarykModel.ref { map.at(LocalTime(12, 0)) } with "Bye"
             )
         )
 
@@ -148,7 +150,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { map.refToAnyValue() } with "Hello"
+                TestMarykModel.ref { map.anyValue() } with "Hello"
             )
         )
 
@@ -157,7 +159,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { embeddedValues { value::ref } } with "bye"
+                TestMarykModel.ref { embeddedValues { value } } with "bye"
             )
         )
 
@@ -166,7 +168,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { embeddedValues { model { value::ref } } } with "goodbye"
+                TestMarykModel.ref { embeddedValues { model { value } } } with "goodbye"
             )
         )
 
@@ -177,7 +179,7 @@ class ChangeTest {
             // Cannot change non set sub values
             changed = original.change(
                 Change(
-                    TestMarykModel { embeddedValues { marykModel { string::ref } } } with "new"
+                    TestMarykModel.ref { embeddedValues { marykModel { string } } } with "new"
                 )
             )
         }
@@ -209,77 +211,77 @@ class ChangeTest {
         assertEquals(original, changed)
 
         changed = original.change(
-            Change(TestMarykModel { int::ref } with null)
+            Change(TestMarykModel.ref { int } with null)
         )
 
         assertNull(changed { int })
         assertEquals(5, original { int })
 
         changed = original.change(
-            Change(TestMarykModel { multi.refAtType(S1) } with null)
+            Change(TestMarykModel.ref { multi.atType(S1) } with null)
         )
 
         assertNull(changed { multi }?.value)
         assertEquals("world", original { multi }?.value)
 
         changed = original.change(
-            Change(TestMarykModel { list::ref } with null)
+            Change(TestMarykModel.ref { list } with null)
         )
 
         assertNull(changed { list })
         assertEquals(listOf(3, 4, 5), original { list })
 
         changed = original.change(
-            Change(TestMarykModel { list.refAt(0u) } with null)
+            Change(TestMarykModel.ref { list.at(0u) } with null)
         )
 
         assertEquals(4, changed { list }?.getOrNull(0))
         assertEquals(3, original { list }?.getOrNull(0))
 
         changed = original.change(
-            Change(TestMarykModel { list.refToAny() } with null)
+            Change(TestMarykModel.ref { list.any() } with null)
         )
 
         assertEquals(emptyList(), changed { list })
         assertEquals(listOf(3, 4, 5), original { list })
 
         changed = original.change(
-            Change(TestMarykModel { set.refAt(LocalDate(2020, 2, 20)) } with null)
+            Change(TestMarykModel.ref { set.item(LocalDate(2020, 2, 20)) } with null)
         )
 
         assertEquals(setOf(LocalDate(2019, 12, 11)), changed { set })
         assertEquals(setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)), original { set })
 
         changed = original.change(
-            Change(TestMarykModel { map.refAt(LocalTime(12, 0)) } with null)
+            Change(TestMarykModel.ref { map.at(LocalTime(12, 0)) } with null)
         )
 
         assertEquals(mapOf(LocalTime(1, 2) to "Hoi"), changed { map })
         assertEquals(mapOf(LocalTime(12, 0) to "Hi", LocalTime(1, 2) to "Hoi"), original { map })
 
         changed = original.change(
-            Change(TestMarykModel { map.refToAnyValue() } with null)
+            Change(TestMarykModel.ref { map.anyValue() } with null)
         )
 
         assertEquals(emptyMap(), changed { map })
         assertEquals(mapOf(LocalTime(12, 0) to "Hi", LocalTime(1, 2) to "Hoi"), original { map })
 
         changed = original.change(
-            Change(TestMarykModel { embeddedValues { value::ref } } with null)
+            Change(TestMarykModel.ref { embeddedValues { value } } with null)
         )
 
         assertNull(changed { embeddedValues } / { value })
         assertEquals("hi", original { embeddedValues } / { value })
 
         changed = original.change(
-            Change(TestMarykModel { embeddedValues { model { value::ref } } } with null)
+            Change(TestMarykModel.ref { embeddedValues { model { value } } } with null)
         )
 
         assertNull(changed { embeddedValues } / { model } / { value })
         assertEquals("bye", original { embeddedValues } / { model } / { value })
 
         changed = original.change(
-            Change(TestMarykModel { embeddedValues { marykModel { string::ref } } } with null)
+            Change(TestMarykModel.ref { embeddedValues { marykModel { string } } } with null)
         )
 
         assertNull(changed { embeddedValues } / { marykModel } / { string })

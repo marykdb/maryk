@@ -301,7 +301,7 @@ class RocksDBSensitivePropertiesTest {
                 assertIs<ChangeSuccess<SensitiveRocksModel>>(
                     store.execute(
                         SensitiveRocksModel.change(
-                            add.key.change(Change(SensitiveRocksModel { secret::ref } with "after"))
+                            add.key.change(Change(SensitiveRocksModel.ref { secret } with "after"))
                         )
                     ).statuses.single()
                 )
@@ -312,7 +312,7 @@ class RocksDBSensitivePropertiesTest {
                 )
                 val historicScan = store.execute(
                     SensitiveRocksModel.scan(
-                        where = Equals(SensitiveRocksModel { secret::ref } with "before"),
+                        where = Equals(SensitiveRocksModel.ref { secret } with "before"),
                         toVersion = beforeChange,
                         allowTableScan = true,
                     )

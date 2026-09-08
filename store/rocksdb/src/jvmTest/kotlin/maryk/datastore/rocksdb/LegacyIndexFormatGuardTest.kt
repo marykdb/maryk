@@ -91,7 +91,7 @@ class LegacyIndexFormatGuardTest {
                 assertEquals(
                     listOf("haha legacy"),
                     reopenedStore.execute(
-                        ModelV1.scan(where = Equals(ModelV1 { value::ref } with "haha legacy"))
+                        ModelV1.scan(where = Equals(ModelV1.ref { value } with "haha legacy"))
                     ).values.map { it.values { value } },
                 )
             } finally {
@@ -155,7 +155,7 @@ class LegacyIndexFormatGuardTest {
                 assertEquals(
                     listOf("haha migration"),
                     reopenedStore.execute(
-                        ModelV1.scan(where = Equals(ModelV1 { value::ref } with "haha migration"))
+                        ModelV1.scan(where = Equals(ModelV1.ref { value } with "haha migration"))
                     ).values.map { it.values { value } },
                 )
             } finally {
@@ -224,7 +224,7 @@ class LegacyIndexFormatGuardTest {
                 assertFailsWith<MigrationException> {
                     migratingStore.execute(
                         AnyValueSetIndexModel.scan(
-                            where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "s4")
+                            where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "s4")
                         )
                     )
                 }
@@ -243,7 +243,7 @@ class LegacyIndexFormatGuardTest {
                     listOf("other model"),
                     migratingStore.execute(
                         AnyValueSetIndexModel.scan(
-                            where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "s4")
+                            where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "s4")
                         )
                     ).values.map { it.values { name } },
                 )
@@ -327,7 +327,7 @@ class LegacyIndexFormatGuardTest {
                     listOf("unchanged model"),
                     migratingStore.execute(
                         AnyValueSetIndexModel.scan(
-                            where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "s5")
+                            where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "s5")
                         )
                     ).values.map { it.values { name } },
                 )
@@ -443,7 +443,7 @@ class LegacyIndexFormatGuardTest {
                     assertEquals(2, readStoreMetaFile(folder).indexKeyFormatVersion)
                     val response = store.execute(
                         AnyValueSetIndexModel.scan(
-                            where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "s1")
+                            where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "s1")
                         )
                     )
                     assertEquals(listOf("legacy"), response.values.map { it.values { name } })
@@ -516,7 +516,7 @@ class LegacyIndexFormatGuardTest {
                     assertEquals(2, readStoreMetaFile(folder).indexKeyFormatVersion)
                     val response = store.execute(
                         AnyValueSetIndexModel.scan(
-                            where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "s2")
+                            where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "s2")
                         )
                     )
                     assertEquals(listOf("missing-meta"), response.values.map { it.values { name } })
@@ -569,7 +569,7 @@ class LegacyIndexFormatGuardTest {
                     assertEquals(2, readStoreMetaFile(folder).indexKeyFormatVersion)
                     val response = store.execute(
                         UniqueModel.scan(
-                            where = Equals(UniqueModel { email::ref } with "legacy@unique.test")
+                            where = Equals(UniqueModel.ref { email } with "legacy@unique.test")
                         )
                     )
                     assertEquals(listOf("legacy@unique.test"), response.values.map { it.values { email } })

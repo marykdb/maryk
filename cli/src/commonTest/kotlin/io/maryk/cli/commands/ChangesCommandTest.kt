@@ -74,7 +74,7 @@ class ChangesCommandTest {
                 val changes = listOf(
                     VersionedChanges(
                         version = 1uL,
-                        changes = listOf(ObjectCreate, Change(SimpleMarykModel { value::ref } with "hello"))
+                        changes = listOf(ObjectCreate, Change(SimpleMarykModel.ref { value } with "hello"))
                     )
                 )
                 val response = ChangesResponse(

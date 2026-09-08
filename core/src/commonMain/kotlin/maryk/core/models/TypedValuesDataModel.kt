@@ -1,16 +1,23 @@
+@file:OptIn(ExperimentalTypeInference::class)
+
 package maryk.core.models
 
 import maryk.core.models.serializers.DataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.wrapper.IsReferenceCreator
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
+import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.dsl.ref as selectReference
 import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
+import kotlin.experimental.ExperimentalTypeInference
+import kotlin.jvm.JvmName
 
 /**
  * Class for typed DataModels which describe how to work with [Values] objects.
@@ -18,6 +25,36 @@ import maryk.core.values.Values
 abstract class TypedValuesDataModel<DM: IsValuesDataModel> : BaseDataModel<Any>(), IsTypedValuesDataModel<DM> {
     @Suppress("UNCHECKED_CAST", "LeakingThis")
     override val Serializer = DataModelSerializer<Any, Values<DM>, DM, IsPropertyContext>(this as DM)
+
+    /** Select a typed property or embedded path without an extension import. */
+    @OverloadResolutionByLambdaReturnType
+    @Suppress("UNCHECKED_CAST")
+    fun <R : IsPropertyReference<*, *, *>> ref(
+        selector: DM.() -> IsReferenceCreator<R>
+    ): R = (this as DM).selectReference(selector)
+
+    /** Select a typed property below [parent] without an extension import. */
+    @OverloadResolutionByLambdaReturnType
+    @Suppress("UNCHECKED_CAST")
+    fun <R : IsPropertyReference<*, *, *>> ref(
+        parent: AnyOutPropertyReference?,
+        selector: DM.() -> IsReferenceCreator<R>
+    ): R = (this as DM).selectReference(parent, selector)
+
+    /** Resolve a nested selection below [parent] without an extension import. */
+    @JvmName("refFromReferenceGetterWithParent")
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any, D : IsPropertyDefinition<T>, R : IsPropertyReference<T, D, *>> ref(
+        parent: AnyOutPropertyReference?,
+        selector: DM.() -> (AnyOutPropertyReference?) -> R
+    ): R = (this as DM).selectReference(parent, selector)
+
+    /** Resolve a nested selection or a legacy callable-reference selector. */
+    @JvmName("refFromReferenceGetter")
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any, D : IsPropertyDefinition<T>, R : IsPropertyReference<T, D, *>> ref(
+        selector: DM.() -> (AnyOutPropertyReference?) -> R
+    ): R = (this as DM).selectReference(selector)
 
     /**
      * Create a new [Values] object with [pairs] and set defaults if [setDefaults] is true

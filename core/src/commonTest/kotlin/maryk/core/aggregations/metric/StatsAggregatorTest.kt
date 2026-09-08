@@ -9,12 +9,12 @@ class StatsAggregatorTest {
     @Test
     fun aggregate() {
         val statsAggregator = StatsAggregator(
-            Stats(TestMarykModel { int::ref })
+            Stats(TestMarykModel.ref { int })
         )
 
         expect(
             StatsResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 min = null,
                 max = null,
                 sum = null,
@@ -30,7 +30,7 @@ class StatsAggregatorTest {
         statsAggregator.aggregate { 789 }
         expect(
             StatsResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 min = 452,
                 max = 12936,
                 sum = 14177,
@@ -45,7 +45,7 @@ class StatsAggregatorTest {
     @Test
     fun aggregateDecimal() {
         val statsAggregator = StatsAggregator(
-            Stats(DecimalAggregationModel { amount::ref })
+            Stats(DecimalAggregationModel.ref { amount })
         )
 
         statsAggregator.aggregate { Decimal.parse("1.02") }
@@ -53,7 +53,7 @@ class StatsAggregatorTest {
 
         expect(
             StatsResponse(
-                DecimalAggregationModel { amount::ref },
+                DecimalAggregationModel.ref { amount },
                 min = Decimal.parse("1.02"),
                 max = Decimal.parse("2.01"),
                 sum = Decimal.parse("3.03"),

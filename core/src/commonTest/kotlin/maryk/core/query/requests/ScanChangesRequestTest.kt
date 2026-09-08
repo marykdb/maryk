@@ -49,20 +49,20 @@ class ScanChangesRequestTest {
 
         // Does not fail
         TestMarykModel.scanChanges(
-            order = TestMarykModel { uint::ref }.ascending()
+            order = TestMarykModel.ref { uint }.ascending()
         )
 
         assertFailsWith<RequestException> {
             TestMarykModel.scanChanges(
-                order = TestMarykModel { int::ref }.ascending()
+                order = TestMarykModel.ref { int }.ascending()
             )
         }
 
         assertFailsWith<RequestException> {
             TestMarykModel.scanChanges(
                 order = Orders(
-                    TestMarykModel { dateTime::ref }.descending(),
-                    TestMarykModel { enum::ref }.ascending()
+                    TestMarykModel.ref { dateTime }.descending(),
+                    TestMarykModel.ref { enum }.ascending()
                 )
             )
         }
@@ -76,14 +76,14 @@ class ScanChangesRequestTest {
         // Does not fail
         TestMarykModel.scanChanges(
             where = Equals(
-                TestMarykModel { uint::ref } with 8u
+                TestMarykModel.ref { uint } with 8u
             )
         )
 
         assertFailsWith<RequestException> {
             TestMarykModel.scanChanges(
                 where = Equals(
-                    TestMarykModel { int::ref } with 8
+                    TestMarykModel.ref { int } with 8
                 )
             )
         }

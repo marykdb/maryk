@@ -16,17 +16,17 @@ import kotlin.test.expect
 
 class EnumValuesResponseTest {
     private val enumValuesResponse = EnumValuesResponse(
-        reference = TestMarykModel { enum::ref },
+        reference = TestMarykModel.ref { enum },
         buckets = listOf(
             Bucket(
                 V1,
                 AggregationsResponse(
                     "total" to SumResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         123456789
                     ),
                     "avg" to AverageResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         43728,
                         32uL
                     )
@@ -37,11 +37,11 @@ class EnumValuesResponseTest {
                 V2,
                 AggregationsResponse(
                     "total" to SumResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         1
                     ),
                     "avg" to AverageResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         5322,
                         2uL
                     )

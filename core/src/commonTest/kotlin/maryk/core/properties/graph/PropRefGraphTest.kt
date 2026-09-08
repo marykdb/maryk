@@ -33,13 +33,13 @@ class PropRefGraphTest {
 
     @Test
     fun containsReference() {
-        assertTrue(graph.contains(EmbeddedMarykModel { value::ref }))
-        assertFalse(graph.contains(EmbeddedMarykModel { marykModel::ref }))
+        assertTrue(graph.contains(EmbeddedMarykModel.ref { value }))
+        assertFalse(graph.contains(EmbeddedMarykModel.ref { marykModel }))
 
-        assertTrue(graph.contains(EmbeddedMarykModel { model::ref }))
-        assertFalse(graph.contains(EmbeddedMarykModel { model { model::ref } }))
-        assertTrue(graph.contains(EmbeddedMarykModel { model { marykModel::ref } }))
-        assertTrue(graph.contains(EmbeddedMarykModel { model { marykModel { string::ref } } }))
+        assertTrue(graph.contains(EmbeddedMarykModel.ref { model }))
+        assertFalse(graph.contains(EmbeddedMarykModel.ref { model { model } }))
+        assertTrue(graph.contains(EmbeddedMarykModel.ref { model { marykModel } }))
+        assertTrue(graph.contains(EmbeddedMarykModel.ref { model { marykModel { string } } }))
     }
 
     @Test

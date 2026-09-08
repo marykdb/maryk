@@ -46,13 +46,13 @@ class HistoricDescendingAnyValueOrderFoundationDBTest {
 
             val currentScan = store.execute(
                 AnyValueIncMapIndexModel.scan(
-                    order = AnyValueIncMapIndexModel { incMapValues.refToAnyKey() }.descending()
+                    order = AnyValueIncMapIndexModel.ref { incMapValues.anyKey() }.descending()
                 )
             )
             val historicScan = store.execute(
                 AnyValueIncMapIndexModel.scan(
                     toVersion = statuses.maxOf { it.version },
-                    order = AnyValueIncMapIndexModel { incMapValues.refToAnyKey() }.descending()
+                    order = AnyValueIncMapIndexModel.ref { incMapValues.anyKey() }.descending()
                 )
             )
 

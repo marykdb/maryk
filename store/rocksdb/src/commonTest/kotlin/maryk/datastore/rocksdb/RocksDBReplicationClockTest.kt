@@ -43,7 +43,7 @@ class RocksDBReplicationClockTest {
                         key,
                         30uL,
                         0,
-                        listOf(Change(Log { message::ref } with "newer change")),
+                        listOf(Change(Log.ref { message } with "newer change")),
                     ),
                 )
             )

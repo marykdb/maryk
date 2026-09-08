@@ -115,7 +115,7 @@ class DataStoreGetUpdatesAndFlowTest(
     private suspend fun executeGetUpdatesToVersionIncludesChangeAtBound() {
         if (!dataStore.keepAllVersions) return
 
-        val change = Change(SimpleMarykModel { value::ref } with "habound")
+        val change = Change(SimpleMarykModel.ref { value } with "habound")
         val changeVersion = assertStatusIs<ChangeSuccess<SimpleMarykModel>>(
             dataStore.execute(SimpleMarykModel.change(testKeys[0].change(change))).statuses.single()
         ).version
@@ -144,7 +144,7 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(highestInitVersion, version)
         }
 
-        val change1 = Change(SimpleMarykModel { value::ref } with "haha 55")
+        val change1 = Change(SimpleMarykModel.ref { value } with "haha 55")
         dataStore.execute(SimpleMarykModel.change(
             testKeys[0].change(change1)
         ))
@@ -166,7 +166,7 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(highestInitVersion, version)
         }
 
-        val change1 = Change(SimpleMarykModel { value::ref } with "haha 66")
+        val change1 = Change(SimpleMarykModel.ref { value } with "haha 66")
         dataStore.execute(SimpleMarykModel.change(
             testKeys[0].change(change1)
         ))
@@ -188,7 +188,7 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(highestInitVersion, version)
         }
 
-        val change1 = Change(SimpleMarykModel { value::ref } with "haha5")
+        val change1 = Change(SimpleMarykModel.ref { value } with "haha5")
         dataStore.execute(SimpleMarykModel.change(
             testKeys[0].change(change1)
         ))
@@ -199,7 +199,7 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(listOf(change1), changes)
         }
 
-        val change2 = Change(SimpleMarykModel { value::ref } with "haha6")
+        val change2 = Change(SimpleMarykModel.ref { value } with "haha6")
         dataStore.execute(SimpleMarykModel.change(
             testKeys[1].change(change2)
         ))
@@ -229,7 +229,7 @@ class DataStoreGetUpdatesAndFlowTest(
         SimpleMarykModel.getUpdates(
             testKeys[0],
             testKeys[1],
-            where = Not(Equals(SimpleMarykModel { value::ref } with "haha0")),
+            where = Not(Equals(SimpleMarykModel.ref { value } with "haha0")),
             fromVersion = highestInitVersion + 1uL
         ),
         3
@@ -239,7 +239,7 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(highestInitVersion, version)
         }
 
-        val change1 = Change(SimpleMarykModel { value::ref } with "haha5")
+        val change1 = Change(SimpleMarykModel.ref { value } with "haha5")
         dataStore.execute(SimpleMarykModel.change(
             testKeys[0].change(change1)
         ))
@@ -250,7 +250,7 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(listOf(change1), changes)
         }
 
-        val change2 = Change(SimpleMarykModel { value::ref } with "haha0")
+        val change2 = Change(SimpleMarykModel.ref { value } with "haha0")
         dataStore.execute(SimpleMarykModel.change(
             testKeys[1].change(change2)
         ))
@@ -310,7 +310,7 @@ class DataStoreGetUpdatesAndFlowTest(
         dataStore,
         SimpleMarykModel.get(
             testKeys[0],
-            where = Equals(SimpleMarykModel { value::ref } with "ha inside")
+            where = Equals(SimpleMarykModel.ref { value } with "ha inside")
         ),
         4
     ) { responses ->
@@ -320,7 +320,7 @@ class DataStoreGetUpdatesAndFlowTest(
 
         dataStore.execute(
             SimpleMarykModel.change(
-                testKeys[0].change(Change(SimpleMarykModel { value::ref } with "ha inside"))
+                testKeys[0].change(Change(SimpleMarykModel.ref { value } with "ha inside"))
             )
         )
         assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
@@ -330,7 +330,7 @@ class DataStoreGetUpdatesAndFlowTest(
 
         dataStore.execute(
             SimpleMarykModel.change(
-                testKeys[0].change(Change(SimpleMarykModel { value::ref } with "ha outside"))
+                testKeys[0].change(Change(SimpleMarykModel.ref { value } with "ha outside"))
             )
         )
         assertIs<RemovalUpdate<*>>(responses[2].await()).apply {
@@ -340,7 +340,7 @@ class DataStoreGetUpdatesAndFlowTest(
 
         dataStore.execute(
             SimpleMarykModel.change(
-                testKeys[0].change(Change(SimpleMarykModel { value::ref } with "ha inside"))
+                testKeys[0].change(Change(SimpleMarykModel.ref { value } with "ha inside"))
             )
         )
         assertIs<AdditionUpdate<*>>(responses[3].await()).apply {
@@ -361,7 +361,7 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(emptyList(), changes)
         }
 
-        val change = Change(SimpleMarykModel { value::ref } with "ha after empty history")
+        val change = Change(SimpleMarykModel.ref { value } with "ha after empty history")
         dataStore.execute(SimpleMarykModel.change(testKeys[0].change(change)))
 
         assertIs<ChangeUpdate<*>>(responses[1].await()).apply {
@@ -467,7 +467,7 @@ class DataStoreGetUpdatesAndFlowTest(
             )
         }
 
-        val change1 = Change(SimpleMarykModel { value::ref } with "haha5")
+        val change1 = Change(SimpleMarykModel.ref { value } with "haha5")
         dataStore.execute(SimpleMarykModel.change(
             testKeys[0].change(change1)
         ))

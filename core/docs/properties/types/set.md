@@ -50,7 +50,7 @@ or change the contents. It can be defined with a set with `addValues` or a set w
 Kotlin example on a model with a set containing strings.
 ```kotlin
 SetChange(
-    Model { setOfStrings::ref }.change(
+    Model.ref { setOfStrings }.change(
         addValues = setOf("three", "four"),
         deleteValues = setOf("one", "two")
     )
@@ -59,14 +59,14 @@ SetChange(
 
 ## Indexing set values
 
-Set properties can be indexed on any set value with `refToAny()` (`set.*` in string notation).
+Set properties can be indexed on any set value with `any()` (`set.*` in string notation).
 
 Example:
 ```kotlin
 object ExampleModel : RootDataModel<ExampleModel>(
     indexes = {
         listOf(
-            ExampleModel { tags.refToAny() }
+            ExampleModel.ref { tags.any() }
         )
     }
 ) {

@@ -78,7 +78,7 @@ class DataStoreScanUpdatesWithLogTest(
             dataStore,
             Log.scanUpdates(
                 testKeys[2],
-                where = Not(Equals(Log { message::ref } with "new message 0")),
+                where = Not(Equals(Log.ref { message } with "new message 0")),
                 fromVersion = highestInitVersion + 1uL
             ),
             3
@@ -88,7 +88,7 @@ class DataStoreScanUpdatesWithLogTest(
                 assertEquals(highestInitVersion, version)
             }
 
-            val change1 = Change(Log { message::ref } with "new message 5")
+            val change1 = Change(Log.ref { message } with "new message 5")
             dataStore.execute(Log.change(
                 testKeys[0].change(change1)
             ))
@@ -98,7 +98,7 @@ class DataStoreScanUpdatesWithLogTest(
                 assertEquals(listOf(change1), changes)
             }
 
-            val change2 = Change(Log { message::ref } with "new message 0")
+            val change2 = Change(Log.ref { message } with "new message 0")
             dataStore.execute(Log.change(
                 testKeys[2].change(change2)
             ))
@@ -116,7 +116,7 @@ class DataStoreScanUpdatesWithLogTest(
             // Reverse order so keys[0], [1] and [2] are within range
             Log.scanUpdates(
                 startKey = testKeys[2],
-                where = ValueIn(Log { severity::ref } with setOf(DEBUG, ERROR)),
+                where = ValueIn(Log.ref { severity } with setOf(DEBUG, ERROR)),
                 fromVersion = highestInitVersion + 1uL
             ),
             4
@@ -126,7 +126,7 @@ class DataStoreScanUpdatesWithLogTest(
                 assertEquals(highestInitVersion, version)
             }
 
-            val change1 = Change(Log { message::ref } with "new message 1")
+            val change1 = Change(Log.ref { message } with "new message 1")
             dataStore.execute(Log.change(
                 testKeys[0].change(change1)
             ))
@@ -137,7 +137,7 @@ class DataStoreScanUpdatesWithLogTest(
                 assertEquals(listOf(change1), changes)
             }
 
-            val change2 = Change(Log { message::ref } with "new message 3")
+            val change2 = Change(Log.ref { message } with "new message 3")
             dataStore.execute(Log.change(
                 testKeys[2].change(change2)
             ))

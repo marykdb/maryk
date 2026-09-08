@@ -10,6 +10,7 @@ import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.exceptions.InjectException
+import maryk.core.properties.references.dsl.ref
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
@@ -63,7 +64,7 @@ class InjectTest {
         )
     )
 
-    private val injectSimple = Inject("testSimpleConvert", EmbeddedMarykModel { model { value::ref } })
+    private val injectSimple = Inject("testSimpleConvert", EmbeddedMarykModel.ref { model { value } })
     private val injectCompleteObject = Inject("testCompleteConvert")
 
     init {
@@ -72,16 +73,16 @@ class InjectTest {
         context.addToCollect("testSimpleConvert", EmbeddedMarykModel)
     }
 
-    private val firstResponseValueRef = ValuesResponse { values.refAt(0u) { values } }
+    private val firstResponseValueRef = ValuesResponse.ref { values.at(0u) { values } }
 
     private val inject =
-        Inject("testCollection", TestMarykModel(firstResponseValueRef) { string::ref })
+        Inject("testCollection", TestMarykModel.ref(firstResponseValueRef) { string })
 
     private val injectDeep =
-        Inject("testCollection", TestMarykModel(firstResponseValueRef) { embeddedValues { value::ref } })
+        Inject("testCollection", TestMarykModel.ref(firstResponseValueRef) { embeddedValues { value } })
 
     private val injectFromAny =
-        Inject("testCollection", ValuesResponse { values.atAny { values.refWithDM(TestMarykModel) { string } } })
+        Inject("testCollection", ValuesResponse.ref { values.atAny { values.withModel(TestMarykModel) { string } } })
 
     @Test
     fun testGetToCollect() {
@@ -111,7 +112,7 @@ class InjectTest {
         context.addToCollect("testCollection2", EmbeddedMarykModel)
 
         val values = TestMarykModel.create(context = context) {
-            string with Inject("testCollection2", EmbeddedMarykModel { this.model { value::ref } })
+            string with Inject("testCollection2", EmbeddedMarykModel.ref { this.model { value } })
         }
 
         expect(InjectException("testCollection2")) {
@@ -139,7 +140,7 @@ class InjectTest {
         context.addToCollect("where", Equals)
 
         val getRequest = GetRequest.create(context = context) {
-            where with Inject("where", EmbeddedMarykModel { this.model { value::ref } })
+            where with Inject("where", EmbeddedMarykModel.ref { this.model { value } })
         }
 
         expect(InjectException("where")) {
@@ -149,7 +150,7 @@ class InjectTest {
         }
 
         val equals = Equals(
-            EmbeddedMarykModel { value::ref } with "hoi"
+            EmbeddedMarykModel.ref { value } with "hoi"
         )
 
         context.collectResult("where", Equals.asValues(equals))

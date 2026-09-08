@@ -20,7 +20,7 @@ internal class ChangeUpdateTest {
         version = 1uL,
         index = 5,
         changes = listOf(
-            Change(SimpleMarykModel { value::ref } with "nicer value")
+            Change(SimpleMarykModel.ref { value } with "nicer value")
         )
     )
 

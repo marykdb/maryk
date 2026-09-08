@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class NotTest {
     private val not = Not(
-        Exists(SimpleMarykModel { value::ref })
+        Exists(SimpleMarykModel.ref { value })
     )
 
     private val context = RequestContext(

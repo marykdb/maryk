@@ -31,13 +31,13 @@ private object InfoEmbeddedModel : DataModel<InfoEmbeddedModel>() {
 private object NestedEmbeddedIndexRootModel : RootDataModel<NestedEmbeddedIndexRootModel>(
     indexes = {
         listOf(
-            NestedEmbeddedIndexRootModel { info { name { firstNames::ref } } },
-            NestedEmbeddedIndexRootModel { info { birthDate::ref } },
-            NestedEmbeddedIndexRootModel { info { name { familyName { lastName::ref } } } },
-            NestedEmbeddedIndexRootModel { info { name { familyName { prefix::ref } } } },
+            NestedEmbeddedIndexRootModel.ref { info { name { firstNames } } },
+            NestedEmbeddedIndexRootModel.ref { info { birthDate } },
+            NestedEmbeddedIndexRootModel.ref { info { name { familyName { lastName } } } },
+            NestedEmbeddedIndexRootModel.ref { info { name { familyName { prefix } } } },
             Multiple(
-                NestedEmbeddedIndexRootModel { info { name { familyName { lastName::ref } } } },
-                NestedEmbeddedIndexRootModel { info { name { firstNames::ref } } },
+                NestedEmbeddedIndexRootModel.ref { info { name { familyName { lastName } } } },
+                NestedEmbeddedIndexRootModel.ref { info { name { firstNames } } },
             )
         )
     },

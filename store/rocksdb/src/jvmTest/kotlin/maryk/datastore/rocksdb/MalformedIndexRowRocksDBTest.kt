@@ -58,8 +58,8 @@ class MalformedIndexRowRocksDBTest {
             val scanResponse = store.execute(
                 Person.scan(
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     )
                 )
             )
@@ -112,8 +112,8 @@ class MalformedIndexRowRocksDBTest {
             val scanResponse = store.execute(
                 Person.scan(
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     ),
                     limit = 1u
                 )
@@ -165,8 +165,8 @@ class MalformedIndexRowRocksDBTest {
                 Person.scan(
                     toVersion = addStatus.version,
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     )
                 )
             )
@@ -207,7 +207,7 @@ class MalformedIndexRowRocksDBTest {
             })).statuses.single()).key
 
             val columnFamilies = store.getColumnFamilies(Person)
-            val surnameValueKey = second.bytes + Person { surname::ref }.toStorageByteArray()
+            val surnameValueKey = second.bytes + Person.ref { surname }.toStorageByteArray()
             val currentSurname = store.db.get(columnFamilies.table, surnameValueKey)!!
             store.db.put(columnFamilies.table, surnameValueKey, currentSurname + byteArrayOf(1))
 
@@ -215,8 +215,8 @@ class MalformedIndexRowRocksDBTest {
                 Person.scan(
                     startKey = second,
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     ),
                     select = Person.graph { listOf(firstName) }
                 )
@@ -255,15 +255,15 @@ class MalformedIndexRowRocksDBTest {
             val second = assertIs<AddSuccess<Person>>(store.execute(Person.add(secondPerson)).statuses.single()).key
 
             val columnFamilies = store.getColumnFamilies(Person)
-            val surnameValueKey = second.bytes + Person { surname::ref }.toStorageByteArray()
+            val surnameValueKey = second.bytes + Person.ref { surname }.toStorageByteArray()
             val currentSurname = store.db.get(columnFamilies.table, surnameValueKey)!!
             store.db.put(columnFamilies.table, surnameValueKey, currentSurname + byteArrayOf(1))
 
             val updatesResponse = store.execute(
                 Person.scanUpdates(
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     ),
                     select = Person.graph { listOf(firstName) },
                     limit = 2u,
@@ -312,7 +312,7 @@ class MalformedIndexRowRocksDBTest {
             val versionBytes = HLC.toStorageBytes(HLC(secondStatus.version))
             val historicSurnameKey = combineToByteArray(
                 secondStatus.key.bytes,
-                Person { surname::ref }.toStorageByteArray(),
+                Person.ref { surname }.toStorageByteArray(),
                 versionBytes
             ).apply {
                 invert(size - versionBytes.size)
@@ -325,8 +325,8 @@ class MalformedIndexRowRocksDBTest {
                     startKey = secondStatus.key,
                     toVersion = secondStatus.version,
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     ),
                     select = Person.graph { listOf(firstName) }
                 )

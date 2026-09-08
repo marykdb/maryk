@@ -8,12 +8,12 @@ class MaxAggregatorTest {
     @Test
     fun aggregate() {
         val maxAggregator = MaxAggregator(
-            Max(TestMarykModel { int::ref })
+            Max(TestMarykModel.ref { int })
         )
 
         expect(
             MaxResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 null
             )
         ) {
@@ -25,7 +25,7 @@ class MaxAggregatorTest {
         maxAggregator.aggregate { 789 }
         expect(
             MaxResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 12936
             )
         ) {

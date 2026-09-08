@@ -1,11 +1,16 @@
+@file:OptIn(ExperimentalTypeInference::class)
+
 package maryk.core.properties.references.dsl
 
+import kotlin.experimental.ExperimentalTypeInference
+import kotlin.jvm.JvmName
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.invoke
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.models.invoke
+import maryk.core.properties.definitions.wrapper.IsReferenceCreator
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.IsPropertyReference
@@ -26,3 +31,10 @@ fun <K : Any, V : Values<DM>, DM : IsValuesDataModel, T : Any, R : IsPropertyRef
             referenceGetter
         )
     }
+
+/** Select an embedded child while preserving its concrete reference type. */
+@OverloadResolutionByLambdaReturnType
+@JvmName("anyPropertySelection")
+fun <K : Any, V : Values<DM>, DM : IsValuesDataModel, T : Any, R : IsPropertyReference<T, *, *>> IsMapDefinition<K, V, *>.any(
+    selector: DM.() -> IsReferenceCreator<R>
+): (AnyOutPropertyReference?) -> R = any(referenceGetter = { selector(this)::ref })

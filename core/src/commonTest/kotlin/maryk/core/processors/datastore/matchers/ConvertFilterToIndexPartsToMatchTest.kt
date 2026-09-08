@@ -29,7 +29,7 @@ class ConvertFilterToIndexPartsToMatchTest {
             nestedIndexable,
             CompleteMarykModel.Meta.keyByteSize,
             null,
-            Equals(CompleteMarykModel { number::ref } with 5u),
+            Equals(CompleteMarykModel.ref { number } with 5u),
             indexParts
         )
 
@@ -46,7 +46,7 @@ class ConvertFilterToIndexPartsToMatchTest {
             nestedIndexable,
             CompleteMarykModel.Meta.keyByteSize,
             null,
-            Equals(CompleteMarykModel { time::ref } with LocalTime(11, 10, 9)),
+            Equals(CompleteMarykModel.ref { time } with LocalTime(11, 10, 9)),
             indexParts
         )
 

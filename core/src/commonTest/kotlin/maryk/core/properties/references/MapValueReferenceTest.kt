@@ -15,13 +15,13 @@ import kotlin.test.assertEquals
 import kotlin.test.expect
 
 class MapValueReferenceTest {
-    private val valReference = TestMarykModel { map refAt LocalTime(15, 22, 55) }
-    private val subReference = TestMarykModel { embeddedValues { marykModel { map refAt LocalTime(15, 22, 55) } } }
+    private val valReference = TestMarykModel.ref { map at LocalTime(15, 22, 55) }
+    private val subReference = TestMarykModel.ref { embeddedValues { marykModel { map at LocalTime(15, 22, 55) } } }
 
     @Test
     fun sameMapValueSelectionCreatesAnEqualReference() {
-        assertEquals(valReference, TestMarykModel { map refAt LocalTime(15, 22, 55) })
-        assertEquals(subReference, TestMarykModel { embeddedValues { marykModel { map refAt LocalTime(15, 22, 55) } } })
+        assertEquals(valReference, TestMarykModel.ref { map at LocalTime(15, 22, 55) })
+        assertEquals(subReference, TestMarykModel.ref { embeddedValues { marykModel { map at LocalTime(15, 22, 55) } } })
     }
 
     @Test
@@ -56,7 +56,7 @@ class MapValueReferenceTest {
 
     @Test
     fun convertsLengthDelimitedMapKeyReferenceToProtoBufAndBack() {
-        val stringKeyReference = ComplexModel { mapStringString refAt "key" }
+        val stringKeyReference = ComplexModel.ref { mapStringString at "key" }
 
         ByteCollector().apply {
             val cache = WriteCache()
@@ -73,7 +73,7 @@ class MapValueReferenceTest {
     @Test
     fun stringMapKeysWithDotsOrEmptyValuesRoundTripByName() {
         listOf("a.b", "").forEach { key ->
-            val reference = ComplexModel { mapStringString refAt key }
+            val reference = ComplexModel.ref { mapStringString at key }
 
             expect(reference) {
                 ComplexModel.getPropertyReferenceByName(reference.completeName)
@@ -84,7 +84,7 @@ class MapValueReferenceTest {
     @Test
     fun stringMapKeyReferencesWithDotsOrEmptyValuesRoundTripByName() {
         listOf("a.b", "").forEach { key ->
-            val reference = ComplexModel { mapStringString refToKey key }
+            val reference = ComplexModel.ref { mapStringString key key }
 
             expect(reference) {
                 ComplexModel.getPropertyReferenceByName(reference.completeName)

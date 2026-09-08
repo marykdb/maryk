@@ -14,16 +14,16 @@ class DateHistogramAggregatorTest {
     @Test
     fun aggregate() {
         val dateHistogramAggregator = DateHistogram(
-            TestMarykModel { dateTime::ref },
+            TestMarykModel.ref { dateTime },
             dateUnit = Hours,
             aggregations = Aggregations(
-                "totalInt" to Sum(TestMarykModel { int::ref })
+                "totalInt" to Sum(TestMarykModel.ref { int })
             )
         ).createAggregator()
 
         expect(
             DateHistogramResponse(
-                TestMarykModel { dateTime::ref }
+                TestMarykModel.ref { dateTime }
             )
         ) {
             dateHistogramAggregator.toResponse()
@@ -63,13 +63,13 @@ class DateHistogramAggregatorTest {
 
         expect(
             DateHistogramResponse(
-                TestMarykModel { dateTime::ref },
+                TestMarykModel.ref { dateTime },
                 listOf(
                     Bucket(
                         LocalDateTime(2019, 12, 11, 10, 0),
                         AggregationsResponse(
                             "totalInt" to SumResponse(
-                                TestMarykModel { int::ref },
+                                TestMarykModel.ref { int },
                                 2882
                             )
                         ),
@@ -79,7 +79,7 @@ class DateHistogramAggregatorTest {
                         LocalDateTime(2019, 12, 11, 11, 0),
                         AggregationsResponse(
                             "totalInt" to SumResponse(
-                                TestMarykModel { int::ref },
+                                TestMarykModel.ref { int },
                                 1
                             )
                         ),
@@ -89,7 +89,7 @@ class DateHistogramAggregatorTest {
                         LocalDateTime(2019, 12, 11, 12, 0),
                         AggregationsResponse(
                             "totalInt" to SumResponse(
-                                TestMarykModel { int::ref },
+                                TestMarykModel.ref { int },
                                 null
                             )
                         ),

@@ -8,11 +8,11 @@ import kotlin.test.assertSame
 import kotlin.test.expect
 
 class MapReferenceTest {
-    private val mapReference = TestMarykModel { map::ref }
+    private val mapReference = TestMarykModel.ref { map }
 
     @Test
     fun cacheReferenceTest() {
-        assertSame(mapReference, TestMarykModel { map::ref })
+        assertSame(mapReference, TestMarykModel.ref { map })
     }
 
     @Test

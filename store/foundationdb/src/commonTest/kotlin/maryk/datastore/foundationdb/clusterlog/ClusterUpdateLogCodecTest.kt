@@ -64,7 +64,7 @@ class ClusterUpdateLogCodecTest {
         val log = newLog()
         val key = ByteArray(16) { 9 }
         val version = HLC().timestamp
-        val changes = listOf(Change(SimpleMarykModel { value::ref } with "changed"))
+        val changes = listOf(Change(SimpleMarykModel.ref { value } with "changed"))
         val update = ClusterLogChange(Bytes(key), version, changes)
 
         val encoded = log.encodeValue(modelId, update, SimpleMarykModel)

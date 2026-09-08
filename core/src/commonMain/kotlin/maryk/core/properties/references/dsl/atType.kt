@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalTypeInference::class)
+
 package maryk.core.properties.references.dsl
 
+import kotlin.experimental.ExperimentalTypeInference
+import kotlin.jvm.JvmName
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.invoke
@@ -9,13 +13,13 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsReferenceCreator
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
-import kotlin.jvm.JvmName
 
 /** Specific extension to support fetching deeper references on multi types by [type] */
 @JvmName("atEmbedType")
@@ -61,7 +65,6 @@ fun <E: TypeEnum<I>, I: List<T>, T: Any, R : IsPropertyReference<*, *, *>> IsMul
         )
     }
 
-
 /** Specific extension to support fetching deeper references on type definition with [type] */
 @JvmName("atSetType")
 fun <E: TypeEnum<I>, I: Set<T>, T: Any, R : IsPropertyReference<*, *, *>> IsMultiTypeDefinition<*, *, *>.atType(
@@ -84,7 +87,6 @@ fun <E: TypeEnum<I>, I: Set<T>, T: Any, R : IsPropertyReference<*, *, *>> IsMult
             multiDefinition.typedValueRef(type, parent as CanHaveComplexChildReference<*, *, *, *>?)
         )
     }
-
 
 /** Specific extension to support fetching deeper references on type definition with [type] */
 @JvmName("atMapType")
@@ -131,3 +133,11 @@ fun <E: TypeEnum<I>, I: TypedValue<E2, *>, E2: TypeEnum<*>, R : IsPropertyRefere
             multiDefinition.typedValueRef(type, parent as CanHaveComplexChildReference<*, *, *, *>?)
         )
     }
+
+/** Select an embedded child while preserving its concrete reference type. */
+@OverloadResolutionByLambdaReturnType
+@JvmName("atTypePropertySelection")
+fun <DM : IsValuesDataModel, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> IsMultiTypeDefinition<*, *, *>.atType(
+    type: TypeEnum<Values<DM>>,
+    selector: DM.() -> IsReferenceCreator<R>
+): (AnyOutPropertyReference?) -> R = atType(type, referenceGetter = { selector(this)::ref })

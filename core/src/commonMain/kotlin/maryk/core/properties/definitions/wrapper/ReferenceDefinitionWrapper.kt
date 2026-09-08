@@ -1,5 +1,10 @@
+@file:OptIn(ExperimentalTypeInference::class)
+
 package maryk.core.properties.definitions.wrapper
 
+import kotlin.experimental.ExperimentalTypeInference
+import kotlin.jvm.JvmName
+import kotlin.reflect.KProperty
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.invoke
 import maryk.core.properties.IsPropertyContext
@@ -12,7 +17,6 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ObjectReferencePropertyReference
 import maryk.core.properties.types.Key
-import kotlin.reflect.KProperty
 
 /**
  * Contains a reference [definition] of [D].
@@ -32,6 +36,7 @@ data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootDataModel, out D : IsR
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<ObjectReferencePropertyReference<DM, TO, ReferenceDefinitionWrapper<TO, DM, D, DO>, AnyPropertyReference>>,
     IsReferenceDefinition<DM, IsPropertyContext> by definition,
     IsSensitiveValueDefinitionWrapper<Key<DM>, TO, IsPropertyContext, DO>,
     IsFixedStorageBytesEncodable<Key<DM>> {
@@ -40,6 +45,13 @@ data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootDataModel, out D : IsR
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         ObjectReferencePropertyReference(this, parentRef)
     }
+
+    /** Select a child while preserving its concrete reference type. */
+    @OverloadResolutionByLambdaReturnType
+    @JvmName("invokePropertySelection")
+    operator fun <T : Any, R : IsPropertyReference<T, *, *>> invoke(
+        selector: DM.() -> IsReferenceCreator<R>
+    ): (AnyOutPropertyReference?) -> R = invoke(referenceGetter = { selector(this)::ref })
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(

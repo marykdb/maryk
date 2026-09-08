@@ -237,7 +237,7 @@ class DataExportVersionHistoryTest {
                                 VersionedChanges(1uL, listOf(ObjectCreate)),
                                 VersionedChanges(
                                     2uL,
-                                    listOf(Change(ExportHistoryModel { number::ref } with 51u)),
+                                    listOf(Change(ExportHistoryModel.ref { number } with 51u)),
                                 ),
                             ),
                         )
@@ -271,7 +271,7 @@ class DataExportVersionHistoryTest {
             history!!.changes.first().changes
                 .filterIsInstance<Change>()
                 .flatMap { it.referenceValuePairs }
-                .single { it.reference == ExportHistoryModel { number::ref } }
+                .single { it.reference == ExportHistoryModel.ref { number } }
                 .value,
         )
     }

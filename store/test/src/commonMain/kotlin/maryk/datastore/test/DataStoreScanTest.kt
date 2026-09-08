@@ -113,10 +113,10 @@ class DataStoreScanTest(
                 startKey = keys[2],
                 aggregations = Aggregations(
                     "last" to Max(
-                        Log { timestamp::ref }
+                        Log.ref { timestamp }
                     ),
                     "first" to Min(
-                        Log { timestamp::ref }
+                        Log.ref { timestamp }
                     )
                 )
             )
@@ -132,10 +132,10 @@ class DataStoreScanTest(
         expect(
             AggregationsResponse(
                 "last" to MaxResponse(
-                    Log { timestamp::ref }, LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
+                    Log.ref { timestamp }, LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                 ),
                 "first" to MinResponse(
-                    Log { timestamp::ref }, LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)
+                    Log.ref { timestamp }, LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)
                 )
             )
         ) {

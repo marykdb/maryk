@@ -7,8 +7,8 @@ import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.MapValueReference
 
-/** Specific extension to support fetching references on map definition at [key] */
-fun <K : Any, V : Any> IsMapDefinition<K, V, *>.refAt(
+/** Select a map value reference at [key]. */
+infix fun <K : Any, V : Any> IsMapDefinition<K, V, *>.at(
     key: K
 ): (AnyOutPropertyReference?) -> MapValueReference<K, V, out IsPropertyContext> =
     {
@@ -18,3 +18,10 @@ fun <K : Any, V : Any> IsMapDefinition<K, V, *>.refAt(
 
         this.valueRef(key, parent as CanContainMapItemReference<*, *, *>?)
     }
+
+/** @deprecated Use [at]. */
+@Deprecated("Use at(key)", ReplaceWith("at(key)", "maryk.core.properties.references.dsl.at"))
+fun <K : Any, V : Any> IsMapDefinition<K, V, *>.refAt(
+    key: K
+): (AnyOutPropertyReference?) -> MapValueReference<K, V, out IsPropertyContext> =
+    this.at(key)

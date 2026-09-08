@@ -241,7 +241,7 @@ class DataStoreBackupTest {
 
             source.execute(
                 SimpleMarykModel.change(
-                    key.change(Change(SimpleMarykModel { value::ref } with "ha after backup"))
+                    key.change(Change(SimpleMarykModel.ref { value } with "ha after backup"))
                 )
             )
 
@@ -372,7 +372,7 @@ class DataStoreBackupTest {
             repeat(1_001) { index ->
                 source.execute(
                     SimpleMarykModel.change(
-                        key.change(Change(SimpleMarykModel { value::ref } with "ha change $index"))
+                        key.change(Change(SimpleMarykModel.ref { value } with "ha change $index"))
                     )
                 )
             }
@@ -387,7 +387,7 @@ class DataStoreBackupTest {
                 history.first().changes
                     .filterIsInstance<Change>()
                     .flatMap { it.referenceValuePairs }
-                    .single { it.reference == SimpleMarykModel { value::ref } }
+                    .single { it.reference == SimpleMarykModel.ref { value } }
                     .value,
             )
         } finally {
@@ -407,7 +407,7 @@ class DataStoreBackupTest {
             repeat(2) { index ->
                 source.execute(
                     SimpleMarykModel.change(
-                        key.change(Change(SimpleMarykModel { value::ref } with "ha change $index"))
+                        key.change(Change(SimpleMarykModel.ref { value } with "ha change $index"))
                     )
                 )
             }
@@ -477,7 +477,7 @@ class DataStoreBackupTest {
             val receiverKey = UniqueModel.key(validUuidV4Bytes(1))
             source.execute(UniqueModel.add(ownerKey to UniqueModel.create { email with "transfer@test.com" }))
             source.execute(
-                UniqueModel.change(ownerKey.change(Change(UniqueModel { email::ref } with "released@test.com")))
+                UniqueModel.change(ownerKey.change(Change(UniqueModel.ref { email } with "released@test.com")))
             )
             source.execute(UniqueModel.add(receiverKey to UniqueModel.create { email with "transfer@test.com" }))
             val backup = CollectingBackup()

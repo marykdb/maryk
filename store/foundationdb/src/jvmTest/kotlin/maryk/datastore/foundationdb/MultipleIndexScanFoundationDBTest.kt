@@ -55,8 +55,8 @@ class MultipleIndexScanFoundationDBTest {
             val orderedScan = store.execute(
                 Person.scan(
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     )
                 )
             )
@@ -69,10 +69,10 @@ class MultipleIndexScanFoundationDBTest {
 
             val filteredScan = store.execute(
                 Person.scan(
-                    where = Equals(Person { surname::ref } with "Kastens"),
+                    where = Equals(Person.ref { surname } with "Kastens"),
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     )
                 )
             )
@@ -121,7 +121,7 @@ class MultipleIndexScanFoundationDBTest {
             val scanResponse = store.execute(
                 AnyValueIncMapIndexModel.scan(
                     toVersion = toVersion,
-                    order = AnyValueIncMapIndexModel { incMapValues.refToAnyKey() }.descending()
+                    order = AnyValueIncMapIndexModel.ref { incMapValues.anyKey() }.descending()
                 )
             )
 

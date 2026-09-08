@@ -169,7 +169,7 @@ class DataStoreScanMultiTypeTest(
         val scanResponse = dataStore.execute(
             Measurement.scan(
                 where = Equals(
-                    Measurement { measurement.simpleRefAtType(MeasurementType.Number) } with 220u.toUShort()
+                    Measurement.ref { measurement.simpleAtType(MeasurementType.Number) } with 220u.toUShort()
                 )
             )
         )
@@ -265,7 +265,7 @@ class DataStoreScanMultiTypeTest(
         val scanResponse = dataStore.execute(
             Measurement.scan(
                 where = Equals(
-                    Measurement { measurement::typeRef } with MeasurementType.Weight,
+                    Measurement.ref { measurement::typeRef } with MeasurementType.Weight,
                 )
             )
         )
@@ -293,9 +293,9 @@ class DataStoreScanMultiTypeTest(
         val scanResponse = dataStore.execute(
             Measurement.scan(
                 where = Range(
-                    Measurement { measurement.withType(MeasurementType.Length) { lengthInCm::ref } } with ValueRange(170u, 180u),
+                    Measurement.ref { measurement.withType(MeasurementType.Length) { lengthInCm } } with ValueRange(170u, 180u),
                 ),
-                order = Measurement { measurement.withType(MeasurementType.Length) { lengthInCm::ref } }.ascending()
+                order = Measurement.ref { measurement.withType(MeasurementType.Length) { lengthInCm } }.ascending()
             )
         )
 

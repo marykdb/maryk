@@ -15,9 +15,9 @@ import kotlin.test.expect
 
 class AndTest {
     private val and = And(
-        Exists(SimpleMarykModel { value::ref }),
+        Exists(SimpleMarykModel.ref { value }),
         Equals(
-            SimpleMarykModel { value::ref } with "hoi"
+            SimpleMarykModel.ref { value } with "hoi"
         )
     )
 
@@ -31,11 +31,11 @@ class AndTest {
     @Test
     fun singleReference() {
         assertNotNull(
-            and.singleReference { it == SimpleMarykModel { value::ref } }
+            and.singleReference { it == SimpleMarykModel.ref { value } }
         )
 
         assertNull(
-            and.singleReference { it == TestMarykModel { uint::ref } }
+            and.singleReference { it == TestMarykModel.ref { uint } }
         )
     }
 

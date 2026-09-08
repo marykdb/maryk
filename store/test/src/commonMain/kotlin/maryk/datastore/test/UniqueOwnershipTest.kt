@@ -36,7 +36,7 @@ class UniqueOwnershipTest(
                 dataStore.execute(
                     UniqueModel.change(
                         deleted.key.change(
-                            Change(UniqueModel { email::ref } with "owned@test.com"),
+                            Change(UniqueModel.ref { email } with "owned@test.com"),
                             ObjectSoftDeleteChange(true),
                         )
                     )
@@ -69,7 +69,7 @@ class UniqueOwnershipTest(
             assertStatusIs<ChangeSuccess<UniqueModel>>(
                 dataStore.execute(
                     UniqueModel.change(
-                        deleted.key.change(Change(UniqueModel { email::ref } with "owned@test.com"))
+                        deleted.key.change(Change(UniqueModel.ref { email } with "owned@test.com"))
                     )
                 ).statuses.single()
             )

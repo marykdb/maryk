@@ -17,7 +17,7 @@ import kotlin.test.expect
 class IncMapAdditionTest {
     private val incMapAddition = IncMapAddition(
         IncMapKeyAdditions(
-            CompleteMarykModel { incMap::ref },
+            CompleteMarykModel.ref { incMap },
             listOf(
                 22u,
                 23u
@@ -31,7 +31,7 @@ class IncMapAdditionTest {
 
     private val incMapLessAddition = IncMapAddition(
         IncMapKeyAdditions(
-            CompleteMarykModel { incMap::ref },
+            CompleteMarykModel.ref { incMap },
             listOf(
                 22u,
                 23u
@@ -54,7 +54,7 @@ class IncMapAdditionTest {
     ).apply {
         collectIncMapChange(
             IncMapChange(
-                CompleteMarykModel { incMap::ref }.change(
+                CompleteMarykModel.ref { incMap }.change(
                     listOf(
                         EmbeddedMarykModel.create { value with "ho" },
                         EmbeddedMarykModel.create { value with "ha" },
@@ -147,7 +147,7 @@ class IncMapAdditionTest {
         val changed = original.change(
             IncMapAddition(
                 IncMapKeyAdditions(
-                    TestMarykModel { incMap::ref },
+                    TestMarykModel.ref { incMap },
                     addedKeys = listOf(4u, 5u),
                     addedValues = listOf(
                         "four",
@@ -174,7 +174,7 @@ class IncMapAdditionTest {
         val deepChanged = original.change(
             IncMapAddition(
                 IncMapKeyAdditions(
-                    TestMarykModel { embeddedValues { marykModel { incMap::ref } } },
+                    TestMarykModel.ref { embeddedValues { marykModel { incMap } } },
                     addedKeys = listOf(14u, 15u),
                     addedValues = listOf(
                         "fourteen",

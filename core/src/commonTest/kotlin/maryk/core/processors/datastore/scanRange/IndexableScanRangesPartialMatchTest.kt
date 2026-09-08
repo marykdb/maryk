@@ -21,8 +21,8 @@ class IndexableScanRangesPartialMatchTest {
         val index = PrefixIndexedModel.Meta.indexes!!.first()
 
         val filter = And(
-            Prefix(PrefixIndexedModel { name::ref } with "Jan"),
-            GreaterThan(PrefixIndexedModel { age::ref } with 10u),
+            Prefix(PrefixIndexedModel.ref { name } with "Jan"),
+            GreaterThan(PrefixIndexedModel.ref { age } with 10u),
         )
 
         val scanRange = index.createScanRange(filter, keyRange)

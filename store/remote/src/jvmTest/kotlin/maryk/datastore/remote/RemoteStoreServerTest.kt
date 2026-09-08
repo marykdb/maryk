@@ -1613,7 +1613,7 @@ private class LargeAddResponseStore(
         // Model a large server-generated change without inflating the request body.
         @Suppress("UNCHECKED_CAST")
         return response.copy(statuses = listOf(status.copy(
-            changes = listOf(Change(SimpleMarykModel { value::ref } with generatedValue)),
+            changes = listOf(Change(SimpleMarykModel.ref { value } with generatedValue)),
         ))) as RP
     }
 }
@@ -1750,7 +1750,7 @@ private fun addThenOversizedFilterPayload(): ByteArray =
         Requests(
             SimpleMarykModel.add(SimpleMarykModel.create { value with "haha-prefix" }),
             SimpleMarykModel.scan(
-                where = And(List(1_024) { Exists(SimpleMarykModel { value::ref }) }),
+                where = And(List(1_024) { Exists(SimpleMarykModel.ref { value }) }),
                 allowTableScan = true,
             ),
         ),
@@ -1762,7 +1762,7 @@ private fun filterWorkPayload(): ByteArray =
         Requests.Serializer,
         Requests(
             SimpleMarykModel.scan(
-                where = And(List(1_024) { Exists(SimpleMarykModel { value::ref }) }),
+                where = And(List(1_024) { Exists(SimpleMarykModel.ref { value }) }),
                 allowTableScan = true,
             )
         ),
@@ -1777,7 +1777,7 @@ private fun aggregationWorkPayload(): ByteArray =
                 SimpleMarykModel.key(ByteArray(16)),
                 aggregations = Aggregations(
                     *(0 until 129).map { index ->
-                        "aggregation-$index" to ValueCount(SimpleMarykModel { value::ref })
+                        "aggregation-$index" to ValueCount(SimpleMarykModel.ref { value })
                     }.toTypedArray()
                 ),
             )
@@ -1791,7 +1791,7 @@ private fun terminalReferenceFilterPayload(): ByteArray =
         Requests(
             NamedIndexSourceModel.scan(
                 where = Equals(
-                    NamedIndexSourceModel { target::ref } with NamedIndexTargetModel.key(ByteArray(16))
+                    NamedIndexSourceModel.ref { target } with NamedIndexTargetModel.key(ByteArray(16))
                 ),
                 allowTableScan = true,
             )
@@ -1805,7 +1805,7 @@ private fun terminalReferenceFilterFlowPayload(): ByteArray =
         Requests(
             NamedIndexSourceModel.scanUpdates(
                 where = Equals(
-                    NamedIndexSourceModel { target::ref } with NamedIndexTargetModel.key(ByteArray(16))
+                    NamedIndexSourceModel.ref { target } with NamedIndexTargetModel.key(ByteArray(16))
                 ),
             )
         ),
@@ -1938,7 +1938,7 @@ private fun changeWithSoftDeletePayload(): ByteArray =
                 version = 1uL,
                 index = 0,
                 changes = listOf(
-                    Change(SimpleMarykModel { value::ref } with "changed"),
+                    Change(SimpleMarykModel.ref { value } with "changed"),
                     ObjectSoftDeleteChange(true),
                 ),
             ),
@@ -1990,7 +1990,7 @@ private fun initialChangesWithMixedOperationsPayload(): ByteArray =
                             VersionedChanges(1uL, listOf(ObjectCreate)),
                             VersionedChanges(
                                 2uL,
-                                listOf(Change(SimpleMarykModel { value::ref } with "changed")),
+                                listOf(Change(SimpleMarykModel.ref { value } with "changed")),
                             ),
                             VersionedChanges(3uL, listOf(ObjectSoftDeleteChange(true))),
                         ),
@@ -2043,7 +2043,7 @@ private object NamedIndexSourceModel : RootDataModel<NamedIndexSourceModel>(
             listOf(
                 AnyOf(
                     "related-value",
-                    NamedIndexSourceModel { target { value::ref } },
+                    NamedIndexSourceModel.ref { target { value } },
                 )
             )
         }

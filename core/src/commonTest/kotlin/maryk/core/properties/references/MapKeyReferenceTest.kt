@@ -12,13 +12,13 @@ import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class MapKeyReferenceTest {
-    private val keyReference = TestMarykModel { map refToKey LocalTime(12, 0, 1) }
-    private val subKeyReference = TestMarykModel { embeddedValues { marykModel { map refToKey LocalTime(15, 22, 55) } } }
+    private val keyReference = TestMarykModel.ref { map key LocalTime(12, 0, 1) }
+    private val subKeyReference = TestMarykModel.ref { embeddedValues { marykModel { map key LocalTime(15, 22, 55) } } }
 
     @Test
     fun sameMapKeySelectionCreatesAnEqualReference() {
-        assertEquals(keyReference, TestMarykModel { map refToKey LocalTime(12, 0, 1) })
-        assertEquals(subKeyReference, TestMarykModel { embeddedValues { marykModel { map refToKey LocalTime(15, 22, 55) } } })
+        assertEquals(keyReference, TestMarykModel.ref { map key LocalTime(12, 0, 1) })
+        assertEquals(subKeyReference, TestMarykModel.ref { embeddedValues { marykModel { map key LocalTime(15, 22, 55) } } })
     }
 
     @Test
@@ -54,7 +54,7 @@ class MapKeyReferenceTest {
 
     @Test
     fun convertsLengthDelimitedMapKeyReferenceToProtoBufAndBack() {
-        val stringKeyReference = ComplexModel { mapStringString refToKey "key" }
+        val stringKeyReference = ComplexModel.ref { mapStringString key "key" }
 
         ByteCollector().apply {
             val cache = WriteCache()

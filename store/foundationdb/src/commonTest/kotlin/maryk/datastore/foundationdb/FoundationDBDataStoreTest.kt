@@ -295,8 +295,8 @@ class FoundationDBDataStoreTest {
                 dataStore.execute(
                     TestMarykModel.change(
                         key.change(
-                            Check(TestMarykModel { list::ref } with listOf(3)),
-                            Change(TestMarykModel { string::ref } with "happier"),
+                            Check(TestMarykModel.ref { list } with listOf(3)),
+                            Change(TestMarykModel.ref { string } with "happier"),
                         )
                     )
                 ).statuses.single()

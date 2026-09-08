@@ -34,7 +34,7 @@ internal class NormalizeTest {
                 AnyOf(
                     "name",
                     TokenModel.family.ref().normalize().split(Whitespace),
-                    TokenModel { given.refToAny() }.normalize().split(Whitespace),
+                    TokenModel.ref { given.any() }.normalize().split(Whitespace),
                 )
             )
         }
@@ -177,7 +177,7 @@ internal class NormalizeTest {
     fun streamedNormalizeAndSplitEntriesEmitEveryToken() {
         val index = AnyOf(
             TokenModel.family.ref().normalize().split(Whitespace),
-            TokenModel { given.refToAny() }.normalize().split(Whitespace),
+            TokenModel.ref { given.any() }.normalize().split(Whitespace),
         )
         val values = TokenModel.create {
             family with "van der Berg"
@@ -212,7 +212,7 @@ internal class NormalizeTest {
         val index = AnyOf(
             "name",
             TokenModel.family.ref(),
-            TokenModel { given.refToAny() }
+            TokenModel.ref { given.any() }
         ).normalize().split(WordBoundary)
 
         val values = TokenModel.create {
@@ -232,7 +232,7 @@ internal class NormalizeTest {
         val index = AnyOf(
             "name",
             TokenModel.family.ref(),
-            TokenModel { given.refToAny() }
+            TokenModel.ref { given.any() }
         ).normalize().split(WordBoundary)
 
         expect(listOf("garcia")) {
@@ -246,7 +246,7 @@ internal class NormalizeTest {
         val index = AnyOf(
             "name",
             TokenModel.family.ref(),
-            TokenModel { given.refToAny() }
+            TokenModel.ref { given.any() }
         ).normalize().split(Whitespace)
 
         expect("name") { index.name }

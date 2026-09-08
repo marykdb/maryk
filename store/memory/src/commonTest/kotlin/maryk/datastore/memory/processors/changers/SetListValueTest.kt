@@ -15,12 +15,12 @@ class SetListValueTest {
     fun shrinkingListDeletesOnlyRemovedTailItems() {
         val version = HLC(1uL)
         val nextVersion = HLC(2uL)
-        val listRef = TestMarykModel { list::ref }
+        val listRef = TestMarykModel.ref { list }
         val values = mutableListOf<DataRecordNode>(
             DataRecordValue(listRef.toStorageByteArray(), 3, version),
-            DataRecordValue(TestMarykModel { list refAt 0u }.toStorageByteArray(), 10, version),
-            DataRecordValue(TestMarykModel { list refAt 1u }.toStorageByteArray(), 20, version),
-            DataRecordValue(TestMarykModel { list refAt 2u }.toStorageByteArray(), 30, version),
+            DataRecordValue(TestMarykModel.ref { list at 0u }.toStorageByteArray(), 10, version),
+            DataRecordValue(TestMarykModel.ref { list at 1u }.toStorageByteArray(), 20, version),
+            DataRecordValue(TestMarykModel.ref { list at 2u }.toStorageByteArray(), 30, version),
         )
 
         setListValue(values, listRef, listOf(10, 20), 3, nextVersion, keepAllVersions = false)
@@ -30,7 +30,7 @@ class SetListValueTest {
         assertEquals(10, assertIs<DataRecordValue<Int>>(values[1]).value)
         assertEquals(20, assertIs<DataRecordValue<Int>>(values[2]).value)
         assertContentEquals(
-            TestMarykModel { list refAt 2u }.toStorageByteArray(),
+            TestMarykModel.ref { list at 2u }.toStorageByteArray(),
             assertIs<DeletedValue<Int>>(values[3]).reference
         )
     }

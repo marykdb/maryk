@@ -173,10 +173,10 @@ val g = Message.graph {
 }
 ```
 
-MultiType with keys: cluster by variant for fast scans using `property.refToType()` in the key. This keeps same‑type values together on disk.
+MultiType with keys: cluster by variant for fast scans using `Model.ref { property.type }` in the key. This keeps same‑type values together on disk.
 ```kotlin
 object Activity : RootDataModel<Activity>(
-    keyDefinition = { Multiple(user.ref(), Reversed(timestamp.ref()), item.refToType()) }
+    keyDefinition = { Multiple(user.ref(), Reversed(timestamp.ref()), Activity.ref { item.type }) }
 ) {
     val user by reference(index = 1u, dataModel = { User })
     val timestamp by dateTime(index = 2u)
@@ -241,12 +241,12 @@ Keys decide how data is clustered and thus how range scans perform.
 
 Common patterns
 - Owner + reversed timestamp: `Multiple(user.ref(), Reversed(date.ref()))` → latest first per user.
-- Include `property.refToType()` to cluster polymorphic values by variant.
+- Include `Model.ref { property.type }` to cluster polymorphic values by variant.
 
 Feed example:
 ```kotlin
 object FeedItem : RootDataModel<FeedItem>(
-    keyDefinition = { Multiple(user.ref(), Reversed(postedAt.ref()), content.refToType()) }
+    keyDefinition = { Multiple(user.ref(), Reversed(postedAt.ref()), FeedItem.ref { content.type }) }
 ) {
     val user by reference(index = 1u, dataModel = { User })
     val postedAt by dateTime(index = 2u)

@@ -189,12 +189,12 @@ internal class PropertyReferenceTest {
 
     @Test
     fun createReferenceMatcher() {
-        val matcher = TestMarykModel { reference { string::ref } }.toQualifierMatcher()
+        val matcher = TestMarykModel.ref { reference { string } }.toQualifierMatcher()
 
         assertIs<QualifierExactMatcher>(matcher).apply {
             expect("71") { qualifier.toHexString() }
             assertIs<ReferencedQualifierMatcher>(referencedQualifierMatcher).apply {
-                expect(TestMarykModel { reference::ref }) { reference }
+                expect(TestMarykModel.ref { reference }) { reference }
                 assertIs<QualifierExactMatcher>(qualifierMatcher).apply {
                     expect("09") { qualifier.toHexString() }
                 }
@@ -204,7 +204,7 @@ internal class PropertyReferenceTest {
 
     @Test
     fun createFuzzyReferenceMatcher() {
-        val matcher = ComplexModel { incMap.any { marykModel { reference { map.refToAnyValue() } } } }.toQualifierMatcher()
+        val matcher = ComplexModel.ref { incMap.any { marykModel { reference { map.anyValue() } } } }.toQualifierMatcher()
 
         assertIs<QualifierFuzzyMatcher>(matcher).apply {
             expect("44") { firstPossible().toHexString() }
@@ -219,7 +219,7 @@ internal class PropertyReferenceTest {
             }
 
             assertIs<ReferencedQualifierMatcher>(referencedQualifierMatcher).apply {
-                expect(ComplexModel { incMap.any { marykModel { reference::ref } } }) { reference }
+                expect(ComplexModel.ref { incMap.any { marykModel { reference } } }) { reference }
 
                 assertIs<QualifierFuzzyMatcher>(qualifierMatcher).apply {
                     expect("54") { firstPossible().toHexString() }

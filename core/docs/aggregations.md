@@ -43,7 +43,7 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "count" to ValueCount(
-                Person { email::ref }
+                Person.ref { email }
             )
         )
     )
@@ -64,7 +64,7 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "total" to Sum(
-                Person { orderAmount::ref }
+                Person.ref { orderAmount }
             )
         )
     )
@@ -89,7 +89,7 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "average" to Average(
-                Person { age::ref }
+                Person.ref { age }
             )
         )
     )
@@ -110,7 +110,7 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "min" to Min(
-                Person { registrationDate::ref }
+                Person.ref { registrationDate }
             )
         )
     )
@@ -131,7 +131,7 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "max" to Max(
-                Person { registrationDate::ref }
+                Person.ref { registrationDate }
             )
         )
     )
@@ -152,7 +152,7 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "stats" to Stats(
-                ProductOrder { orderId::ref }
+                ProductOrder.ref { orderId }
             )
         )
     )
@@ -186,14 +186,14 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "by day" to DateHistogram(
-                Order { orderDate::ref },
+                Order.ref { orderDate },
                 DateUnit.Days,
                 Aggregations(
                     "total" to Sum(
-                        Order { orderAmount::ref }
+                        Order.ref { orderAmount }
                     ),
                     "average" to Average(
-                        Order { orderAmount::ref }
+                        Order.ref { orderAmount }
                     )
                 )
             )
@@ -217,13 +217,13 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "each enum" to EnumValues(
-                User { accountType::ref },
+                User.ref { accountType },
                 Aggregations(
                     "count" to ValueCount(
-                        User { accountId::ref }
+                        User.ref { accountId }
                     ),
                     "revenue" to Sum(
-                        User { accountRevenue::ref }
+                        User.ref { accountRevenue }
                     )
                 )
             )
@@ -247,13 +247,13 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "each type" to Types(
-                Reports { multiType.refToType() },
+                Reports.ref { multiType.type },
                 Aggregations(
                     "total" to Sum(
-                        Reports { itemCount::ref }
+                        Reports.ref { itemCount }
                     ),
                     "average" to Average(
-                        Reports { price::ref }
+                        Reports.ref { price }
                     )
                 )
             )
@@ -281,23 +281,23 @@ val getResponse = dataStore.execute(
         *keys.toTypedArray(),
         aggregations = Aggregations(
             "salesByMonth" to DateHistogram(
-                Sale { orderDate::ref },
+                Sale.ref { orderDate },
                 DateUnit.Months,
                 Aggregations(
                     "total" to Sum(
-                        Sale { saleAmount::ref }
+                        Sale.ref { saleAmount }
                     ),
                     "average" to Average(
-                        Sale { saleAmount::ref }
+                        Sale.ref { saleAmount }
                     ),
                     "eachAccountType" to EnumValues(
-                        Sale { accountType::ref },
+                        Sale.ref { accountType },
                         Aggregations(
                             "totalByType" to Sum(
-                                Sale { saleAmount::ref }
+                                Sale.ref { saleAmount }
                             ),
                             "averageByType" to Average(
-                                Sale { saleAmount::ref }
+                                Sale.ref { saleAmount }
                             )
                         )
                     )

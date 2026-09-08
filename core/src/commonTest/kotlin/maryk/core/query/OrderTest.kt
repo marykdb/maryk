@@ -13,7 +13,7 @@ import kotlin.test.expect
 
 class OrderTest {
     private val order = Order(
-        SimpleMarykModel { value::ref },
+        SimpleMarykModel.ref { value },
         DESC
     )
 
@@ -30,7 +30,7 @@ class OrderTest {
     @Test
     fun testOrder() {
         expect(DESC) { this.order.direction }
-        expect(SimpleMarykModel { value::ref }) { this.order.propertyReference }
+        expect(SimpleMarykModel.ref { value }) { this.order.propertyReference }
     }
 
     @Test

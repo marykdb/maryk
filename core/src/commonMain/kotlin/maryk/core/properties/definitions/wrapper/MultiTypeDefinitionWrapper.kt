@@ -1,5 +1,10 @@
+@file:OptIn(ExperimentalTypeInference::class)
+
 package maryk.core.properties.definitions.wrapper
 
+import kotlin.experimental.ExperimentalTypeInference
+import kotlin.jvm.JvmName
+import kotlin.reflect.KProperty
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.invoke
 import maryk.core.properties.IsPropertyContext
@@ -8,8 +13,8 @@ import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.enum.TypeEnum
-import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.graph.IsPropRefGraphNode
+import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.graph.TypePropRefGraph
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
@@ -21,7 +26,6 @@ import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
-import kotlin.reflect.KProperty
 
 /**
  * Contains a Multi Type property [definition] containing type [E]
@@ -40,6 +44,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<MultiTypePropertyReference<E, T, TO, MultiTypeDefinitionWrapper<E, T, TO, CX, DO>, AnyPropertyReference>>,
     IsMultiTypeDefinition<E, T, CX> by definition,
     IsChangeableValueDefinition<TypedValue<E, T>, CX>,
     IsDefinitionWrapper<TypedValue<E, T>, TO, CX, DO> {
@@ -67,20 +72,42 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
         }
     }
 
-    /** For quick notation to get a [type] reference */
+    /** Select a value reference for [type]. */
+    infix fun atType(type: E): IsReferenceCreator<TypedValueReference<E, T, CX>> =
+        IsReferenceCreator { this.typedValueReference(type, it) }
+
+    /** Select a simple value reference for [type]. */
+    infix fun simpleAtType(type: E): IsReferenceCreator<SimpleTypedValueReference<E, T, CX>> =
+        IsReferenceCreator { this.simpleTypedValueReference(type, it as? CanHaveComplexChildReference<*, *, *, *>) }
+
+    /** Select the discriminator reference. */
+    val type: IsReferenceCreator<TypeReference<E, T, CX>>
+        get() = IsReferenceCreator {
+            @Suppress("UNCHECKED_CAST")
+            this.typeRef(it as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?)
+        }
+
+    /** @deprecated Use [atType]. */
+    @Deprecated("Use atType(type)", ReplaceWith("atType(type)::ref"))
     infix fun refAtType(type: E): (AnyOutPropertyReference?) -> TypedValueReference<E, T, CX> =
-        { this.typedValueReference(type, it) }
+        { this.atType(type).ref(it) }
 
-
-    /** For quick notation to get a [type] reference */
+    /** @deprecated Use [simpleAtType]. */
+    @Deprecated("Use simpleAtType(type)", ReplaceWith("simpleAtType(type)::ref"))
     infix fun simpleRefAtType(type: E): (AnyOutPropertyReference?) -> SimpleTypedValueReference<E, T, CX> =
-        { this.simpleTypedValueReference(type, it as? CanHaveComplexChildReference<*, *, *, *>) }
+        { this.simpleAtType(type).ref(it) }
 
-    /** For quick notation to get an any type reference */
-    fun refToType(): (AnyOutPropertyReference?) -> TypeReference<E, T, CX> = {
-        @Suppress("UNCHECKED_CAST")
-        this.typeRef(it as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?)
-    }
+    /** @deprecated Use [type]. */
+    @Deprecated("Use type", ReplaceWith("type::ref"))
+    fun refToType(): (AnyOutPropertyReference?) -> TypeReference<E, T, CX> = { this.type.ref(it) }
+
+    /** Select a child while preserving its concrete reference type. */
+    @OverloadResolutionByLambdaReturnType
+    @JvmName("withTypePropertySelection")
+    fun <DM : IsValuesDataModel, T : Any, R : IsPropertyReference<T, *, *>> withType(
+        type: TypeEnum<Values<DM>>,
+        selector: DM.() -> IsReferenceCreator<R>
+    ): (AnyOutPropertyReference?) -> R = withType(type, referenceGetter = { selector(this)::ref })
 
     /** Specific extension to support fetching deeper references with [type] */
     @Suppress("UNCHECKED_CAST")

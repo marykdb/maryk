@@ -8,6 +8,7 @@ import maryk.core.aggregations.metric.ValueCountResponse
 import maryk.core.models.asValues
 import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.references.dsl.ref
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.orders.Direction
@@ -37,7 +38,7 @@ class ValuesResponseTest {
             )
         ),
         AggregationsResponse(
-            "total" to ValueCountResponse(SimpleMarykObject { value::ref }, 1uL)
+            "total" to ValueCountResponse(SimpleMarykObject.ref { value }, 1uL)
         ),
         dataFetchType = FetchByKey,
     )
@@ -104,8 +105,8 @@ class ValuesResponseTest {
 
     @Test
     fun referenceToValuesAndGetOnObject() {
-        val valuesResponseRef = ValuesResponse { values.refAt(0u) { values } }
-        val simpleValueRef = SimpleMarykObject(valuesResponseRef) { value::ref }
+        val valuesResponseRef = ValuesResponse.ref { values.at(0u) { values } }
+        val simpleValueRef = SimpleMarykObject.ref(valuesResponseRef) { value }
 
         expect("values.@0.values") { valuesResponseRef.completeName }
         expect("values.@0.values.value") { simpleValueRef.completeName }

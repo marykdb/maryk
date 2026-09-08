@@ -8,8 +8,8 @@ A `Check` compares a property value; subsequent operations run only when the che
 Check if firstName is `John`
 ```kotlin
 Check(
-    Person { firstName::ref } with "John",
-    Person { lastName::ref } with "Smith"
+    Person.ref { firstName } with "John",
+    Person.ref { lastName } with "Smith"
 )
 ```
 
@@ -18,8 +18,8 @@ Use `Change` to update a property value.
 
 ```kotlin
 Change(
-    Person { firstName::ref } with "Jane",
-    Person { lastName::ref } with "Doe"
+    Person.ref { firstName } with "Jane",
+    Person.ref { lastName } with "Doe"
 )
 ```
 
@@ -27,7 +27,7 @@ Change(
 Set a property to `null` to delete it.
 ```kotlin
 Change(
-    Person { firstName::ref } with null
+    Person.ref { firstName } with null
 )
 ```
 

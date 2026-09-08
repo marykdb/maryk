@@ -20,13 +20,13 @@ val getMaxRequest = SimpleMarykModel.run {
     get(
         key1,
         key2,
-        where = Exists(invoke { value::ref }),
+        where = Exists(ref { value }),
         toVersion = 333uL,
         filterSoftDeleted = true,
         select = graph { listOf(value) },
         aggregations = Aggregations(
             "totalValues" to ValueCount(
-                SimpleMarykModel { value::ref }
+                SimpleMarykModel.ref { value }
             )
         )
     )

@@ -56,7 +56,7 @@ or change the contents. It can be defined with a map with `valuesToAdd` or a set
 Example on a model with a map containing integers mapped to strings:
 ```kotlin
 MapChange(
-    Model { mapOfIntToString::ref }.change(
+    Model.ref { mapOfIntToString }.change(
         valuesToAdd = mapOf(
             3 to "three",
             4 to "four"
@@ -69,17 +69,17 @@ MapChange(
 ## Indexing map keys
 
 Map properties can be indexed on:
-- any map key with `refToAnyKey()` (`map.~` in string notation)
-- specific map value/key refs like `refAt(key)` / `refToKey(key)`
+- any map key with `anyKey()` (`map.~` in string notation)
+- specific map value/key refs like `at(key)` / `key(key)`
 
-`refToAnyValue()` (`map.*`) is available for filtering, but is not indexable.
+`anyValue()` (`map.*`) is available for filtering, but is not indexable.
 
 Example:
 ```kotlin
 object ExampleModel : RootDataModel<ExampleModel>(
     indexes = {
         listOf(
-            ExampleModel { mapValues.refToAnyKey() }
+            ExampleModel.ref { mapValues.anyKey() }
         )
     }
 ) {

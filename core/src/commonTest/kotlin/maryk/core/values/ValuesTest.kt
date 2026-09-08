@@ -92,14 +92,14 @@ class ValuesTest {
             }
         }
 
-        expect("hello world") { values[TestMarykModel { string::ref }] }
-        expect(2.3) { values[TestMarykModel { double::ref }] }
-        expect(LocalDateTime(2018, 7, 18, 0, 0)) { values[TestMarykModel { dateTime::ref }] }
-        expect("v3") { values[TestMarykModel { listOfString refAt 2u }] }
-        expect(listOf("v1", "v2", "v3")) { values[TestMarykModel { listOfString.refToAny() }] }
-        expect("twelve") { values[TestMarykModel { map refAt LocalTime(12, 23, 34) }] }
-        expect("test") { values[TestMarykModel { embeddedValues { value::ref } }] }
-        expect("another test") { values[TestMarykModel { embeddedValues { model { value::ref } } }] }
+        expect("hello world") { values[TestMarykModel.ref { string }] }
+        expect(2.3) { values[TestMarykModel.ref { double }] }
+        expect(LocalDateTime(2018, 7, 18, 0, 0)) { values[TestMarykModel.ref { dateTime }] }
+        expect("v3") { values[TestMarykModel.ref { listOfString at 2u }] }
+        expect(listOf("v1", "v2", "v3")) { values[TestMarykModel.ref { listOfString.any() }] }
+        expect("twelve") { values[TestMarykModel.ref { map at LocalTime(12, 23, 34) }] }
+        expect("test") { values[TestMarykModel.ref { embeddedValues { value } }] }
+        expect("another test") { values[TestMarykModel.ref { embeddedValues { model { value } } }] }
     }
 
     @Test
@@ -204,20 +204,20 @@ class ValuesTest {
         }
 
         val expectedValues = arrayOf<Pair<IsPropertyReference<*, *, *>, Any?>>(
-            TestMarykModel { string::ref } to values { string },
-            TestMarykModel { int::ref } to values { int },
-            TestMarykModel { uint::ref } to values { uint },
-            TestMarykModel { double::ref } to values { double },
-            TestMarykModel { dateTime::ref } to values { dateTime },
-            TestMarykModel { enum::ref } to values { enum },
-            TestMarykModel { map refAt LocalTime(11, 22, 33) } to "eleven",
-            TestMarykModel { map refAt LocalTime(12, 23, 34) } to "twelve",
-            TestMarykModel { embeddedValues { value::ref } } to "test",
-            TestMarykModel { embeddedValues { model { value::ref } } } to "another test",
-            TestMarykModel { multi.refAtType(S1) } to "s1value",
-            TestMarykModel { listOfString refAt 0u } to "v1",
-            TestMarykModel { listOfString refAt 1u } to "v2",
-            TestMarykModel { listOfString refAt 2u } to "v3"
+            TestMarykModel.ref { string } to values { string },
+            TestMarykModel.ref { int } to values { int },
+            TestMarykModel.ref { uint } to values { uint },
+            TestMarykModel.ref { double } to values { double },
+            TestMarykModel.ref { dateTime } to values { dateTime },
+            TestMarykModel.ref { enum } to values { enum },
+            TestMarykModel.ref { map at LocalTime(11, 22, 33) } to "eleven",
+            TestMarykModel.ref { map at LocalTime(12, 23, 34) } to "twelve",
+            TestMarykModel.ref { embeddedValues { value } } to "test",
+            TestMarykModel.ref { embeddedValues { model { value } } } to "another test",
+            TestMarykModel.ref { multi.atType(S1) } to "s1value",
+            TestMarykModel.ref { listOfString at 0u } to "v1",
+            TestMarykModel.ref { listOfString at 1u } to "v2",
+            TestMarykModel.ref { listOfString at 2u } to "v3"
         )
 
         var index = 0

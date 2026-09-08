@@ -171,7 +171,7 @@ class DataStoreProcessUpdateTest(
                     key = key,
                     version = 1236uL,
                     index = 1,
-                    changes = listOf(Change(Log { message::ref } with "newer value"))
+                    changes = listOf(Change(Log.ref { message } with "newer value"))
                 )
             )
         )
@@ -182,7 +182,7 @@ class DataStoreProcessUpdateTest(
                     key = key,
                     version = 1235uL,
                     index = 1,
-                    changes = listOf(Change(Log { message::ref } with "stale value"))
+                    changes = listOf(Change(Log.ref { message } with "stale value"))
                 )
             )
         )
@@ -241,7 +241,7 @@ class DataStoreProcessUpdateTest(
                     key = key,
                     version = 19uL,
                     index = 1,
-                    changes = listOf(Change(Log { message::ref } with "stale change"))
+                    changes = listOf(Change(Log.ref { message } with "stale change"))
                 )
             )
         )
@@ -290,9 +290,9 @@ class DataStoreProcessUpdateTest(
                                     version = 10uL,
                                     changes = listOf(
                                         ObjectCreate,
-                                        Change(Log { message::ref } with "stale initial replay"),
-                                        Change(Log { severity::ref } with INFO),
-                                        Change(Log { this.timestamp::ref } with initialLogTimestamp),
+                                        Change(Log.ref { message } with "stale initial replay"),
+                                        Change(Log.ref { severity } with INFO),
+                                        Change(Log.ref { this.timestamp } with initialLogTimestamp),
                                     )
                                 )
                             )
@@ -362,7 +362,7 @@ class DataStoreProcessUpdateTest(
                     version = 1235uL,
                     index = 1,
                     changes = listOf(
-                        Change(Log { message::ref } with editedMessage)
+                        Change(Log.ref { message } with editedMessage)
                     )
                 )
             )
@@ -392,9 +392,9 @@ class DataStoreProcessUpdateTest(
                     index = 1,
                     changes = listOf(
                         ObjectCreate,
-                        Change(Log { message::ref } with newMessage),
-                        Change(Log { severity::ref } with ERROR),
-                        Change(Log { timestamp::ref } with LocalDateTime(2020, 9, 5, 12, 0))
+                        Change(Log.ref { message } with newMessage),
+                        Change(Log.ref { severity } with ERROR),
+                        Change(Log.ref { timestamp } with LocalDateTime(2020, 9, 5, 12, 0))
                     )
                 )
             )
@@ -522,7 +522,7 @@ class DataStoreProcessUpdateTest(
                             changes = listOf(VersionedChanges(
                                 version = 1235uL,
                                 changes = listOf(
-                                    Change(Log { message::ref } with editedMessage)
+                                    Change(Log.ref { message } with editedMessage)
                                 )
                             ))
                         ),
@@ -532,9 +532,9 @@ class DataStoreProcessUpdateTest(
                                 version = 1234uL,
                                 changes = listOf(
                                     ObjectCreate,
-                                    Change(Log { message::ref } with newMessage),
-                                    Change(Log { severity::ref } with ERROR),
-                                    Change(Log { timestamp::ref } with LocalDateTime(2020, 9, 5, 12, 0))
+                                    Change(Log.ref { message } with newMessage),
+                                    Change(Log.ref { severity } with ERROR),
+                                    Change(Log.ref { timestamp } with LocalDateTime(2020, 9, 5, 12, 0))
                                 )
                             ))
                         )

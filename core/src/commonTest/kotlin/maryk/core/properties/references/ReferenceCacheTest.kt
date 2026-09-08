@@ -53,16 +53,16 @@ private object CachedMultiTypeModel : RootDataModel<CachedMultiTypeModel>() {
 class ReferenceCacheTest {
     @Test
     fun reusesReferenceForSameEmbeddedParentChain() {
-        val first = CachedRootModelA { info { name { familyName { lastName::ref } } } }
-        val second = CachedRootModelA { info { name { familyName { lastName::ref } } } }
+        val first = CachedRootModelA.ref { info { name { familyName { lastName } } } }
+        val second = CachedRootModelA.ref { info { name { familyName { lastName } } } }
 
         assertSame(first, second)
     }
 
     @Test
     fun doesNotReuseReferenceAcrossDifferentEmbeddedParentChains() {
-        val first = CachedRootModelA { info { name { familyName { lastName::ref } } } }
-        val second = CachedRootModelB { info { name { familyName { lastName::ref } } } }
+        val first = CachedRootModelA.ref { info { name { familyName { lastName } } } }
+        val second = CachedRootModelB.ref { info { name { familyName { lastName } } } }
 
         assertNotSame(first, second)
         assertNotSame(first.parentReference, second.parentReference)
@@ -70,10 +70,10 @@ class ReferenceCacheTest {
 
     @Test
     fun reusesTypedAndSimpleTypedReferencesForSameParent() {
-        val typedFirst = CachedMultiTypeModel { multi refAtType MarykTypeEnum.T3 }
-        val typedSecond = CachedMultiTypeModel { multi refAtType MarykTypeEnum.T3 }
-        val simpleFirst = CachedMultiTypeModel { multi refAtType MarykTypeEnum.T1 }
-        val simpleSecond = CachedMultiTypeModel { multi refAtType MarykTypeEnum.T1 }
+        val typedFirst = CachedMultiTypeModel.ref { multi atType MarykTypeEnum.T3 }
+        val typedSecond = CachedMultiTypeModel.ref { multi atType MarykTypeEnum.T3 }
+        val simpleFirst = CachedMultiTypeModel.ref { multi atType MarykTypeEnum.T1 }
+        val simpleSecond = CachedMultiTypeModel.ref { multi atType MarykTypeEnum.T1 }
 
         assertSame(typedFirst, typedSecond)
         assertSame(simpleFirst, simpleSecond)
@@ -81,14 +81,14 @@ class ReferenceCacheTest {
 
     @Test
     fun doesNotRetainDynamicallySelectedCollectionReferences() {
-        TestMarykModel { list::ref }
-        TestMarykModel { map::ref }
+        TestMarykModel.ref { list }
+        TestMarykModel.ref { map }
         val listCacheSize = TestMarykModel.list.refCache.value?.size ?: 0
         val mapCacheSize = TestMarykModel.map.refCache.value?.size ?: 0
 
         repeat(60) {
-            TestMarykModel { list refAt it.toUInt() }
-            TestMarykModel { map refAt LocalTime(1, 0, it) }
+            TestMarykModel.ref { list at it.toUInt() }
+            TestMarykModel.ref { map at LocalTime(1, 0, it) }
         }
 
         assertEquals(listCacheSize, TestMarykModel.list.refCache.value?.size ?: 0)

@@ -25,6 +25,7 @@ data class ContextualDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<PropertyReferenceForValues<T, TO, ContextualDefinitionWrapper<T, TO, CX, D, DO>, AnyPropertyReference>>,
     IsDefinitionWrapper<T, TO, CX, DO>,
     IsContextualEncodable<T, CX> by definition,
     IsValueDefinitionWrapper<T, TO, CX, DO> {

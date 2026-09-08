@@ -49,8 +49,8 @@ object Measurement : RootDataModel<Measurement>(
     },
     indexes = {
         listOf(
-            Measurement { measurement.withType(MeasurementType.Length) { lengthInCm::ref } },
-            Measurement { measurement simpleRefAtType MeasurementType.Number }
+            Measurement.ref { measurement.withType(MeasurementType.Length) { lengthInCm } },
+            Measurement.ref { measurement simpleAtType MeasurementType.Number }
         )
     },
     minimumKeyScanByteRange = 0u,

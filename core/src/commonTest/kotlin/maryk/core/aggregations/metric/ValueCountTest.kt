@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class ValueCountTest {
     private val valueCount = ValueCount(
-        TestMarykModel { int::ref }
+        TestMarykModel.ref { int }
     )
 
     private val context = RequestContext(

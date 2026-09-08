@@ -20,8 +20,8 @@ val scanRequest = SimpleMarykModel.run {
 val scanMaxRequest = SimpleMarykModel.run {
     scan(
         startKey = key1,
-        where = Exists(invoke { value::ref }),
-        order = this { value::ref }.ascending(),
+        where = Exists(ref { value }),
+        order = ref { value }.ascending(),
         limit = 200u,
         includeStart = false,
         filterSoftDeleted = true,
@@ -29,7 +29,7 @@ val scanMaxRequest = SimpleMarykModel.run {
         select = graph { listOf(value) },
         aggregations = Aggregations(
             "totalValues" to ValueCount(
-                SimpleMarykModel { value::ref }
+                SimpleMarykModel.ref { value }
             )
         )
     )
@@ -39,8 +39,8 @@ val scanOrdersRequest = SimpleMarykModel.run {
     scan(
         startKey = key1,
         order = Orders(
-            this { value::ref }.ascending(),
-            this { value::ref }.descending()
+            ref { value }.ascending(),
+            ref { value }.descending()
         ),
         select = graph { listOf(value) }
     )

@@ -38,9 +38,9 @@ class MapWithEmbedPropRefGraphTest {
 
     @Test
     fun containsReference() {
-        assertTrue(graph.contains(ComplexModel { mapIntObject.at(2u) { EmbeddedMarykModel.value::ref } }))
-        assertTrue(graph.contains(ComplexModel { mapIntObject.at(2u) { EmbeddedMarykModel.marykModel { TestMarykModel.string::ref } } }))
-        assertFalse(graph.contains(ComplexModel { mapIntObject.at(3u) { EmbeddedMarykModel.value::ref } }))
+        assertTrue(graph.contains(ComplexModel.ref { mapIntObject.at(2u) { EmbeddedMarykModel.value } }))
+        assertTrue(graph.contains(ComplexModel.ref { mapIntObject.at(2u) { EmbeddedMarykModel.marykModel { TestMarykModel.string } } }))
+        assertFalse(graph.contains(ComplexModel.ref { mapIntObject.at(3u) { EmbeddedMarykModel.value } }))
     }
 
     @Test

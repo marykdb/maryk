@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class AverageTest {
     private val average = Average(
-        TestMarykModel { int::ref }
+        TestMarykModel.ref { int }
     )
 
     private val context = RequestContext(

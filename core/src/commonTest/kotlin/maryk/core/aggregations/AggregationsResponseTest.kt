@@ -21,33 +21,33 @@ import kotlin.test.expect
 class AggregationsResponseTest {
     private val aggregationsResponse = AggregationsResponse(
         "total" to SumResponse(
-            TestMarykModel { int::ref },
+            TestMarykModel.ref { int },
             3765476
         ),
         "mediocre" to AverageResponse(
-            TestMarykModel { int::ref },
+            TestMarykModel.ref { int },
             3526,
             32uL
         ),
         "the least" to MinResponse(
-            TestMarykModel { dateTime::ref },
+            TestMarykModel.ref { dateTime },
             LocalDateTime(2019, 12, 1, 12, 3, 45)
         ),
         "the most" to MaxResponse(
-            TestMarykModel { double::ref },
+            TestMarykModel.ref { double },
             3456.231
         ),
-        "count" to ValueCountResponse(TestMarykModel { string::ref }, 1234uL),
+        "count" to ValueCountResponse(TestMarykModel.ref { string }, 1234uL),
         "by day" to DateHistogramResponse(
-            TestMarykModel { dateTime::ref },
+            TestMarykModel.ref { dateTime },
             listOf()
         ),
         "each enum" to EnumValuesResponse(
-            TestMarykModel { enum::ref },
+            TestMarykModel.ref { enum },
             listOf()
         ),
         "each type" to TypesResponse(
-            TestMarykModel { multi.refToType() },
+            TestMarykModel.ref { multi.type },
             listOf()
         )
     )

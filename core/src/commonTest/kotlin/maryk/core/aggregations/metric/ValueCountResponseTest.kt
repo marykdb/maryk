@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class ValueCountResponseTest {
     private val valueCountResponse = ValueCountResponse(
-        reference = TestMarykModel { string::ref },
+        reference = TestMarykModel.ref { string },
         value = 1234uL
     )
 

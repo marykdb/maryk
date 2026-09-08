@@ -13,12 +13,12 @@ import kotlin.test.expect
 
 class ExistsTest {
     private val exists = Exists(
-        TestMarykModel { string::ref }
+        TestMarykModel.ref { string }
     )
     private val existsMultiple = Exists(
-        TestMarykModel { string::ref },
-        TestMarykModel { int::ref },
-        TestMarykModel { dateTime::ref }
+        TestMarykModel.ref { string },
+        TestMarykModel.ref { int },
+        TestMarykModel.ref { dateTime }
     )
 
     private val context = RequestContext(
@@ -31,17 +31,17 @@ class ExistsTest {
     @Test
     fun singleReference() {
         assertNotNull(
-            existsMultiple.singleReference { it == TestMarykModel { int::ref } }
+            existsMultiple.singleReference { it == TestMarykModel.ref { int } }
         )
 
         assertNull(
-            existsMultiple.singleReference { it == TestMarykModel { uint::ref } }
+            existsMultiple.singleReference { it == TestMarykModel.ref { uint } }
         )
 
         assertNotNull(
             Exists(
-                TestMarykModel { embeddedValues { model::ref } }
-            ).singleReference { it == TestMarykModel { embeddedValues::ref } }
+                TestMarykModel.ref { embeddedValues { model } }
+            ).singleReference { it == TestMarykModel.ref { embeddedValues } }
         )
     }
 

@@ -13,13 +13,13 @@ import kotlin.test.expect
 
 class RangeTest {
     private val range = Range(
-        TestMarykModel { string::ref } with ValueRange(
+        TestMarykModel.ref { string } with ValueRange(
             from = "test",
             to = "test999",
             inclusiveFrom = false,
             inclusiveTo = false
         ),
-        TestMarykModel { int::ref } with 3..5
+        TestMarykModel.ref { int } with 3..5
     )
 
     private val context = RequestContext(

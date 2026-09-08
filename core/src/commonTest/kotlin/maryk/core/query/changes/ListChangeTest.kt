@@ -19,7 +19,7 @@ import kotlin.test.expect
 
 class ListChangeTest {
     private val listPropertyChange = ListChange(
-        TestMarykModel { listOfString::ref }.change(
+        TestMarykModel.ref { listOfString }.change(
             addValuesAtIndex = mapOf(2u to "a", 3u to "abc"),
             addValuesToEnd = listOf("four", "five"),
             deleteValues = listOf("three")
@@ -84,7 +84,7 @@ class ListChangeTest {
 
         val changed = original.change(
             ListChange(
-                TestMarykModel { list::ref }.change(
+                TestMarykModel.ref { list }.change(
                     deleteValues = listOf(3),
                     addValuesAtIndex = mapOf(
                         1u to 999
@@ -99,7 +99,7 @@ class ListChangeTest {
 
         val deepChanged = original.change(
             ListChange(
-                TestMarykModel { embeddedValues { marykModel { list::ref } } }.change(
+                TestMarykModel.ref { embeddedValues { marykModel { list } } }.change(
                     deleteValues = listOf(33),
                     addValuesAtIndex = mapOf(
                         1u to 9999
@@ -122,7 +122,7 @@ class ListChangeTest {
         assertFailsWith<RequestException> {
             original.change(
                 ListChange(
-                    TestMarykModel { list::ref }.change(
+                    TestMarykModel.ref { list }.change(
                         addValuesAtIndex = mapOf(UInt.MAX_VALUE to 999)
                     )
                 )
@@ -136,7 +136,7 @@ class ListChangeTest {
         val exceptions = mutableListOf<ValidationException>()
 
         ListChange(
-            TestMarykModel { listOfString::ref }.change(
+            TestMarykModel.ref { listOfString }.change(
                 addValuesAtIndex = mapOf(3u to tooLong),
                 addValuesToEnd = listOf(tooLong),
                 deleteValues = listOf(tooLong)
@@ -155,13 +155,13 @@ class ListChangeTest {
     @Test
     fun validAndEmptyListChangesRemainValid() {
         val validChange = ListChange(
-            TestMarykModel { listOfString::ref }.change(
+            TestMarykModel.ref { listOfString }.change(
                 addValuesAtIndex = mapOf(1u to "valid"),
                 addValuesToEnd = listOf("also valid"),
                 deleteValues = listOf("not present")
             )
         )
-        val emptyChange = ListChange(TestMarykModel { listOfString::ref }.change())
+        val emptyChange = ListChange(TestMarykModel.ref { listOfString }.change())
 
         validChange.validate { error("valid list change failed validation: $it") }
         emptyChange.validate { error("empty list change failed validation: $it") }

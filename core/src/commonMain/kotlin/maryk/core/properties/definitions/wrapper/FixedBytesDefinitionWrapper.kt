@@ -28,6 +28,7 @@ data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<ValueWithFixedBytesPropertyReference<T, TO, FixedBytesDefinitionWrapper<T, TO, CX, D, DO>, AnyPropertyReference>>,
     IsSerializableFixedBytesEncodable<T, CX> by definition,
     IsSensitiveValueDefinitionWrapper<T, TO, CX, DO>,
     IsFixedStorageBytesEncodable<T> {

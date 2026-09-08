@@ -107,26 +107,26 @@ class DataStoreGetChangesComplexTest(
                 VersionedChanges(version = lowestVersion, changes = listOf(
                     ObjectCreate,
                     MultiTypeChange(
-                        ComplexModel { multi::ref } withType T3,
-                        ComplexModel { mapIntMulti.refAt(1u) } withType T3,
-                        ComplexModel { mapIntMulti.refAt(3u) } withType T3
+                        ComplexModel.ref { multi } withType T3,
+                        ComplexModel.ref { mapIntMulti.at(1u) } withType T3,
+                        ComplexModel.ref { mapIntMulti.at(3u) } withType T3
                     ),
                     Change(
-                        ComplexModel { multi.withType(T3) { value::ref } } with "u3",
-                        ComplexModel { multi.withType(T3) { model { value::ref } } } with "ue3",
-                        ComplexModel { mapStringString refAt "a" } with "b",
-                        ComplexModel { mapStringString refAt "c" } with "d",
-                        ComplexModel { mapIntObject refAt 1u } with Unit,
-                        ComplexModel { mapIntObject.at(1u) { value::ref } } with "v1",
-                        ComplexModel { mapIntObject refAt 2u } with Unit,
-                        ComplexModel { mapIntObject.at(2u) { value::ref } } with "v2",
-                        ComplexModel { mapIntMulti.at(1u) { atType(T3) { value::ref } } } with "v1",
-                        ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { value::ref } } } } with "sub1",
-                        ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { model { value::ref } } } } } with "sub2",
-                        ComplexModel { mapIntMulti refAt 2u } with T1("string"),
-                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { value::ref } } } with "v2",
-                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { value::ref } } } } with "2sub1",
-                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { model { value::ref } } } } } with "2sub2"
+                        ComplexModel.ref { multi.withType(T3) { value } } with "u3",
+                        ComplexModel.ref { multi.withType(T3) { model { value } } } with "ue3",
+                        ComplexModel.ref { mapStringString at "a" } with "b",
+                        ComplexModel.ref { mapStringString at "c" } with "d",
+                        ComplexModel.ref { mapIntObject at 1u } with Unit,
+                        ComplexModel.ref { mapIntObject.at(1u) { value } } with "v1",
+                        ComplexModel.ref { mapIntObject at 2u } with Unit,
+                        ComplexModel.ref { mapIntObject.at(2u) { value } } with "v2",
+                        ComplexModel.ref { mapIntMulti.at(1u) { atType(T3) { value } } } with "v1",
+                        ComplexModel.ref { mapIntMulti.at(1u) { atType(T3) { model { value } } } } with "sub1",
+                        ComplexModel.ref { mapIntMulti.at(1u) { atType(T3) { model { model { value } } } } } with "sub2",
+                        ComplexModel.ref { mapIntMulti at 2u } with T1("string"),
+                        ComplexModel.ref { mapIntMulti.at(3u) { atType(T3) { value } } } with "v2",
+                        ComplexModel.ref { mapIntMulti.at(3u) { atType(T3) { model { value } } } } with "2sub1",
+                        ComplexModel.ref { mapIntMulti.at(3u) { atType(T3) { model { model { value } } } } } with "2sub2"
                     )
                 ))
             )

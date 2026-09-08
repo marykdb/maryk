@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class SumTest {
     private val sum = Sum(
-        TestMarykModel { int::ref }
+        TestMarykModel.ref { int }
     )
 
     private val context = RequestContext(

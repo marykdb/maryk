@@ -326,7 +326,7 @@ class FieldEncryptionTest {
                 assertIs<ChangeSuccess<SensitiveRecord>>(
                     store.execute(
                         SensitiveRecord.change(
-                            add.key.change(Change(SensitiveRecord { secret::ref } with "after"))
+                            add.key.change(Change(SensitiveRecord.ref { secret } with "after"))
                         )
                     ).statuses.single()
                 )
@@ -357,7 +357,7 @@ class FieldEncryptionTest {
 
                 val response = store.execute(
                     SensitiveRecord.scan(
-                        where = Equals(SensitiveRecord { secret::ref } with "wanted"),
+                        where = Equals(SensitiveRecord.ref { secret } with "wanted"),
                         allowTableScan = true,
                     )
                 )
@@ -391,7 +391,7 @@ class FieldEncryptionTest {
 
                 val response = store.execute(
                     SensitiveReferenceOwner.scan(
-                        where = Equals(SensitiveReferenceOwner { target { secret::ref } } with "wanted"),
+                        where = Equals(SensitiveReferenceOwner.ref { target { secret } } with "wanted"),
                         allowTableScan = true,
                     )
                 )
@@ -639,7 +639,7 @@ class FieldEncryptionTest {
                 assertIs<ChangeSuccess<SensitiveUniqueRecord>>(
                     store.execute(
                         SensitiveUniqueRecord.change(
-                            targetKey.change(Change(SensitiveUniqueRecord { secret::ref } with "new-secret"))
+                            targetKey.change(Change(SensitiveUniqueRecord.ref { secret } with "new-secret"))
                         )
                     ).statuses.single()
                 )
@@ -684,7 +684,7 @@ class FieldEncryptionTest {
                     assertIs<ChangeSuccess<SensitiveUniqueRecord>>(
                         store.execute(
                             SensitiveUniqueRecord.change(
-                                targetKey.change(Change(SensitiveUniqueRecord { secret::ref } with value))
+                                targetKey.change(Change(SensitiveUniqueRecord.ref { secret } with value))
                             )
                         ).statuses.single()
                     )

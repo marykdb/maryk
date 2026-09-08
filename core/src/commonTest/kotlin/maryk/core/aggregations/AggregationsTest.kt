@@ -21,29 +21,29 @@ import kotlin.test.expect
 class AggregationsTest {
     private val aggregations = Aggregations(
         "total" to Sum(
-            TestMarykModel { int::ref }
+            TestMarykModel.ref { int }
         ),
         "mediocre" to Average(
-            TestMarykModel { int::ref }
+            TestMarykModel.ref { int }
         ),
         "the least" to Min(
-            TestMarykModel { int::ref }
+            TestMarykModel.ref { int }
         ),
         "the most" to Max(
-            TestMarykModel { int::ref }
+            TestMarykModel.ref { int }
         ),
         "count" to ValueCount(
-            TestMarykModel { int::ref }
+            TestMarykModel.ref { int }
         ),
         "by day" to DateHistogram(
-            TestMarykModel { dateTime::ref },
+            TestMarykModel.ref { dateTime },
             DateUnit.Days
         ),
         "each enum" to EnumValues(
-            TestMarykModel { enum::ref }
+            TestMarykModel.ref { enum }
         ),
         "each type" to Types(
-            TestMarykModel { multi.refToType() }
+            TestMarykModel.ref { multi.type }
         )
     )
 

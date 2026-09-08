@@ -31,7 +31,7 @@ class ChangeResponseTest {
                 listOf(
                     IncMapAddition(
                         IncMapKeyAdditions(
-                            CompleteMarykModel { incMap::ref },
+                            CompleteMarykModel.ref { incMap },
                             listOf(
                                 22u,
                                 23u
@@ -44,7 +44,7 @@ class ChangeResponseTest {
             ValidationFail(
                 ValidationUmbrellaException(
                     null, listOf(
-                        InvalidValueException(CompleteMarykModel { string::ref }, "wrong")
+                        InvalidValueException(CompleteMarykModel.ref { string }, "wrong")
                     )
                 )
             ),

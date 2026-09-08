@@ -32,8 +32,8 @@ class OptimizeTableScanKtTest {
     @Test
     fun optimizeTableScanInt() {
         val filter = Equals(
-            TestMarykModel { enum::ref} with V3,
-            TestMarykModel { int::ref} with 245,
+            TestMarykModel.ref { enum} with V3,
+            TestMarykModel.ref { int} with 245,
         )
         val keyScanRanges = TestMarykModel.createScanRange(
             filter = filter,
@@ -56,7 +56,7 @@ class OptimizeTableScanKtTest {
     @Test
     fun optimizeTableScanDoubleReversed() {
         val filter = Equals(
-            TestMarykModel { double::ref} with 2.5,
+            TestMarykModel.ref { double} with 2.5,
         )
         val keyScanRanges = TestMarykModel.createScanRange(
             filter = filter,
@@ -76,9 +76,9 @@ class OptimizeTableScanKtTest {
     @Test
     fun optimizeTableScanMultiple() {
         val filter = Equals(
-            TestMarykModel { dateTime::ref} with LocalDateTime(2018, 3, 3, 0, 0),
-            TestMarykModel { enum::ref} with V3,
-            TestMarykModel { int::ref} with 245,
+            TestMarykModel.ref { dateTime} with LocalDateTime(2018, 3, 3, 0, 0),
+            TestMarykModel.ref { enum} with V3,
+            TestMarykModel.ref { int} with 245,
         )
         val keyScanRanges = TestMarykModel.createScanRange(
             filter = filter,

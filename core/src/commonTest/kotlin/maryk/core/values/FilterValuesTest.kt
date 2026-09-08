@@ -68,13 +68,13 @@ class FilterValuesTest {
     fun doExistsFilter() {
         assertTrue {
             value1.matches(
-                Exists(TestMarykModel { string::ref })
+                Exists(TestMarykModel.ref { string })
             )
         }
 
         assertFalse {
             value1.matches(
-                Exists(TestMarykModel { reference::ref })
+                Exists(TestMarykModel.ref { reference })
             )
         }
     }
@@ -83,13 +83,13 @@ class FilterValuesTest {
     fun doEqualsFilter() {
         assertTrue {
             value1.matches(
-                Equals(TestMarykModel { string::ref } with "haha1")
+                Equals(TestMarykModel.ref { string } with "haha1")
             )
         }
 
         assertFalse {
             value1.matches(
-                Equals(TestMarykModel { string::ref } with "wrong")
+                Equals(TestMarykModel.ref { string } with "wrong")
             )
         }
     }
@@ -98,67 +98,67 @@ class FilterValuesTest {
     fun doComplexMapListSetFilter() {
         assertTrue {
             value1.matches(
-                Equals(TestMarykModel { map.refAt(LocalTime(12, 13, 14)) } with "haha10")
+                Equals(TestMarykModel.ref { map.at(LocalTime(12, 13, 14)) } with "haha10")
             )
         }
 
         assertTrue {
             value1.matches(
-                Equals(TestMarykModel { map.refToAnyValue() } with "haha10")
+                Equals(TestMarykModel.ref { map.anyValue() } with "haha10")
             )
         }
 
         assertFalse {
             value1.matches(
-                Equals(TestMarykModel { map.refToAnyValue() } with "haha11")
+                Equals(TestMarykModel.ref { map.anyValue() } with "haha11")
             )
         }
 
         assertFalse {
             value1.matches(
-                Equals(TestMarykModel { map.refAt(LocalTime(13, 13, 14)) } with "haha10")
+                Equals(TestMarykModel.ref { map.at(LocalTime(13, 13, 14)) } with "haha10")
             )
         }
 
         assertTrue {
             value1.matches(
-                Equals(TestMarykModel { list refAt 1u } with 6)
+                Equals(TestMarykModel.ref { list at 1u } with 6)
             )
         }
 
         assertFalse {
             value1.matches(
-                Equals(TestMarykModel { list refAt 2u } with 6)
+                Equals(TestMarykModel.ref { list at 2u } with 6)
             )
         }
 
         assertTrue {
             value1.matches(
-                Equals(TestMarykModel { list.refToAny() } with 6)
+                Equals(TestMarykModel.ref { list.any() } with 6)
             )
         }
 
         assertFalse {
             value1.matches(
-                Equals(TestMarykModel { list.refToAny() } with 2)
+                Equals(TestMarykModel.ref { list.any() } with 2)
             )
         }
 
         assertTrue {
             value1.matches(
-                Equals(TestMarykModel { list refAt 1u } with 6)
+                Equals(TestMarykModel.ref { list at 1u } with 6)
             )
         }
 
         assertTrue {
             value1.matches(
-                Exists(TestMarykModel { set refAt LocalDate(2018, 9, 9) })
+                Exists(TestMarykModel.ref { set item LocalDate(2018, 9, 9) })
             )
         }
 
         assertFalse {
             value1.matches(
-                Exists(TestMarykModel { set refAt LocalDate(2017, 9, 9) })
+                Exists(TestMarykModel.ref { set item LocalDate(2017, 9, 9) })
             )
         }
     }
@@ -167,13 +167,13 @@ class FilterValuesTest {
     fun doPrefixFilter() {
         assertTrue {
             value1.matches(
-                Prefix(TestMarykModel { string::ref } with "ha")
+                Prefix(TestMarykModel.ref { string } with "ha")
             )
         }
 
         assertFalse {
             value1.matches(
-                Prefix(TestMarykModel { string::ref } with "wrong")
+                Prefix(TestMarykModel.ref { string } with "wrong")
             )
         }
     }
@@ -182,19 +182,19 @@ class FilterValuesTest {
     fun doLessThanFilter() {
         assertTrue {
             value1.matches(
-                LessThan(TestMarykModel { int::ref } with 6)
+                LessThan(TestMarykModel.ref { int } with 6)
             )
         }
 
         assertFalse {
             value1.matches(
-                LessThan(TestMarykModel { int::ref } with 5)
+                LessThan(TestMarykModel.ref { int } with 5)
             )
         }
 
         assertFalse {
             value1.matches(
-                LessThan(TestMarykModel { int::ref } with 2)
+                LessThan(TestMarykModel.ref { int } with 2)
             )
         }
     }
@@ -203,19 +203,19 @@ class FilterValuesTest {
     fun doLessThanEqualsFilter() {
         assertTrue {
             value1.matches(
-                LessThanEquals(TestMarykModel { int::ref } with 6)
+                LessThanEquals(TestMarykModel.ref { int } with 6)
             )
         }
 
         assertTrue {
             value1.matches(
-                LessThanEquals(TestMarykModel { int::ref } with 5)
+                LessThanEquals(TestMarykModel.ref { int } with 5)
             )
         }
 
         assertFalse {
             value1.matches(
-                LessThanEquals(TestMarykModel { int::ref } with 2)
+                LessThanEquals(TestMarykModel.ref { int } with 2)
             )
         }
     }
@@ -224,19 +224,19 @@ class FilterValuesTest {
     fun doGreaterThanFilter() {
         assertTrue {
             value1.matches(
-                GreaterThan(TestMarykModel { int::ref } with 4)
+                GreaterThan(TestMarykModel.ref { int } with 4)
             )
         }
 
         assertFalse {
             value1.matches(
-                GreaterThan(TestMarykModel { int::ref } with 5)
+                GreaterThan(TestMarykModel.ref { int } with 5)
             )
         }
 
         assertFalse {
             value1.matches(
-                GreaterThan(TestMarykModel { int::ref } with 6)
+                GreaterThan(TestMarykModel.ref { int } with 6)
             )
         }
     }
@@ -245,19 +245,19 @@ class FilterValuesTest {
     fun doGreaterThanEqualsFilter() {
         assertTrue {
             value1.matches(
-                GreaterThanEquals(TestMarykModel { int::ref } with 4)
+                GreaterThanEquals(TestMarykModel.ref { int } with 4)
             )
         }
 
         assertTrue {
             value1.matches(
-                GreaterThanEquals(TestMarykModel { int::ref } with 5)
+                GreaterThanEquals(TestMarykModel.ref { int } with 5)
             )
         }
 
         assertFalse {
             value1.matches(
-                GreaterThanEquals(TestMarykModel { int::ref } with 6)
+                GreaterThanEquals(TestMarykModel.ref { int } with 6)
             )
         }
     }
@@ -266,19 +266,19 @@ class FilterValuesTest {
     fun doRangeFilter() {
         assertTrue {
             value1.matches(
-                Range(TestMarykModel { int::ref } with (2..8))
+                Range(TestMarykModel.ref { int } with (2..8))
             )
         }
 
         assertTrue {
             value1.matches(
-                Range(TestMarykModel { int::ref } with (2..5))
+                Range(TestMarykModel.ref { int } with (2..5))
             )
         }
 
         assertFalse {
             value1.matches(
-                Range(TestMarykModel { int::ref } with (2..3))
+                Range(TestMarykModel.ref { int } with (2..3))
             )
         }
     }
@@ -287,13 +287,13 @@ class FilterValuesTest {
     fun doRegExFilter() {
         assertTrue {
             value1.matches(
-                RegEx(TestMarykModel { string::ref } with Regex("^h.*$"))
+                RegEx(TestMarykModel.ref { string } with Regex("^h.*$"))
             )
         }
 
         assertFalse {
             value1.matches(
-                RegEx(TestMarykModel { string::ref } with Regex("^b.*$"))
+                RegEx(TestMarykModel.ref { string } with Regex("^b.*$"))
             )
         }
     }
@@ -302,13 +302,13 @@ class FilterValuesTest {
     fun doValueInFilter() {
         assertTrue {
             value1.matches(
-                ValueIn(TestMarykModel { string::ref } with setOf("haha1", "haha2"))
+                ValueIn(TestMarykModel.ref { string } with setOf("haha1", "haha2"))
             )
         }
 
         assertFalse {
             value1.matches(
-                ValueIn(TestMarykModel { string::ref } with setOf("no1", "no2"))
+                ValueIn(TestMarykModel.ref { string } with setOf("no1", "no2"))
             )
         }
     }
@@ -317,13 +317,13 @@ class FilterValuesTest {
     fun doNotFilter() {
         assertFalse {
             value1.matches(
-                Not(Exists(TestMarykModel { string::ref }))
+                Not(Exists(TestMarykModel.ref { string }))
             )
         }
 
         assertTrue {
             value1.matches(
-                Not(Exists(TestMarykModel { reference::ref }))
+                Not(Exists(TestMarykModel.ref { reference }))
             )
         }
     }
@@ -333,8 +333,8 @@ class FilterValuesTest {
         assertTrue {
             value1.matches(
                 And(
-                    Exists(TestMarykModel { int::ref }),
-                    Exists(TestMarykModel { string::ref })
+                    Exists(TestMarykModel.ref { int }),
+                    Exists(TestMarykModel.ref { string })
                 )
             )
         }
@@ -342,8 +342,8 @@ class FilterValuesTest {
         assertFalse {
             value1.matches(
                 And(
-                    Exists(TestMarykModel { reference::ref }),
-                    Exists(TestMarykModel { string::ref })
+                    Exists(TestMarykModel.ref { reference }),
+                    Exists(TestMarykModel.ref { string })
                 )
             )
         }
@@ -354,8 +354,8 @@ class FilterValuesTest {
         assertTrue {
             value1.matches(
                 Or(
-                    Exists(TestMarykModel { int::ref }),
-                    Exists(TestMarykModel { string::ref })
+                    Exists(TestMarykModel.ref { int }),
+                    Exists(TestMarykModel.ref { string })
                 )
             )
         }
@@ -363,8 +363,8 @@ class FilterValuesTest {
         assertTrue {
             value1.matches(
                 Or(
-                    Exists(TestMarykModel { reference::ref }),
-                    Exists(TestMarykModel { string::ref })
+                    Exists(TestMarykModel.ref { reference }),
+                    Exists(TestMarykModel.ref { string })
                 )
             )
         }
@@ -372,8 +372,8 @@ class FilterValuesTest {
         assertFalse {
             value1.matches(
                 Or(
-                    Exists(TestMarykModel { reference::ref }),
-                    Not(Exists(TestMarykModel { string::ref }))
+                    Exists(TestMarykModel.ref { reference }),
+                    Not(Exists(TestMarykModel.ref { string }))
                 )
             )
         }

@@ -12,10 +12,10 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 class MultiTypeChangeTest {
-    val ref = TestMarykModel { multi::ref }
+    val ref = TestMarykModel.ref { multi }
 
     private val multiTypeChange = MultiTypeChange(
-        TestMarykModel { multi::ref } withType S3
+        TestMarykModel.ref { multi } withType S3
     )
 
     private val context = RequestContext(
@@ -23,7 +23,7 @@ class MultiTypeChangeTest {
             TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
         ),
         dataModel = TestMarykModel,
-        reference = TestMarykModel { multi::ref }
+        reference = TestMarykModel.ref { multi }
     )
 
     @Test

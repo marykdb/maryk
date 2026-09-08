@@ -101,7 +101,7 @@ object DependentModel : DataModel<DependentModel>() {
 object ModelWithDependents : RootDataModel<ModelWithDependents>(
     version = Version(1, 0),
     indexes = { listOf(
-        ModelWithDependents { dep { value::ref } }
+        ModelWithDependents.ref { dep { value } }
     ) }
 ) {
     val dep by embed(index = 1u, dataModel = { DependentModel })

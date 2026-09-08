@@ -111,7 +111,7 @@ internal fun flowObservesDurableCrossContextAddChangeDeleteOnce() = runTest {
                 assertEquals(initialValues, update.values)
             }
 
-            val change = Change(SimpleMarykModel { value::ref } with "ha cross-context change")
+            val change = Change(SimpleMarykModel.ref { value } with "ha cross-context change")
             val changeResponse = writer.execute(SimpleMarykModel.change(key.change(change)))
             val changeVersion = assertStatusIs<ChangeSuccess<SimpleMarykModel>>(changeResponse.statuses.single()).version
             assertIs<ChangeUpdate<SimpleMarykModel>>(next()).also { update ->
@@ -158,7 +158,7 @@ internal fun orderedFlowReplaysCrossContextIndexChange() = runTest {
         val listener = launch {
             reader.executeFlow(
                 Person.scan(
-                    order = Orders(Person { surname::ref }.ascending(), Person { firstName::ref }.ascending())
+                    order = Orders(Person.ref { surname }.ascending(), Person.ref { firstName }.ascending())
                 )
             ).collect(responses::send)
         }
@@ -167,7 +167,7 @@ internal fun orderedFlowReplaysCrossContextIndexChange() = runTest {
             assertIs<InitialValuesUpdate<*>>(next()).also { initial ->
                 assertEquals(listOf(firstKey, secondKey), initial.values.map { it.key })
             }
-            writer.execute(Person.change(firstKey.change(Change(Person { firstName::ref } with "Z"))))
+            writer.execute(Person.change(firstKey.change(Change(Person.ref { firstName } with "Z"))))
             assertIs<ChangeUpdate<Person>>(next()).also { update ->
                 assertEquals(firstKey, update.key)
                 assertEquals(1, update.index)
@@ -305,7 +305,7 @@ internal fun checkOnlyChangeRemainsSuccessful() = runTest {
             dataStore.execute(
                 SimpleMarykModel.change(
                     key.change(
-                        Check(SimpleMarykModel { value::ref } with "ha check-only"),
+                        Check(SimpleMarykModel.ref { value } with "ha check-only"),
                         lastVersion = addVersion,
                     )
                 )

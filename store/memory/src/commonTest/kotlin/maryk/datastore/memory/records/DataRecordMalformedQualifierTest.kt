@@ -34,14 +34,14 @@ class DataRecordMalformedQualifierTest {
                 mapStringString with mapOf("good" to "value")
             }
         )
-        val malformedReference = ComplexModel { mapStringString::ref }.toStorageByteArray() + byteArrayOf(-128)
+        val malformedReference = ComplexModel.ref { mapStringString }.toStorageByteArray() + byteArrayOf(-128)
         val corrupted = record.copy(
             values = record.values + DataRecordValue(malformedReference, "broken", HLC(1235uL))
         )
 
         assertEquals(
             mapOf("good" to "value"),
-            corrupted.get(ComplexModel { mapStringString::ref }),
+            corrupted.get(ComplexModel.ref { mapStringString }),
         )
     }
 
@@ -54,14 +54,14 @@ class DataRecordMalformedQualifierTest {
                 set with setOf(LocalDate(2018, 9, 9))
             }
         )
-        val malformedReference = TestMarykModel { set::ref }.toStorageByteArray() + byteArrayOf(-128)
+        val malformedReference = TestMarykModel.ref { set }.toStorageByteArray() + byteArrayOf(-128)
         val corrupted = record.copy(
             values = record.values + DataRecordValue(malformedReference, LocalDate(2019, 1, 1), HLC(1235uL))
         )
 
         assertEquals(
             setOf(LocalDate(2018, 9, 9)),
-            corrupted.get(TestMarykModel { set::ref }),
+            corrupted.get(TestMarykModel.ref { set }),
         )
     }
 }

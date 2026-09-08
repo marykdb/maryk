@@ -18,24 +18,24 @@ class DataObjectChangeTest {
         byteArrayOf(0, 0, 2, 43, 1, 0, 2)
     )
 
-    private val subModel = TestMarykModel { embeddedValues::ref }
+    private val subModel = TestMarykModel.ref { embeddedValues }
 
-    private val incMapChange = IncMapChange(TestMarykModel { incMap::ref }.change(
+    private val incMapChange = IncMapChange(TestMarykModel.ref { incMap }.change(
         addValues = listOf("a","b")
     ))
 
     private val dataObjectChange = key1.change(
-        Change(EmbeddedMarykModel(subModel) { value::ref } with "new"),
-        Change(EmbeddedMarykModel(subModel) { model::ref } with null),
-        Check(EmbeddedMarykModel(subModel) { value::ref } with "current"),
+        Change(EmbeddedMarykModel.ref(subModel) { value } with "new"),
+        Change(EmbeddedMarykModel.ref(subModel) { model } with null),
+        Check(EmbeddedMarykModel.ref(subModel) { value } with "current"),
         ObjectSoftDeleteChange(true),
         ObjectCreate,
         ListChange(
-            TestMarykModel { list::ref }.change(
+            TestMarykModel.ref { list }.change(
                 addValuesToEnd = listOf(1, 2, 3)
             )
         ),
-        SetChange(TestMarykModel { set::ref }.change()),
+        SetChange(TestMarykModel.ref { set }.change()),
         incMapChange,
         lastVersion = 12345uL
     )

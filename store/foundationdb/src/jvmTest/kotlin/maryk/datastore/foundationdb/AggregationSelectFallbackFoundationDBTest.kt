@@ -39,7 +39,7 @@ class AggregationSelectFallbackFoundationDBTest {
                     statuses[1].key,
                     select = Log.graph { listOf(Log.message) },
                     aggregations = Aggregations(
-                        "last" to Max(Log { timestamp::ref })
+                        "last" to Max(Log.ref { timestamp })
                     )
                 )
             )
@@ -48,7 +48,7 @@ class AggregationSelectFallbackFoundationDBTest {
             assertEquals(
                 AggregationsResponse(
                     "last" to MaxResponse(
-                        Log { timestamp::ref },
+                        Log.ref { timestamp },
                         LocalDateTime(2024, 1, 1, 11, 0)
                     )
                 ),
@@ -80,7 +80,7 @@ class AggregationSelectFallbackFoundationDBTest {
                     select = Log.graph { listOf(Log.message) },
                     toVersion = statuses[1].version,
                     aggregations = Aggregations(
-                        "last" to Max(Log { timestamp::ref })
+                        "last" to Max(Log.ref { timestamp })
                     )
                 )
             )
@@ -89,7 +89,7 @@ class AggregationSelectFallbackFoundationDBTest {
             assertEquals(
                 AggregationsResponse(
                     "last" to MaxResponse(
-                        Log { timestamp::ref },
+                        Log.ref { timestamp },
                         LocalDateTime(2024, 1, 1, 11, 0)
                     )
                 ),
@@ -121,7 +121,7 @@ class AggregationSelectFallbackFoundationDBTest {
                 Log.scan(
                     select = Log.graph { listOf(Log.message) },
                     aggregations = Aggregations(
-                        "last" to Max(Log { timestamp::ref })
+                        "last" to Max(Log.ref { timestamp })
                     )
                 )
             )
@@ -130,7 +130,7 @@ class AggregationSelectFallbackFoundationDBTest {
             assertEquals(
                 AggregationsResponse(
                     "last" to MaxResponse(
-                        Log { timestamp::ref },
+                        Log.ref { timestamp },
                         LocalDateTime(2024, 1, 1, 11, 0)
                     )
                 ),
@@ -163,7 +163,7 @@ class AggregationSelectFallbackFoundationDBTest {
                     select = Log.graph { listOf(Log.message) },
                     toVersion = statuses[1].version,
                     aggregations = Aggregations(
-                        "last" to Max(Log { timestamp::ref })
+                        "last" to Max(Log.ref { timestamp })
                     )
                 )
             )
@@ -172,7 +172,7 @@ class AggregationSelectFallbackFoundationDBTest {
             assertEquals(
                 AggregationsResponse(
                     "last" to MaxResponse(
-                        Log { timestamp::ref },
+                        Log.ref { timestamp },
                         LocalDateTime(2024, 1, 1, 11, 0)
                     )
                 ),

@@ -16,7 +16,7 @@ import kotlin.test.expect
 
 class IncMapChangeTest {
     private val incMapChange = IncMapChange(
-        CompleteMarykModel { incMap::ref }.change(
+        CompleteMarykModel.ref { incMap }.change(
             addValues = listOf(
                 EmbeddedMarykModel.create { value with "a" },
                 EmbeddedMarykModel.create { value with "b" },
@@ -88,7 +88,7 @@ class IncMapChangeTest {
 
         val changed = original.change(
             IncMapChange(
-                TestMarykModel { incMap::ref }.change(
+                TestMarykModel.ref { incMap }.change(
                     addValues = listOf(
                         "four",
                         "five"
@@ -113,7 +113,7 @@ class IncMapChangeTest {
 
         val deepChanged = original.change(
             IncMapChange(
-                TestMarykModel { embeddedValues { marykModel { incMap::ref } } }.change(
+                TestMarykModel.ref { embeddedValues { marykModel { incMap } } }.change(
                     addValues = listOf(
                         "fourteen",
                         "fifteen"
@@ -144,7 +144,7 @@ class IncMapChangeTest {
 
         val changed = original.change(
             IncMapChange(
-                TestMarykModel { incMap::ref }.change(
+                TestMarykModel.ref { incMap }.change(
                     addValues = listOf("first")
                 )
             )

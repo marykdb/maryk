@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.string
 object AnyValueMapIndexModel : RootDataModel<AnyValueMapIndexModel>(
     indexes = {
         listOf(
-            AnyValueMapIndexModel { mapValues.refToAnyKey() }
+            AnyValueMapIndexModel.ref { mapValues.anyKey() }
         )
     }
 ) {

@@ -178,7 +178,7 @@ class KeyScanRangesTest {
     @Test
     fun convertSimpleEqualFilterToScanRange() {
         val filter = Equals(
-            Log { timestamp::ref } with LocalDateTime(2018, 12, 8, 12, 33, 23)
+            Log.ref { timestamp } with LocalDateTime(2018, 12, 8, 12, 33, 23)
         )
 
         val scanRange = Log.createScanRange(filter, null)
@@ -214,7 +214,7 @@ class KeyScanRangesTest {
         val logKey = Log.key(log)
 
         val filter = Equals(
-            Log { timestamp::ref } with LocalDateTime(2018, 12, 8, 12, 33, 23)
+            Log.ref { timestamp } with LocalDateTime(2018, 12, 8, 12, 33, 23)
         )
 
         val scanRange1 = Log.createScanRange(filter, logKey.bytes, true)
@@ -249,7 +249,7 @@ class KeyScanRangesTest {
     @Test
     fun convertGreaterThanFilterToScanRange() {
         val filter = GreaterThan(
-            Log { timestamp::ref} with LocalDateTime(2018, 12, 8, 12, 33, 23)
+            Log.ref { timestamp} with LocalDateTime(2018, 12, 8, 12, 33, 23)
         )
 
         val scanRange = Log.createScanRange(filter, null)
@@ -278,7 +278,7 @@ class KeyScanRangesTest {
     @Test
     fun convertGreaterThanEqualsFilterToScanRange() {
         val filter = GreaterThanEquals(
-            Log { timestamp::ref } with LocalDateTime(2018, 12, 8, 12, 33, 23)
+            Log.ref { timestamp } with LocalDateTime(2018, 12, 8, 12, 33, 23)
         )
 
         val scanRange = Log.createScanRange(filter, null)
@@ -307,7 +307,7 @@ class KeyScanRangesTest {
     @Test
     fun convertLessThanFilterToScanRange() {
         val filter = LessThan(
-            Log { timestamp::ref } with LocalDateTime(2018, 12, 8, 12, 33, 23)
+            Log.ref { timestamp } with LocalDateTime(2018, 12, 8, 12, 33, 23)
         )
 
         val scanRange = Log.createScanRange(filter, null)
@@ -336,7 +336,7 @@ class KeyScanRangesTest {
     @Test
     fun convertLessThanEqualsFilterToScanRange() {
         val filter = LessThanEquals(
-            Log { timestamp::ref } with LocalDateTime(2018, 12, 8, 12, 33, 23)
+            Log.ref { timestamp } with LocalDateTime(2018, 12, 8, 12, 33, 23)
         )
 
         val scanRange = Log.createScanRange(filter, null)
@@ -365,7 +365,7 @@ class KeyScanRangesTest {
     @Test
     fun convertRangeFilterToScanRange() {
         val filter = Range(
-            Log { timestamp::ref } with LocalDateTime(2018, 12, 8, 12, 33, 1, 1000000)..LocalDateTime(2018, 12, 8, 12, 33, 55, 2000000)
+            Log.ref { timestamp } with LocalDateTime(2018, 12, 8, 12, 33, 1, 1000000)..LocalDateTime(2018, 12, 8, 12, 33, 55, 2000000)
         )
 
         val scanRange = Log.createScanRange(filter, null)
@@ -393,7 +393,7 @@ class KeyScanRangesTest {
     @Test
     fun convertValueInFilterToScanRange() {
         val filter = ValueIn(
-            Log { timestamp::ref } with setOf(
+            Log.ref { timestamp } with setOf(
                 LocalDateTime(2018, 12, 8, 12, 1, 1, 1000000),
                 LocalDateTime(2018, 12, 8, 12, 2, 2, 2000000),
                 LocalDateTime(2018, 12, 8, 12, 3, 3, 3000000)
@@ -443,8 +443,8 @@ class KeyScanRangesTest {
         )
         val severities = setOf(DEBUG, ERROR)
         val filter = And(
-            ValueIn(Log { timestamp::ref } with timestamps),
-            ValueIn(Log { severity::ref } with severities)
+            ValueIn(Log.ref { timestamp } with timestamps),
+            ValueIn(Log.ref { severity } with severities)
         )
 
         val scanRange = Log.createScanRange(filter, null)
@@ -467,7 +467,7 @@ class KeyScanRangesTest {
     @Test
     fun convertEmptyValueInFilterToScanRange() {
         val filter = ValueIn(
-            Log { timestamp::ref } with emptySet<LocalDateTime>()
+            Log.ref { timestamp } with emptySet<LocalDateTime>()
         )
 
         val scanRange = Log.createScanRange(filter, null)
@@ -479,10 +479,10 @@ class KeyScanRangesTest {
     fun convertAndFilterToScanRange() {
         val filter = And(
             Equals(
-                Log { timestamp::ref } with LocalDateTime(2018, 12, 8, 12, 33, 23)
+                Log.ref { timestamp } with LocalDateTime(2018, 12, 8, 12, 33, 23)
             ),
             LessThan(
-                Log { severity::ref } with ERROR
+                Log.ref { severity } with ERROR
             )
         )
 
@@ -511,7 +511,7 @@ class KeyScanRangesTest {
     @Test
     fun convertNoKeyPartsToScanRange() {
         val filter = LessThan(
-            Log { severity::ref } with ERROR
+            Log.ref { severity } with ERROR
         )
 
         val scanRange = Log.createScanRange(filter, null)

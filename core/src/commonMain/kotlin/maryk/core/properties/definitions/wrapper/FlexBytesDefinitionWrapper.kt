@@ -26,6 +26,7 @@ data class FlexBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext,
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<ValueWithFlexBytesPropertyReference<T, TO, FlexBytesDefinitionWrapper<T, TO, CX, D, DO>, AnyPropertyReference>>,
     IsSerializableFlexBytesEncodable<T, CX> by definition,
     IsSensitiveValueDefinitionWrapper<T, TO, CX, DO> {
     override val graphType = PropRef

@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class MinTest {
     private val min = Min(
-        TestMarykModel { int::ref }
+        TestMarykModel.ref { int }
     )
 
     private val context = RequestContext(

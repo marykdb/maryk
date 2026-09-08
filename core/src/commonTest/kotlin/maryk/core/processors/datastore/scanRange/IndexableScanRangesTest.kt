@@ -126,7 +126,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertSimpleEqualFilterToScanRange() {
         val filter = Equals(
-            CompleteMarykModel { number::ref } with 5u
+            CompleteMarykModel.ref { number } with 5u
         )
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
@@ -184,7 +184,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertGreaterThanFilterToScanRange() {
         val filter = GreaterThan(
-            CompleteMarykModel { number::ref } with 5u
+            CompleteMarykModel.ref { number } with 5u
         )
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
@@ -210,7 +210,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertGreaterThanEqualsFilterToScanRange() {
         val filter = GreaterThanEquals(
-            CompleteMarykModel { number::ref } with 5u
+            CompleteMarykModel.ref { number } with 5u
         )
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
@@ -236,7 +236,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertLessThanFilterToScanRange() {
         val filter = LessThan(
-            CompleteMarykModel { number::ref } with 5u
+            CompleteMarykModel.ref { number } with 5u
         )
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
@@ -262,7 +262,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertLessThanEqualsFilterToScanRange() {
         val filter = LessThanEquals(
-            CompleteMarykModel { number::ref } with 5u
+            CompleteMarykModel.ref { number } with 5u
         )
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
@@ -288,7 +288,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertRangeFilterToScanRange() {
         val filter = Range(
-            CompleteMarykModel { number::ref } with 4u..6u
+            CompleteMarykModel.ref { number } with 4u..6u
         )
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
@@ -314,7 +314,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertValueInFilterToScanRange() {
         val filter = ValueIn(
-            CompleteMarykModel { number::ref } with setOf(
+            CompleteMarykModel.ref { number } with setOf(
                 3u,
                 5u,
                 6u
@@ -365,8 +365,8 @@ class IndexableScanRangesTest {
             LocalTime(12, 11, 10)
         )
         val filter = And(
-            ValueIn(CompleteMarykModel { number::ref } with numbers),
-            ValueIn(CompleteMarykModel { time::ref } with times)
+            ValueIn(CompleteMarykModel.ref { number } with numbers),
+            ValueIn(CompleteMarykModel.ref { time } with times)
         )
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
@@ -400,7 +400,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertEmptyValueInFilterToScanRange() {
         val filter = ValueIn(
-            CompleteMarykModel { number::ref } with emptySet()
+            CompleteMarykModel.ref { number } with emptySet()
         )
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
@@ -412,10 +412,10 @@ class IndexableScanRangesTest {
     fun convertAndFilterToScanRange() {
         val filter = And(
             Equals(
-                CompleteMarykModel { number::ref } with 5u
+                CompleteMarykModel.ref { number } with 5u
             ),
             LessThan(
-                CompleteMarykModel { time::ref } with LocalTime(12, 11, 10)
+                CompleteMarykModel.ref { time } with LocalTime(12, 11, 10)
             )
         )
 
@@ -442,7 +442,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertNoKeyPartsToScanRange() {
         val filter = LessThan(
-            CompleteMarykModel { boolean::ref } with true
+            CompleteMarykModel.ref { boolean } with true
         )
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
@@ -466,7 +466,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertPrefixFilterToScanRange() {
         val filter = Prefix(
-            CompleteMarykModel { string::ref } with "Jan"
+            CompleteMarykModel.ref { string } with "Jan"
         )
 
         val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
@@ -490,7 +490,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertPrefixFilterToNormalizeScanRange() {
         val filter = Prefix(
-            CompleteMarykModel { string::ref } with " j-a n "
+            CompleteMarykModel.ref { string } with " j-a n "
         )
 
         val scanRange = normalizedStringIndexable.createScanRange(filter, keyScanRange)
@@ -506,7 +506,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertGreaterThanStringFilterToScanRange() {
         val filter = GreaterThan(
-            CompleteMarykModel { string::ref } with "Jan"
+            CompleteMarykModel.ref { string } with "Jan"
         )
 
         val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
@@ -522,7 +522,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertLessThanStringFilterToScanRange() {
         val filter = LessThan(
-            CompleteMarykModel { string::ref } with "Jannesz"
+            CompleteMarykModel.ref { string } with "Jannesz"
         )
 
         val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
@@ -538,7 +538,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertLessThanStringFilterToScanRangeRejectsLongerEqualPrefix() {
         val filter = LessThanEquals(
-            CompleteMarykModel { string::ref } with "Jan"
+            CompleteMarykModel.ref { string } with "Jan"
         )
 
         val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
@@ -554,7 +554,7 @@ class IndexableScanRangesTest {
     @Test
     fun convertRegexFilterToScanRange() {
         val filter = RegEx(
-            CompleteMarykModel { string::ref} with Regex("^[A-Z]an.*$")
+            CompleteMarykModel.ref { string} with Regex("^[A-Z]an.*$")
         )
 
         val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)

@@ -130,7 +130,7 @@ internal class ProcessUpdateResponseTest {
             index = 1,
             changes = listOf(
                 Change(
-                    SimpleMarykModel { value::ref } with newValue
+                    SimpleMarykModel.ref { value } with newValue
                 )
             )
         )
@@ -156,7 +156,7 @@ internal class ProcessUpdateResponseTest {
             index = 1,
             changes = listOf(
                 Change(
-                    SimpleMarykModel { value::ref } with "new value"
+                    SimpleMarykModel.ref { value } with "new value"
                 )
             )
         )
@@ -175,7 +175,7 @@ internal class ProcessUpdateResponseTest {
             changes = listOf(
                 ObjectSoftDeleteChange(true),
                 Change(
-                    SimpleMarykModel { value::ref } with "new value"
+                    SimpleMarykModel.ref { value } with "new value"
                 ),
                 ObjectSoftDeleteChange(false)
             )
@@ -196,7 +196,7 @@ internal class ProcessUpdateResponseTest {
             index = 0,
             changes = listOf(
                 Change(
-                    SimpleMarykModel { value::ref } with newValue
+                    SimpleMarykModel.ref { value } with newValue
                 )
             )
         )
@@ -222,7 +222,7 @@ internal class ProcessUpdateResponseTest {
             index = 0,
             changes = listOf(
                 Change(
-                    SimpleMarykModel { value::ref } with "new value"
+                    SimpleMarykModel.ref { value } with "new value"
                 )
             )
         )

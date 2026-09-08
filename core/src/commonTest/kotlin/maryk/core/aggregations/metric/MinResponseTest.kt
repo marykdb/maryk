@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class MinResponseTest {
     private val minResponse = MinResponse(
-        reference = TestMarykModel { int::ref },
+        reference = TestMarykModel.ref { int },
         value = 1234
     )
 

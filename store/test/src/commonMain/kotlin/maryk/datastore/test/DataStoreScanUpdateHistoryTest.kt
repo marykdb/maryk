@@ -67,17 +67,17 @@ class DataStoreScanUpdateHistoryTest(
     private suspend fun executeScanUpdateHistoryReturnsVersionOrderedEntries() {
         if (!(dataStore.keepAllVersions && dataStore.keepUpdateHistoryIndex)) return
 
-        val change1 = Change(TestMarykModel { string::ref } with "ha history 1")
+        val change1 = Change(TestMarykModel.ref { string } with "ha history 1")
         val version1 = assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[1].change(change1))).statuses.first()
         ).version
 
-        val change2 = Change(TestMarykModel { string::ref } with "ha history 2")
+        val change2 = Change(TestMarykModel.ref { string } with "ha history 2")
         val version2 = assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[3].change(change2))).statuses.first()
         ).version
 
-        val change3 = Change(TestMarykModel { string::ref } with "ha history 3")
+        val change3 = Change(TestMarykModel.ref { string } with "ha history 3")
         val version3 = assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[1].change(change3))).statuses.first()
         ).version

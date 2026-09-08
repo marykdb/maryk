@@ -63,7 +63,7 @@ class DataStoreGetChangesTest(
     private suspend fun executeSimpleGetChangesRequest() {
         val changeResult = dataStore.execute(
             SimpleMarykModel.change(
-                keys[1].change(Change(SimpleMarykModel { value::ref } with "haha3"))
+                keys[1].change(Change(SimpleMarykModel.ref { value } with "haha3"))
             )
         )
 
@@ -85,7 +85,7 @@ class DataStoreGetChangesTest(
             listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
                     ObjectCreate,
-                    Change(SimpleMarykModel { value::ref } with "haha1")
+                    Change(SimpleMarykModel.ref { value } with "haha1")
                 ))
             )
         ) {
@@ -96,7 +96,7 @@ class DataStoreGetChangesTest(
             listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(ObjectCreate)),
                 VersionedChanges(version = versionAfterChange, changes = listOf(
-                    Change(SimpleMarykModel { value::ref } with "haha3")
+                    Change(SimpleMarykModel.ref { value } with "haha3")
                 ))
             )
         ) {
@@ -124,7 +124,7 @@ class DataStoreGetChangesTest(
     private suspend fun executeToVersionIncludesChangeAtBound() {
         if (!dataStore.keepAllVersions) return
 
-        val change = Change(SimpleMarykModel { value::ref } with "habound")
+        val change = Change(SimpleMarykModel.ref { value } with "habound")
         val changeVersion = assertStatusIs<ChangeSuccess<SimpleMarykModel>>(
             dataStore.execute(SimpleMarykModel.change(keys[0].change(change))).statuses.single()
         ).version
@@ -164,7 +164,7 @@ class DataStoreGetChangesTest(
                 listOf(
                     VersionedChanges(version = lowestVersion, changes = listOf(
                         ObjectCreate,
-                        Change(SimpleMarykModel { value::ref } with "haha1")
+                        Change(SimpleMarykModel.ref { value } with "haha1")
                     ))
                 )
             ) {
@@ -178,7 +178,7 @@ class DataStoreGetChangesTest(
         if (dataStore.keepAllVersions) {
             val collectedVersions = mutableListOf<ULong>()
 
-            val change1 = Change(SimpleMarykModel { value::ref } with "ha change 1")
+            val change1 = Change(SimpleMarykModel.ref { value } with "ha change 1")
             dataStore.execute(
                 SimpleMarykModel.change(
                     keys[1].change(change1)
@@ -189,7 +189,7 @@ class DataStoreGetChangesTest(
                 }
             }
 
-            val change2 = Change(SimpleMarykModel { value::ref } with "ha change 2")
+            val change2 = Change(SimpleMarykModel.ref { value } with "ha change 2")
             dataStore.execute(
                 SimpleMarykModel.change(
                     keys[1].change(change2)
@@ -200,7 +200,7 @@ class DataStoreGetChangesTest(
                 }
             }
 
-            val change3 = Change(SimpleMarykModel { value::ref } with "ha change 3")
+            val change3 = Change(SimpleMarykModel.ref { value } with "ha change 3")
             dataStore.execute(
                 SimpleMarykModel.change(
                     keys[1].change(change3)

@@ -15,7 +15,7 @@ import kotlin.test.expect
 
 class SetChangeTest {
     private val setPropertyChange = SetChange(
-        TestMarykModel { set::ref }.change(
+        TestMarykModel.ref { set }.change(
             addValues = setOf(
                 LocalDate(2014, 4, 14),
                 LocalDate(2013, 3, 13)
@@ -77,7 +77,7 @@ class SetChangeTest {
 
         val changed = original.change(
             SetChange(
-                TestMarykModel { set::ref }.change(
+                TestMarykModel.ref { set }.change(
                     addValues = setOf(
                         LocalDate(1981, 12, 5), LocalDate(1989, 5, 15)
                     )
@@ -96,7 +96,7 @@ class SetChangeTest {
 
         val deepChanged = original.change(
             SetChange(
-                TestMarykModel { embeddedValues { marykModel { set::ref } } }.change(
+                TestMarykModel.ref { embeddedValues { marykModel { set } } }.change(
                     addValues = setOf(
                         LocalDate(1881, 12, 5), LocalDate(1889, 5, 15)
                     )

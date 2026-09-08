@@ -32,6 +32,7 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<MapReference<K, V, CX>>,
     IsMapDefinition<K, V, CX> by definition,
     IsChangeableValueDefinition<Map<K, V>, CX>,
     IsMapDefinitionWrapper<K, V, TO, CX, DO> {

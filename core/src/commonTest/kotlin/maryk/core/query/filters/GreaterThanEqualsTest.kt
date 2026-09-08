@@ -12,8 +12,8 @@ import kotlin.test.expect
 
 class GreaterThanEqualsTest {
     private val greaterThanEquals = GreaterThanEquals(
-        TestMarykModel { string::ref } with "test",
-        TestMarykModel { int::ref } with 6
+        TestMarykModel.ref { string } with "test",
+        TestMarykModel.ref { int } with 6
     )
 
     private val context = RequestContext(

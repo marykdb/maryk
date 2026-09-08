@@ -88,9 +88,9 @@ internal class RootDataModelTest {
         }
     }
 
-    private val subModelRef = TestMarykModel { embeddedValues { value::ref } }
-    private val mapRef = TestMarykModel { map::ref }
-    private val mapKeyRef = TestMarykModel { map refToKey LocalTime(12, 33, 44) }
+    private val subModelRef = TestMarykModel.ref { embeddedValues { value } }
+    private val mapRef = TestMarykModel.ref { map }
+    private val mapKeyRef = TestMarykModel.ref { map key LocalTime(12, 33, 44) }
 
     @Test
     fun testPropertyReferenceByName() {

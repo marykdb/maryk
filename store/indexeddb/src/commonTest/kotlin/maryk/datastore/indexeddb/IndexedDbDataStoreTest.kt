@@ -787,7 +787,7 @@ class IndexedDbDataStoreTest {
             val updates = dataStore.execute(
                 SimpleMarykModel.scanUpdates(
                     fromVersion = delete.version,
-                    where = Equals(SimpleMarykModel { value::ref } with "ha filtered hard-delete"),
+                    where = Equals(SimpleMarykModel.ref { value } with "ha filtered hard-delete"),
                     limit = 1u,
                 )
             )
@@ -822,7 +822,7 @@ class IndexedDbDataStoreTest {
             val filteredUpdates = dataStore.execute(
                 SimpleMarykModel.scanUpdates(
                     fromVersion = delete.version,
-                    where = Equals(SimpleMarykModel { value::ref } with "ha tracked hard-delete"),
+                    where = Equals(SimpleMarykModel.ref { value } with "ha tracked hard-delete"),
                     orderedKeys = listOf(add.key),
                     limit = 1u,
                 )
@@ -855,7 +855,7 @@ class IndexedDbDataStoreTest {
                 val orderedUpdates = indexedDataStore.execute(
                     AnyValueSetIndexModel.scanUpdates(
                         fromVersion = indexedDelete.version,
-                        order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                        order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                         orderedKeys = listOf(indexedAdd.key),
                         limit = 1u,
                     )
@@ -1067,7 +1067,7 @@ class IndexedDbDataStoreTest {
             val add = source.execute(SimpleMarykModel.add(initialValues))
             val addStatus = assertStatusIs<AddSuccess<SimpleMarykModel>>(add.statuses.single())
             val changedValue = "haha-changed"
-            val change = Change(SimpleMarykModel { value::ref } with changedValue)
+            val change = Change(SimpleMarykModel.ref { value } with changedValue)
             val changeResponse = source.execute(SimpleMarykModel.change(addStatus.key.change(change)))
             val changeStatus = assertStatusIs<ChangeSuccess<SimpleMarykModel>>(changeResponse.statuses.single())
             val deleteResponse = source.execute(SimpleMarykModel.delete(addStatus.key))
@@ -1176,7 +1176,7 @@ class IndexedDbDataStoreTest {
             assertIs<ChangeSuccess<SimpleMarykModel>>(
                 dataStore.execute(
                     SimpleMarykModel.change(
-                        add.key.change(Change(SimpleMarykModel { value::ref } with "haha-marker-changed"))
+                        add.key.change(Change(SimpleMarykModel.ref { value } with "haha-marker-changed"))
                     )
                 ).statuses.single()
             )
@@ -1249,7 +1249,7 @@ class IndexedDbDataStoreTest {
             assertIs<ChangeSuccess<SimpleMarykModel>>(
                 dataStore.execute(
                     SimpleMarykModel.change(
-                        add.key.change(Change(SimpleMarykModel { value::ref } with "haha-scan-marker-changed"))
+                        add.key.change(Change(SimpleMarykModel.ref { value } with "haha-scan-marker-changed"))
                     )
                 ).statuses.single()
             )
@@ -1727,10 +1727,10 @@ class IndexedDbDataStoreTest {
         val keys = add.statuses.map { status -> assertIs<AddSuccess<ModelV2>>(status).key }
         val change = dataStore.execute(
             ModelV2.change(
-                keys[0].change(Change(ModelV2 { newNumber::ref } with 40)),
-                keys[1].change(Change(ModelV2 { newNumber::ref } with 2000)),
-                keys[2].change(Change(ModelV2 { newNumber::ref } with 500)),
-                keys[3].change(Change(ModelV2 { newNumber::ref } with 990)),
+                keys[0].change(Change(ModelV2.ref { newNumber } with 40)),
+                keys[1].change(Change(ModelV2.ref { newNumber } with 2000)),
+                keys[2].change(Change(ModelV2.ref { newNumber } with 500)),
+                keys[3].change(Change(ModelV2.ref { newNumber } with 990)),
             )
         )
         change.statuses.forEach { status -> assertIs<ChangeSuccess<ModelV2>>(status) }
@@ -1743,11 +1743,11 @@ class IndexedDbDataStoreTest {
         )
         try {
             val currentScan = dataStore.execute(
-                ModelV2ExtraIndex.scan(order = ModelV2ExtraIndex { newNumber::ref }.ascending())
+                ModelV2ExtraIndex.scan(order = ModelV2ExtraIndex.ref { newNumber }.ascending())
             )
             val historicScan = dataStore.execute(
                 ModelV2ExtraIndex.scan(
-                    order = ModelV2ExtraIndex { newNumber::ref }.descending(),
+                    order = ModelV2ExtraIndex.ref { newNumber }.descending(),
                     toVersion = ULong.MAX_VALUE,
                 )
             )
@@ -2378,7 +2378,7 @@ class IndexedDbDataStoreTest {
                         SensitiveRecord.add(SensitiveRecord(Bytes(keyBytes), "public", addSecret))
                     ).statuses.single()
                 )
-                val change = Change(SensitiveRecord { secret::ref } with changedSecret)
+                val change = Change(SensitiveRecord.ref { secret } with changedSecret)
                 val changeStatus = assertIs<ChangeSuccess<SensitiveRecord>>(
                     writer.execute(SensitiveRecord.change(addStatus.key.change(change))).statuses.single()
                 )
@@ -2430,7 +2430,7 @@ class IndexedDbDataStoreTest {
         val key = SensitiveRecord.key(keyBytes)
         val version = 123uL
         val secretValue = "legacy-durable-secret"
-        val change = Change(SensitiveRecord { secret::ref } with secretValue)
+        val change = Change(SensitiveRecord.ref { secret } with secretValue)
         val plainChangePayload = encodeVersionedChange(
             SensitiveRecord,
             DataObjectVersionedChange(
@@ -2819,7 +2819,7 @@ class IndexedDbDataStoreTest {
 
             val scan = dataStore.execute(
                 Person.scan(
-                    order = Orders(Person { surname::ref }.ascending(), Person { firstName::ref }.ascending()),
+                    order = Orders(Person.ref { surname }.ascending(), Person.ref { firstName }.ascending()),
                     limit = 2u,
                 )
             )

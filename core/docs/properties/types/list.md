@@ -54,7 +54,7 @@ The current value can be compared against `valueToCompare`
 
 ```kotlin
 ListChange(
-    Model { listOfStrings::ref }.change(
+    Model.ref { listOfStrings }.change(
         addValuesToEnd = listOf("three", "four"),
         deleteValues = listOf("one", "two")
     )
@@ -66,7 +66,7 @@ ListChange(
 Kotlin:
 ```kotlin
 ListChange(
-    Model { listOfStrings::ref }.change(
+    Model.ref { listOfStrings }.change(
         addValuesAtIndex = mapOf(
             0 to "three", 
             0 to "four"
@@ -78,7 +78,7 @@ ListChange(
 
 ## Indexing list values
 
-List references like `refAt(index)` and `refToAny()` (`list.*`) can be used in filters and changes.
+List references like `at(index)` and `any()` (`list.*`) can be used in filters and changes.
 They are not indexable in `RootDataModel` index definitions.
 
 ## Storage Byte representation

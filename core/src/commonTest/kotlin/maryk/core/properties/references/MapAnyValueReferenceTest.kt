@@ -13,13 +13,13 @@ import kotlin.test.assertSame
 import kotlin.test.expect
 
 class MapAnyValueReferenceTest {
-    private val anyReference = TestMarykModel { map.refToAnyValue() }
-    private val subAnyReference = TestMarykModel { embeddedValues { marykModel { map.refToAnyValue() } } }
+    private val anyReference = TestMarykModel.ref { map.anyValue() }
+    private val subAnyReference = TestMarykModel.ref { embeddedValues { marykModel { map.anyValue() } } }
 
     @Test
     fun cacheReferenceTest() {
-        assertSame(anyReference, TestMarykModel { map.refToAnyValue() })
-        assertSame(subAnyReference, TestMarykModel { embeddedValues { marykModel { map.refToAnyValue() } } })
+        assertSame(anyReference, TestMarykModel.ref { map.anyValue() })
+        assertSame(subAnyReference, TestMarykModel.ref { embeddedValues { marykModel { map.anyValue() } } })
     }
 
     @Test

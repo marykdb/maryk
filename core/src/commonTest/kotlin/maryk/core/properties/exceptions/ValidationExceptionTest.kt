@@ -10,7 +10,7 @@ import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 
 class ValidationExceptionTest {
-    private val ref = SimpleMarykModel { value::ref }
+    private val ref = SimpleMarykModel.ref { value }
 
     private val validationUmbrellaException = ValidationUmbrellaException(
         null, listOf(

@@ -12,14 +12,14 @@ import kotlin.test.assertEquals
 import kotlin.test.expect
 
 class ListItemReferenceTest {
-    private val reference = TestMarykModel { listOfString refAt 5u }
-    private val subReference = TestMarykModel { embeddedValues { marykModel { listOfString refAt 22u } } }
+    private val reference = TestMarykModel.ref { listOfString at 5u }
+    private val subReference = TestMarykModel.ref { embeddedValues { marykModel { listOfString at 22u } } }
     val cache = WriteCache()
 
     @Test
     fun sameListSelectionCreatesAnEqualReference() {
-        assertEquals(reference, TestMarykModel { listOfString refAt 5u })
-        assertEquals(subReference, TestMarykModel { embeddedValues { marykModel { listOfString refAt 22u } } })
+        assertEquals(reference, TestMarykModel.ref { listOfString at 5u })
+        assertEquals(subReference, TestMarykModel.ref { embeddedValues { marykModel { listOfString at 22u } } })
     }
 
     @Test
@@ -35,7 +35,7 @@ class ListItemReferenceTest {
 
     @Test
     fun oversizedIndexDoesNotWrapWhenResolvingList() {
-        val highReference = TestMarykModel { listOfString refAt UInt.MAX_VALUE }
+        val highReference = TestMarykModel.ref { listOfString at UInt.MAX_VALUE }
         val list = listOf("a")
 
         assertFailsWith<UnexpectedValueException> {

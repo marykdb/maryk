@@ -238,7 +238,7 @@ class MultipleTest {
             FanoutModel.family.ref(),
             AnyOf(
                 FanoutModel.family.ref(),
-                FanoutModel { given.refToAny() }
+                FanoutModel.ref { given.any() }
             )
         )
         val values = FanoutModel.create {
@@ -292,8 +292,8 @@ class MultipleTest {
     fun streamedIndexEntriesMatchCartesianFanoutOrderAndLayout() {
         val index = Multiple(
             FanoutModel.family.ref(),
-            AnyOf(FanoutModel.family.ref(), FanoutModel { given.refToAny() }),
-            FanoutModel { given.refToAny() },
+            AnyOf(FanoutModel.family.ref(), FanoutModel.ref { given.any() }),
+            FanoutModel.ref { given.any() },
         )
         val values = FanoutModel.create {
             family with "abc"
@@ -337,7 +337,7 @@ class MultipleTest {
 
     @Test
     fun streamedMultipleEntriesStayEmptyWhenOneFanoutReferenceIsMissing() {
-        val index = Multiple(FanoutModel.family.ref(), FanoutModel { given.refToAny() })
+        val index = Multiple(FanoutModel.family.ref(), FanoutModel.ref { given.any() })
         val values = FanoutModel.create {
             family with "abc"
         }
@@ -352,8 +352,8 @@ class MultipleTest {
     @Test
     fun streamedMultipleEntriesSupportHighFanoutWithoutCollectingEntries() {
         val index = Multiple(
-            FanoutModel { given.refToAny() },
-            FanoutModel { given.refToAny() },
+            FanoutModel.ref { given.any() },
+            FanoutModel.ref { given.any() },
         )
         val values = FanoutModel.create {
             family with "unused"
@@ -372,7 +372,7 @@ class MultipleTest {
 
     @Test
     fun streamedMapAnyKeyEntriesFanOutOverEveryStoredKey() {
-        val index = TestMarykModel { map.refToAnyKey() }
+        val index = TestMarykModel.ref { map.anyKey() }
         val values = TestMarykModel.create(setDefaults = false) {
             map with linkedMapOf(
                 LocalTime(9, 0) to "first",
@@ -430,8 +430,8 @@ class MultipleTest {
 
     @Test
     fun streamedMapAndSetReferencesUseGetterCallbacksWithoutCollectionReads() {
-        val mapIndex = TestMarykModel { map.refToAnyKey() }
-        val setIndex = FanoutModel { given.refToAny() }
+        val mapIndex = TestMarykModel.ref { map.anyKey() }
+        val setIndex = FanoutModel.ref { given.any() }
         val index = Multiple(mapIndex, setIndex, setIndex)
         val values = StreamingCollectionsValuesGetter(
             mapReference = mapIndex.parentReference!!,

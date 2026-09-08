@@ -28,7 +28,7 @@ class UpdatesResponseTest {
             AdditionUpdate(key, 1234uL, 1233uL, 0, false, testMarykModelObject),
             ChangeUpdate(key, 1235uL, 4, listOf(
                 Change(
-                    TestMarykModel { string::ref } with "ha 2"
+                    TestMarykModel.ref { string } with "ha 2"
                 )
             )),
             RemovalUpdate(key, 1236uL, SoftDelete)

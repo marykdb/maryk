@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.string
 object AnyValueSetIndexModel : RootDataModel<AnyValueSetIndexModel>(
     indexes = {
         listOf(
-            AnyValueSetIndexModel { setValues.refToAny() }
+            AnyValueSetIndexModel.ref { setValues.any() }
         )
     }
 ) {

@@ -28,6 +28,10 @@ abstract class TypedObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI : Is
 
     abstract override operator fun invoke(values: ObjectValues<DO, DM>): DO
 
+    @Deprecated(
+        message = "Use ref { property } to select a property reference",
+        replaceWith = ReplaceWith("ref(parent, referenceGetter)", "maryk.core.properties.references.dsl.ref"),
+    )
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(
         parent: AnyOutPropertyReference? = null,
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R

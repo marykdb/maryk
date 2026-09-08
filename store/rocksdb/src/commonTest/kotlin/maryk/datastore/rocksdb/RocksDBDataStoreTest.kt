@@ -17,7 +17,7 @@ import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.change
-import maryk.core.properties.references.dsl.refAt
+import maryk.core.properties.references.dsl.at
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
 import maryk.datastore.rocksdb.processors.helpers.createIndexKey
@@ -255,13 +255,13 @@ class RocksDBDataStoreTest {
                 dataStore.execute(
                     TestMarykModel.change(
                         addStatus.key.change(
-                            Change(TestMarykModel { listOfString.refAt(0u) } with null)
+                            Change(TestMarykModel.ref { listOfString.at(0u) } with null)
                         )
                     )
                 ).statuses.single()
             )
 
-            val shiftedReference = TestMarykModel { listOfString.refAt(0u) }.toStorageByteArray()
+            val shiftedReference = TestMarykModel.ref { listOfString.at(0u) }.toStorageByteArray()
             val shiftedKey = addStatus.key.bytes + shiftedReference
             val columnFamilies = dataStore.getColumnFamilies(TestMarykModel) as HistoricTableColumnFamilies
             val currentBytes = dataStore.db.get(columnFamilies.table, shiftedKey)!!
@@ -316,7 +316,7 @@ class RocksDBDataStoreTest {
                     TestMarykModel.change(
                         added.key.change(
                             ListChange(
-                                TestMarykModel { listOfString::ref }.change(
+                                TestMarykModel.ref { listOfString }.change(
                                     addValuesAtIndex = mapOf(0u to "first"),
                                 )
                             )
@@ -622,7 +622,7 @@ class RocksDBDataStoreTest {
             dataModelsById = dataModelsForTests,
         )
         val key = Key<UniqueModel>(ByteArray(16) { 3 })
-        val uniqueDefinitionMarker = byteArrayOf(0) + UniqueModel { email::ref }.toStorageByteArray()
+        val uniqueDefinitionMarker = byteArrayOf(0) + UniqueModel.ref { email }.toStorageByteArray()
         try {
             dataStore.execute(
                 UniqueModel.add(key to UniqueModel.create { email with "markerless@test.com" })

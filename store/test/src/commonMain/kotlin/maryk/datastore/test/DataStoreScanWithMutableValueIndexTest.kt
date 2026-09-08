@@ -67,7 +67,7 @@ class DataStoreScanWithMutableValueIndexTest(
     private suspend fun executeScanOnAscendingIndexRequest() {
         val changeResult = dataStore.execute(
             ModelV2ExtraIndex.change(
-                keys[2].change(Change(ModelV2ExtraIndex { newNumber::ref } with 99))
+                keys[2].change(Change(ModelV2ExtraIndex.ref { newNumber } with 99))
             )
         )
 
@@ -79,7 +79,7 @@ class DataStoreScanWithMutableValueIndexTest(
         }
 
         val scanResponse = dataStore.execute(
-            ModelV2ExtraIndex.scan(startKey = keys[1], order = ModelV2ExtraIndex { newNumber::ref }.ascending())
+            ModelV2ExtraIndex.scan(startKey = keys[1], order = ModelV2ExtraIndex.ref { newNumber }.ascending())
         )
 
         expect(3) { scanResponse.values.size }
@@ -104,7 +104,7 @@ class DataStoreScanWithMutableValueIndexTest(
             val historicScanResponse = dataStore.execute(
                 ModelV2ExtraIndex.scan(
                     startKey = keys[1],
-                    order = ModelV2ExtraIndex { newNumber::ref }.ascending(),
+                    order = ModelV2ExtraIndex.ref { newNumber }.ascending(),
                     toVersion = versionAfterChange - 1uL // Before the change
                 )
             )
@@ -125,7 +125,7 @@ class DataStoreScanWithMutableValueIndexTest(
 
     private suspend fun executeScanOnDescendingIndexRequest() {
         val scanResponse = dataStore.execute(
-            ModelV2ExtraIndex.scan(startKey = keys[1], order = ModelV2ExtraIndex { newNumber::ref }.descending())
+            ModelV2ExtraIndex.scan(startKey = keys[1], order = ModelV2ExtraIndex.ref { newNumber }.descending())
         )
 
         expect(2) { scanResponse.values.size }
@@ -146,7 +146,7 @@ class DataStoreScanWithMutableValueIndexTest(
 
     private suspend fun executeScanOnDescendingIndexNoStartKeyRequest() {
         val scanResponse = dataStore.execute(
-            ModelV2ExtraIndex.scan(order = ModelV2ExtraIndex { newNumber::ref }.descending())
+            ModelV2ExtraIndex.scan(order = ModelV2ExtraIndex.ref { newNumber }.descending())
         )
 
         expect(4) { scanResponse.values.size }
@@ -172,7 +172,7 @@ class DataStoreScanWithMutableValueIndexTest(
     }
 
     private suspend fun resumeCursorAfterBoundaryIndexValueChanges() {
-        val order = ModelV2ExtraIndex { newNumber::ref }.ascending()
+        val order = ModelV2ExtraIndex.ref { newNumber }.ascending()
         val firstPage = dataStore.execute(
             ModelV2ExtraIndex.scan(order = order, limit = 2u)
         )
@@ -182,7 +182,7 @@ class DataStoreScanWithMutableValueIndexTest(
 
         dataStore.execute(
             ModelV2ExtraIndex.change(
-                keys[1].change(Change(ModelV2ExtraIndex { newNumber::ref } with 100))
+                keys[1].change(Change(ModelV2ExtraIndex.ref { newNumber } with 100))
             )
         ).statuses.forEach {
             assertStatusIs<ChangeSuccess<*>>(it)

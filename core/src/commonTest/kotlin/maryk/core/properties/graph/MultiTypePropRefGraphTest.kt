@@ -33,9 +33,9 @@ class MultiTypePropRefGraphTest {
 
     @Test
     fun containsReference() {
-        assertTrue(graph.contains(ComplexModel { multi.withType(MarykTypeEnum.T3) { value::ref } }))
-        assertTrue(graph.contains(ComplexModel { multi.withType(MarykTypeEnum.T3) { model { marykModel::ref } } }))
-        assertFalse(graph.contains(ComplexModel { multi.withType(MarykTypeEnum.T3) { model { value::ref } } }))
+        assertTrue(graph.contains(ComplexModel.ref { multi.withType(MarykTypeEnum.T3) { value } }))
+        assertTrue(graph.contains(ComplexModel.ref { multi.withType(MarykTypeEnum.T3) { model { marykModel } } }))
+        assertFalse(graph.contains(ComplexModel.ref { multi.withType(MarykTypeEnum.T3) { model { value } } }))
     }
 
     @Test

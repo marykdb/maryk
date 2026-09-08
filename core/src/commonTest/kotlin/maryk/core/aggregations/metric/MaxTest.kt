@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class MaxTest {
     private val max = Max(
-        TestMarykModel { int::ref }
+        TestMarykModel.ref { int }
     )
 
     private val context = RequestContext(

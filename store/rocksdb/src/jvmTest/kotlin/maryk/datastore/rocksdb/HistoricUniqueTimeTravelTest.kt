@@ -178,7 +178,7 @@ class HistoricUniqueTimeTravelTest {
 
             val startStatus = addStatuses.maxWith { left, right -> left.key.bytes compareTo right.key.bytes }
             val columnFamilies = store.getColumnFamilies(EmptyIndexedStringModel)
-            val reference = EmptyIndexedStringModel { value::ref }.toStorageByteArray()
+            val reference = EmptyIndexedStringModel.ref { value }.toStorageByteArray()
             val valueKey = startStatus.key.bytes + reference
             val current = store.db.get(columnFamilies.table, valueKey)!!
             store.db.put(columnFamilies.table, valueKey, current + byteArrayOf(1))
@@ -187,7 +187,7 @@ class HistoricUniqueTimeTravelTest {
                 EmptyIndexedStringModel.scan(
                     startKey = startStatus.key,
                     toVersion = addStatuses.maxOf { it.version },
-                    order = EmptyIndexedStringModel { value::ref }.ascending()
+                    order = EmptyIndexedStringModel.ref { value }.ascending()
                 )
             )
 

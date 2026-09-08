@@ -11,8 +11,8 @@ import kotlin.test.expect
 
 class ContextualPropertyReferenceDefinitionTest {
     private val refsToTest = mapOf(
-        TestMarykModel { string::ref } to "string",
-        TestMarykModel { embeddedValues { value::ref } } to "embeddedValues.value"
+        TestMarykModel.ref { string } to "string",
+        TestMarykModel.ref { embeddedValues { value } } to "embeddedValues.value"
     )
 
     private val def = ContextualPropertyReferenceDefinition<RequestContext>(

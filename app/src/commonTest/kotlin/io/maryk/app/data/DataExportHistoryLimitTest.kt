@@ -27,7 +27,7 @@ class DataExportHistoryLimitTest {
             repeat(2) { index ->
                 store.execute(
                     SimpleMarykModel.change(
-                        key.change(Change(SimpleMarykModel { value::ref } with "ha change $index"))
+                        key.change(Change(SimpleMarykModel.ref { value } with "ha change $index"))
                     )
                 )
             }

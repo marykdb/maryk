@@ -68,7 +68,7 @@ class UniqueTest(
         addResponse.statuses.forEach { status ->
             val fail = assertStatusIs<ValidationFail<UniqueModel>>(status)
             val alreadyExists = assertIs<AlreadyExistsException>(fail.exceptions.first())
-            expect(UniqueModel { email::ref }) { alreadyExists.reference }
+            expect(UniqueModel.ref { email }) { alreadyExists.reference }
             expect(keys[0]) { alreadyExists.key }
         }
 
@@ -86,7 +86,7 @@ class UniqueTest(
             UniqueModel.change(
                 keys[1].change(
                     Change(
-                        UniqueModel { email::ref } with "test@test.com"
+                        UniqueModel.ref { email } with "test@test.com"
                     )
                 )
             )
@@ -94,7 +94,7 @@ class UniqueTest(
         changeResponse.statuses.forEach { status ->
             val fail = assertStatusIs<ValidationFail<UniqueModel>>(status)
             val alreadyExists = assertIs<AlreadyExistsException>(fail.exceptions.first())
-            expect(UniqueModel { email::ref }) { alreadyExists.reference }
+            expect(UniqueModel.ref { email }) { alreadyExists.reference }
             expect(keys[0]) { alreadyExists.key }
         }
 
@@ -112,7 +112,7 @@ class UniqueTest(
             UniqueModel.change(
                 keys[0].change(
                     Change(
-                        UniqueModel { email::ref } with "new@test.com"
+                        UniqueModel.ref { email } with "new@test.com"
                     )
                 )
             )
@@ -142,7 +142,7 @@ class UniqueTest(
 
         val fail = assertStatusIs<ValidationFail<UniqueModel>>(addResponse.statuses[1])
         val alreadyExists = assertIs<AlreadyExistsException>(fail.exceptions.first())
-        expect(UniqueModel { email::ref }) { alreadyExists.reference }
+        expect(UniqueModel.ref { email }) { alreadyExists.reference }
         expect(firstStatus.key) { alreadyExists.key }
     }
 
@@ -151,7 +151,7 @@ class UniqueTest(
             UniqueModel.change(
                 keys[1].change(
                     Change(
-                        UniqueModel { email::ref } with "test@test.com"
+                        UniqueModel.ref { email } with "test@test.com"
                     )
                 )
             )

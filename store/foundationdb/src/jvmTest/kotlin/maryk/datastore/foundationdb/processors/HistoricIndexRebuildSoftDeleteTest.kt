@@ -54,7 +54,7 @@ class HistoricIndexRebuildSoftDeleteTest {
                 ).statuses.single()
             )
 
-            val indexable = TestMarykModel { int::ref }
+            val indexable = TestMarykModel.ref { int }
             val tableDirs = assertIs<HistoricTableDirectories>(store.getTableDirs(TestMarykModel))
             val keyRow = packKey(tableDirs.keysPrefix, addStatus.key.bytes)
 
@@ -68,7 +68,7 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val currentScan = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5)
+                    where = Equals(TestMarykModel.ref { int } with 5)
                 )
             )
             assertEquals(0, currentScan.values.size)
@@ -103,11 +103,11 @@ class HistoricIndexRebuildSoftDeleteTest {
                 ).statuses.single()
             )
 
-            val indexable = TestMarykModel { int::ref }
+            val indexable = TestMarykModel.ref { int }
             val tableDirs = assertIs<HistoricTableDirectories>(store.getTableDirs(TestMarykModel))
             val valueKey = packKey(
                 tableDirs.tablePrefix,
-                addStatus.key.bytes + TestMarykModel { int::ref }.toStorageByteArray()
+                addStatus.key.bytes + TestMarykModel.ref { int }.toStorageByteArray()
             )
 
             store.runTransaction { tr ->
@@ -120,14 +120,14 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val currentScan = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5)
+                    where = Equals(TestMarykModel.ref { int } with 5)
                 )
             )
             assertEquals(0, currentScan.values.size)
 
             val historicScan = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = addStatus.version,
                 )
             )
@@ -162,7 +162,7 @@ class HistoricIndexRebuildSoftDeleteTest {
                 ).statuses.single()
             )
 
-            val indexable = TestMarykModel { int::ref }
+            val indexable = TestMarykModel.ref { int }
             val tableDirs = assertIs<HistoricTableDirectories>(store.getTableDirs(TestMarykModel))
             val latestKey = packKey(tableDirs.tablePrefix, addStatus.key.bytes)
 
@@ -176,7 +176,7 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val currentScan = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5)
+                    where = Equals(TestMarykModel.ref { int } with 5)
                 )
             )
             assertEquals(0, currentScan.values.size)
@@ -216,7 +216,7 @@ class HistoricIndexRebuildSoftDeleteTest {
                 ).statuses.single()
             )
 
-            val indexable = TestMarykModel { int::ref }
+            val indexable = TestMarykModel.ref { int }
             val tableDirs = assertIs<HistoricTableDirectories>(store.getTableDirs(TestMarykModel))
 
             deleteCompleteIndexContents(store.tc, tableDirs, indexable)
@@ -224,7 +224,7 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val postDelete = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = deleteStatus.version
                 )
             )
@@ -232,7 +232,7 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val preDelete = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = addStatus.version
                 )
             )
@@ -266,13 +266,13 @@ class HistoricIndexRebuildSoftDeleteTest {
                 assertIs<ChangeSuccess<TestMarykModel>>(
                     store.execute(
                         TestMarykModel.change(
-                            add.key.change(Change(TestMarykModel { int::ref } with ((value % 5) + 2)))
+                            add.key.change(Change(TestMarykModel.ref { int } with ((value % 5) + 2)))
                         )
                     ).statuses.single()
                 )
             }
 
-            val indexable = TestMarykModel { int::ref }
+            val indexable = TestMarykModel.ref { int }
             val tableDirs = assertIs<HistoricTableDirectories>(store.getTableDirs(TestMarykModel))
             deleteCompleteIndexContents(store.tc, tableDirs, indexable)
             walkDataRecordsAndFillIndex(
@@ -284,7 +284,7 @@ class HistoricIndexRebuildSoftDeleteTest {
             )
 
             assertEquals(1, store.execute(
-                TestMarykModel.scan(where = Equals(TestMarykModel { int::ref } with 6))
+                TestMarykModel.scan(where = Equals(TestMarykModel.ref { int } with 6))
             ).values.size)
             val scratchPrefix = packKey(tableDirs.modelPrefix, modelIndexRebuildScratchKey)
             assertTrue(store.runTransaction { transaction ->

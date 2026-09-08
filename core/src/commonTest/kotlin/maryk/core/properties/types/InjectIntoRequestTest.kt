@@ -8,6 +8,7 @@ import maryk.core.models.asValues
 import maryk.core.models.graph
 import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.references.dsl.ref
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
@@ -35,8 +36,8 @@ private val context = RequestContext(mapOf(
 class InjectIntoRequestTest {
     private val getRequestWithInjectable = GetRequest.create(context = context) {
         from with SimpleMarykModel
-        keys with Inject("keysToInject", GetRequest { keys::ref })
-        where with Exists(SimpleMarykModel { value::ref })
+        keys with Inject("keysToInject", GetRequest.ref { keys })
+        where with Exists(SimpleMarykModel.ref { value })
         toVersion with 333uL
         filterSoftDeleted with true
         select with SimpleMarykModel.graph {
@@ -50,7 +51,7 @@ class InjectIntoRequestTest {
 
     @Test
     fun testInjectInValuesGetRequest() {
-        val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel) { references } } }
+        val requestRef = ValuesResponse.ref { values.atAny { values.withModel(ReferencesModel) { references } } }
 
         val getRequest = GetRequest.create(context = context) {
             from with ReferencesModel

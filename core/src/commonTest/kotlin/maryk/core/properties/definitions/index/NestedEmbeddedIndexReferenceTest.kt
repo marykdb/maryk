@@ -28,12 +28,12 @@ private object InfoModel : DataModel<InfoModel>() {
 private object NestedIndexModel : RootDataModel<NestedIndexModel>(
     indexes = {
         listOf(
-            NestedIndexModel { info { name { firstNames::ref } } },
-            NestedIndexModel { info { birthDate::ref } },
-            NestedIndexModel { info { name { familyName { lastName::ref } } } },
-            NestedIndexModel { info { name { familyName { prefix::ref } } } },
-            NestedIndexModel { info { InfoModel.name { NameModel.familyName { FamilyNameModel.lastName::ref } } } },
-            NestedIndexModel { info { InfoModel.name { NameModel.familyName { FamilyNameModel.prefix::ref } } } },
+            NestedIndexModel.ref { info { name { firstNames } } },
+            NestedIndexModel.ref { info { birthDate } },
+            NestedIndexModel.ref { info { name { familyName { lastName } } } },
+            NestedIndexModel.ref { info { name { familyName { prefix } } } },
+            NestedIndexModel.ref { info { InfoModel.name { NameModel.familyName { FamilyNameModel.lastName } } } },
+            NestedIndexModel.ref { info { InfoModel.name { NameModel.familyName { FamilyNameModel.prefix } } } },
         )
     },
     minimumKeyScanByteRange = 0u,
@@ -61,7 +61,7 @@ private object CacheCollisionInfoModelB : DataModel<CacheCollisionInfoModelB>() 
 private object CacheCollisionRootModelA : RootDataModel<CacheCollisionRootModelA>(
     indexes = {
         listOf(
-            CacheCollisionRootModelA { info { name { familyName { lastName::ref } } } }
+            CacheCollisionRootModelA.ref { info { name { familyName { lastName } } } }
         )
     },
     minimumKeyScanByteRange = 0u,
@@ -72,7 +72,7 @@ private object CacheCollisionRootModelA : RootDataModel<CacheCollisionRootModelA
 private object CacheCollisionRootModelB : RootDataModel<CacheCollisionRootModelB>(
     indexes = {
         listOf(
-            CacheCollisionRootModelB { info { name { familyName { lastName::ref } } } }
+            CacheCollisionRootModelB.ref { info { name { familyName { lastName } } } }
         )
     },
     minimumKeyScanByteRange = 0u,
@@ -96,10 +96,10 @@ class NestedEmbeddedIndexReferenceTest {
 
     @Test
     fun resolvesDeepEmbeddedReferences() {
-        assertEquals("Mila Anne", values[NestedIndexModel { info { name { firstNames::ref } } }])
-        assertEquals("1980-01-01", values[NestedIndexModel { info { birthDate::ref } }])
-        assertEquals("Loon", values[NestedIndexModel { info { name { familyName { lastName::ref } } } }])
-        assertEquals("van", values[NestedIndexModel { info { name { familyName { prefix::ref } } } }])
+        assertEquals("Mila Anne", values[NestedIndexModel.ref { info { name { firstNames } } }])
+        assertEquals("1980-01-01", values[NestedIndexModel.ref { info { birthDate } }])
+        assertEquals("Loon", values[NestedIndexModel.ref { info { name { familyName { lastName } } } }])
+        assertEquals("van", values[NestedIndexModel.ref { info { name { familyName { prefix } } } }])
     }
 
     @Test
@@ -115,27 +115,27 @@ class NestedEmbeddedIndexReferenceTest {
 
         assertContentEquals(
             firstNamesIndex.toStorageByteArraysForIndex(values, rootKey).single(),
-            NestedIndexModel { info { name { firstNames::ref } } }.toStorageByteArraysForIndex(values, rootKey).single()
+            NestedIndexModel.ref { info { name { firstNames } } }.toStorageByteArraysForIndex(values, rootKey).single()
         )
         assertContentEquals(
             birthDateIndex.toStorageByteArraysForIndex(values, rootKey).single(),
-            NestedIndexModel { info { birthDate::ref } }.toStorageByteArraysForIndex(values, rootKey).single()
+            NestedIndexModel.ref { info { birthDate } }.toStorageByteArraysForIndex(values, rootKey).single()
         )
         assertContentEquals(
             familyNameIndex.toStorageByteArraysForIndex(values, rootKey).single(),
-            NestedIndexModel { info { name { familyName { lastName::ref } } } }.toStorageByteArraysForIndex(values, rootKey).single()
+            NestedIndexModel.ref { info { name { familyName { lastName } } } }.toStorageByteArraysForIndex(values, rootKey).single()
         )
         assertContentEquals(
             prefixIndex.toStorageByteArraysForIndex(values, rootKey).single(),
-            NestedIndexModel { info { name { familyName { prefix::ref } } } }.toStorageByteArraysForIndex(values, rootKey).single()
+            NestedIndexModel.ref { info { name { familyName { prefix } } } }.toStorageByteArraysForIndex(values, rootKey).single()
         )
         assertContentEquals(
             explicitFamilyNameIndex.toStorageByteArraysForIndex(values, rootKey).single(),
-            NestedIndexModel {
+            NestedIndexModel.ref {
                 info {
                     InfoModel.name {
                         NameModel.familyName {
-                            FamilyNameModel.lastName::ref
+                            FamilyNameModel.lastName
                         }
                     }
                 }
@@ -143,11 +143,11 @@ class NestedEmbeddedIndexReferenceTest {
         )
         assertContentEquals(
             explicitPrefixIndex.toStorageByteArraysForIndex(values, rootKey).single(),
-            NestedIndexModel {
+            NestedIndexModel.ref {
                 info {
                     InfoModel.name {
                         NameModel.familyName {
-                            FamilyNameModel.prefix::ref
+                            FamilyNameModel.prefix
                         }
                     }
                 }
@@ -157,7 +157,7 @@ class NestedEmbeddedIndexReferenceTest {
 
     @Test
     fun resolvesSharedEmbeddedReferencesAcrossDifferentParentLayouts() {
-        CacheCollisionRootModelA { info { name { familyName { lastName::ref } } } }
+        CacheCollisionRootModelA.ref { info { name { familyName { lastName } } } }
 
         val values = CacheCollisionRootModelB.create {
             info with {
@@ -172,7 +172,7 @@ class NestedEmbeddedIndexReferenceTest {
 
         assertEquals(
             "Different Parent Layout",
-            values[CacheCollisionRootModelB { info { name { familyName { lastName::ref } } } }]
+            values[CacheCollisionRootModelB.ref { info { name { familyName { lastName } } } }]
         )
     }
 }

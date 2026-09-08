@@ -217,7 +217,7 @@ private fun SimpleTypedValueReference<*, *, *>.generateKotlin(
             append(segment.kotlinIdentifier()).append(" { ")
         }
         append(segments.last().kotlinIdentifier())
-            .append(" simpleRefAtType ")
+            .append(" simpleAtType ")
             .append(typeEnumName)
             .append('.')
             .append(typeName)
@@ -226,5 +226,5 @@ private fun SimpleTypedValueReference<*, *, *>.generateKotlin(
         }
     }
 
-    return "${modelName.kotlinIdentifier()} { $expression }"
+    return "${modelName.kotlinIdentifier()}.ref { $expression }"
 }

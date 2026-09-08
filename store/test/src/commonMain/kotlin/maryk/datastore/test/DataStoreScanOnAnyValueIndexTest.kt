@@ -153,7 +153,7 @@ class DataStoreScanOnAnyValueIndexTest(
     private suspend fun executeScanOnMapRefToAnyIndexRequest() {
         val scanResponse = dataStore.execute(
             AnyValueMapIndexModel.scan(
-                order = AnyValueMapIndexModel { mapValues.refToAnyKey() }.ascending()
+                order = AnyValueMapIndexModel.ref { mapValues.anyKey() }.ascending()
             )
         )
 
@@ -166,7 +166,7 @@ class DataStoreScanOnAnyValueIndexTest(
     private suspend fun executeScanOnIncMapRefToAnyIndexRequest() {
         val scanResponse = dataStore.execute(
             AnyValueIncMapIndexModel.scan(
-                order = AnyValueIncMapIndexModel { incMapValues.refToAnyKey() }.descending()
+                order = AnyValueIncMapIndexModel.ref { incMapValues.anyKey() }.descending()
             )
         )
 
@@ -179,7 +179,7 @@ class DataStoreScanOnAnyValueIndexTest(
     private suspend fun executeScanOnSetRefToAnyIndexRequest() {
         val scanResponse = dataStore.execute(
             AnyValueSetIndexModel.scan(
-                order = AnyValueSetIndexModel { setValues.refToAny() }.ascending()
+                order = AnyValueSetIndexModel.ref { setValues.any() }.ascending()
             )
         )
 
@@ -193,7 +193,7 @@ class DataStoreScanOnAnyValueIndexTest(
         val scanResponse = dataStore.execute(
             AnyValueMapIndexModel.scan(
                 where = Equals(
-                    AnyValueMapIndexModel { mapValues.refToAnyKey() } with "k3"
+                    AnyValueMapIndexModel.ref { mapValues.anyKey() } with "k3"
                 )
             )
         )
@@ -208,7 +208,7 @@ class DataStoreScanOnAnyValueIndexTest(
         val scanResponse = dataStore.execute(
             AnyValueIncMapIndexModel.scan(
                 where = Equals(
-                    AnyValueIncMapIndexModel { incMapValues.refToAnyKey() } with 2u
+                    AnyValueIncMapIndexModel.ref { incMapValues.anyKey() } with 2u
                 )
             )
         )
@@ -223,7 +223,7 @@ class DataStoreScanOnAnyValueIndexTest(
         val scanResponse = dataStore.execute(
             AnyValueSetIndexModel.scan(
                 where = Equals(
-                    AnyValueSetIndexModel { setValues.refToAny() } with "s2"
+                    AnyValueSetIndexModel.ref { setValues.any() } with "s2"
                 )
             )
         )
@@ -251,7 +251,7 @@ class DataStoreScanOnAnyValueIndexTest(
         val scanResponse = dataStore.execute(
             AnyValueMapIndexModel.scan(
                 where = Equals(
-                    AnyValueMapIndexModel { mapValues.refToAnyKey() } with "k0"
+                    AnyValueMapIndexModel.ref { mapValues.anyKey() } with "k0"
                 )
             )
         )
@@ -276,7 +276,7 @@ class DataStoreScanOnAnyValueIndexTest(
         val scanResponse = dataStore.execute(
             AnyValueSetIndexModel.scan(
                 where = Equals(
-                    AnyValueSetIndexModel { setValues.refToAny() } with "s0"
+                    AnyValueSetIndexModel.ref { setValues.any() } with "s0"
                 )
             )
         )
@@ -300,7 +300,7 @@ class DataStoreScanOnAnyValueIndexTest(
 
         val scanResponse = dataStore.execute(
             AnyValueSetIndexModel.scan(
-                order = AnyValueSetIndexModel { setValues.refToAny() }.ascending()
+                order = AnyValueSetIndexModel.ref { setValues.any() }.ascending()
             )
         )
 
@@ -326,7 +326,7 @@ class DataStoreScanOnAnyValueIndexTest(
         do {
             val page = dataStore.execute(
                 AnyValueSetIndexModel.scan(
-                    order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                    order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                     cursor = cursor,
                     limit = 1u,
                 )
@@ -354,7 +354,7 @@ class DataStoreScanOnAnyValueIndexTest(
         do {
             val page = dataStore.execute(
                 AnyValueSetIndexModel.scan(
-                    order = AnyValueSetIndexModel { setValues.refToAny() }.descending(),
+                    order = AnyValueSetIndexModel.ref { setValues.any() }.descending(),
                     cursor = cursor,
                     limit = 1u,
                 )
@@ -378,7 +378,7 @@ class DataStoreScanOnAnyValueIndexTest(
 
         val scanResponse = dataStore.execute(
             AnyValueSetIndexModel.scan(
-                order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                 startKey = addedKey,
                 includeStart = false
             )
@@ -394,9 +394,9 @@ class DataStoreScanOnAnyValueIndexTest(
         val scanResponse = dataStore.execute(
             AnyValueSetIndexModel.scan(
                 where = Equals(
-                    AnyValueSetIndexModel { setValues.refToAny() } with "s2"
+                    AnyValueSetIndexModel.ref { setValues.any() } with "s2"
                 ),
-                order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                 startKey = setKeys.first(),
                 includeStart = false
             )
@@ -420,7 +420,7 @@ class DataStoreScanOnAnyValueIndexTest(
 
         val scanResponse = dataStore.execute(
             AnyValueSetIndexModel.scanUpdates(
-                order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                 limit = 1u
             )
         )
@@ -429,7 +429,7 @@ class DataStoreScanOnAnyValueIndexTest(
             expect(listOf(addedKey)) { keys }
 
             val actualSortingKey = assertNotNull(sortingKeys).single().bytes
-            val expectedSortingKey = AnyValueSetIndexModel { setValues.refToAny() }
+            val expectedSortingKey = AnyValueSetIndexModel.ref { setValues.any() }
                 .toStorageByteArraysForIndex(addedObject, addedKey.bytes)
                 .minBy { it.toHexString() }
 
@@ -443,7 +443,7 @@ class DataStoreScanOnAnyValueIndexTest(
         updateListenerTester(
             dataStore = dataStore,
             request = AnyValueSetIndexModel.scan(
-                order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                 startKey = startKey,
                 includeStart = false
             ),
@@ -479,7 +479,7 @@ class DataStoreScanOnAnyValueIndexTest(
         updateListenerTester(
             dataStore = dataStore,
             request = AnyValueSetIndexModel.scanUpdates(
-                order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                 startKey = startKey,
                 includeStart = false
             ),
@@ -514,7 +514,7 @@ class DataStoreScanOnAnyValueIndexTest(
         val listenJob = launch {
             dataStore.executeFlow(
                 AnyValueMapIndexModel.scan(
-                    order = AnyValueMapIndexModel { mapValues.refToAnyKey() }.ascending(),
+                    order = AnyValueMapIndexModel.ref { mapValues.anyKey() }.ascending(),
                     limit = 2u
                 )
             ).collect {
@@ -539,7 +539,7 @@ class DataStoreScanOnAnyValueIndexTest(
                 AnyValueMapIndexModel.change(
                     mapKeys[1].change(
                         Change(
-                            AnyValueMapIndexModel { mapValues refAt "k2x" } with "m1"
+                            AnyValueMapIndexModel.ref { mapValues at "k2x" } with "m1"
                         )
                     )
                 )
@@ -551,7 +551,7 @@ class DataStoreScanOnAnyValueIndexTest(
                 AnyValueMapIndexModel.change(
                     mapKeys[1].change(
                         Change(
-                            AnyValueMapIndexModel { mapValues refAt "k2" } with null
+                            AnyValueMapIndexModel.ref { mapValues at "k2" } with null
                         )
                     )
                 )
@@ -609,7 +609,7 @@ class DataStoreScanOnAnyValueIndexTest(
         dataStore.execute(
             AnyValueMapIndexModel.change(
                 mapKeys[0].change(
-                    Change(AnyValueMapIndexModel { mapValues refAt "k1x" } with "m4")
+                    Change(AnyValueMapIndexModel.ref { mapValues at "k1x" } with "m4")
                 )
             )
         )
@@ -617,7 +617,7 @@ class DataStoreScanOnAnyValueIndexTest(
         updateListenerTester(
             dataStore,
             AnyValueMapIndexModel.scan(
-                order = AnyValueMapIndexModel { mapValues.refToAnyKey() }.ascending(),
+                order = AnyValueMapIndexModel.ref { mapValues.anyKey() }.ascending(),
                 limit = 3u
             ),
             2
@@ -625,7 +625,7 @@ class DataStoreScanOnAnyValueIndexTest(
             assertIs<InitialValuesUpdate<*>>(responses[0].await())
 
             val selectedCandidateDelete = Change(
-                AnyValueMapIndexModel { mapValues refAt "k1" } with null
+                AnyValueMapIndexModel.ref { mapValues at "k1" } with null
             )
             dataStore.execute(
                 AnyValueMapIndexModel.change(
@@ -645,7 +645,7 @@ class DataStoreScanOnAnyValueIndexTest(
             AnyValueMapIndexModel.change(
                 mapKeys[0].change(
                     Change(
-                        AnyValueMapIndexModel { mapValues refAt "k0" } with "m3"
+                        AnyValueMapIndexModel.ref { mapValues at "k0" } with "m3"
                     )
                 )
             )
@@ -657,7 +657,7 @@ class DataStoreScanOnAnyValueIndexTest(
         val scanResponse = dataStore.execute(
             AnyValueMapIndexModel.scan(
                 where = Equals(
-                    AnyValueMapIndexModel { mapValues.refToAnyKey() } with "k0"
+                    AnyValueMapIndexModel.ref { mapValues.anyKey() } with "k0"
                 )
             )
         )
@@ -673,7 +673,7 @@ class DataStoreScanOnAnyValueIndexTest(
             AnyValueIncMapIndexModel.change(
                 incMapKeys[0].change(
                     Change(
-                        AnyValueIncMapIndexModel { incMapValues refAt 4u } with "i2"
+                        AnyValueIncMapIndexModel.ref { incMapValues at 4u } with "i2"
                     )
                 )
             )
@@ -685,7 +685,7 @@ class DataStoreScanOnAnyValueIndexTest(
         val scanResponse = dataStore.execute(
             AnyValueIncMapIndexModel.scan(
                 where = Equals(
-                    AnyValueIncMapIndexModel { incMapValues.refToAnyKey() } with 4u
+                    AnyValueIncMapIndexModel.ref { incMapValues.anyKey() } with 4u
                 )
             )
         )
@@ -701,7 +701,7 @@ class DataStoreScanOnAnyValueIndexTest(
             AnyValueSetIndexModel.change(
                 setKeys[0].change(
                     SetChange(
-                        AnyValueSetIndexModel { setValues::ref }.change(
+                        AnyValueSetIndexModel.ref { setValues }.change(
                             addValues = setOf("s0")
                         )
                     )
@@ -715,7 +715,7 @@ class DataStoreScanOnAnyValueIndexTest(
         val scanResponse = dataStore.execute(
             AnyValueSetIndexModel.scan(
                 where = Equals(
-                    AnyValueSetIndexModel { setValues.refToAny() } with "s0"
+                    AnyValueSetIndexModel.ref { setValues.any() } with "s0"
                 )
             )
         )

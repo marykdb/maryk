@@ -315,7 +315,7 @@ class DataStoreScanUpdatesAndFlowTest(
         val scanResponse = dataStore.execute(
             TestMarykModel.scanUpdates(
                 startKey = testKeys[1],
-                order = TestMarykModel { int::ref }.ascending(),
+                order = TestMarykModel.ref { int }.ascending(),
                 limit = 2u,
                 includeStart = false
             )
@@ -342,12 +342,12 @@ class DataStoreScanUpdatesAndFlowTest(
     private suspend fun executeSimpleScanUpdatesRequestWithUpdateHistoryIndex() {
         if (!dataStore.keepUpdateHistoryIndex) return
 
-        val change1 = Change(TestMarykModel { string::ref } with "ha history 1")
+        val change1 = Change(TestMarykModel.ref { string } with "ha history 1")
         assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[1].change(change1))).statuses.first()
         )
 
-        val change2 = Change(TestMarykModel { string::ref } with "ha history 2")
+        val change2 = Change(TestMarykModel.ref { string } with "ha history 2")
         assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[3].change(change2))).statuses.first()
         )
@@ -370,7 +370,7 @@ class DataStoreScanUpdatesAndFlowTest(
     private suspend fun executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex() {
         if (dataStore.keepUpdateHistoryIndex) return
 
-        val change = Change(TestMarykModel { string::ref } with "ha history change update")
+        val change = Change(TestMarykModel.ref { string } with "ha history change update")
         assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[1].change(change))).statuses.first()
         )
@@ -404,7 +404,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(highestInitVersion, version)
             }
 
-            val change = Change(TestMarykModel { string::ref } with "ha new message for values")
+            val change = Change(TestMarykModel.ref { string } with "ha new message for values")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change)
             )).also {
@@ -492,7 +492,7 @@ class DataStoreScanUpdatesAndFlowTest(
         updateListenerTester(
             dataStore,
             TestMarykModel.scan(
-                where = Equals(TestMarykModel { string::ref } with "ha world 1"),
+                where = Equals(TestMarykModel.ref { string } with "ha world 1"),
                 limit = 1u,
                 allowTableScan = true
             ),
@@ -505,14 +505,14 @@ class DataStoreScanUpdatesAndFlowTest(
             assertStatusIs<ChangeSuccess<*>>(
                 dataStore.execute(
                     TestMarykModel.change(
-                        testKeys[1].change(Change(TestMarykModel { string::ref } with "ha world 1"))
+                        testKeys[1].change(Change(TestMarykModel.ref { string } with "ha world 1"))
                     )
                 ).statuses.single()
             )
             assertStatusIs<ChangeSuccess<*>>(
                 dataStore.execute(
                     TestMarykModel.change(
-                        testKeys[0].change(Change(TestMarykModel { string::ref } with "ha outside flow"))
+                        testKeys[0].change(Change(TestMarykModel.ref { string } with "ha outside flow"))
                     )
                 ).statuses.single()
             )
@@ -535,15 +535,15 @@ class DataStoreScanUpdatesAndFlowTest(
 
         dataStore.execute(
             TestMarykModel.change(
-                earlierKey.change(Change(TestMarykModel { string::ref } with "ha outside limit")),
-                laterKey.change(Change(TestMarykModel { string::ref } with "ha inside limit"))
+                earlierKey.change(Change(TestMarykModel.ref { string } with "ha outside limit")),
+                laterKey.change(Change(TestMarykModel.ref { string } with "ha inside limit"))
             )
         )
 
         updateListenerTester(
             dataStore,
             TestMarykModel.scan(
-                where = Equals(TestMarykModel { string::ref } with "ha inside limit"),
+                where = Equals(TestMarykModel.ref { string } with "ha inside limit"),
                 limit = 1u,
                 allowTableScan = true
             ),
@@ -556,7 +556,7 @@ class DataStoreScanUpdatesAndFlowTest(
             assertStatusIs<ChangeSuccess<*>>(
                 dataStore.execute(
                     TestMarykModel.change(
-                        earlierKey.change(Change(TestMarykModel { string::ref } with "ha inside limit"))
+                        earlierKey.change(Change(TestMarykModel.ref { string } with "ha inside limit"))
                     )
                 ).statuses.single()
             )
@@ -577,8 +577,8 @@ class DataStoreScanUpdatesAndFlowTest(
         val listenJob = launch {
             dataStore.executeFlow(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 6),
-                    order = TestMarykModel { int::ref }.ascending(),
+                    where = Equals(TestMarykModel.ref { int } with 6),
+                    order = TestMarykModel.ref { int }.ascending(),
                     limit = 2u
                 )
             ).collect {
@@ -595,7 +595,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(emptyList(), values.map { it.key })
             }
 
-            val change = Change(TestMarykModel { int::ref } with 6)
+            val change = Change(TestMarykModel.ref { int } with 6)
             dataStore.execute(TestMarykModel.change(testKeys[4].change(change))).also {
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
@@ -615,7 +615,7 @@ class DataStoreScanUpdatesAndFlowTest(
         val listenJob = launch {
             dataStore.executeFlow(
                 TestMarykModel.scan(
-                    order = TestMarykModel { int::ref }.ascending(),
+                    order = TestMarykModel.ref { int }.ascending(),
                     limit = 2u
                 )
             ).collect {
@@ -665,7 +665,7 @@ class DataStoreScanUpdatesAndFlowTest(
         val listenJob = launch {
             dataStore.executeFlow(
                 TestMarykModel.scan(
-                    order = TestMarykModel { int::ref }.descending(),
+                    order = TestMarykModel.ref { int }.descending(),
                     limit = 2u
                 )
             ).collect {
@@ -716,7 +716,7 @@ class DataStoreScanUpdatesAndFlowTest(
     private suspend fun executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill() {
         if (!dataStore.keepUpdateHistoryIndex) return
 
-        val change = Change(TestMarykModel { string::ref } with "ha refill ordering")
+        val change = Change(TestMarykModel.ref { string } with "ha refill ordering")
         dataStore.execute(TestMarykModel.change(testKeys[4].change(change))).also {
             assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
         }
@@ -761,7 +761,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(highestInitVersion, version)
             }
 
-            val change1 = Change(TestMarykModel { string::ref } with "ha new message for change")
+            val change1 = Change(TestMarykModel.ref { string } with "ha new message for change")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
             )).also {
@@ -788,7 +788,7 @@ class DataStoreScanUpdatesAndFlowTest(
             assertEquals(emptyList(), changes)
         }
 
-        val change = Change(TestMarykModel { string::ref } with "ha after empty scan history")
+        val change = Change(TestMarykModel.ref { string } with "ha after empty scan history")
         dataStore.execute(TestMarykModel.change(testKeys[0].change(change)))
 
         assertIs<ChangeUpdate<*>>(responses[1].await()).apply {
@@ -800,8 +800,8 @@ class DataStoreScanUpdatesAndFlowTest(
     private suspend fun executeIndexedScanValuesFlowAdmitsMutableFilterMatch() = updateListenerTester(
         dataStore,
         TestMarykModel.scan(
-            where = Equals(TestMarykModel { string::ref } with "ha target"),
-            order = TestMarykModel { int::ref }.ascending(),
+            where = Equals(TestMarykModel.ref { string } with "ha target"),
+            order = TestMarykModel.ref { int }.ascending(),
             limit = 2u
         ),
         2
@@ -812,7 +812,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
         dataStore.execute(
             TestMarykModel.change(
-                testKeys[0].change(Change(TestMarykModel { string::ref } with "ha target"))
+                testKeys[0].change(Change(TestMarykModel.ref { string } with "ha target"))
             )
         )
 
@@ -826,7 +826,7 @@ class DataStoreScanUpdatesAndFlowTest(
         dataStore,
         TestMarykModel.scan(
             select = TestMarykModel.graph { listOf(string) },
-            order = TestMarykModel { int::ref }.ascending(),
+            order = TestMarykModel.ref { int }.ascending(),
             limit = 2u
         ),
         3
@@ -900,7 +900,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals<Values<*>>(t3, values)
             }
 
-            val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
+            val change1 = Change(TestMarykModel.ref { string } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
             )).also {
@@ -917,13 +917,13 @@ class DataStoreScanUpdatesAndFlowTest(
             // next response should be for next change
             dataStore.execute(TestMarykModel.change(
                 testKeys[0].change(
-                    Change(TestMarykModel { string::ref } with "ha newer message 3")
+                    Change(TestMarykModel.ref { string } with "ha newer message 3")
                 )
             )).also {
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
 
-            val change2 = Change(TestMarykModel { string::ref } with "ha newer message 3")
+            val change2 = Change(TestMarykModel.ref { string } with "ha newer message 3")
             dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(change2)
             ))
@@ -987,7 +987,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(highestInitVersion, version)
             }
 
-            val change = Change(TestMarykModel { string::ref } with "ha history flow")
+            val change = Change(TestMarykModel.ref { string } with "ha history flow")
             dataStore.execute(TestMarykModel.change(testKeys[1].change(change))).also {
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
@@ -1029,7 +1029,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(listOf(testKeys[4], testKeys[3]), keys)
             }
 
-            val change = Change(TestMarykModel { string::ref } with "ha enters top range")
+            val change = Change(TestMarykModel.ref { string } with "ha enters top range")
             dataStore.execute(TestMarykModel.change(testKeys[1].change(change))).also {
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
@@ -1046,7 +1046,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(0, insertionIndex)
             }
 
-            val followUpChange = Change(TestMarykModel { string::ref } with "ha stays tracked")
+            val followUpChange = Change(TestMarykModel.ref { string } with "ha stays tracked")
             dataStore.execute(TestMarykModel.change(testKeys[1].change(followUpChange))).also {
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
@@ -1097,7 +1097,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 }
             }
 
-            val change = Change(TestMarykModel { string::ref } with "ha out of range")
+            val change = Change(TestMarykModel.ref { string } with "ha out of range")
             dataStore.execute(TestMarykModel.change(testKeys[1].change(change))).also {
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
@@ -1116,17 +1116,17 @@ class DataStoreScanUpdatesAndFlowTest(
     private suspend fun executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion() = coroutineScope {
         if (!dataStore.keepUpdateHistoryIndex) return@coroutineScope
 
-        val beforeWindowChange = Change(TestMarykModel { string::ref } with "ha before listener window")
+        val beforeWindowChange = Change(TestMarykModel.ref { string } with "ha before listener window")
         assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[2].change(beforeWindowChange))).statuses.first()
         )
 
-        val refillCandidateChange = Change(TestMarykModel { string::ref } with "ha refill candidate")
+        val refillCandidateChange = Change(TestMarykModel.ref { string } with "ha refill candidate")
         assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[3].change(refillCandidateChange))).statuses.first()
         )
 
-        val inWindowChange = Change(TestMarykModel { string::ref } with "ha inside listener window")
+        val inWindowChange = Change(TestMarykModel.ref { string } with "ha inside listener window")
         assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[4].change(inWindowChange))).statuses.first()
         )
@@ -1183,7 +1183,7 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore,
             TestMarykModel.scanUpdates(
                 startKey = testKeys[1],
-                where = Not(Equals(TestMarykModel { string::ref } with "ha filtered message")),
+                where = Not(Equals(TestMarykModel.ref { string } with "ha filtered message")),
                 fromVersion = highestInitVersion + 1uL
             ),
             2
@@ -1193,7 +1193,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(highestInitVersion, version)
             }
 
-            val change1 = Change(TestMarykModel { string::ref } with "ha filtered message")
+            val change1 = Change(TestMarykModel.ref { string } with "ha filtered message")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
             )).also {
@@ -1237,7 +1237,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(3, insertionIndex)
             }
 
-            val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
+            val change1 = Change(TestMarykModel.ref { string } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
             )).also {
@@ -1270,8 +1270,8 @@ class DataStoreScanUpdatesAndFlowTest(
             }
 
             val change1 = Change(
-                TestMarykModel { string::ref } with "ha new message 1",
-                TestMarykModel { double::ref } with 1.5
+                TestMarykModel.ref { string } with "ha new message 1",
+                TestMarykModel.ref { double } with 1.5
             )
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
@@ -1283,7 +1283,7 @@ class DataStoreScanUpdatesAndFlowTest(
             assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(
-                    Change(TestMarykModel { string::ref } with "ha new message 1"),
+                    Change(TestMarykModel.ref { string } with "ha new message 1"),
                     IndexChange(listOf(
                         IndexUpdate(
                             index = Bytes("CyE"),
@@ -1297,7 +1297,7 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(
                     Change(
-                        TestMarykModel { double::ref } with 2.5
+                        TestMarykModel.ref { double } with 2.5
                     )
                 )
             )).also {
@@ -1323,7 +1323,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(highestInitVersion, version)
             }
 
-            val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
+            val change1 = Change(TestMarykModel.ref { string } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change1)
             )).also {
@@ -1341,13 +1341,13 @@ class DataStoreScanUpdatesAndFlowTest(
             // next response should be for next change
             dataStore.execute(TestMarykModel.change(
                 testKeys[4].change(
-                    Change(TestMarykModel { string::ref } with "ha new message 3")
+                    Change(TestMarykModel.ref { string } with "ha new message 3")
                 )
             )).also {
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
 
-            val change2 = Change(TestMarykModel { string::ref } with "ha new message 3")
+            val change2 = Change(TestMarykModel.ref { string } with "ha new message 3")
             dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(change2)
             )).also {
@@ -1403,7 +1403,7 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore,
             TestMarykModel.scanUpdates(
                 startKey = testKeys[1],
-                order = TestMarykModel { int::ref }.ascending(),
+                order = TestMarykModel.ref { int }.ascending(),
                 limit = 2u,
                 includeStart = false,
                 fromVersion = highestInitVersion + 1uL
@@ -1417,7 +1417,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(highestInitVersion, version)
             }
 
-            val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
+            val change1 = Change(TestMarykModel.ref { string } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change1)
             )).also {
@@ -1434,11 +1434,11 @@ class DataStoreScanUpdatesAndFlowTest(
             // next response should be for next change
             dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(
-                    Change(TestMarykModel { string::ref } with "ha new message 3")
+                    Change(TestMarykModel.ref { string } with "ha new message 3")
                 )
             ))
 
-            val change2 = Change(TestMarykModel { string::ref } with "ha new new message 3")
+            val change2 = Change(TestMarykModel.ref { string } with "ha new new message 3")
             dataStore.execute(TestMarykModel.change(
                 testKeys[0].change(change2)
             )).also {
@@ -1515,7 +1515,7 @@ class DataStoreScanUpdatesAndFlowTest(
             }
 
             // Change value which changes order
-            val change3 = Change(TestMarykModel { int::ref } with 0)
+            val change3 = Change(TestMarykModel.ref { int } with 0)
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change3)
             )).also {
@@ -1545,7 +1545,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
             // Move item out of range by changing value on which index is determined
 
-            val change4 = Change(TestMarykModel { int::ref } with 5)
+            val change4 = Change(TestMarykModel.ref { int } with 5)
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change4)
             )).also {
@@ -1566,7 +1566,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
             // Move item back to its old position
 
-            val change5 = Change(TestMarykModel { int::ref } with -1)
+            val change5 = Change(TestMarykModel.ref { int } with -1)
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change5)
             )).also {
@@ -1592,7 +1592,7 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore,
             TestMarykModel.scanUpdates(
                 startKey = testKeys[4],
-                order = TestMarykModel { int::ref }.descending(),
+                order = TestMarykModel.ref { int }.descending(),
                 limit = 2u,
                 includeStart = false,
                 fromVersion = highestInitVersion + 1uL
@@ -1606,7 +1606,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(highestInitVersion, version)
             }
 
-            val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
+            val change1 = Change(TestMarykModel.ref { string } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(change1)
             )).also {
@@ -1623,13 +1623,13 @@ class DataStoreScanUpdatesAndFlowTest(
             // next response should be for next change
             dataStore.execute(TestMarykModel.change(
                 testKeys[4].change(
-                    Change(TestMarykModel { string::ref } with "ha new message 3")
+                    Change(TestMarykModel.ref { string } with "ha new message 3")
                 )
             )).also {
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
 
-            val change2 = Change(TestMarykModel { string::ref } with "ha new message 3")
+            val change2 = Change(TestMarykModel.ref { string } with "ha new message 3")
             dataStore.execute(TestMarykModel.change(
                 testKeys[0].change(change2)
             ))
@@ -1704,7 +1704,7 @@ class DataStoreScanUpdatesAndFlowTest(
             }
 
             // Change value on a tracked key so its position within the visible window changes
-            val change3 = Change(TestMarykModel { int::ref } with -3)
+            val change3 = Change(TestMarykModel.ref { int } with -3)
             dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(change3)
             )).also {

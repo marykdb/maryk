@@ -14,11 +14,11 @@ import kotlin.test.expect
 
 class SimpleTypedValueReferenceTest {
     private val typedValueReference =
-        Measurement { measurement simpleRefAtType MeasurementType.Number }
+        Measurement.ref { measurement simpleAtType MeasurementType.Number }
 
     @Test
     fun cacheReferenceTest() {
-        assertSame(typedValueReference, Measurement { measurement simpleRefAtType MeasurementType.Number })
+        assertSame(typedValueReference, Measurement.ref { measurement simpleAtType MeasurementType.Number })
     }
 
     @Test

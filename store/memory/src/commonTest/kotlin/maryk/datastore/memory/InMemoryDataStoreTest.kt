@@ -83,8 +83,8 @@ class InMemoryDataStoreTest {
             val committedChange = dataStore.execute(
                 SimpleMarykModel.change(
                     addStatus.key.change(
-                        Change(SimpleMarykModel { value::ref } with "ha staged"),
-                        Change(SimpleMarykModel { value::ref } with "ha committed")
+                        Change(SimpleMarykModel.ref { value } with "ha staged"),
+                        Change(SimpleMarykModel.ref { value } with "ha committed")
                     )
                 )
             ).statuses.single() as ChangeSuccess<SimpleMarykModel>
@@ -92,8 +92,8 @@ class InMemoryDataStoreTest {
             val failedChange = dataStore.execute(
                 SimpleMarykModel.change(
                     addStatus.key.change(
-                        Change(SimpleMarykModel { value::ref } with "ha rejected"),
-                        Check(SimpleMarykModel { value::ref } with "ha wrong")
+                        Change(SimpleMarykModel.ref { value } with "ha rejected"),
+                        Check(SimpleMarykModel.ref { value } with "ha wrong")
                     )
                 )
             ).statuses.single()
@@ -268,8 +268,8 @@ class InMemoryDataStoreTest {
 
             val scanResponse = dataStore.execute(
                 MaxNumberScanModel.scan(
-                    where = Equals(MaxNumberScanModel { number::ref } with UInt.MAX_VALUE),
-                    order = Orders(MaxNumberScanModel { number::ref }.ascending()),
+                    where = Equals(MaxNumberScanModel.ref { number } with UInt.MAX_VALUE),
+                    order = Orders(MaxNumberScanModel.ref { number }.ascending()),
                     startKey = key,
                     includeStart = false
                 )
@@ -297,8 +297,8 @@ class InMemoryDataStoreTest {
 
             val scanResponse = dataStore.execute(
                 MaxNumberScanModel.scan(
-                    where = Equals(MaxNumberScanModel { number::ref } with UInt.MAX_VALUE),
-                    order = Orders(MaxNumberScanModel { number::ref }.ascending()),
+                    where = Equals(MaxNumberScanModel.ref { number } with UInt.MAX_VALUE),
+                    order = Orders(MaxNumberScanModel.ref { number }.ascending()),
                     startKey = key,
                     includeStart = false
                 )
@@ -337,7 +337,7 @@ class InMemoryDataStoreTest {
 
             val scanResponse = dataStore.execute(
                 AnyValueSetIndexModel.scan(
-                    order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                    order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                     startKey = firstKey,
                     includeStart = false
                 )
@@ -372,7 +372,7 @@ class InMemoryDataStoreTest {
 
             val scanResponse = dataStore.execute(
                 AnyValueSetIndexModel.scan(
-                    order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                    order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                     startKey = startKey,
                     includeStart = false
                 )
@@ -400,7 +400,7 @@ class InMemoryDataStoreTest {
 
             val scanResponse = dataStore.execute(
                 MaxNumberScanModel.scan(
-                    order = Orders(MaxNumberScanModel { number::ref }.descending()),
+                    order = Orders(MaxNumberScanModel.ref { number }.descending()),
                     startKey = key,
                     includeStart = false
                 )
@@ -437,8 +437,8 @@ class InMemoryDataStoreTest {
 
             val scanResponse = dataStore.execute(
                 AnyValueSetIndexModel.scan(
-                    where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "s2"),
-                    order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                    where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "s2"),
+                    order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                     startKey = startKey,
                     includeStart = false
                 )
@@ -483,7 +483,7 @@ class InMemoryDataStoreTest {
             listenJob = launch {
                 dataStore.executeFlow(
                     AnyValueSetIndexModel.scan(
-                        order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                        order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                         startKey = startKey,
                         includeStart = false
                     )
@@ -553,14 +553,14 @@ class InMemoryDataStoreTest {
 
             val fullScanResponse = dataStore.execute(
                 AnyValueSetIndexModel.scan(
-                    order = AnyValueSetIndexModel { setValues.refToAny() }.ascending()
+                    order = AnyValueSetIndexModel.ref { setValues.any() }.ascending()
                 )
             )
             assertEquals(listOf("e", "b", "c", "a"), fullScanResponse.values.map { it.values { name } }.distinct())
 
             val valuesResponse = dataStore.execute(
                 AnyValueSetIndexModel.scan(
-                    order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                    order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                     limit = 1u
                 )
             )
@@ -568,7 +568,7 @@ class InMemoryDataStoreTest {
 
             val updatesResponse = dataStore.execute(
                 AnyValueSetIndexModel.scanUpdates(
-                    order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                    order = AnyValueSetIndexModel.ref { setValues.any() }.ascending(),
                     limit = 1u
                 )
             )
@@ -605,7 +605,7 @@ class InMemoryDataStoreTest {
                 AnyValueIncMapIndexModel.change(
                     keys[0].change(
                         Change(
-                            AnyValueIncMapIndexModel { incMapValues refAt 4u } with "i2"
+                            AnyValueIncMapIndexModel.ref { incMapValues at 4u } with "i2"
                         )
                     )
                 )
@@ -622,7 +622,7 @@ class InMemoryDataStoreTest {
             val scanResponse = dataStore.execute(
                 AnyValueIncMapIndexModel.scan(
                     where = Equals(
-                        AnyValueIncMapIndexModel { incMapValues.refToAnyKey() } with 4u
+                        AnyValueIncMapIndexModel.ref { incMapValues.anyKey() } with 4u
                     )
                 )
             )
@@ -731,7 +731,7 @@ class InMemoryDataStoreTest {
                     fromVersion = deleteStatus.version,
                     toVersion = deleteStatus.version,
                     limit = 1u,
-                    where = Equals(SimpleMarykModel { value::ref } with "ha historic filtered hard delete")
+                    where = Equals(SimpleMarykModel.ref { value } with "ha historic filtered hard delete")
                 )
             )
 
@@ -766,7 +766,7 @@ class InMemoryDataStoreTest {
 
             val updatesResponse = dataStore.execute(
                 SimpleMarykModel.scanUpdates(
-                    where = Equals(SimpleMarykModel { value::ref } with "ha historic filtered hard delete updates"),
+                    where = Equals(SimpleMarykModel.ref { value } with "ha historic filtered hard delete updates"),
                     limit = 1u
                 )
             )
@@ -839,7 +839,7 @@ class InMemoryDataStoreTest {
                 Log.scan(
                     where = Equals(Log.severity.ref() with INFO),
                     toVersion = addStatus.version,
-                    order = Orders(Log { severity::ref }.ascending())
+                    order = Orders(Log.ref { severity }.ascending())
                 )
             )
 
@@ -871,7 +871,7 @@ class InMemoryDataStoreTest {
 
             val scanResponse = dataStore.execute(
                 UniqueModel.scan(
-                    where = Equals(UniqueModel { email::ref } with "historic-unique@test.com"),
+                    where = Equals(UniqueModel.ref { email } with "historic-unique@test.com"),
                     toVersion = addStatus.version
                 )
             )
@@ -897,7 +897,7 @@ class InMemoryDataStoreTest {
                 dataStore.execute(
                     NullableUniqueModel.change(
                         key.change(
-                            Change(NullableUniqueModel { email::ref } with "first@example.com")
+                            Change(NullableUniqueModel.ref { email } with "first@example.com")
                         )
                     )
                 ).statuses.single()
@@ -907,7 +907,7 @@ class InMemoryDataStoreTest {
                 listOf(key),
                 dataStore.execute(
                     NullableUniqueModel.scan(
-                        where = Equals(NullableUniqueModel { email::ref } with "first@example.com")
+                        where = Equals(NullableUniqueModel.ref { email } with "first@example.com")
                     )
                 ).values.map { it.key }
             )
@@ -943,7 +943,7 @@ class InMemoryDataStoreTest {
                 dataStore.execute(
                     NullableUniqueModel.change(
                         firstKey.change(
-                            Change(NullableUniqueModel { email::ref } with null)
+                            Change(NullableUniqueModel.ref { email } with null)
                         )
                     )
                 ).statuses.single()
@@ -953,7 +953,7 @@ class InMemoryDataStoreTest {
                 emptyList(),
                 dataStore.execute(
                     NullableUniqueModel.scan(
-                        where = Equals(NullableUniqueModel { email::ref } with "released@example.com")
+                        where = Equals(NullableUniqueModel.ref { email } with "released@example.com")
                     )
                 ).values.map { it.key }
             )
@@ -970,7 +970,7 @@ class InMemoryDataStoreTest {
                 dataStore.execute(
                     NullableUniqueModel.change(
                         firstKey.change(
-                            Change(NullableUniqueModel { email::ref } with null)
+                            Change(NullableUniqueModel.ref { email } with null)
                         )
                     )
                 ).statuses.single()
@@ -980,7 +980,7 @@ class InMemoryDataStoreTest {
                 listOf(secondKey),
                 dataStore.execute(
                     NullableUniqueModel.scan(
-                        where = Equals(NullableUniqueModel { email::ref } with "released@example.com")
+                        where = Equals(NullableUniqueModel.ref { email } with "released@example.com")
                     )
                 ).values.map { it.key }
             )
@@ -1016,7 +1016,7 @@ class InMemoryDataStoreTest {
                 dataStore.execute(
                     NullableUniqueModel.change(
                         addStatus.key.change(
-                            Change(NullableUniqueModel { email::ref } with null)
+                            Change(NullableUniqueModel.ref { email } with null)
                         )
                     )
                 ).statuses.single()
@@ -1031,7 +1031,7 @@ class InMemoryDataStoreTest {
                     VersionedChanges(addStatus.version, listOf(ObjectCreate)),
                     VersionedChanges(
                         clearStatus.version,
-                        listOf(Change(NullableUniqueModel { email::ref } with null))
+                        listOf(Change(NullableUniqueModel.ref { email } with null))
                     )
                 ),
                 changes
@@ -1069,7 +1069,7 @@ class InMemoryDataStoreTest {
                 dataStore.execute(
                     Log.scan(
                         where = Equals(Log.severity.ref() with INFO),
-                        order = Orders(Log { severity::ref }.ascending())
+                        order = Orders(Log.ref { severity }.ascending())
                     )
                 ).values.map { it.key }
             )
@@ -1078,7 +1078,7 @@ class InMemoryDataStoreTest {
                 dataStore.execute(
                     Log.scan(
                         where = Equals(Log.severity.ref() with INFO),
-                        order = Orders(Log { severity::ref }.ascending()),
+                        order = Orders(Log.ref { severity }.ascending()),
                         filterSoftDeleted = false
                     )
                 ).values.map { it.key }
@@ -1093,7 +1093,7 @@ class InMemoryDataStoreTest {
                 dataStore.execute(
                     Log.scan(
                         where = Equals(Log.severity.ref() with INFO),
-                        order = Orders(Log { severity::ref }.ascending())
+                        order = Orders(Log.ref { severity }.ascending())
                     )
                 ).values.map { it.key }
             )
@@ -1125,7 +1125,7 @@ class InMemoryDataStoreTest {
                 emptyList(),
                 dataStore.execute(
                     UniqueModel.scan(
-                        where = Equals(UniqueModel { email::ref } with "soft-delete@example.com")
+                        where = Equals(UniqueModel.ref { email } with "soft-delete@example.com")
                     )
                 ).values.map { it.key }
             )
@@ -1133,7 +1133,7 @@ class InMemoryDataStoreTest {
                 listOf(firstKey),
                 dataStore.execute(
                     UniqueModel.scan(
-                        where = Equals(UniqueModel { email::ref } with "soft-delete@example.com"),
+                        where = Equals(UniqueModel.ref { email } with "soft-delete@example.com"),
                         filterSoftDeleted = false
                     )
                 ).values.map { it.key }
@@ -1173,7 +1173,7 @@ class InMemoryDataStoreTest {
                 listOf(secondKey),
                 dataStore.execute(
                     UniqueModel.scan(
-                        where = Equals(UniqueModel { email::ref } with "soft-delete@example.com")
+                        where = Equals(UniqueModel.ref { email } with "soft-delete@example.com")
                     )
                 ).values.map { it.key }
             )
@@ -1340,7 +1340,7 @@ class InMemoryDataStoreTest {
                 SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha first get changes value" })
             ).statuses.single() as AddSuccess<SimpleMarykModel>).version
 
-            val firstChange = Change(SimpleMarykModel { value::ref } with "ha first get changes update")
+            val firstChange = Change(SimpleMarykModel.ref { value } with "ha first get changes update")
             dataStore.execute(
                 SimpleMarykModel.change(key.change(firstChange))
             ).statuses.single() as ChangeSuccess<SimpleMarykModel>
@@ -1351,7 +1351,7 @@ class InMemoryDataStoreTest {
                 SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha second get changes value" })
             ).statuses.single() as AddSuccess<SimpleMarykModel>).version
 
-            val secondChange = Change(SimpleMarykModel { value::ref } with "ha second get changes update")
+            val secondChange = Change(SimpleMarykModel.ref { value } with "ha second get changes update")
             val secondChangeVersion = (dataStore.execute(
                 SimpleMarykModel.change(key.change(secondChange))
             ).statuses.single() as ChangeSuccess<SimpleMarykModel>).version
@@ -1383,7 +1383,7 @@ class InMemoryDataStoreTest {
                 SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha first scan changes value" })
             ).statuses.single() as AddSuccess<SimpleMarykModel>).version
 
-            val firstChange = Change(SimpleMarykModel { value::ref } with "ha first scan changes update")
+            val firstChange = Change(SimpleMarykModel.ref { value } with "ha first scan changes update")
             dataStore.execute(SimpleMarykModel.change(key.change(firstChange))).statuses.single() as ChangeSuccess<SimpleMarykModel>
 
             dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true))
@@ -1392,7 +1392,7 @@ class InMemoryDataStoreTest {
                 SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha second scan changes value" })
             ).statuses.single() as AddSuccess<SimpleMarykModel>).version
 
-            val secondChange = Change(SimpleMarykModel { value::ref } with "ha second scan changes update")
+            val secondChange = Change(SimpleMarykModel.ref { value } with "ha second scan changes update")
             val secondChangeVersion = (dataStore.execute(
                 SimpleMarykModel.change(key.change(secondChange))
             ).statuses.single() as ChangeSuccess<SimpleMarykModel>).version
@@ -1424,7 +1424,7 @@ class InMemoryDataStoreTest {
                 SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha first get updates value" })
             ).statuses.single() as AddSuccess<SimpleMarykModel>
 
-            val firstChange = Change(SimpleMarykModel { value::ref } with "ha first get updates update")
+            val firstChange = Change(SimpleMarykModel.ref { value } with "ha first get updates update")
             dataStore.execute(SimpleMarykModel.change(key.change(firstChange))).statuses.single() as ChangeSuccess<SimpleMarykModel>
 
             dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true))
@@ -1433,7 +1433,7 @@ class InMemoryDataStoreTest {
                 SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha second get updates value" })
             ).statuses.single() as AddSuccess<SimpleMarykModel>
 
-            val secondChange = Change(SimpleMarykModel { value::ref } with "ha second get updates update")
+            val secondChange = Change(SimpleMarykModel.ref { value } with "ha second get updates update")
             val secondChangeVersion = (dataStore.execute(
                 SimpleMarykModel.change(key.change(secondChange))
             ).statuses.single() as ChangeSuccess<SimpleMarykModel>).version
@@ -1468,7 +1468,7 @@ class InMemoryDataStoreTest {
                 SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha first scan updates limited value" })
             ).statuses.single() as AddSuccess<SimpleMarykModel>
 
-            val firstChange = Change(SimpleMarykModel { value::ref } with "ha first scan updates limited update")
+            val firstChange = Change(SimpleMarykModel.ref { value } with "ha first scan updates limited update")
             dataStore.execute(SimpleMarykModel.change(key.change(firstChange))).statuses.single() as ChangeSuccess<SimpleMarykModel>
 
             dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true))
@@ -1477,7 +1477,7 @@ class InMemoryDataStoreTest {
                 SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha second scan updates limited value" })
             ).statuses.single() as AddSuccess<SimpleMarykModel>
 
-            val secondChange = Change(SimpleMarykModel { value::ref } with "ha second scan updates limited update")
+            val secondChange = Change(SimpleMarykModel.ref { value } with "ha second scan updates limited update")
             val secondChangeVersion = (dataStore.execute(
                 SimpleMarykModel.change(key.change(secondChange))
             ).statuses.single() as ChangeSuccess<SimpleMarykModel>).version

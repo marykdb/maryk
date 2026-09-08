@@ -101,9 +101,9 @@ class DataStoreScanChangesTest(
                     VersionedChanges(version = lowestVersion, changes = listOf(
                         ObjectCreate,
                         Change(
-                            Log { message::ref } with "Something REALLY happened",
-                            Log { severity::ref } with INFO,
-                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
+                            Log.ref { message } with "Something REALLY happened",
+                            Log.ref { severity } with INFO,
+                            Log.ref { timestamp } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                         )
                     ))
                 )
@@ -119,9 +119,9 @@ class DataStoreScanChangesTest(
                     VersionedChanges(version = lowestVersion, changes = listOf(
                         ObjectCreate,
                         Change(
-                            Log { message::ref } with "Something else happened",
-                            Log { severity::ref } with INFO,
-                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 0)
+                            Log.ref { message } with "Something else happened",
+                            Log.ref { severity } with INFO,
+                            Log.ref { timestamp } with LocalDateTime(2018, 11, 14, 12, 0)
                         )
                     ))
                 )
@@ -135,9 +135,9 @@ class DataStoreScanChangesTest(
                     VersionedChanges(version = lowestVersion, changes = listOf(
                         ObjectCreate,
                         Change(
-                            Log { message::ref } with "Something happened",
-                            Log { severity::ref } with INFO,
-                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)
+                            Log.ref { message } with "Something happened",
+                            Log.ref { severity } with INFO,
+                            Log.ref { timestamp } with LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)
                         )
                     ))
                 )
@@ -174,7 +174,7 @@ class DataStoreScanChangesTest(
 
     private suspend fun executeScanChangesOnAscendingIndexRequest() {
         val scanResponse = dataStore.execute(
-            Log.scanChanges(startKey = keys[0], order = Log { severity::ref }.ascending())
+            Log.scanChanges(startKey = keys[0], order = Log.ref { severity }.ascending())
         )
 
         expect(2) { scanResponse.changes.size }
@@ -198,7 +198,7 @@ class DataStoreScanChangesTest(
 
     private suspend fun executeScanChangesOnDescendingIndexRequest() {
         val scanResponse = dataStore.execute(
-            Log.scanChanges(startKey = keys[3], order = Log { severity::ref }.descending(), limit = 3u)
+            Log.scanChanges(startKey = keys[3], order = Log.ref { severity }.descending(), limit = 3u)
         )
 
         expect(3) { scanResponse.changes.size }
@@ -233,9 +233,9 @@ class DataStoreScanChangesTest(
                     VersionedChanges(version = lowestVersion, changes = listOf(
                         ObjectCreate,
                         Change(
-                            Log { message::ref } with "Something REALLY happened",
-                            Log { severity::ref } with INFO,
-                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
+                            Log.ref { message } with "Something REALLY happened",
+                            Log.ref { severity } with INFO,
+                            Log.ref { timestamp } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                         )
                     ))
                 )
@@ -273,7 +273,7 @@ class DataStoreScanChangesTest(
         val scanResponse = dataStore.execute(
             Log.scanChanges(
                 startKey = keys[0],
-                order = Log { severity::ref }.ascending(),
+                order = Log.ref { severity }.ascending(),
                 toVersion = lowestVersion
             )
         )
@@ -335,7 +335,7 @@ class DataStoreScanChangesTest(
                     VersionedChanges(version = lowestVersion, changes = listOf(
                         ObjectCreate,
                         Change(
-                            Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
+                            Log.ref { timestamp } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                         )
                     ))
                 )
@@ -348,7 +348,7 @@ class DataStoreScanChangesTest(
         if (dataStore.keepAllVersions) {
             val collectedVersions = mutableListOf<ULong>()
 
-            val change1 = Change(Log { message::ref } with "A change 1")
+            val change1 = Change(Log.ref { message } with "A change 1")
             dataStore.execute(
                 Log.change(
                     keys[2].change(change1)
@@ -359,7 +359,7 @@ class DataStoreScanChangesTest(
                 }
             }
 
-            val change2 = Change(Log { message::ref } with "A change 2")
+            val change2 = Change(Log.ref { message } with "A change 2")
             dataStore.execute(
                 Log.change(
                     keys[2].change(change2)
@@ -370,7 +370,7 @@ class DataStoreScanChangesTest(
                 }
             }
 
-            val change3 = Change(Log { message::ref } with "A change 3")
+            val change3 = Change(Log.ref { message } with "A change 3")
             dataStore.execute(
                 Log.change(
                     keys[2].change(change3)
@@ -402,8 +402,8 @@ class DataStoreScanChangesTest(
                         VersionedChanges(version = lowestVersion, changes = listOf(
                             ObjectCreate,
                             Change(
-                                Log { severity::ref } with INFO,
-                                Log { timestamp::ref } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
+                                Log.ref { severity } with INFO,
+                                Log.ref { timestamp } with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                             )
                         )),
                         VersionedChanges(version = collectedVersions[1], changes = listOf(change2)),

@@ -452,7 +452,7 @@ class RocksDBDataStoreMigrationTest {
                 if (oldModel != null) {
                     withContext(Dispatchers.Default.limitedParallelism(1)) {
                         withTimeout(5_000.milliseconds) {
-                            store.execute(ModelV2.scan(order = ModelV2 { value::ref }.ascending()))
+                            store.execute(ModelV2.scan(order = ModelV2.ref { value }.ascending()))
                         }
                     }
                 }
@@ -491,7 +491,7 @@ class RocksDBDataStoreMigrationTest {
                                 context.store.execute(ModelV2.get(migratedKey)).values.single().values { newNumber },
                             )
                             val response = context.store.execute(
-                                ModelV2.change(migratedKey.change(Change(ModelV2 { newNumber::ref } with 2)))
+                                ModelV2.change(migratedKey.change(Change(ModelV2.ref { newNumber } with 2)))
                             )
                             assertIs<ChangeSuccess<ModelV2>>(response.statuses.single())
                             MigrationOutcome.Success
@@ -538,7 +538,7 @@ class RocksDBDataStoreMigrationTest {
                         context.store.execute(ModelV2.get(migratedKey)).values.single().values { newNumber },
                     )
                     val response = context.store.execute(
-                        ModelV2.change(migratedKey.change(Change(ModelV2 { newNumber::ref } with 3)))
+                        ModelV2.change(migratedKey.change(Change(ModelV2.ref { newNumber } with 3)))
                     )
                     assertIs<ChangeSuccess<ModelV2>>(response.statuses.single())
                     MigrationOutcome.Success
@@ -662,10 +662,10 @@ class RocksDBDataStoreMigrationTest {
 
         val changeResult = dataStore.execute(
             ModelV2.change(
-                keys[0].change(Change(ModelV2 { newNumber::ref } with 40)),
-                keys[1].change(Change(ModelV2 { newNumber::ref } with 2000)),
-                keys[2].change(Change(ModelV2 { newNumber::ref } with 500)),
-                keys[3].change(Change(ModelV2 { newNumber::ref } with 990))
+                keys[0].change(Change(ModelV2.ref { newNumber } with 40)),
+                keys[1].change(Change(ModelV2.ref { newNumber } with 2000)),
+                keys[2].change(Change(ModelV2.ref { newNumber } with 500)),
+                keys[3].change(Change(ModelV2.ref { newNumber } with 990))
             )
         )
 
@@ -685,7 +685,7 @@ class RocksDBDataStoreMigrationTest {
 
         val scanResponse = dataStore.execute(
             ModelV2ExtraIndex.scan(
-                order = ModelV2ExtraIndex { newNumber::ref }.ascending()
+                order = ModelV2ExtraIndex.ref { newNumber }.ascending()
             )
         )
 
@@ -698,7 +698,7 @@ class RocksDBDataStoreMigrationTest {
 
         val historicScanResponse = dataStore.execute(
             ModelV2ExtraIndex.scan(
-                order = ModelV2ExtraIndex { newNumber::ref }.descending(),
+                order = ModelV2ExtraIndex.ref { newNumber }.descending(),
                 toVersion = ULong.MAX_VALUE
             )
         )

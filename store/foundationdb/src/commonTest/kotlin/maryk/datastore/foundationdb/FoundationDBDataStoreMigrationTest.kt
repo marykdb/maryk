@@ -334,7 +334,7 @@ class FoundationDBDataStoreMigrationTest {
             assertEquals(
                 1,
                 upgradedStore.execute(
-                    ModelV2ExtraIndex.scan(order = ModelV2ExtraIndex { newNumber::ref }.ascending())
+                    ModelV2ExtraIndex.scan(order = ModelV2ExtraIndex.ref { newNumber }.ascending())
                 ).values.size,
             )
         } finally {
@@ -595,7 +595,7 @@ class FoundationDBDataStoreMigrationTest {
                     assertTrue(lease.isHeld)
                     withContext(Dispatchers.Default.limitedParallelism(1)) {
                         withTimeout(5_000.milliseconds) {
-                            store.execute(ModelV2.scan(order = ModelV2 { value::ref }.ascending()))
+                            store.execute(ModelV2.scan(order = ModelV2.ref { value }.ascending()))
                         }
                     }
                 }
@@ -739,7 +739,7 @@ class FoundationDBDataStoreMigrationTest {
             ),
         )
         assertTrue(
-            resumed.execute(ModelV2.scan(order = ModelV2 { value::ref }.ascending())).values.isEmpty()
+            resumed.execute(ModelV2.scan(order = ModelV2.ref { value }.ascending())).values.isEmpty()
         )
         resumed.close()
     }
@@ -974,10 +974,10 @@ class FoundationDBDataStoreMigrationTest {
 
         val changeResult = dataStore.execute(
             ModelV2.change(
-                keys[0].change(Change(ModelV2 { newNumber::ref } with 40)),
-                keys[1].change(Change(ModelV2 { newNumber::ref } with 2000)),
-                keys[2].change(Change(ModelV2 { newNumber::ref } with 500)),
-                keys[3].change(Change(ModelV2 { newNumber::ref } with 990))
+                keys[0].change(Change(ModelV2.ref { newNumber } with 40)),
+                keys[1].change(Change(ModelV2.ref { newNumber } with 2000)),
+                keys[2].change(Change(ModelV2.ref { newNumber } with 500)),
+                keys[3].change(Change(ModelV2.ref { newNumber } with 990))
             )
         )
 
@@ -998,7 +998,7 @@ class FoundationDBDataStoreMigrationTest {
 
         val scanResponse = dataStore.execute(
             ModelV2ExtraIndex.scan(
-                order = ModelV2ExtraIndex { newNumber::ref }.ascending()
+                order = ModelV2ExtraIndex.ref { newNumber }.ascending()
             )
         )
 
@@ -1011,7 +1011,7 @@ class FoundationDBDataStoreMigrationTest {
 
         val historicScanResponse = dataStore.execute(
             ModelV2ExtraIndex.scan(
-                order = ModelV2ExtraIndex { newNumber::ref }.descending(),
+                order = ModelV2ExtraIndex.ref { newNumber }.descending(),
                 toVersion = ULong.MAX_VALUE
             )
         )
@@ -1026,7 +1026,7 @@ class FoundationDBDataStoreMigrationTest {
         // Historic scan at time before changes: expect initial values ordering
         val preChangeHistoric = dataStore.execute(
             ModelV2ExtraIndex.scan(
-                order = ModelV2ExtraIndex { newNumber::ref }.descending(),
+                order = ModelV2ExtraIndex.ref { newNumber }.descending(),
                 toVersion = initialMaxVersion
             )
         )

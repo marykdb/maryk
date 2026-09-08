@@ -49,7 +49,7 @@ class HistoricIndexRebuildSoftDeleteTest {
                 ).statuses.single()
             )
 
-            val indexable = TestMarykModel { int::ref }
+            val indexable = TestMarykModel.ref { int }
             val columnFamilies = assertIs<HistoricTableColumnFamilies>(
                 store.getColumnFamilies(TestMarykModel)
             )
@@ -64,14 +64,14 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val currentScan = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5)
+                    where = Equals(TestMarykModel.ref { int } with 5)
                 )
             )
             assertEquals(0, currentScan.values.size)
             assertIs<FetchByTableScan>(
                 store.execute(
                     TestMarykModel.scan(
-                        where = Equals(TestMarykModel { int::ref } with 5),
+                        where = Equals(TestMarykModel.ref { int } with 5),
                         allowTableScan = true
                     )
                 ).dataFetchType
@@ -109,11 +109,11 @@ class HistoricIndexRebuildSoftDeleteTest {
                 ).statuses.single()
             )
 
-            val indexable = TestMarykModel { int::ref }
+            val indexable = TestMarykModel.ref { int }
             val columnFamilies = assertIs<HistoricTableColumnFamilies>(
                 store.getColumnFamilies(TestMarykModel)
             )
-            val intReference = TestMarykModel { int::ref }.toStorageByteArray()
+            val intReference = TestMarykModel.ref { int }.toStorageByteArray()
             val valueKey = addStatus.key.bytes + intReference
             val currentValue = store.db.get(columnFamilies.table, valueKey)!!
             store.db.put(columnFamilies.table, valueKey, currentValue + byteArrayOf(1))
@@ -126,7 +126,7 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val currentScan = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5)
+                    where = Equals(TestMarykModel.ref { int } with 5)
                 )
             )
             assertEquals(0, currentScan.values.size)
@@ -171,7 +171,7 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val baselinePostDelete = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = deleteStatus.version
                 )
             )
@@ -179,13 +179,13 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val baselinePreDelete = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = addStatus.version
                 )
             )
             assertEquals(1, baselinePreDelete.values.size)
 
-            val indexable = TestMarykModel { int::ref }
+            val indexable = TestMarykModel.ref { int }
             val columnFamilies = assertIs<HistoricTableColumnFamilies>(
                 store.getColumnFamilies(TestMarykModel)
             )
@@ -198,7 +198,7 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val postDelete = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = deleteStatus.version
                 )
             )
@@ -206,7 +206,7 @@ class HistoricIndexRebuildSoftDeleteTest {
 
             val preDelete = store.execute(
                 TestMarykModel.scan(
-                    where = Equals(TestMarykModel { int::ref } with 5),
+                    where = Equals(TestMarykModel.ref { int } with 5),
                     toVersion = addStatus.version
                 )
             )

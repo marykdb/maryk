@@ -13,10 +13,10 @@ import kotlin.test.expect
 
 class EnumValuesTest {
     private val enumValues = EnumValues(
-        TestMarykModel { enum::ref },
+        TestMarykModel.ref { enum },
         Aggregations(
             "total" to Sum(
-                TestMarykModel { double::ref }
+                TestMarykModel.ref { double }
             )
         )
     )

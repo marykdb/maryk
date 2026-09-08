@@ -106,7 +106,7 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { string::ref } with "wrong"
+                        TestMarykModel.ref { string } with "wrong"
                     )
                 )
             )
@@ -134,7 +134,7 @@ class DataStoreChangeValidationTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
-                    Change(TestMarykModel { uint::ref } with null)
+                    Change(TestMarykModel.ref { uint } with null)
                 )
             )
         )
@@ -162,7 +162,7 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[0].change(
                     ListChange(
-                        TestMarykModel { listOfString::ref }.change(
+                        TestMarykModel.ref { listOfString }.change(
                             addValuesToEnd = listOf("u", "v", "w", "x", "y", "z")
                         )
                     )
@@ -194,7 +194,7 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[0].change(
                     ListChange(
-                        TestMarykModel { listOfString::ref }.change(
+                        TestMarykModel.ref { listOfString }.change(
                             addValuesAtIndex = mapOf(
                                 0u to "verylongwrongvalue"
                             )
@@ -210,7 +210,7 @@ class DataStoreChangeValidationTest(
             validationFail.exceptions.apply {
                 expect(1) { size }
                 assertIs<InvalidSizeException>(first()).apply {
-                    expect(TestMarykModel { listOfString refAt 0u }) { reference }
+                    expect(TestMarykModel.ref { listOfString at 0u }) { reference }
                     expect("verylongwrongvalue") { value }
                 }
             }
@@ -229,7 +229,7 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[1].change(
                     SetChange(
-                        TestMarykModel { set::ref }.change(
+                        TestMarykModel.ref { set }.change(
                             addValues = setOf(
                                 LocalDate(2018, 11, 26),
                                 LocalDate(2019, 11, 26),
@@ -266,7 +266,7 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[1].change(
                     SetChange(
-                        TestMarykModel { set::ref }.change(
+                        TestMarykModel.ref { set }.change(
                             addValues = setOf(
                                 LocalDate(2101, 12, 31)
                             )
@@ -300,10 +300,10 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { map.refAt(LocalTime(1, 2, 3)) } with "test1",
-                        TestMarykModel { map.refAt(LocalTime(2, 3, 4)) } with "test2",
-                        TestMarykModel { map.refAt(LocalTime(3, 4, 5)) } with "test3",
-                        TestMarykModel { map.refAt(LocalTime(4, 5, 6)) } with "test4"
+                        TestMarykModel.ref { map.at(LocalTime(1, 2, 3)) } with "test1",
+                        TestMarykModel.ref { map.at(LocalTime(2, 3, 4)) } with "test2",
+                        TestMarykModel.ref { map.at(LocalTime(3, 4, 5)) } with "test3",
+                        TestMarykModel.ref { map.at(LocalTime(4, 5, 6)) } with "test4"
                     )
                 )
             )
@@ -341,8 +341,8 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { map.refAt(LocalTime(23, 52, 53)) } with "test1",
-                        TestMarykModel { map.refAt(LocalTime(1, 52, 53)) } with "verylongwrongsize"
+                        TestMarykModel.ref { map.at(LocalTime(23, 52, 53)) } with "test1",
+                        TestMarykModel.ref { map.at(LocalTime(1, 52, 53)) } with "verylongwrongsize"
                     )
                 )
             )
@@ -354,10 +354,10 @@ class DataStoreChangeValidationTest(
             validationFail.exceptions.apply {
                 expect(2) { size }
                 assertIs<OutOfRangeException>(first()).apply {
-                    expect(TestMarykModel { map refToKey LocalTime(23, 52, 53) }) { reference }
+                    expect(TestMarykModel.ref { map key LocalTime(23, 52, 53) }) { reference }
                 }
                 assertIs<InvalidSizeException>(this[1]).apply {
-                    expect(TestMarykModel { map refAt LocalTime(1, 52, 53) }) { reference }
+                    expect(TestMarykModel.ref { map at LocalTime(1, 52, 53) }) { reference }
                 }
             }
         }
@@ -382,7 +382,7 @@ class DataStoreChangeValidationTest(
             TestMarykModel.change(
                 keys[2].change(
                     Change(
-                        TestMarykModel { listOfString.refAt(0u) } with null
+                        TestMarykModel.ref { listOfString.at(0u) } with null
                     )
                 )
             )

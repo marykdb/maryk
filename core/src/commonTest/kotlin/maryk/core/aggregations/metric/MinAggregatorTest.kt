@@ -8,12 +8,12 @@ class MinAggregatorTest {
     @Test
     fun aggregate() {
         val minAggregator = MinAggregator(
-            Min(TestMarykModel { int::ref })
+            Min(TestMarykModel.ref { int })
         )
 
         expect(
             MinResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 null
             )
         ) {
@@ -26,7 +26,7 @@ class MinAggregatorTest {
 
         expect(
             MinResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 452
             )
         ) {

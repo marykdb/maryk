@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTypeInference::class)
+
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsValuesDataModel
@@ -15,6 +17,8 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValues
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
+import kotlin.experimental.ExperimentalTypeInference
+import kotlin.jvm.JvmName
 import kotlin.reflect.KProperty
 
 /**
@@ -38,6 +42,7 @@ data class EmbeddedValuesDefinitionWrapper<
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<EmbeddedValuesPropertyRef<DM, CX>>,
     IsEmbeddedValuesDefinition<DM, CX> by definition,
     IsDefinitionWrapper<Values<DM>, Values<DM>, CX, Any> {
     override val graphType = PropRef
@@ -64,8 +69,8 @@ data class EmbeddedValuesDefinitionWrapper<
         ValuesCollectorContext.add(ValueItem(this.index, Values(dm, items)))
     }
 
-    /** Get a top-level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */
-    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsValuesDataModel> refWithDM(
+    /** Select a property using an explicitly supplied [dataModel]. */
+    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsValuesDataModel> withModel(
         dataModel: DM,
         propertyDefinitionGetter: DM.() -> W
     ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<DM>> =
@@ -74,6 +79,23 @@ data class EmbeddedValuesDefinitionWrapper<
             propertyDefinitionGetter(dataModel)
                 .ref(this.ref(it)) as IsPropertyReference<T, W, IsValues<DM>>
         }
+
+    /** @deprecated Use [withModel]. */
+    @Deprecated("Use withModel(dataModel) { property }", ReplaceWith("withModel(dataModel, propertyDefinitionGetter)"))
+    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, DM: IsValuesDataModel> refWithDM(
+        dataModel: DM,
+        propertyDefinitionGetter: DM.() -> W
+    ): (AnyOutPropertyReference?) -> IsPropertyReference<T, W, IsValues<DM>> =
+        withModel(dataModel, propertyDefinitionGetter)
+
+    /** Select a child property and preserve its concrete reference type and parent path. */
+    @OverloadResolutionByLambdaReturnType
+    @JvmName("invokePropertySelection")
+    operator fun <R : IsPropertyReference<*, *, *>> invoke(
+        selector: DM.() -> IsReferenceCreator<R>
+    ): (AnyOutPropertyReference?) -> R = { parent ->
+        selector(definition.dataModel).ref(ref(parent))
+    }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(

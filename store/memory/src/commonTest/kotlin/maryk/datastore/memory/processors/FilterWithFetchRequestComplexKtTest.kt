@@ -47,7 +47,7 @@ class FilterWithFetchRequestComplexKtTest {
     fun doExistsFilter() {
         assertTrue {
             filterMatches(
-                Exists(ComplexModel { mapStringString.refAt("k1") }),
+                Exists(ComplexModel.ref { mapStringString.at("k1") }),
                 value1,
                 null,
                 recordFetcher
@@ -59,7 +59,7 @@ class FilterWithFetchRequestComplexKtTest {
     fun doEqualsFilter() {
         assertTrue {
             filterMatches(
-                Equals(ComplexModel { mapStringString.refAt("k1") } with "v1"),
+                Equals(ComplexModel.ref { mapStringString.at("k1") } with "v1"),
                 value1,
                 null,
                 recordFetcher
@@ -68,7 +68,7 @@ class FilterWithFetchRequestComplexKtTest {
 
         assertTrue {
             filterMatches(
-                Equals(ComplexModel { mapStringString.refToAnyValue() } with "v2"),
+                Equals(ComplexModel.ref { mapStringString.anyValue() } with "v2"),
                 value1,
                 null,
                 recordFetcher

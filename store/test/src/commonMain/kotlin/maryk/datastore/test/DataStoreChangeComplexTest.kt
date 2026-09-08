@@ -135,7 +135,7 @@ class DataStoreChangeComplexTest(
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[0].change(
-                    Change(ComplexModel { multi::ref } with null)
+                    Change(ComplexModel.ref { multi } with null)
                 )
             )
         )
@@ -159,7 +159,7 @@ class DataStoreChangeComplexTest(
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[2].change(
-                    Change(ComplexModel { mapIntObject::ref } with null)
+                    Change(ComplexModel.ref { mapIntObject } with null)
                 )
             )
         )
@@ -182,7 +182,7 @@ class DataStoreChangeComplexTest(
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[6].change(
-                    Change(ComplexModel { mapIntObject refAt 2u } with null)
+                    Change(ComplexModel.ref { mapIntObject at 2u } with null)
                 )
             )
         )
@@ -209,7 +209,7 @@ class DataStoreChangeComplexTest(
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[3].change(
-                    Change(ComplexModel { mapIntObject.at(1u) { model::ref } } with null)
+                    Change(ComplexModel.ref { mapIntObject.at(1u) { model } } with null)
                 )
             )
         )
@@ -237,10 +237,10 @@ class DataStoreChangeComplexTest(
             ComplexModel.change(
                 keys[4].change(
                     Change(
-                        ComplexModel {
-                            mapIntMulti.at(1u) { atType(T3) { model { model::ref } } }
+                        ComplexModel.ref {
+                            mapIntMulti.at(1u) { atType(T3) { model { model } } }
                         } with null,
-                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { model::ref } } } with null
+                        ComplexModel.ref { mapIntMulti.at(3u) { atType(T3) { model } } } with null
                     )
                 )
             )
@@ -274,11 +274,11 @@ class DataStoreChangeComplexTest(
             ComplexModel.change(
                 keys[5].change(
                     Change(
-                        ComplexModel {
-                            mapIntMulti.at(1u) { atType(T3) { model { model { value::ref } } } }
+                        ComplexModel.ref {
+                            mapIntMulti.at(1u) { atType(T3) { model { model { value } } } }
                         } with "changed",
-                        ComplexModel { mapIntObject.at(1u) { value::ref } } with "mapIntObjectChanged",
-                        ComplexModel { multi.withType(T3) { model { value::ref } } } with "multi sub changed"
+                        ComplexModel.ref { mapIntObject.at(1u) { value } } with "mapIntObjectChanged",
+                        ComplexModel.ref { multi.withType(T3) { model { value } } } with "multi sub changed"
                     )
                 )
             )
@@ -332,7 +332,7 @@ class DataStoreChangeComplexTest(
             ComplexModel.change(
                 keys[7].change(
                     Change(
-                        ComplexModel { mapIntObject refAt 5u } with EmbeddedMarykModel.create { value with "v5" },
+                        ComplexModel.ref { mapIntObject at 5u } with EmbeddedMarykModel.create { value with "v5" },
                     )
                 )
             )
@@ -394,10 +394,10 @@ class DataStoreChangeComplexTest(
             ComplexModel.change(
                 keys[5].change(
                     Change(
-                        ComplexModel { multi::ref } with newMultiValue,
-                        ComplexModel { mapStringString::ref } with newMapStringString,
-                        ComplexModel { mapIntObject::ref } with newMapIntObject,
-                        ComplexModel { mapIntMulti::ref } with newMapIntMulti
+                        ComplexModel.ref { multi } with newMultiValue,
+                        ComplexModel.ref { mapStringString } with newMapStringString,
+                        ComplexModel.ref { mapIntObject } with newMapIntObject,
+                        ComplexModel.ref { mapIntMulti } with newMapIntMulti
                     )
                 )
             )
@@ -427,13 +427,13 @@ class DataStoreChangeComplexTest(
             ComplexModel.change(
                 keys[0].change(
                     Change(
-                        ComplexModel { incMap.refAt(1u) } with EmbeddedMarykModel.create { value with "n" }
+                        ComplexModel.ref { incMap.at(1u) } with EmbeddedMarykModel.create { value with "n" }
                     ),
                     Change(
-                        ComplexModel { incMap.refAt(2u) } with null
+                        ComplexModel.ref { incMap.at(2u) } with null
                     ),
                     IncMapChange(
-                        ComplexModel { incMap::ref }.change(
+                        ComplexModel.ref { incMap }.change(
                             addValues = listOf(
                                 EmbeddedMarykModel.create { value with "q" },
                                 EmbeddedMarykModel.create { value with "r" }
@@ -451,7 +451,7 @@ class DataStoreChangeComplexTest(
                     listOf(
                         IncMapAddition(
                             IncMapKeyAdditions(
-                                ComplexModel { incMap::ref },
+                                ComplexModel.ref { incMap },
                                 listOf(3u, 4u),
                                 listOf(
                                     EmbeddedMarykModel.create { value with "q" },

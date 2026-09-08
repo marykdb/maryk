@@ -10,12 +10,12 @@ class SumAggregatorTest {
     @Test
     fun aggregate() {
         val sumAggregator = SumAggregator(
-            Sum(TestMarykModel { int::ref })
+            Sum(TestMarykModel.ref { int })
         )
 
         expect(
             SumResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 null
             )
         ) {
@@ -27,7 +27,7 @@ class SumAggregatorTest {
         sumAggregator.aggregate { 789 }
         expect(
             SumResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 14177
             )
         ) {
@@ -38,7 +38,7 @@ class SumAggregatorTest {
     @Test
     fun aggregateDecimal() {
         val sumAggregator = SumAggregator(
-            Sum(DecimalAggregationModel { amount::ref })
+            Sum(DecimalAggregationModel.ref { amount })
         )
 
         sumAggregator.aggregate { Decimal.parse("1.20") }
@@ -52,7 +52,7 @@ class SumAggregatorTest {
     @Test
     fun rejectsNonArithmeticDefinition() {
         assertFailsWith<IllegalArgumentException> {
-            Sum(NonArithmeticAggregationModel { bytes::ref }).createAggregator()
+            Sum(NonArithmeticAggregationModel.ref { bytes }).createAggregator()
         }
     }
 }

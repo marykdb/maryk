@@ -8,11 +8,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.IsUsableInMultiType
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.string
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.MultiTypeEnum
+import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlModelReader
@@ -57,7 +62,62 @@ private object SecondSharedEnumModel : RootDataModel<SecondSharedEnumModel>() {
     val kind by enum(index = 1u, enum = SharedKotlinEnum)
 }
 
+private sealed class SimpleIndexType<T : Any>(
+    index: UInt,
+    override val definition: IsUsableInMultiType<T, *>?,
+) : IndexedEnumImpl<SimpleIndexType<Any>>(index), MultiTypeEnum<T> {
+    object Text : SimpleIndexType<String>(1u, StringDefinition())
+
+    companion object : MultiTypeEnumDefinition<SimpleIndexType<out Any>>(
+        SimpleIndexType::class,
+        values = { listOf(Text) },
+    )
+}
+
+private object NestedTypedIndex : DataModel<NestedTypedIndex>() {
+    val value by multiType(index = 1u, typeEnum = SimpleIndexType)
+}
+
+private object SimpleTypedIndexes : RootDataModel<SimpleTypedIndexes>(
+    indexes = {
+        listOf(
+            SimpleTypedIndexes.ref { value simpleAtType SimpleIndexType.Text },
+            SimpleTypedIndexes.ref { nested { value simpleAtType SimpleIndexType.Text } },
+        )
+    },
+) {
+    val value by multiType(index = 1u, typeEnum = SimpleIndexType)
+    val nested by embed(index = 2u, dataModel = { NestedTypedIndex })
+}
+
 class GeneratedKotlinCompilationTest {
+    @Test
+    fun compilesGeneratedTopLevelAndNestedSimpleTypedIndexes() {
+        val packageName = "example.generated"
+        val generationContext = GenerationContext()
+        val sources = listOf(
+            buildString { NestedTypedIndex.generateKotlin(packageName, generationContext) { append(it) } },
+            buildString { SimpleTypedIndexes.generateKotlin(packageName, generationContext) { append(it) } },
+        )
+        val sourceDirectory = createTempDirectory()
+        val outputDirectory = createTempDirectory()
+        val sourceFiles = sources.mapIndexed { index, source ->
+            sourceDirectory.resolve("Generated$index.kt").also { it.writeText(source) }
+        }
+        val compilerOutput = ByteArrayOutputStream()
+
+        val result = K2JVMCompiler().exec(
+            PrintStream(compilerOutput),
+            "-classpath", System.getProperty("java.class.path"),
+            "-no-stdlib", "-no-reflect",
+            "-d", outputDirectory.toString(),
+            "-jvm-target", "17",
+            *sourceFiles.map { it.toString() }.toTypedArray(),
+        )
+
+        assertEquals(ExitCode.OK, result, compilerOutput.toString())
+    }
+
     @Test
     fun compilesGeneratedValueDataModelInConsumerContext() {
         val source = buildString {

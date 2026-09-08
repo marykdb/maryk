@@ -101,7 +101,7 @@ data class Values<DM : IsValuesDataModel> internal constructor(
                         @Suppress("UNCHECKED_CAST")
                         val multiDef = def as MultiTypeDefinitionWrapper<TypeEnum<Any>, Any, *, *, *>
                         val type = typedValue.type
-                        val typeRef = multiDef.refAtType(type)(parentRef)
+                        val typeRef = multiDef.atType(type).ref(parentRef)
 
                         val subDef = multiDef.definition(type)
                         if (subDef is IsEmbeddedValuesDefinition<*, *>) {

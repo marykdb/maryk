@@ -122,7 +122,7 @@ class HistoricStoreIndexValuesWalkerTest {
                 AnyValueMapIndexModel.change(
                     addStatus.key.change(
                         Change(
-                            AnyValueMapIndexModel { mapValues.refAt("m1") } with "v2"
+                            AnyValueMapIndexModel.ref { mapValues.at("m1") } with "v2"
                         )
                     )
                 )
@@ -130,7 +130,7 @@ class HistoricStoreIndexValuesWalkerTest {
                 assertIs<ChangeSuccess<AnyValueMapIndexModel>>(it)
             }
 
-            val indexable = AnyValueMapIndexModel { mapValues.refToAnyKey() }
+            val indexable = AnyValueMapIndexModel.ref { mapValues.anyKey() }
             val expected = indexable.toStorageByteArraysForIndex(
                 AnyValueMapIndexModel.create {
                     name with "walker"
@@ -188,7 +188,7 @@ class HistoricStoreIndexValuesWalkerTest {
                 AnyValueMapIndexModel.change(
                     key.change(
                         Change(
-                            AnyValueMapIndexModel { mapValues.refAt("m2") } with null
+                            AnyValueMapIndexModel.ref { mapValues.at("m2") } with null
                         )
                     )
                 )
@@ -196,7 +196,7 @@ class HistoricStoreIndexValuesWalkerTest {
                 assertIs<ChangeSuccess<AnyValueMapIndexModel>>(it)
             }
 
-            val indexable = AnyValueMapIndexModel { mapValues.refToAnyKey() }
+            val indexable = AnyValueMapIndexModel.ref { mapValues.anyKey() }
             val expected = listOf("m1", "m2").map { mapKey ->
                 val valueAndKey = indexable.toStorageByteArraysForIndex(
                     AnyValueMapIndexModel.create {
@@ -251,7 +251,7 @@ class HistoricStoreIndexValuesWalkerTest {
             )
             val key = status.key
             val versionBytes = status.version.toReversedVersionBytes()
-            val indexable = AnyValueMapIndexModel { mapValues.refToAnyKey() }
+            val indexable = AnyValueMapIndexModel.ref { mapValues.anyKey() }
 
             val columnFamilies = assertIs<HistoricTableColumnFamilies>(
                 store.getColumnFamilies(AnyValueMapIndexModel)
@@ -305,7 +305,7 @@ class HistoricStoreIndexValuesWalkerTest {
             )
             val key = status.key
             val versionBytes = status.version.toReversedVersionBytes()
-            val indexable = AnyValueSetIndexModel { setValues.refToAny() }
+            val indexable = AnyValueSetIndexModel.ref { setValues.any() }
 
             val columnFamilies = assertIs<HistoricTableColumnFamilies>(
                 store.getColumnFamilies(AnyValueSetIndexModel)
@@ -355,7 +355,7 @@ class HistoricStoreIndexValuesWalkerTest {
             )
             val key = status.key
             val versionBytes = status.version.toReversedVersionBytes()
-            val indexable = AnyValueSetIndexModel { setValues.refToAny() }
+            val indexable = AnyValueSetIndexModel.ref { setValues.any() }
 
             val columnFamilies = assertIs<HistoricTableColumnFamilies>(
                 store.getColumnFamilies(AnyValueSetIndexModel)
@@ -416,7 +416,7 @@ class HistoricStoreIndexValuesWalkerTest {
                 AnyValueSetIndexModel.change(
                     key.change(
                         Change(
-                            AnyValueSetIndexModel { setValues.refAt("s1") } with null
+                            AnyValueSetIndexModel.ref { setValues.item("s1") } with null
                         )
                     )
                 )
@@ -424,7 +424,7 @@ class HistoricStoreIndexValuesWalkerTest {
                 assertIs<ChangeSuccess<AnyValueSetIndexModel>>(it)
             }
 
-            val indexable = AnyValueSetIndexModel { setValues.refToAny() }
+            val indexable = AnyValueSetIndexModel.ref { setValues.any() }
             val expected = listOf("s1", "s2").map { setItem ->
                 val valueAndKey = indexable.toStorageByteArraysForIndex(
                     AnyValueSetIndexModel.create {

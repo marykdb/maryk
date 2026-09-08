@@ -109,7 +109,7 @@ class IsMigrationNeededTest {
     @Test
     fun newIndexAddedOnExistingProperties() {
         assertIs<NewIndicesOnExistingProperties>(ModelV2ExtraIndex.isMigrationNeeded(ModelV2)).apply {
-            indexesToIndex.containsAll(listOf(ModelV2ExtraIndex { newNumber::ref }))
+            indexesToIndex.containsAll(listOf(ModelV2ExtraIndex.ref { newNumber }))
         }
     }
 

@@ -322,20 +322,20 @@ Examples:
 
 ```kotlin
 Equals(
-    Person { surname::ref } with "garcia lopez"
+    Person.ref { surname } with "garcia lopez"
 )
 ```
 
 ```kotlin
 Prefix(
-    Person { surname::ref } with "gar"
+    Person.ref { surname } with "gar"
 )
 ```
 
 ```kotlin
 Orders(
-    Person { surname::ref }.ascending(),
-    Person { firstName::ref }.ascending()
+    Person.ref { surname }.ascending(),
+    Person.ref { firstName }.ascending()
 )
 ```
 

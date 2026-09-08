@@ -66,7 +66,7 @@ class BrowserStateHistoryTest {
             repeat(1_001) { index ->
                 store.execute(
                     HistoryModel.change(
-                        key.change(Change(HistoryModel { number::ref } with index.toUInt()))
+                        key.change(Change(HistoryModel.ref { number } with index.toUInt()))
                     )
                 )
             }
@@ -78,7 +78,7 @@ class BrowserStateHistoryTest {
                 history.first().changes
                     .filterIsInstance<Change>()
                     .flatMap { it.referenceValuePairs }
-                    .single { it.reference == HistoryModel { number::ref } }
+                    .single { it.reference == HistoryModel.ref { number } }
                     .value,
             )
         } finally {

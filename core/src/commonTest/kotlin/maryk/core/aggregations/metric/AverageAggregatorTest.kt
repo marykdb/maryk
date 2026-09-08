@@ -9,12 +9,12 @@ class AverageAggregatorTest {
     @Test
     fun aggregate() {
         val averageAggregator = AverageAggregator(
-            Average(TestMarykModel { int::ref })
+            Average(TestMarykModel.ref { int })
         )
 
         expect(
             AverageResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 null,
                 0uL
             )
@@ -28,7 +28,7 @@ class AverageAggregatorTest {
 
         expect(
             AverageResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 455,
                 3uL
             )
@@ -40,7 +40,7 @@ class AverageAggregatorTest {
     @Test
     fun aggregateDecimalRoundsHalfEvenAtPropertyScale() {
         val averageAggregator = AverageAggregator(
-            Average(DecimalAggregationModel { amount::ref })
+            Average(DecimalAggregationModel.ref { amount })
         )
 
         averageAggregator.aggregate { Decimal.parse("1.02") }

@@ -87,11 +87,11 @@ val person2Key // Key of person 2 to change
 
 val changeRequest = Person.change(
     person1Key.change(
-        Check(Person { firstName::ref } with "Jane"),
-        Change(Person { lastName::ref } with "Doe")
+        Check(Person.ref { firstName } with "Jane"),
+        Change(Person.ref { lastName } with "Doe")
     ),
     person2Key.change(
-        Change(Person { lastName::ref } with "Smith")
+        Change(Person.ref { lastName } with "Smith")
     )
 )
 ```
@@ -216,9 +216,9 @@ Aggregations apply to the current page; combine page results in the application
 when a total across every page is needed.
 
 ```kotlin
-val firstPage = dataStore.execute(Logs.scan(order = Logs { timeStamp::ref }, limit = 50u))
+val firstPage = dataStore.execute(Logs.scan(order = Logs.ref { timeStamp }, limit = 50u))
 val secondPage = firstPage.nextCursor?.let { cursor ->
-    dataStore.execute(Logs.scan(order = Logs { timeStamp::ref }, limit = 50u, cursor = cursor))
+    dataStore.execute(Logs.scan(order = Logs.ref { timeStamp }, limit = 50u, cursor = cursor))
 }
 ```
 
@@ -297,7 +297,7 @@ val timedKey // Key that indicates the starting point for scanning.
 val scanRequest = Logs.scanChanges(
     startKey = timedKey,
     select = graph { listOf(timeStamp, severity, message) },
-    where = GreaterThanEquals(Logs { severity::ref } with Severity.ERROR),
+    where = GreaterThanEquals(Logs.ref { severity } with Severity.ERROR),
     order = ref { timeStamp }.descending(),
     limit = 50u,
     includeStart = true,
@@ -372,7 +372,7 @@ val scanRequest = Logs.scanUpdates(
         )
     },
     where = GreaterThanEquals(
-        Logs { severity::ref } with Severity.ERROR
+        Logs.ref { severity } with Severity.ERROR
     ),
     order = ref { timeStamp }.descending(),
     filterSoftDeleted = false,

@@ -27,7 +27,7 @@ class DeleteCompleteIndexContentsTest {
                 dataModelsById = mapOf(1u to AnyValueSetIndexModel),
             )
 
-            val indexable = AnyValueSetIndexModel { setValues.refToAny() }
+            val indexable = AnyValueSetIndexModel.ref { setValues.any() }
             val columnFamilies = assertIs<HistoricTableColumnFamilies>(
                 store.getColumnFamilies(AnyValueSetIndexModel)
             )

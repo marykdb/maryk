@@ -12,8 +12,8 @@ import kotlin.test.expect
 
 class LessThanEqualsTest {
     private val lessThanEquals = LessThanEquals(
-        TestMarykModel { string::ref } with "test",
-        TestMarykModel { int::ref } with 6
+        TestMarykModel.ref { string } with "test",
+        TestMarykModel.ref { int } with 6
     )
 
     private val context = RequestContext(

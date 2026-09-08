@@ -282,7 +282,7 @@ class HistoricIndexTimeTravelTest {
 
             val startStatus = addStatuses.maxWith { left, right -> left.key.bytes compareTo right.key.bytes }
             val tableDirs = store.getTableDirs(EmptyIndexedStringModel)
-            val reference = EmptyIndexedStringModel { value::ref }.toStorageByteArray()
+            val reference = EmptyIndexedStringModel.ref { value }.toStorageByteArray()
             val valueKey = packKey(tableDirs.tablePrefix, startStatus.key.bytes + reference)
 
             store.runTransaction { tr ->
@@ -294,7 +294,7 @@ class HistoricIndexTimeTravelTest {
                 EmptyIndexedStringModel.scan(
                     startKey = startStatus.key,
                     toVersion = addStatuses.maxOf { it.version },
-                    order = EmptyIndexedStringModel { value::ref }.ascending()
+                    order = EmptyIndexedStringModel.ref { value }.ascending()
                 )
             )
 
@@ -327,7 +327,7 @@ class HistoricIndexTimeTravelTest {
                 ).key
 
                 val tableDirs = store.getTableDirs(UniqueModel)
-                val uniqueDefinitionMarker = byteArrayOf(0) + UniqueModel { email::ref }.toStorageByteArray()
+                val uniqueDefinitionMarker = byteArrayOf(0) + UniqueModel.ref { email }.toStorageByteArray()
                 store.runTransaction { tr ->
                     tr.clear(packKey(tableDirs.uniquePrefix, uniqueDefinitionMarker))
                 }

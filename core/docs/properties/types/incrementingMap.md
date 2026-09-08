@@ -55,7 +55,7 @@ Example on a model with a map containing integers mapped to strings:
 ```kotlin
 
 IncMapChange(
-    Model { incMap::ref }.change(
+    Model.ref { incMap }.change(
         addValues = listOf(
             "a",
             "b"

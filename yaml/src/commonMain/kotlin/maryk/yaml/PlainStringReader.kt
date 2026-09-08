@@ -15,7 +15,7 @@ internal enum class PlainStyleMode {
  * Reads a plain String
  * Set [startWith] to set first characters
  * Pass [tag] to set type on Value.
- * Pass [extraIndent] to set at how many indents where present before plain string so it can be added as map start values
+ * Pass [extraIndent] to set how many indents were present before the plain string so it can be added as map start values
  * [flowMode] determines which characters can stop the reader
  * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
  */

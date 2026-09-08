@@ -12,7 +12,7 @@ import kotlin.test.expect
 
 class RegExTest {
     private val regEx = RegEx(
-        TestMarykModel { string::ref } with Regex(".*")
+        TestMarykModel.ref { string } with Regex(".*")
     )
 
     private val context = RequestContext(

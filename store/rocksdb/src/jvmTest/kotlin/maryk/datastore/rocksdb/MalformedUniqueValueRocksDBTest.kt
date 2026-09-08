@@ -53,7 +53,7 @@ class MalformedUniqueValueRocksDBTest {
             )
 
             val columnFamilies = store.getColumnFamilies(UniqueModel)
-            val reference = UniqueModel { email::ref }.toStorageByteArray()
+            val reference = UniqueModel.ref { email }.toStorageByteArray()
 
             store.db.newIterator(columnFamilies.unique).use { iterator ->
                 iterator.seek(reference)
@@ -100,7 +100,7 @@ class MalformedUniqueValueRocksDBTest {
             )
 
             val columnFamilies = store.getColumnFamilies(UniqueModel) as HistoricTableColumnFamilies
-            val reference = UniqueModel { email::ref }.toStorageByteArray()
+            val reference = UniqueModel.ref { email }.toStorageByteArray()
 
             store.db.newIterator(columnFamilies.historic.unique).use { iterator ->
                 iterator.seek(reference)
@@ -210,7 +210,7 @@ class MalformedUniqueValueRocksDBTest {
             )
 
             val columnFamilies = store.getColumnFamilies(UniqueModel)
-            val valueKey = addStatus.key.bytes + UniqueModel { email::ref }.toStorageByteArray()
+            val valueKey = addStatus.key.bytes + UniqueModel.ref { email }.toStorageByteArray()
             val currentValue = store.db.get(columnFamilies.table, valueKey)!!
             store.db.put(columnFamilies.table, valueKey, currentValue + byteArrayOf(1))
 
@@ -258,7 +258,7 @@ class MalformedUniqueValueRocksDBTest {
             )
 
             val columnFamilies = store.getColumnFamilies(UniqueModel)
-            val valueKey = addStatus.key.bytes + UniqueModel { email::ref }.toStorageByteArray()
+            val valueKey = addStatus.key.bytes + UniqueModel.ref { email }.toStorageByteArray()
             val currentValue = store.db.get(columnFamilies.table, valueKey)!!
             store.db.put(columnFamilies.table, valueKey, currentValue + byteArrayOf(1))
 
@@ -310,7 +310,7 @@ class MalformedUniqueValueRocksDBTest {
             )
 
             val columnFamilies = store.getColumnFamilies(NullableUniqueModel)
-            val valueKey = addStatus.key.bytes + NullableUniqueModel { email::ref }.toStorageByteArray()
+            val valueKey = addStatus.key.bytes + NullableUniqueModel.ref { email }.toStorageByteArray()
             val currentValue = store.db.get(columnFamilies.table, valueKey)!!
             store.db.put(columnFamilies.table, valueKey, currentValue + byteArrayOf(1))
 
@@ -318,7 +318,7 @@ class MalformedUniqueValueRocksDBTest {
                 store.execute(
                     NullableUniqueModel.change(
                         addStatus.key.change(
-                            Change(NullableUniqueModel { email::ref } with null)
+                            Change(NullableUniqueModel.ref { email } with null)
                         )
                     )
                 ).statuses.single()
@@ -362,7 +362,7 @@ class MalformedUniqueValueRocksDBTest {
             )
 
             val columnFamilies = store.getColumnFamilies(UniqueModel)
-            val valueKey = addStatus.key.bytes + UniqueModel { email::ref }.toStorageByteArray()
+            val valueKey = addStatus.key.bytes + UniqueModel.ref { email }.toStorageByteArray()
             val currentValue = store.db.get(columnFamilies.table, valueKey)!!
             store.db.put(columnFamilies.table, valueKey, currentValue + byteArrayOf(1))
 
@@ -412,7 +412,7 @@ class MalformedUniqueValueRocksDBTest {
             )
 
             val columnFamilies = store.getColumnFamilies(UniqueModel)
-            val valueKey = addStatus.key.bytes + UniqueModel { email::ref }.toStorageByteArray()
+            val valueKey = addStatus.key.bytes + UniqueModel.ref { email }.toStorageByteArray()
             val currentValue = store.db.get(columnFamilies.table, valueKey)!!
             store.db.put(columnFamilies.table, valueKey, currentValue + byteArrayOf(1))
 
@@ -448,7 +448,7 @@ class MalformedUniqueValueRocksDBTest {
     }
 
     private fun uniqueReference(store: RocksDBDataStore, emailValue: String): ByteArray {
-        val reference = UniqueModel { email::ref }.toStorageByteArray()
+        val reference = UniqueModel.ref { email }.toStorageByteArray()
         val definition = UniqueModel.email.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>
         val valueBytes = definition.toStorageBytes(emailValue as Comparable<Any>)
         val rawUniqueValue = byteArrayOf(TypeIndicator.NoTypeIndicator.byte) + valueBytes

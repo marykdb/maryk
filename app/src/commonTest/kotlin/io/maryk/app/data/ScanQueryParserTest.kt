@@ -19,7 +19,7 @@ class ScanQueryParserTest {
             ScanQueryParser.parseSelectGraph(ScanParserModel, listOf("map[12:34:56]"))
         )
 
-        assertTrue(graph.contains(ScanParserModel { map.refAt(LocalTime(12, 34, 56)) }))
+        assertTrue(graph.contains(ScanParserModel.ref { map.at(LocalTime(12, 34, 56)) }))
     }
 
     @Test

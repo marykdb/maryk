@@ -5,8 +5,8 @@ import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.SetItemReference
 
-/** Extension to support fetching set item refs by [setItem] */
-fun <T : Any> IsSetDefinition<T, *>.refAt(
+/** Select a set item reference by [setItem]. */
+infix fun <T : Any> IsSetDefinition<T, *>.item(
     setItem: T
 ): (AnyOutPropertyReference?) -> SetItemReference<T, *> =
     {
@@ -15,3 +15,10 @@ fun <T : Any> IsSetDefinition<T, *>.refAt(
             it as CanContainSetItemReference<*, *, *>
         )
     }
+
+/** @deprecated Use [item]. */
+@Deprecated("Use item(setItem)", ReplaceWith("item(setItem)", "maryk.core.properties.references.dsl.item"))
+fun <T : Any> IsSetDefinition<T, *>.refAt(
+    setItem: T
+): (AnyOutPropertyReference?) -> SetItemReference<T, *> =
+    this.item(setItem)

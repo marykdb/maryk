@@ -11,12 +11,12 @@ import kotlin.test.expect
 
 class MaxResponseTest {
     private val maxResponse = MaxResponse(
-        reference = TestMarykModel { int::ref },
+        reference = TestMarykModel.ref { int },
         value = 1234
     )
 
     private val maxResponseNull = MaxResponse(
-        reference = TestMarykModel { int::ref },
+        reference = TestMarykModel.ref { int },
         value = null
     )
 

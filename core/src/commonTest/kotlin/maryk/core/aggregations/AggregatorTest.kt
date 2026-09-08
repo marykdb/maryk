@@ -13,8 +13,8 @@ class AggregatorTest {
     fun aggregate() {
         val aggregator = Aggregator(
             Aggregations(
-                "sum" to Sum(TestMarykModel { int::ref }),
-                "count" to ValueCount(TestMarykModel { int::ref })
+                "sum" to Sum(TestMarykModel.ref { int }),
+                "count" to ValueCount(TestMarykModel.ref { int })
             )
         )
 
@@ -32,11 +32,11 @@ class AggregatorTest {
         expect(
             AggregationsResponse(
                 "sum" to SumResponse(
-                    TestMarykModel { int::ref },
+                    TestMarykModel.ref { int },
                     14177
                 ),
                 "count" to ValueCountResponse(
-                    TestMarykModel { int::ref },
+                    TestMarykModel.ref { int },
                     3uL
                 )
             )

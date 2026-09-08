@@ -41,20 +41,38 @@ interface IsMapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyCont
         }
     }
 
-    /** For quick notation to get a map [key] reference */
+    /** Select a map key reference for [key]. */
+    infix fun key(key: K): IsReferenceCreator<MapKeyReference<K, V, *>> =
+        IsReferenceCreator { this.keyRef(key, it) }
+
+    /** Select a map value reference at [key]. */
+    infix fun at(key: K): IsReferenceCreator<MapValueReference<K, V, *>> =
+        IsReferenceCreator { this.valueRef(key, it) }
+
+    /** @deprecated Use [key]. */
+    @Deprecated("Use key(key)", ReplaceWith("key(key)::ref"))
     infix fun refToKey(key: K): (AnyOutPropertyReference?) -> MapKeyReference<K, V, *> =
-        { this.keyRef(key, it) }
+        { this.key(key).ref(it) }
 
-    /** For quick notation to get a map value reference at given [key] */
+    /** @deprecated Use [at]. */
+    @Deprecated("Use at(key)", ReplaceWith("at(key)::ref"))
     infix fun refAt(key: K): (AnyOutPropertyReference?) -> MapValueReference<K, V, *> =
-        { this.valueRef(key, it) }
+        { this.at(key).ref(it) }
 
-    /** For quick notation to get a map key reference at any key */
-    fun refToAnyKey(): (AnyOutPropertyReference?) -> MapAnyKeyReference<K, V, *> =
+    /** For quick notation to get a map key reference at any key. */
+    fun anyKey(): (AnyOutPropertyReference?) -> MapAnyKeyReference<K, V, *> =
         this::anyKeyRef
 
-    /** For quick notation to get a map value reference at any key */
-    fun refToAnyValue(): (AnyOutPropertyReference?) -> MapAnyValueReference<K, V, *> =
+    /** For quick notation to get a map value reference at any key. */
+    fun anyValue(): (AnyOutPropertyReference?) -> MapAnyValueReference<K, V, *> =
         this::anyValueRef
+
+    /** @deprecated Use [anyKey]. */
+    @Deprecated("Use anyKey()", ReplaceWith("anyKey()"))
+    fun refToAnyKey(): (AnyOutPropertyReference?) -> MapAnyKeyReference<K, V, *> = anyKey()
+
+    /** @deprecated Use [anyValue]. */
+    @Deprecated("Use anyValue()", ReplaceWith("anyValue()"))
+    fun refToAnyValue(): (AnyOutPropertyReference?) -> MapAnyValueReference<K, V, *> = anyValue()
 
 }

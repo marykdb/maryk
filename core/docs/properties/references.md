@@ -30,19 +30,66 @@ object Address : DataModel<Address>() {
 With compiled models Kotlin produces type strict property definitions. This means your IDE will
 help to validate and autocomplete them.
 
-Examples:
+`RootDataModel`, `DataModel`, and `ObjectDataModel` inherit `ref`. Return the property you want; no
+helper import is needed:
+
 ```kotlin
 // Reference to firstName property
-Person { firstName::ref }
+Person.ref { firstName }
 
 // Reference to street through a Person
-Person { livingAddress { street::ref } }
+Person.ref { livingAddress { street } }
 ```
 
-For deeper nesting, chain `{}` blocks and call `::ref` on the last property
+Each block retains its concrete model receiver, so the IDE can suggest Person
+properties in the outer block and Address properties in the embedded block.
+The selected property's value type is preserved for typed query operands:
+
 ```kotlin
-Model { property { property { property { property { property::ref } } } } }
+Equals(Person.ref { firstName } with "Jane")
 ```
+
+This syntax uses the existing model receivers; it does not hide their other
+public members from completion or require generated scope classes.
+
+For deeper embedding, chain blocks and return the leaf property:
+
+```kotlin
+Model.ref { property { property { property { leaf } } } }
+```
+
+Direct selection preserves the property's concrete reference type, including
+through embedded models, map navigation, referenced models, and multi-type
+branches. It supports index definitions, reference-specific change operations,
+and storage-byte operations without casts or an inner `::ref`.
+
+```kotlin
+val index: IsIndexable = Person.ref { livingAddress { street } }
+val change = Model.ref { incMap }.change(addValues = listOf("new"))
+```
+
+Property wrappers expose this relationship through `IsReferenceCreator<R>`.
+Custom wrappers can implement that interface using their existing concrete
+`ref(parentRef)` override. Generic helpers should retain this contract when
+they need to preserve the concrete return type.
+
+The original callable-reference selectors remain supported for compatibility.
+The outer `Person { ... }` reference syntax is deprecated in favor of `Person.ref`.
+
+```kotlin
+Person.ref { firstName }
+Person.ref { livingAddress { street } }
+```
+
+For generic code whose model is typed only as an `IsDataModel` interface, and for
+framework models based directly on `TypedObjectDataModel` (including
+`DefinitionModel`), the extension remains available through
+`import maryk.core.properties.references.dsl.ref`.
+Existing imports can remain; concrete models use their inherited member.
+
+Embedded values and embedded objects support direct property selection. Map
+`at(key)` and `any { ... }`, referenced-model blocks, and multi-type `withType`
+and `atType` blocks also support returning the child property directly.
 
 ## Creating property references with String notation
 
@@ -58,10 +105,10 @@ It is also possible to refer to a value inside a map to filter or order:
 ```kotlin
 // Model contains map with Time as a key
 // Refer to the value at 12:23
-Model { map refAt Time(12, 23) }
+Model.ref { map.at(Time(12, 23)) }
 ```
 
-In string notation this becomes `map.@12:23`. Validation errors that refer to the key use `map.$12:23`.
+In string notation this becomes `map.@12:23`. References to the key itself use `map.#12:23`.
 
 ### Wildcards for maps
 
@@ -69,10 +116,10 @@ Maps support wildcard references for both values and keys:
 
 ```kotlin
 // Any key in the map
-Model { map.refToAnyKey() }
+Model.ref { map.anyKey() }
 
 // Any value in the map
-Model { map.refToAnyValue() }
+Model.ref { map.anyValue() }
 ```
 
 String notation:
@@ -85,17 +132,17 @@ Items in sets can be selected by value
 ```kotlin
 // Model with a set property of Time
 // Refer to the value at Time(12, 23)
-Model { set refAt Time(12, 23) }
+Model.ref { set.item(Time(12, 23)) }
 ```
 
-In string notation this is `set.$12:23`.
+In string notation this is `set.#12:23`.
 
 ### Wildcards for sets
 
 Sets support wildcard references to match any item value:
 
 ```kotlin
-Model { set.refToAny() }
+Model.ref { set.any() }
 ```
 
 String notation:
@@ -107,7 +154,7 @@ Items in lists can also be selected by index
 ```kotlin
 // Model with list property
 // Refer to the value at index 5
-Model { list refAt 5 }
+Model.ref { list.at(5u) }
 ```
 
 In string notation this is `list.@5`.

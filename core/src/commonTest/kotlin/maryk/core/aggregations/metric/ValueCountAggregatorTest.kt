@@ -8,12 +8,12 @@ class ValueCountAggregatorTest {
     @Test
     fun aggregate() {
         val valueCountAggregator = ValueCountAggregator(
-            ValueCount(TestMarykModel { int::ref })
+            ValueCount(TestMarykModel.ref { int })
         )
 
         expect(
             ValueCountResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 0uL
             )
         ) {
@@ -25,7 +25,7 @@ class ValueCountAggregatorTest {
         valueCountAggregator.aggregate { 789 }
         expect(
             ValueCountResponse(
-                TestMarykModel { int::ref },
+                TestMarykModel.ref { int },
                 3uL
             )
         ) {

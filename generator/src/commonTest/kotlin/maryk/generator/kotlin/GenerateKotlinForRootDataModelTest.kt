@@ -840,7 +840,7 @@ class GenerateKotlinForRootDataModelTest {
             }
         }
 
-        assertTrue(output.contains("simpleRefAtType MeasurementType.Number"))
+        assertTrue(output.contains("Measurement.ref { measurement simpleAtType MeasurementType.Number }"))
         assertTrue(output.contains("keyDefinition = {\n        Measurement.run {"))
         assertTrue(output.contains("indexes = {\n        Measurement.run {"))
         assertTrue(!output.contains(",,"))

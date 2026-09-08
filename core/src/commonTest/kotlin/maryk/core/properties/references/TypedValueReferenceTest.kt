@@ -14,11 +14,11 @@ import kotlin.test.expect
 
 class TypedValueReferenceTest {
     private val typedValueReference =
-        TestMarykModel { multi refAtType S2 }
+        TestMarykModel.ref { multi atType S2 }
 
     @Test
     fun cacheReferenceTest() {
-        assertSame(typedValueReference, TestMarykModel { multi refAtType S2 })
+        assertSame(typedValueReference, TestMarykModel.ref { multi atType S2 })
     }
 
     @Test

@@ -30,7 +30,7 @@ val requests = Requests.create(context = context) {
                 keys with Inject(
                     "collectedResponse",
                     ValuesResponse {
-                        values.atAny { values.refWithDM(Person) { friends } }
+                        values.atAny { values.withModel(Person) { friends } }
                     }
                 )
             }

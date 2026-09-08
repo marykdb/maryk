@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
+import kotlin.experimental.ExperimentalTypeInference
+import kotlin.jvm.JvmName
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.invoke
@@ -59,8 +61,9 @@ data class ObjectListDefinitionWrapper<
         }
     }
 
-    /** Get a top level reference on a model at [index] with [propertyDefinitionGetter] */
+    /** Get a top level reference on a model at [index] with [propertyDefinitionGetter]. */
     @Suppress("UNCHECKED_CAST")
+    @Deprecated("Use at(index) { property } when selecting a concrete property")
     fun <T : Any> refAt(
         index: UInt,
         propertyDefinitionGetter: DM.() -> IsDefinitionWrapper<T, *, *, *>
@@ -88,6 +91,15 @@ data class ObjectListDefinitionWrapper<
                 referenceGetter as IsObjectDataModel<*>.() -> (AnyOutPropertyReference?) -> R
             )
         }
+
+    /** Select an object-list child while preserving its concrete reference type. */
+    @OptIn(ExperimentalTypeInference::class)
+    @OverloadResolutionByLambdaReturnType
+    @JvmName("atPropertySelection")
+    fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> at(
+        index: UInt,
+        selector: DM.() -> IsReferenceCreator<R>
+    ): (AnyOutPropertyReference?) -> R = at(index, referenceGetter = { selector(this)::ref })
 
     /** Reference values to references from [referenceGetter] at any item of list */
     fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> atAny(

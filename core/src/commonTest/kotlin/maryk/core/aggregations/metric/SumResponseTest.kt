@@ -11,7 +11,7 @@ import kotlin.test.expect
 
 class SumResponseTest {
     private val sumResponse = SumResponse(
-        reference = TestMarykModel { double::ref },
+        reference = TestMarykModel.ref { double },
         value = 1.234
     )
 

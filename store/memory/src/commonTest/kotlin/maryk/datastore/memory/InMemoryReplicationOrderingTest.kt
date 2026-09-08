@@ -81,9 +81,9 @@ class InMemoryReplicationOrderingTest {
                         index = 0,
                         changes = listOf(
                             ObjectCreate,
-                            Change(Log { message::ref } with "stale create"),
-                            Change(Log { severity::ref } with INFO),
-                            Change(Log { this.timestamp::ref } with timestamp),
+                            Change(Log.ref { message } with "stale create"),
+                            Change(Log.ref { severity } with INFO),
+                            Change(Log.ref { this.timestamp } with timestamp),
                         ),
                     ),
                 )

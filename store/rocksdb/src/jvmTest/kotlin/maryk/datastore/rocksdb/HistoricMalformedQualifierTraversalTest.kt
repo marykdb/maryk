@@ -239,7 +239,7 @@ class HistoricMalformedQualifierTraversalTest {
     ) {
         val columnFamilies = getColumnFamilies(NullableUniqueModel) as HistoricTableColumnFamilies
         val versionBytes = HLC.toStorageBytes(HLC(addStatus.version))
-        val reference = NullableUniqueModel { email::ref }.toStorageByteArray()
+        val reference = NullableUniqueModel.ref { email }.toStorageByteArray()
         val historicReference = combineToByteArray(addStatus.key.bytes, reference, versionBytes).apply {
             invert(size - versionBytes.size)
         }

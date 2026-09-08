@@ -23,19 +23,19 @@ Examples:
 
 ```kotlin
 Equals(
-    Person { surname::ref } with "Mous"
+    Person.ref { surname } with "Mous"
 )
 ```
 
 ```kotlin
 GreaterThan(
-    Person { age::ref } with 42
+    Person.ref { age } with 42
 )
 ```
 
 ```kotlin
 Prefix(
-    Person { surname::ref } with "Mo"
+    Person.ref { surname } with "Mo"
 )
 ```
 
@@ -283,7 +283,7 @@ And(
         "name" with "garcia"
     ),
     Equals(
-        Person { active::ref } with true
+        Person.ref { active } with true
     )
 )
 ```

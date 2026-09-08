@@ -32,6 +32,7 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<SetReference<T, CX>>,
     IsSetDefinition<T, CX> by definition,
     IsChangeableValueDefinition<Set<T>, CX>,
     IsDefinitionWrapper<Set<T>, Set<T>, CX, DO> {
@@ -52,14 +53,22 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
         this.definition.anyItemRef(ref)
     }
 
-    /** For quick notation to get a set [item] reference */
-    infix fun refAt(item: T): (AnyOutPropertyReference?) -> SetItemReference<T, *> {
-        return { this.itemRef(item, it) }
-    }
+    /** Select a set item reference for [item]. */
+    infix fun item(item: T): IsReferenceCreator<SetItemReference<T, *>> =
+        IsReferenceCreator { this.itemRef(item, it) }
 
-    /** For quick notation to get any set item reference */
-    fun refToAny(): (AnyOutPropertyReference?) -> SetAnyValueReference<T, CX> =
+    /** @deprecated Use [item]. */
+    @Deprecated("Use item(item)", ReplaceWith("item(item)::ref"))
+    infix fun refAt(item: T): (AnyOutPropertyReference?) -> SetItemReference<T, *> =
+        { this.item(item).ref(it) }
+
+    /** For quick notation to get any set item reference. */
+    fun any(): (AnyOutPropertyReference?) -> SetAnyValueReference<T, CX> =
         this::anyItemReference
+
+    /** @deprecated Use [any]. */
+    @Deprecated("Use any()", ReplaceWith("any()"))
+    fun refToAny(): (AnyOutPropertyReference?) -> SetAnyValueReference<T, CX> = any()
 
     // For delegation in definition
     @Suppress("unused")

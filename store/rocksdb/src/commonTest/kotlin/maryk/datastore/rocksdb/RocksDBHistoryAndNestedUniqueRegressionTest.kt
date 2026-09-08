@@ -111,9 +111,9 @@ class RocksDBHistoryAndNestedUniqueRegressionTest {
                     HistoricCollectionsModel.change(
                         key.change(
                             Change(
-                                HistoricCollectionsModel { listValue::ref } with emptyList<String>(),
-                                HistoricCollectionsModel { setValue::ref } with emptySet<String>(),
-                                HistoricCollectionsModel { mapValue::ref } with emptyMap<String, String>(),
+                                HistoricCollectionsModel.ref { listValue } with emptyList<String>(),
+                                HistoricCollectionsModel.ref { setValue } with emptySet<String>(),
+                                HistoricCollectionsModel.ref { mapValue } with emptyMap<String, String>(),
                             )
                         )
                     )
@@ -122,7 +122,7 @@ class RocksDBHistoryAndNestedUniqueRegressionTest {
             val laterVersion = assertStatusIs<ChangeSuccess<HistoricCollectionsModel>>(
                 store.execute(
                     HistoricCollectionsModel.change(
-                        key.change(Change(HistoricCollectionsModel { marker::ref } with "later"))
+                        key.change(Change(HistoricCollectionsModel.ref { marker } with "later"))
                     )
                 ).statuses.single()
             ).version
@@ -174,7 +174,7 @@ class RocksDBHistoryAndNestedUniqueRegressionTest {
                     NestedUniqueCollectionsModel.change(
                         contender.key.change(
                             ListChange(
-                                NestedUniqueCollectionsModel { listValue::ref }.change(
+                                NestedUniqueCollectionsModel.ref { listValue }.change(
                                     addValuesToEnd = listOf("owned-list")
                                 )
                             )
@@ -189,7 +189,7 @@ class RocksDBHistoryAndNestedUniqueRegressionTest {
                     NestedUniqueCollectionsModel.change(
                         contender.key.change(
                             SetChange(
-                                NestedUniqueCollectionsModel { setValue::ref }.change(
+                                NestedUniqueCollectionsModel.ref { setValue }.change(
                                     addValues = setOf("owned-set")
                                 )
                             )
@@ -227,7 +227,7 @@ class RocksDBHistoryAndNestedUniqueRegressionTest {
                     NestedUniqueCollectionsModel.change(
                         owner.key.change(
                             ListChange(
-                                NestedUniqueCollectionsModel { listValue::ref }.change(
+                                NestedUniqueCollectionsModel.ref { listValue }.change(
                                     deleteValues = listOf("remove")
                                 )
                             )

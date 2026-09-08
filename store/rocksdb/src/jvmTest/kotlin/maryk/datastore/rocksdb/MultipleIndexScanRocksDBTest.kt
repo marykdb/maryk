@@ -29,8 +29,8 @@ class MultipleIndexScanRocksDBTest {
                 dataModelsById = mapOf(1u to Person),
             )
             val order = Orders(
-                Person { surname::ref }.ascending(),
-                Person { firstName::ref }.ascending(),
+                Person.ref { surname }.ascending(),
+                Person.ref { firstName }.ascending(),
             )
             Person.create {
                 firstName with "Jurriaan"
@@ -114,8 +114,8 @@ class MultipleIndexScanRocksDBTest {
             val orderedScan = store.execute(
                 Person.scan(
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     )
                 )
             )
@@ -128,10 +128,10 @@ class MultipleIndexScanRocksDBTest {
 
             val filteredScan = store.execute(
                 Person.scan(
-                    where = Equals(Person { surname::ref } with "Kastens"),
+                    where = Equals(Person.ref { surname } with "Kastens"),
                     order = Orders(
-                        Person { surname::ref }.ascending(),
-                        Person { firstName::ref }.ascending()
+                        Person.ref { surname }.ascending(),
+                        Person.ref { firstName }.ascending()
                     )
                 )
             )

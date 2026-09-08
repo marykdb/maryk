@@ -111,8 +111,8 @@ Change operations can include checks. Use them to guard against stale writes:
 ```kotlin
 Person.change(
     key.change(
-        Check(Person { lastName::ref } with "Doe"),
-        Change(Person { lastName::ref } with "Roe")
+        Check(Person.ref { lastName } with "Doe"),
+        Change(Person.ref { lastName } with "Roe")
     )
 )
 ```

@@ -51,6 +51,10 @@ open class DataModel<DM: IsValuesDataModel>(
 
     override val Meta = meta(typedThis::class.simpleName)
 
+    @Deprecated(
+        message = "Use ref { property } to select a property reference",
+        replaceWith = ReplaceWith("ref(parent, referenceGetter)", "maryk.core.properties.references.dsl.ref"),
+    )
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(
         parent: AnyOutPropertyReference? = null,
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R

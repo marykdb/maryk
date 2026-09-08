@@ -134,7 +134,7 @@ class MalformedSoftDeleteCurrentRowRocksDBTest {
             )
 
             val columnFamilies = store.getColumnFamilies(TestMarykModel)
-            val setItemKey = addStatus.key.bytes + TestMarykModel { set.refAt(setValue) }.toStorageByteArray()
+            val setItemKey = addStatus.key.bytes + TestMarykModel.ref { set.item(setValue) }.toStorageByteArray()
             store.db.put(
                 columnFamilies.table,
                 setItemKey,
@@ -146,7 +146,7 @@ class MalformedSoftDeleteCurrentRowRocksDBTest {
                     TestMarykModel.change(
                         addStatus.key.change(
                             SetChange(
-                                TestMarykModel { set::ref }.change(
+                                TestMarykModel.ref { set }.change(
                                     addValues = setOf(setValue)
                                 )
                             )

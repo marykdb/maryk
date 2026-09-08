@@ -142,7 +142,7 @@ class UpdateListenerForGetTest {
             ),
         )
         val listener = UpdateListenerForGet(request, response)
-        val change = Change(SimpleMarykModel { value::ref } with "changed")
+        val change = Change(SimpleMarykModel.ref { value } with "changed")
 
         listener.process(
             Update.Change(SimpleMarykModel, key, 2uL, listOf(change)),

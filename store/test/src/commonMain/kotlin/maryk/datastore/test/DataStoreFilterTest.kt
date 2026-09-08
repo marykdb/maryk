@@ -113,7 +113,7 @@ class DataStoreFilterTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[0].change(
-                    Change(TestMarykModel { reference::ref } with keys[1])
+                    Change(TestMarykModel.ref { reference } with keys[1])
                 )
             )
         )
@@ -150,7 +150,7 @@ class DataStoreFilterTest(
     private suspend fun doExistsFilter() {
         assertTrue {
             filterMatches(
-                Exists(TestMarykModel { string::ref })
+                Exists(TestMarykModel.ref { string })
             )
         }
 
@@ -158,7 +158,7 @@ class DataStoreFilterTest(
             // Below version it did not exist
             assertFalse {
                 filterMatches(
-                    Exists(TestMarykModel { string::ref }),
+                    Exists(TestMarykModel.ref { string }),
                     HLC(lastVersions.first() - 1u)
                 )
             }
@@ -166,7 +166,7 @@ class DataStoreFilterTest(
             // With higher version it should be found
             assertTrue {
                 filterMatches(
-                    Exists(TestMarykModel { string::ref }),
+                    Exists(TestMarykModel.ref { string }),
                     HLC(lastVersions.first() + 1u)
                 )
             }
@@ -174,7 +174,7 @@ class DataStoreFilterTest(
 
         assertFalse {
             filterMatches(
-                Exists(TestMarykModel { selfReference::ref })
+                Exists(TestMarykModel.ref { selfReference })
             )
         }
     }
@@ -182,14 +182,14 @@ class DataStoreFilterTest(
     private suspend fun doEqualsFilter() {
         assertTrue {
             filterMatches(
-                Equals(TestMarykModel { string::ref } with "haha1")
+                Equals(TestMarykModel.ref { string } with "haha1")
             )
         }
 
         if (dataStore.keepAllVersions) {
             assertFalse {
                 filterMatches(
-                    Equals(TestMarykModel { string::ref } with "haha1"),
+                    Equals(TestMarykModel.ref { string } with "haha1"),
                     HLC(lastVersions.first() - 1u)
                 )
             }
@@ -197,7 +197,7 @@ class DataStoreFilterTest(
             // With higher version it should be found
             assertTrue {
                 filterMatches(
-                    Equals(TestMarykModel { string::ref } with "haha1"),
+                    Equals(TestMarykModel.ref { string } with "haha1"),
                     HLC(lastVersions.first() + 1u)
                 )
             }
@@ -205,7 +205,7 @@ class DataStoreFilterTest(
 
         assertFalse {
             filterMatches(
-                Equals(TestMarykModel { string::ref } with "wrong")
+                Equals(TestMarykModel.ref { string } with "wrong")
             )
         }
     }
@@ -213,14 +213,14 @@ class DataStoreFilterTest(
     private suspend fun doComplexMapListSetFilter() {
         assertTrue {
             filterMatches(
-                Equals(TestMarykModel { map.refAt(LocalTime(12, 13, 14)) } with "haha10")
+                Equals(TestMarykModel.ref { map.at(LocalTime(12, 13, 14)) } with "haha10")
             )
         }
 
         if (dataStore.supportsFuzzyQualifierFiltering) {
             assertTrue {
                 filterMatches(
-                    Equals(TestMarykModel { map.refToAnyValue() } with "haha10")
+                    Equals(TestMarykModel.ref { map.anyValue() } with "haha10")
                 )
             }
 
@@ -228,14 +228,14 @@ class DataStoreFilterTest(
             if (dataStore.keepAllVersions) {
                 assertFalse {
                     filterMatches(
-                        Equals(TestMarykModel { map.refToAnyValue() } with "haha10"),
+                        Equals(TestMarykModel.ref { map.anyValue() } with "haha10"),
                         HLC(lastVersions.first() - 1u)
                     )
                 }
 
                 assertTrue {
                     filterMatches(
-                        Equals(TestMarykModel { map.refToAnyValue() } with "haha10"),
+                        Equals(TestMarykModel.ref { map.anyValue() } with "haha10"),
                         HLC(lastVersions.last() + 1u)
                     )
                 }
@@ -243,7 +243,7 @@ class DataStoreFilterTest(
 
             assertFalse {
                 filterMatches(
-                    Equals(TestMarykModel { map.refToAnyValue() } with "haha11"),
+                    Equals(TestMarykModel.ref { map.anyValue() } with "haha11"),
                     null
                 )
             }
@@ -251,51 +251,51 @@ class DataStoreFilterTest(
 
         assertFalse {
             filterMatches(
-                Equals(TestMarykModel { map.refAt(LocalTime(13, 13, 14)) } with "haha10")
+                Equals(TestMarykModel.ref { map.at(LocalTime(13, 13, 14)) } with "haha10")
             )
         }
 
         assertTrue {
             filterMatches(
-                Equals(TestMarykModel { list refAt 1u } with 6)
+                Equals(TestMarykModel.ref { list at 1u } with 6)
             )
         }
 
         assertFalse {
             filterMatches(
-                Equals(TestMarykModel { list refAt 2u } with 6)
+                Equals(TestMarykModel.ref { list at 2u } with 6)
             )
         }
 
         if (dataStore.supportsFuzzyQualifierFiltering) {
             assertTrue {
                 filterMatches(
-                    Equals(TestMarykModel { list.refToAny() } with 6)
+                    Equals(TestMarykModel.ref { list.any() } with 6)
                 )
             }
 
             assertFalse {
                 filterMatches(
-                    Equals(TestMarykModel { list.refToAny() } with 2)
+                    Equals(TestMarykModel.ref { list.any() } with 2)
                 )
             }
         }
 
         assertTrue {
             filterMatches(
-                Equals(TestMarykModel { list refAt 1u } with 6)
+                Equals(TestMarykModel.ref { list at 1u } with 6)
             )
         }
 
         assertTrue {
             filterMatches(
-                Exists(TestMarykModel { set refAt LocalDate(2018, 9, 9) })
+                Exists(TestMarykModel.ref { set item LocalDate(2018, 9, 9) })
             )
         }
 
         assertFalse {
             filterMatches(
-                Exists(TestMarykModel { set refAt LocalDate(2017, 9, 9) })
+                Exists(TestMarykModel.ref { set item LocalDate(2017, 9, 9) })
             )
         }
     }
@@ -303,13 +303,13 @@ class DataStoreFilterTest(
     private suspend fun doPrefixFilter() {
         assertTrue {
             filterMatches(
-                Prefix(TestMarykModel { string::ref } with "ha")
+                Prefix(TestMarykModel.ref { string } with "ha")
             )
         }
 
         assertFalse {
             filterMatches(
-                Prefix(TestMarykModel { string::ref } with "wrong")
+                Prefix(TestMarykModel.ref { string } with "wrong")
             )
         }
     }
@@ -317,19 +317,19 @@ class DataStoreFilterTest(
     private suspend fun doLessThanFilter() {
         assertTrue {
             filterMatches(
-                LessThan(TestMarykModel { int::ref } with 6)
+                LessThan(TestMarykModel.ref { int } with 6)
             )
         }
 
         assertFalse {
             filterMatches(
-                LessThan(TestMarykModel { int::ref } with 5)
+                LessThan(TestMarykModel.ref { int } with 5)
             )
         }
 
         assertFalse {
             filterMatches(
-                LessThan(TestMarykModel { int::ref } with 2)
+                LessThan(TestMarykModel.ref { int } with 2)
             )
         }
     }
@@ -337,19 +337,19 @@ class DataStoreFilterTest(
     private suspend fun doLessThanEqualsFilter() {
         assertTrue {
             filterMatches(
-                LessThanEquals(TestMarykModel { int::ref } with 6)
+                LessThanEquals(TestMarykModel.ref { int } with 6)
             )
         }
 
         assertTrue {
             filterMatches(
-                LessThanEquals(TestMarykModel { int::ref } with 5)
+                LessThanEquals(TestMarykModel.ref { int } with 5)
             )
         }
 
         assertFalse {
             filterMatches(
-                LessThanEquals(TestMarykModel { int::ref } with 2)
+                LessThanEquals(TestMarykModel.ref { int } with 2)
             )
         }
     }
@@ -357,19 +357,19 @@ class DataStoreFilterTest(
     private suspend fun doGreaterThanFilter() {
         assertTrue {
             filterMatches(
-                GreaterThan(TestMarykModel { int::ref } with 4)
+                GreaterThan(TestMarykModel.ref { int } with 4)
             )
         }
 
         assertFalse {
             filterMatches(
-                GreaterThan(TestMarykModel { int::ref } with 5)
+                GreaterThan(TestMarykModel.ref { int } with 5)
             )
         }
 
         assertFalse {
             filterMatches(
-                GreaterThan(TestMarykModel { int::ref } with 6)
+                GreaterThan(TestMarykModel.ref { int } with 6)
             )
         }
     }
@@ -377,19 +377,19 @@ class DataStoreFilterTest(
     private suspend fun doGreaterThanEqualsFilter() {
         assertTrue {
             filterMatches(
-                GreaterThanEquals(TestMarykModel { int::ref } with 4)
+                GreaterThanEquals(TestMarykModel.ref { int } with 4)
             )
         }
 
         assertTrue {
             filterMatches(
-                GreaterThanEquals(TestMarykModel { int::ref } with 5)
+                GreaterThanEquals(TestMarykModel.ref { int } with 5)
             )
         }
 
         assertFalse {
             filterMatches(
-                GreaterThanEquals(TestMarykModel { int::ref } with 6)
+                GreaterThanEquals(TestMarykModel.ref { int } with 6)
             )
         }
     }
@@ -397,19 +397,19 @@ class DataStoreFilterTest(
     private suspend fun doRangeFilter() {
         assertTrue {
             filterMatches(
-                Range(TestMarykModel { int::ref } with (2..8))
+                Range(TestMarykModel.ref { int } with (2..8))
             )
         }
 
         assertTrue {
             filterMatches(
-                Range(TestMarykModel { int::ref } with (2..5))
+                Range(TestMarykModel.ref { int } with (2..5))
             )
         }
 
         assertFalse {
             filterMatches(
-                Range(TestMarykModel { int::ref } with (2..3))
+                Range(TestMarykModel.ref { int } with (2..3))
             )
         }
     }
@@ -417,13 +417,13 @@ class DataStoreFilterTest(
     private suspend fun doRegExFilter() {
         assertTrue {
             filterMatches(
-                RegEx(TestMarykModel { string::ref } with Regex("^h.*$"))
+                RegEx(TestMarykModel.ref { string } with Regex("^h.*$"))
             )
         }
 
         assertFalse {
             filterMatches(
-                RegEx(TestMarykModel { string::ref } with Regex("^b.*$"))
+                RegEx(TestMarykModel.ref { string } with Regex("^b.*$"))
             )
         }
     }
@@ -431,13 +431,13 @@ class DataStoreFilterTest(
     private suspend fun doValueInFilter() {
         assertTrue {
             filterMatches(
-                ValueIn(TestMarykModel { string::ref } with setOf("haha1", "haha2"))
+                ValueIn(TestMarykModel.ref { string } with setOf("haha1", "haha2"))
             )
         }
 
         assertFalse {
             filterMatches(
-                ValueIn(TestMarykModel { string::ref } with setOf("no1", "no2"))
+                ValueIn(TestMarykModel.ref { string } with setOf("no1", "no2"))
             )
         }
     }
@@ -445,13 +445,13 @@ class DataStoreFilterTest(
     private suspend fun doNotFilter() {
         assertFalse {
             filterMatches(
-                Not(Exists(TestMarykModel { string::ref }))
+                Not(Exists(TestMarykModel.ref { string }))
             )
         }
 
         assertTrue {
             filterMatches(
-                Not(Exists(TestMarykModel { selfReference::ref }))
+                Not(Exists(TestMarykModel.ref { selfReference }))
             )
         }
     }
@@ -460,8 +460,8 @@ class DataStoreFilterTest(
         assertTrue {
             filterMatches(
                 And(
-                    Exists(TestMarykModel { int::ref }),
-                    Exists(TestMarykModel { string::ref })
+                    Exists(TestMarykModel.ref { int }),
+                    Exists(TestMarykModel.ref { string })
                 )
             )
         }
@@ -469,8 +469,8 @@ class DataStoreFilterTest(
         assertFalse {
             filterMatches(
                 And(
-                    Exists(TestMarykModel { selfReference::ref }),
-                    Exists(TestMarykModel { string::ref })
+                    Exists(TestMarykModel.ref { selfReference }),
+                    Exists(TestMarykModel.ref { string })
                 )
             )
         }
@@ -480,8 +480,8 @@ class DataStoreFilterTest(
         assertTrue {
             filterMatches(
                 Or(
-                    Exists(TestMarykModel { int::ref }),
-                    Exists(TestMarykModel { string::ref })
+                    Exists(TestMarykModel.ref { int }),
+                    Exists(TestMarykModel.ref { string })
                 )
             )
         }
@@ -489,8 +489,8 @@ class DataStoreFilterTest(
         assertTrue {
             filterMatches(
                 Or(
-                    Exists(TestMarykModel { selfReference::ref }),
-                    Exists(TestMarykModel { string::ref })
+                    Exists(TestMarykModel.ref { selfReference }),
+                    Exists(TestMarykModel.ref { string })
                 )
             )
         }
@@ -498,8 +498,8 @@ class DataStoreFilterTest(
         assertFalse {
             filterMatches(
                 Or(
-                    Exists(TestMarykModel { selfReference::ref }),
-                    Not(Exists(TestMarykModel { string::ref }))
+                    Exists(TestMarykModel.ref { selfReference }),
+                    Not(Exists(TestMarykModel.ref { string }))
                 )
             )
         }
@@ -509,14 +509,14 @@ class DataStoreFilterTest(
         if (dataStore.supportsSubReferenceFiltering) {
             assertTrue {
                 filterMatches(
-                    Equals(TestMarykModel { reference { string::ref } } with "haha2")
+                    Equals(TestMarykModel.ref { reference { string } } with "haha2")
                 )
             }
 
             if (dataStore.keepAllVersions) {
                 assertFalse {
                     filterMatches(
-                        Equals(TestMarykModel { reference { string::ref } } with "haha2"),
+                        Equals(TestMarykModel.ref { reference { string } } with "haha2"),
                         HLC(lastVersions.first() - 1u)
                     )
                 }
@@ -524,7 +524,7 @@ class DataStoreFilterTest(
                 // With higher version it should be found
                 assertTrue {
                     filterMatches(
-                        Equals(TestMarykModel { reference { string::ref } } with "haha2"),
+                        Equals(TestMarykModel.ref { reference { string } } with "haha2"),
                         HLC(lastVersions.last() + 1u)
                     )
                 }
@@ -532,7 +532,7 @@ class DataStoreFilterTest(
 
             assertFalse {
                 filterMatches(
-                    Equals(TestMarykModel { reference { string::ref } } with "wrong")
+                    Equals(TestMarykModel.ref { reference { string } } with "wrong")
                 )
             }
         }

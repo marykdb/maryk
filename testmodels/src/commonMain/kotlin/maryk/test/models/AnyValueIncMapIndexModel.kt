@@ -9,7 +9,7 @@ import maryk.core.properties.types.numeric.UInt32
 object AnyValueIncMapIndexModel : RootDataModel<AnyValueIncMapIndexModel>(
     indexes = {
         listOf(
-            AnyValueIncMapIndexModel { incMapValues.refToAnyKey() }
+            AnyValueIncMapIndexModel.ref { incMapValues.anyKey() }
         )
     }
 ) {

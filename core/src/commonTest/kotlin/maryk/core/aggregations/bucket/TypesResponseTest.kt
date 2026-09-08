@@ -16,17 +16,17 @@ import kotlin.test.expect
 
 class TypesResponseTest {
     private val typesResponse = TypesResponse(
-        reference = TestMarykModel { multi.refToType() },
+        reference = TestMarykModel.ref { multi.type },
         buckets = listOf(
             Bucket(
                 S1,
                 AggregationsResponse(
                     "total" to SumResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         123456789
                     ),
                     "avg" to AverageResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         43728,
                         32uL
                     )
@@ -37,11 +37,11 @@ class TypesResponseTest {
                 S2,
                 AggregationsResponse(
                     "total" to SumResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         213683
                     ),
                     "avg" to AverageResponse(
-                        TestMarykModel { int::ref },
+                        TestMarykModel.ref { int },
                         8823234,
                         64uL
                     )

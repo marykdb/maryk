@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.references.ListReference
 import maryk.test.models.SimpleMarykObject
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.expect
 
 class ObjectListDefinitionWrapperTest {
@@ -25,5 +26,12 @@ class ObjectListDefinitionWrapperTest {
         expect(ListReference(def, null)) {
             def.ref()
         }
+    }
+
+    @Test
+    fun selectObjectListProperty() {
+        val reference = def.at(2u) { value }(null)
+
+        assertEquals("wrapper.@2.value", reference.completeName)
     }
 }

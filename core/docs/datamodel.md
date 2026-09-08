@@ -83,7 +83,7 @@ object PersonalDiaryItem : RootDataModel<PersonalDiaryItem>(
         listOf(
             Multiple(
                 user.ref(),
-                tags.refToAny(),
+                tags.any(),
             ),
         )
     },
@@ -168,7 +168,7 @@ object TimelineItem : RootDataModel<TimelineItem>(
     keyDefinition = {
         Multiple(
             Reversed(dateOfPosting.ref()),
-            item.refToType()
+            TimelineItem.ref { item.type }
         )
     }
 ) {

@@ -16,15 +16,15 @@ class TypesAggregatorTest {
     @Test
     fun aggregate() {
         val typesAggregator = Types(
-            TestMarykModel { multi.refToType() },
+            TestMarykModel.ref { multi.type },
             aggregations = Aggregations(
-                "totalInt" to Sum(TestMarykModel { int::ref })
+                "totalInt" to Sum(TestMarykModel.ref { int })
             )
         ).createAggregator()
 
         expect(
             TypesResponse(
-                TestMarykModel { multi.refToType() }
+                TestMarykModel.ref { multi.type }
             )
         ) {
             typesAggregator.toResponse()
@@ -77,14 +77,14 @@ class TypesAggregatorTest {
 
         expect(
             TypesResponse(
-                TestMarykModel { multi.refToType() },
+                TestMarykModel.ref { multi.type },
                 listOf(
                     Bucket(
                         S1,
                         AggregationsResponse(
                             mapOf(
                                 "totalInt" to SumResponse(
-                                    TestMarykModel { int::ref },
+                                    TestMarykModel.ref { int },
                                     874688
                                 )
                             )
@@ -95,7 +95,7 @@ class TypesAggregatorTest {
                         S3,
                         AggregationsResponse(
                             "totalInt" to SumResponse(
-                                TestMarykModel { int::ref },
+                                TestMarykModel.ref { int },
                                 null
                             )
                         ),

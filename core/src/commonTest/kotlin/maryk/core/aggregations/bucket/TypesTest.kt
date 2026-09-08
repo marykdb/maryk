@@ -13,10 +13,10 @@ import kotlin.test.expect
 
 class TypesTest {
     private val types = Types(
-        TestMarykModel { multi.refToType() },
+        TestMarykModel.ref { multi.type },
         Aggregations(
             "total" to Sum(
-                TestMarykModel { double::ref }
+                TestMarykModel.ref { double }
             )
         )
     )

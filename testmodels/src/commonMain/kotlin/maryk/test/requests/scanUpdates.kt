@@ -14,8 +14,8 @@ val scanUpdatesRequest = SimpleMarykModel.scanUpdates()
 val scanUpdatesMaxRequest = SimpleMarykModel.run {
     scanUpdates(
         startKey = key1,
-        where = Exists(invoke { value::ref }),
-        order = this { value::ref }.descending(),
+        where = Exists(ref { value }),
+        order = ref { value }.descending(),
         limit = 300u,
         includeStart = false,
         toVersion = 2345uL,

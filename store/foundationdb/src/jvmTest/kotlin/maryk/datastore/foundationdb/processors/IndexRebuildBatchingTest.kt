@@ -48,8 +48,8 @@ private object CompositeAnyIndexModel : RootDataModel<CompositeAnyIndexModel>(
     indexes = {
         listOf(
             Multiple(
-                CompositeAnyIndexModel { mapValues.refToAnyKey() },
-                CompositeAnyIndexModel { setValues.refToAny() },
+                CompositeAnyIndexModel.ref { mapValues.anyKey() },
+                CompositeAnyIndexModel.ref { setValues.any() },
             )
         )
     }
@@ -64,7 +64,7 @@ private object CompositeAnyIndexModel : RootDataModel<CompositeAnyIndexModel>(
 }
 
 private object LargeRowIndexModel : RootDataModel<LargeRowIndexModel>(
-    indexes = { listOf(LargeRowIndexModel { name::ref }) }
+    indexes = { listOf(LargeRowIndexModel.ref { name }) }
 ) {
     val name by string(index = 1u, maxSize = 20u)
     val payload by string(index = 2u, maxSize = 90_000u)
@@ -77,8 +77,8 @@ private object ConcurrentRebuildModel : RootDataModel<ConcurrentRebuildModel>() 
 private object HistoricMultiIndexModel : RootDataModel<HistoricMultiIndexModel>(
     indexes = {
         listOf(
-            HistoricMultiIndexModel { first::ref },
-            HistoricMultiIndexModel { introducedLater::ref },
+            HistoricMultiIndexModel.ref { first },
+            HistoricMultiIndexModel.ref { introducedLater },
         )
     }
 ) {
@@ -225,7 +225,7 @@ class IndexRebuildBatchingTest {
                     )
                 ).statuses.single()
             )
-            val indexable = ConcurrentRebuildModel { name::ref }
+            val indexable = ConcurrentRebuildModel.ref { name }
             val tableDirectories = store.getTableDirs(ConcurrentRebuildModel)
             var changed = false
 
@@ -241,7 +241,7 @@ class IndexRebuildBatchingTest {
                             assertIs<ChangeSuccess<ConcurrentRebuildModel>>(
                                 store.execute(
                                     ConcurrentRebuildModel.change(
-                                        add.key.change(Change(ConcurrentRebuildModel { name::ref } with "after"))
+                                        add.key.change(Change(ConcurrentRebuildModel.ref { name } with "after"))
                                     )
                                 ).statuses.single()
                             )
@@ -279,7 +279,7 @@ class IndexRebuildBatchingTest {
                     setValues with setOf("present")
                 })
             )
-            val indexable = CompositeAnyIndexModel { mapValues.refToAnyKey() }
+            val indexable = CompositeAnyIndexModel.ref { mapValues.anyKey() }
 
             assertFailsWith<StorageException> {
                 walkDataRecordsAndFillIndex(
@@ -314,7 +314,7 @@ class IndexRebuildBatchingTest {
                     }
                 )
             )
-            val indexable = LargeRowIndexModel { name::ref }
+            val indexable = LargeRowIndexModel.ref { name }
             val tableDirectories = store.getTableDirs(LargeRowIndexModel)
             deleteCompleteIndexContents(store.tc, tableDirectories, indexable)
 
@@ -324,7 +324,7 @@ class IndexRebuildBatchingTest {
                 1,
                 store.execute(
                     LargeRowIndexModel.scan(
-                        where = Equals(LargeRowIndexModel { name::ref } with "large-row")
+                        where = Equals(LargeRowIndexModel.ref { name } with "large-row")
                     )
                 ).values.size
             )
@@ -419,7 +419,7 @@ class IndexRebuildBatchingTest {
                     }
                 )
             )
-            val indexable = CompositeAnyIndexModel { mapValues.refToAnyKey() }
+            val indexable = CompositeAnyIndexModel.ref { mapValues.anyKey() }
             val tableDirectories = store.getTableDirs(CompositeAnyIndexModel)
             deleteCompleteIndexContents(store.tc, tableDirectories, indexable)
             val reads = mutableListOf<IndexRebuildReadTransaction>()
@@ -463,7 +463,7 @@ class IndexRebuildBatchingTest {
             assertIs<ChangeSuccess<CompositeAnyIndexModel>>(
                 store.execute(
                     CompositeAnyIndexModel.change(
-                        add.key.change(Change(CompositeAnyIndexModel { mapValues::ref } with (initialMap + ("map-17" to "value-17"))))
+                        add.key.change(Change(CompositeAnyIndexModel.ref { mapValues } with (initialMap + ("map-17" to "value-17"))))
                     )
                 ).statuses.single()
             )
@@ -514,7 +514,7 @@ class IndexRebuildBatchingTest {
             val introduced = assertIs<ChangeSuccess<HistoricMultiIndexModel>>(
                 store.execute(
                     HistoricMultiIndexModel.change(
-                        add.key.change(Change(HistoricMultiIndexModel { introducedLater::ref } with "later"))
+                        add.key.change(Change(HistoricMultiIndexModel.ref { introducedLater } with "later"))
                     )
                 ).statuses.single()
             )
@@ -532,13 +532,13 @@ class IndexRebuildBatchingTest {
 
             assertEquals(0, store.execute(
                 HistoricMultiIndexModel.scan(
-                    where = Equals(HistoricMultiIndexModel { introducedLater::ref } with "later"),
+                    where = Equals(HistoricMultiIndexModel.ref { introducedLater } with "later"),
                     toVersion = add.version,
                 )
             ).values.size)
             assertEquals(1, store.execute(
                 HistoricMultiIndexModel.scan(
-                    where = Equals(HistoricMultiIndexModel { introducedLater::ref } with "later"),
+                    where = Equals(HistoricMultiIndexModel.ref { introducedLater } with "later"),
                     toVersion = introduced.version,
                 )
             ).values.size)
@@ -562,7 +562,7 @@ class IndexRebuildBatchingTest {
                     mapValues with mapOf("\u0000" to "zero", "\u0001" to "one")
                 })).statuses.single()
             )
-            val indexable = AnyValueMapIndexModel { mapValues.refToAnyKey() }
+            val indexable = AnyValueMapIndexModel.ref { mapValues.anyKey() }
             val dirs = store.getTableDirs(AnyValueMapIndexModel)
             deleteCompleteIndexContents(store.tc, dirs, indexable)
             walkDataRecordsAndFillIndex(
@@ -572,7 +572,7 @@ class IndexRebuildBatchingTest {
             )
             listOf("\u0000", "\u0001").forEach { key ->
                 assertEquals(1, store.execute(AnyValueMapIndexModel.scan(
-                    where = Equals(AnyValueMapIndexModel { mapValues.refToAnyKey() } with key),
+                    where = Equals(AnyValueMapIndexModel.ref { mapValues.anyKey() } with key),
                     toVersion = add.version,
                 )).values.size)
             }
@@ -608,8 +608,8 @@ class IndexRebuildBatchingTest {
             )
 
             val indexables = listOf(
-                TestMarykModel { int::ref },
-                TestMarykModel { uint::ref },
+                TestMarykModel.ref { int },
+                TestMarykModel.ref { uint },
             )
             val tableDirectories = store.getTableDirs(TestMarykModel)
             indexables.forEach { deleteCompleteIndexContents(store.tc, tableDirectories, it) }
@@ -619,7 +619,7 @@ class IndexRebuildBatchingTest {
                 5,
                 store.execute(
                     TestMarykModel.scan(
-                        where = Equals(TestMarykModel { int::ref } with 5)
+                        where = Equals(TestMarykModel.ref { int } with 5)
                     )
                 ).values.size
             )
@@ -627,7 +627,7 @@ class IndexRebuildBatchingTest {
                 1,
                 store.execute(
                     TestMarykModel.scan(
-                        where = Equals(TestMarykModel { uint::ref } with 2u)
+                        where = Equals(TestMarykModel.ref { uint } with 2u)
                     )
                 ).values.size
             )
@@ -664,12 +664,12 @@ class IndexRebuildBatchingTest {
             val changes = (2..5).map { value ->
                 assertIs<ChangeSuccess<TestMarykModel>>(
                     store.execute(
-                        TestMarykModel.change(add.key.change(Change(TestMarykModel { int::ref } with value)))
+                        TestMarykModel.change(add.key.change(Change(TestMarykModel.ref { int } with value)))
                     ).statuses.single()
                 )
             }
 
-            val indexable = TestMarykModel { int::ref }
+            val indexable = TestMarykModel.ref { int }
             val tableDirectories = store.getTableDirs(TestMarykModel)
             deleteCompleteIndexContents(store.tc, tableDirectories, indexable)
 
@@ -682,13 +682,13 @@ class IndexRebuildBatchingTest {
             )
 
             assertTrue(transactions >= 6)
-            assertEquals(1, store.execute(TestMarykModel.scan(where = Equals(TestMarykModel { int::ref } with 1), toVersion = add.version)).values.size)
+            assertEquals(1, store.execute(TestMarykModel.scan(where = Equals(TestMarykModel.ref { int } with 1), toVersion = add.version)).values.size)
             changes.forEachIndexed { index, change ->
                 assertEquals(
                     1,
                     store.execute(
                         TestMarykModel.scan(
-                            where = Equals(TestMarykModel { int::ref } with index + 2),
+                            where = Equals(TestMarykModel.ref { int } with index + 2),
                             toVersion = change.version,
                         )
                     ).values.size
@@ -717,7 +717,7 @@ class IndexRebuildBatchingTest {
                     }
                 )
             )
-            val indexable = AnyValueSetIndexModel { setValues.refToAny() }
+            val indexable = AnyValueSetIndexModel.ref { setValues.any() }
             val tableDirectories = store.getTableDirs(AnyValueSetIndexModel)
             deleteCompleteIndexContents(store.tc, tableDirectories, indexable)
 
@@ -726,7 +726,7 @@ class IndexRebuildBatchingTest {
                 1,
                 store.execute(
                     AnyValueSetIndexModel.scan(
-                        where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "tag-32")
+                        where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "tag-32")
                     )
                 ).values.size
             )
@@ -761,7 +761,7 @@ class IndexRebuildBatchingTest {
                         AnyValueSetIndexModel.change(
                             add.key.change(
                                 Change(
-                                    AnyValueSetIndexModel { setValues::ref } with
+                                    AnyValueSetIndexModel.ref { setValues } with
                                         if (index % 2 == 0) setOf("tag") else emptySet()
                                 )
                             )
@@ -770,7 +770,7 @@ class IndexRebuildBatchingTest {
                 )
             }
 
-            val indexable = AnyValueSetIndexModel { setValues.refToAny() }
+            val indexable = AnyValueSetIndexModel.ref { setValues.any() }
             val tableDirectories = store.getTableDirs(AnyValueSetIndexModel)
             deleteCompleteIndexContents(store.tc, tableDirectories, indexable)
 
@@ -787,7 +787,7 @@ class IndexRebuildBatchingTest {
                 1,
                 store.execute(
                     AnyValueSetIndexModel.scan(
-                        where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "tag"),
+                        where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "tag"),
                         toVersion = add.version,
                     )
                 ).values.size
@@ -796,7 +796,7 @@ class IndexRebuildBatchingTest {
                 0,
                 store.execute(
                     AnyValueSetIndexModel.scan(
-                        where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "tag"),
+                        where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "tag"),
                         toVersion = changes.first().version,
                     )
                 ).values.size
@@ -805,7 +805,7 @@ class IndexRebuildBatchingTest {
                 1,
                 store.execute(
                     AnyValueSetIndexModel.scan(
-                        where = Equals(AnyValueSetIndexModel { setValues.refToAny() } with "tag"),
+                        where = Equals(AnyValueSetIndexModel.ref { setValues.any() } with "tag"),
                         toVersion = changes.last().version,
                     )
                 ).values.size
@@ -841,7 +841,7 @@ class IndexRebuildBatchingTest {
                         AnyValueMapIndexModel.change(
                             add.key.change(
                                 Change(
-                                    AnyValueMapIndexModel { mapValues::ref } with
+                                    AnyValueMapIndexModel.ref { mapValues } with
                                         if (index % 2 == 0) mapOf("key" to "value") else emptyMap()
                                 )
                             )
@@ -850,7 +850,7 @@ class IndexRebuildBatchingTest {
                 )
             }
 
-            val indexable = AnyValueMapIndexModel { mapValues.refToAnyKey() }
+            val indexable = AnyValueMapIndexModel.ref { mapValues.anyKey() }
             val tableDirectories = store.getTableDirs(AnyValueMapIndexModel)
             deleteCompleteIndexContents(store.tc, tableDirectories, indexable)
 
@@ -867,7 +867,7 @@ class IndexRebuildBatchingTest {
                 1,
                 store.execute(
                     AnyValueMapIndexModel.scan(
-                        where = Equals(AnyValueMapIndexModel { mapValues.refToAnyKey() } with "key"),
+                        where = Equals(AnyValueMapIndexModel.ref { mapValues.anyKey() } with "key"),
                         toVersion = add.version,
                     )
                 ).values.size
@@ -876,7 +876,7 @@ class IndexRebuildBatchingTest {
                 0,
                 store.execute(
                     AnyValueMapIndexModel.scan(
-                        where = Equals(AnyValueMapIndexModel { mapValues.refToAnyKey() } with "key"),
+                        where = Equals(AnyValueMapIndexModel.ref { mapValues.anyKey() } with "key"),
                     )
                 ).values.size
             )
@@ -884,7 +884,7 @@ class IndexRebuildBatchingTest {
                 0,
                 store.execute(
                     AnyValueMapIndexModel.scan(
-                        where = Equals(AnyValueMapIndexModel { mapValues.refToAnyKey() } with "key"),
+                        where = Equals(AnyValueMapIndexModel.ref { mapValues.anyKey() } with "key"),
                         toVersion = changes.first().version,
                     )
                 ).values.size
@@ -893,7 +893,7 @@ class IndexRebuildBatchingTest {
                 0,
                 store.execute(
                     AnyValueMapIndexModel.scan(
-                        where = Equals(AnyValueMapIndexModel { mapValues.refToAnyKey() } with "key"),
+                        where = Equals(AnyValueMapIndexModel.ref { mapValues.anyKey() } with "key"),
                         toVersion = changes.last().version,
                     )
                 ).values.size
@@ -928,14 +928,14 @@ class IndexRebuildBatchingTest {
                     store.execute(
                         AnyValueMapIndexModel.change(
                             add.key.change(
-                                Change(AnyValueMapIndexModel { mapValues.refAt("key") } with "value-$index")
+                                Change(AnyValueMapIndexModel.ref { mapValues.at("key") } with "value-$index")
                             )
                         )
                     ).statuses.single()
                 )
             }
 
-            val indexable = AnyValueMapIndexModel { mapValues.refToAnyKey() }
+            val indexable = AnyValueMapIndexModel.ref { mapValues.anyKey() }
             val tableDirectories = store.getTableDirs(AnyValueMapIndexModel)
             deleteCompleteIndexContents(store.tc, tableDirectories, indexable)
 
@@ -953,7 +953,7 @@ class IndexRebuildBatchingTest {
                     1,
                     store.execute(
                         AnyValueMapIndexModel.scan(
-                            where = Equals(AnyValueMapIndexModel { mapValues.refToAnyKey() } with "key"),
+                            where = Equals(AnyValueMapIndexModel.ref { mapValues.anyKey() } with "key"),
                             toVersion = version,
                         )
                     ).values.size

@@ -74,6 +74,7 @@ import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.properties.types.Key
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.properties.references.dsl.ref
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AuthFail
 import maryk.datastore.memory.InMemoryDataStore
@@ -1197,9 +1198,9 @@ class RemoteDataStoreTest {
                 from with SimpleMarykModel
                 keys with Inject(
                     "referencedKeys",
-                    ValuesResponse {
+                    ValuesResponse.ref {
                         values.atAny {
-                            values.refWithDM(ReferencesModel) { this.references }
+                            values.withModel(ReferencesModel) { this.references }
                         }
                     },
                 )

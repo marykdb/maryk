@@ -13,13 +13,13 @@ import kotlin.test.assertSame
 import kotlin.test.expect
 
 class SetReferenceTest {
-    private val setReference = TestMarykModel { embeddedValues { marykModel { set::ref } } }
-    private val reference = TestMarykModel { set refAt LocalDate(2001, 4, 2) }
-    private val subReference = TestMarykModel { embeddedValues { marykModel { set refAt LocalDate(2001, 4, 2) } } }
+    private val setReference = TestMarykModel.ref { embeddedValues { marykModel { set } } }
+    private val reference = TestMarykModel.ref { set item LocalDate(2001, 4, 2) }
+    private val subReference = TestMarykModel.ref { embeddedValues { marykModel { set item LocalDate(2001, 4, 2) } } }
 
     @Test
     fun cacheReferenceTest() {
-        assertSame(setReference, TestMarykModel { embeddedValues { marykModel { set::ref } } })
+        assertSame(setReference, TestMarykModel.ref { embeddedValues { marykModel { set } } })
     }
 
     @Test

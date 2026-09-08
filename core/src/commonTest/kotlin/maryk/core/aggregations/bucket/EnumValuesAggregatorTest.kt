@@ -14,15 +14,15 @@ class EnumValuesAggregatorTest {
     @Test
     fun aggregate() {
         val enumValuesAggregator = EnumValues(
-            TestMarykModel { enum::ref },
+            TestMarykModel.ref { enum },
             aggregations = Aggregations(
-                "totalInt" to Sum(TestMarykModel { int::ref })
+                "totalInt" to Sum(TestMarykModel.ref { int })
             )
         ).createAggregator()
 
         expect(
             EnumValuesResponse(
-                TestMarykModel { enum::ref }
+                TestMarykModel.ref { enum }
             )
         ) {
             enumValuesAggregator.toResponse()
@@ -63,13 +63,13 @@ class EnumValuesAggregatorTest {
 
         expect(
             EnumValuesResponse(
-                TestMarykModel { enum::ref },
+                TestMarykModel.ref { enum },
                 listOf(
                     Bucket(
                         V1,
                         AggregationsResponse(
                             "totalInt" to SumResponse(
-                                TestMarykModel { int::ref },
+                                TestMarykModel.ref { int },
                                 null
                             )
                         ),
@@ -79,7 +79,7 @@ class EnumValuesAggregatorTest {
                         V3,
                         AggregationsResponse(
                             "totalInt" to SumResponse(
-                                TestMarykModel { int::ref },
+                                TestMarykModel.ref { int },
                                 39206
                             )
                         ),

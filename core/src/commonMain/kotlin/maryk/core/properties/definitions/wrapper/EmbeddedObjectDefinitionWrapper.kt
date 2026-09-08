@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTypeInference::class)
+
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsTypedObjectDataModel
@@ -15,6 +17,8 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.AbstractValues
 import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
+import kotlin.experimental.ExperimentalTypeInference
+import kotlin.jvm.JvmName
 import kotlin.reflect.KProperty
 
 /**
@@ -41,6 +45,7 @@ data class EmbeddedObjectDefinitionWrapper<
     override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
+    IsReferenceCreator<EmbeddedObjectPropertyRef<EODO, TO, DM, CXI, CX>>,
     IsEmbeddedObjectDefinition<EODO, DM, CXI, CX> by definition,
     IsDefinitionWrapper<EODO, TO, CXI, DO> {
     override val graphType = PropRef
@@ -82,6 +87,15 @@ data class EmbeddedObjectDefinitionWrapper<
                 this.definition.dataModel
             ).ref(this.ref(it)) as IsPropertyReference<T, W, *>
         }
+
+    /** Select a child property and preserve its concrete reference type and parent path. */
+    @OverloadResolutionByLambdaReturnType
+    @JvmName("invokePropertySelection")
+    operator fun <R : IsPropertyReference<*, *, *>> invoke(
+        selector: DM.() -> IsReferenceCreator<R>
+    ): (AnyOutPropertyReference?) -> R = { parent ->
+        selector(definition.dataModel).ref(ref(parent))
+    }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> invoke(

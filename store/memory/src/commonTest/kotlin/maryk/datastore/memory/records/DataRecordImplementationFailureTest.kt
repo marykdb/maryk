@@ -60,7 +60,7 @@ internal class DataRecordImplementationFailureTest {
         )
 
         assertFailsWith<IllegalStateException> {
-            record.get(ThrowingRecordModel { map::ref })
+            record.get(ThrowingRecordModel.ref { map })
         }
     }
 
@@ -74,7 +74,7 @@ internal class DataRecordImplementationFailureTest {
 
         assertFailsWith<IllegalStateException> {
             record.matchQualifier(
-                reference = ThrowingRecordModel { map.refToAnyKey() },
+                reference = ThrowingRecordModel.ref { map.anyKey() },
                 toVersion = null,
                 recordFetcher = { _, _ -> null }
             ) { true }
@@ -90,7 +90,7 @@ internal class DataRecordImplementationFailureTest {
         )
 
         assertFailsWith<IllegalStateException> {
-            record.get(ThrowingRecordModel { set::ref })
+            record.get(ThrowingRecordModel.ref { set })
         }
     }
 
@@ -104,7 +104,7 @@ internal class DataRecordImplementationFailureTest {
 
         assertFailsWith<IllegalStateException> {
             record.matchQualifier(
-                reference = ThrowingRecordModel { set.refToAny() },
+                reference = ThrowingRecordModel.ref { set.any() },
                 toVersion = null,
                 recordFetcher = { _, _ -> null }
             ) { true }

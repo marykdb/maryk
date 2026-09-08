@@ -67,6 +67,10 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
 
     final override val Meta: RootDataModelDefinition by lazy { meta(this::class.simpleName) }
 
+    @Deprecated(
+        message = "Use ref { property } to select a property reference",
+        replaceWith = ReplaceWith("ref(parent, referenceGetter)", "maryk.core.properties.references.dsl.ref"),
+    )
     operator fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> invoke(
         parent: AnyOutPropertyReference? = null,
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R

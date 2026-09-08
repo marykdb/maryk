@@ -57,7 +57,7 @@ class MalformedUniqueValueFoundationDBTest {
             )
 
             val tableDirs = store.getTableDirs(UniqueModel)
-            val reference = UniqueModel { email::ref }.toStorageByteArray()
+            val reference = UniqueModel.ref { email }.toStorageByteArray()
             val prefix = packKey(tableDirs.uniquePrefix, reference)
 
             store.runTransaction { tr ->
@@ -101,7 +101,7 @@ class MalformedUniqueValueFoundationDBTest {
             )
 
             val tableDirs = store.getTableDirs(UniqueModel) as HistoricTableDirectories
-            val reference = UniqueModel { email::ref }.toStorageByteArray()
+            val reference = UniqueModel.ref { email }.toStorageByteArray()
             val prefix = packKey(tableDirs.historicUniquePrefix, encodeZeroFreeUsing01(reference))
 
             store.runTransaction { tr ->
@@ -256,7 +256,7 @@ class MalformedUniqueValueFoundationDBTest {
             val tableDirs = store.getTableDirs(UniqueModel)
             val valueKey = packKey(
                 tableDirs.tablePrefix,
-                addStatus.key.bytes + UniqueModel { email::ref }.toStorageByteArray()
+                addStatus.key.bytes + UniqueModel.ref { email }.toStorageByteArray()
             )
 
             store.runTransaction { tr ->
@@ -307,7 +307,7 @@ class MalformedUniqueValueFoundationDBTest {
             val tableDirs = store.getTableDirs(UniqueModel)
             val valueKey = packKey(
                 tableDirs.tablePrefix,
-                addStatus.key.bytes + UniqueModel { email::ref }.toStorageByteArray()
+                addStatus.key.bytes + UniqueModel.ref { email }.toStorageByteArray()
             )
 
             store.runTransaction { tr ->
@@ -362,7 +362,7 @@ class MalformedUniqueValueFoundationDBTest {
             val tableDirs = store.getTableDirs(NullableUniqueModel)
             val valueKey = packKey(
                 tableDirs.tablePrefix,
-                addStatus.key.bytes + NullableUniqueModel { email::ref }.toStorageByteArray()
+                addStatus.key.bytes + NullableUniqueModel.ref { email }.toStorageByteArray()
             )
 
             store.runTransaction { tr ->
@@ -374,7 +374,7 @@ class MalformedUniqueValueFoundationDBTest {
                 store.execute(
                     NullableUniqueModel.change(
                         addStatus.key.change(
-                            Change(NullableUniqueModel { email::ref } with null)
+                            Change(NullableUniqueModel.ref { email } with null)
                         )
                     )
                 ).statuses.single()
@@ -417,7 +417,7 @@ class MalformedUniqueValueFoundationDBTest {
             val tableDirs = store.getTableDirs(UniqueModel)
             val valueKey = packKey(
                 tableDirs.tablePrefix,
-                addStatus.key.bytes + UniqueModel { email::ref }.toStorageByteArray()
+                addStatus.key.bytes + UniqueModel.ref { email }.toStorageByteArray()
             )
 
             store.runTransaction { tr ->
@@ -470,7 +470,7 @@ class MalformedUniqueValueFoundationDBTest {
             val tableDirs = store.getTableDirs(UniqueModel)
             val valueKey = packKey(
                 tableDirs.tablePrefix,
-                addStatus.key.bytes + UniqueModel { email::ref }.toStorageByteArray()
+                addStatus.key.bytes + UniqueModel.ref { email }.toStorageByteArray()
             )
 
             store.runTransaction { tr ->
@@ -508,7 +508,7 @@ class MalformedUniqueValueFoundationDBTest {
     }
 
     private fun uniqueReference(store: FoundationDBDataStore, emailValue: String): ByteArray {
-        val reference = UniqueModel { email::ref }.toStorageByteArray()
+        val reference = UniqueModel.ref { email }.toStorageByteArray()
         val definition = UniqueModel.email.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>
         val valueBytes = definition.toStorageBytes(emailValue as Comparable<Any>)
         val rawUniqueValue = byteArrayOf(TypeIndicator.NoTypeIndicator.byte) + valueBytes

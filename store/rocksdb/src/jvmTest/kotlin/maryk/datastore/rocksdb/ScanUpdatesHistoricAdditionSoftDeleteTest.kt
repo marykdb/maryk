@@ -52,7 +52,7 @@ class ScanUpdatesHistoricAdditionSoftDeleteTest {
 
             assertIs<ChangeSuccess<TestMarykModel>>(
                 store.execute(
-                    TestMarykModel.change(addStatus.key.change(Change(TestMarykModel { int::ref } with 6)))
+                    TestMarykModel.change(addStatus.key.change(Change(TestMarykModel.ref { int } with 6)))
                 ).statuses.single()
             )
 
@@ -112,7 +112,7 @@ class ScanUpdatesHistoricAdditionSoftDeleteTest {
 
             assertIs<ChangeSuccess<TestMarykModel>>(
                 store.execute(
-                    TestMarykModel.change(addStatus.key.change(Change(TestMarykModel { int::ref } with 6)))
+                    TestMarykModel.change(addStatus.key.change(Change(TestMarykModel.ref { int } with 6)))
                 ).statuses.single()
             )
 

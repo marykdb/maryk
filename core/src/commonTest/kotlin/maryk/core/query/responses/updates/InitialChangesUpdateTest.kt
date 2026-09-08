@@ -26,7 +26,7 @@ internal class InitialChangesUpdateTest {
                     VersionedChanges(
                         version = 1234uL,
                         changes = listOf(
-                            Change(SimpleMarykModel { value::ref } with "change")
+                            Change(SimpleMarykModel.ref { value } with "change")
                         )
                     )
                 )

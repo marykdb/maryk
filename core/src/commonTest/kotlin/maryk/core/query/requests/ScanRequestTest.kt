@@ -92,7 +92,7 @@ private object CursorNestedUnsignedModel : DataModel<CursorNestedUnsignedModel>(
 private object CursorNestedIndexA : RootDataModel<CursorNestedIndexA>(
     name = "CursorNestedIndexModel",
     indexes = {
-        listOf(CursorNestedIndexA { nested { value::ref } })
+        listOf(CursorNestedIndexA.ref { nested { value } })
     },
 ) {
     val nested by embed(index = 1u, dataModel = { CursorNestedSignedModel })
@@ -101,7 +101,7 @@ private object CursorNestedIndexA : RootDataModel<CursorNestedIndexA>(
 private object CursorNestedIndexB : RootDataModel<CursorNestedIndexB>(
     name = "CursorNestedIndexModel",
     indexes = {
-        listOf(CursorNestedIndexB { nested { value::ref } })
+        listOf(CursorNestedIndexB.ref { nested { value } })
     },
 ) {
     val nested by embed(index = 1u, dataModel = { CursorNestedUnsignedModel })
@@ -111,8 +111,8 @@ private object CursorIndexOrderA : RootDataModel<CursorIndexOrderA>(
     name = "CursorIndexOrderModel",
     indexes = {
         listOf(
-            CursorIndexOrderA { first::ref },
-            CursorIndexOrderA { second::ref },
+            CursorIndexOrderA.ref { first },
+            CursorIndexOrderA.ref { second },
         )
     },
 ) {
@@ -124,8 +124,8 @@ private object CursorIndexOrderB : RootDataModel<CursorIndexOrderB>(
     name = "CursorIndexOrderModel",
     indexes = {
         listOf(
-            CursorIndexOrderB { second::ref },
-            CursorIndexOrderB { first::ref },
+            CursorIndexOrderB.ref { second },
+            CursorIndexOrderB.ref { first },
         )
     },
 ) {
@@ -140,8 +140,8 @@ private class DelegatingCursorModel(
 private object CursorFanOutModel : RootDataModel<CursorFanOutModel>(
     indexes = {
         listOf(
-            CursorFanOutModel { setValues.refToAny() },
-            CursorFanOutModel { mapValues.refToAnyKey() },
+            CursorFanOutModel.ref { setValues.any() },
+            CursorFanOutModel.ref { mapValues.anyKey() },
         )
     },
 ) {
@@ -160,8 +160,8 @@ private object CursorAnyOfFanOutModel : RootDataModel<CursorAnyOfFanOutModel>(
     indexes = {
         listOf(
             AnyOf(
-                CursorAnyOfFanOutModel { setValues.refToAny() },
-                CursorAnyOfFanOutModel { mapValues.refToAnyKey() },
+                CursorAnyOfFanOutModel.ref { setValues.any() },
+                CursorAnyOfFanOutModel.ref { mapValues.anyKey() },
             )
         )
     },
@@ -179,7 +179,7 @@ private object CursorAnyOfFanOutModel : RootDataModel<CursorAnyOfFanOutModel>(
 
 private object CursorFanOutLayoutA : RootDataModel<CursorFanOutLayoutA>(
     name = "CursorFanOutLayoutModel",
-    indexes = { listOf(CursorFanOutLayoutA { values.refToAny() }) },
+    indexes = { listOf(CursorFanOutLayoutA.ref { values.any() }) },
 ) {
     val values by set(
         index = 1u,
@@ -189,7 +189,7 @@ private object CursorFanOutLayoutA : RootDataModel<CursorFanOutLayoutA>(
 
 private object CursorFanOutLayoutB : RootDataModel<CursorFanOutLayoutB>(
     name = "CursorFanOutLayoutModel",
-    indexes = { listOf(CursorFanOutLayoutB { values.refToAny() }) },
+    indexes = { listOf(CursorFanOutLayoutB.ref { values.any() }) },
 ) {
     val values by set(
         index = 1u,

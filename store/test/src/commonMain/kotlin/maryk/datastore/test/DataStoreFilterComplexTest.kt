@@ -74,7 +74,7 @@ class DataStoreFilterComplexTest(
     private suspend fun doExistsFilter() {
         assertTrue {
             filterMatches(
-                Exists(ComplexModel { mapStringString.refAt("k1") })
+                Exists(ComplexModel.ref { mapStringString.at("k1") })
             )
         }
 
@@ -82,7 +82,7 @@ class DataStoreFilterComplexTest(
             // Below version it did not exist
             assertFalse {
                 filterMatches(
-                    Exists(ComplexModel { mapStringString.refAt("k1") }),
+                    Exists(ComplexModel.ref { mapStringString.at("k1") }),
                     HLC(lastVersions.first() - 1u)
                 )
             }
@@ -90,7 +90,7 @@ class DataStoreFilterComplexTest(
             // With higher version it should be found
             assertTrue {
                 filterMatches(
-                    Exists(ComplexModel { mapStringString.refAt("k1") }),
+                    Exists(ComplexModel.ref { mapStringString.at("k1") }),
                     HLC(lastVersions.first() + 1u)
                 )
             }
@@ -100,14 +100,14 @@ class DataStoreFilterComplexTest(
     private suspend fun doEqualsFilter() {
         assertTrue {
             filterMatches(
-                Equals(ComplexModel { mapStringString.refAt("k1") } with "v1")
+                Equals(ComplexModel.ref { mapStringString.at("k1") } with "v1")
             )
         }
 
         if (dataStore.keepAllVersions) {
             assertFalse {
                 filterMatches(
-                    Equals(ComplexModel { mapStringString.refAt("k1") } with "v1"),
+                    Equals(ComplexModel.ref { mapStringString.at("k1") } with "v1"),
                     HLC(lastVersions.last() - 1u)
                 )
             }
@@ -115,7 +115,7 @@ class DataStoreFilterComplexTest(
             // With higher version it should be found
             assertTrue {
                 filterMatches(
-                    Equals(ComplexModel { mapStringString.refAt("k1") } with "v1"),
+                    Equals(ComplexModel.ref { mapStringString.at("k1") } with "v1"),
                     HLC(lastVersions.first() + 1u)
                 )
             }
@@ -124,7 +124,7 @@ class DataStoreFilterComplexTest(
         if (dataStore.supportsFuzzyQualifierFiltering) {
             assertTrue {
                 filterMatches(
-                    Equals(ComplexModel { mapStringString.refToAnyValue() } with "v2")
+                    Equals(ComplexModel.ref { mapStringString.anyValue() } with "v2")
                 )
             }
         }

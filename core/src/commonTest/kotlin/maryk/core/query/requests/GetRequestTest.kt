@@ -52,7 +52,7 @@ class GetRequestTest {
             GetRequest.create(context) {
                 from with SimpleMarykModel
                 keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1])
-                where with Exists(SimpleMarykModel { value::ref })
+                where with Exists(SimpleMarykModel.ref { value })
                 toVersion with 333uL
                 filterSoftDeleted with true
                 select with SimpleMarykModel.graph {
@@ -60,7 +60,7 @@ class GetRequestTest {
                 }
                 aggregations with Aggregations(
                     namedAggregations = mapOf(
-                        "totalValues" to ValueCount(SimpleMarykModel { value::ref })
+                        "totalValues" to ValueCount(SimpleMarykModel.ref { value })
                     )
                 )
             }.toDataObject()

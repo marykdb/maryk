@@ -69,7 +69,7 @@ class ScanProfileFixtureFoundationDBTest {
                         store.execute(
                             TestMarykModel.change(
                                 status.key.change(
-                                    Change(TestMarykModel { int::ref } with 5)
+                                    Change(TestMarykModel.ref { int } with 5)
                                 )
                             )
                         ).statuses.single()
@@ -88,20 +88,20 @@ class ScanProfileFixtureFoundationDBTest {
                 store.execute(
                     AnyValueSetIndexModel.scan(
                         where = Equals(
-                            AnyValueSetIndexModel { setValues.refToAny() } with "tag-${iteration % 16}"
+                            AnyValueSetIndexModel.ref { setValues.any() } with "tag-${iteration % 16}"
                         )
                     )
                 )
 
                 store.execute(
                     AnyValueSetIndexModel.scan(
-                        order = AnyValueSetIndexModel { setValues.refToAny() }.ascending()
+                        order = AnyValueSetIndexModel.ref { setValues.any() }.ascending()
                     )
                 )
 
                 store.execute(
                     TestMarykModel.scan(
-                        where = Equals(TestMarykModel { int::ref } with 5),
+                        where = Equals(TestMarykModel.ref { int } with 5),
                         toVersion = ULong.MAX_VALUE
                     )
                 )

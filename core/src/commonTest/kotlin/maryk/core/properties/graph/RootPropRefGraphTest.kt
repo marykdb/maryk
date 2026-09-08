@@ -41,19 +41,19 @@ class RootPropRefGraphTest {
 
     @Test
     fun containsReference() {
-        assertTrue(graph.contains(TestMarykModel { string::ref }))
-        assertFalse(graph.contains(TestMarykModel { int::ref }))
+        assertTrue(graph.contains(TestMarykModel.ref { string }))
+        assertFalse(graph.contains(TestMarykModel.ref { int }))
 
-        assertTrue(graph.contains(TestMarykModel { map::ref }))
-        assertTrue(graph.contains(TestMarykModel { map.refAt(LocalTime(12, 34, 56)) }))
-        assertFalse(graph.contains(TestMarykModel { map.refAt(LocalTime(1, 2, 3)) }))
+        assertTrue(graph.contains(TestMarykModel.ref { map }))
+        assertTrue(graph.contains(TestMarykModel.ref { map.at(LocalTime(12, 34, 56)) }))
+        assertFalse(graph.contains(TestMarykModel.ref { map.at(LocalTime(1, 2, 3)) }))
 
-        assertTrue(graph.contains(TestMarykModel { incMap::ref }))
-        assertTrue(graph.contains(TestMarykModel { incMap.refAt(2u) }))
-        assertFalse(graph.contains(TestMarykModel { incMap.refAt(3u) }))
+        assertTrue(graph.contains(TestMarykModel.ref { incMap }))
+        assertTrue(graph.contains(TestMarykModel.ref { incMap.at(2u) }))
+        assertFalse(graph.contains(TestMarykModel.ref { incMap.at(3u) }))
 
-        assertTrue(graph.contains(TestMarykModel { embeddedValues::ref }))
-        assertTrue(graph.contains(TestMarykModel { embeddedValues { value::ref } }))
+        assertTrue(graph.contains(TestMarykModel.ref { embeddedValues }))
+        assertTrue(graph.contains(TestMarykModel.ref { embeddedValues { value } }))
     }
 
     @Test

@@ -9,7 +9,7 @@ val scanUpdateHistoryRequest = SimpleMarykModel.scanUpdateHistory()
 
 val scanUpdateHistoryMaxRequest = SimpleMarykModel.run {
     scanUpdateHistory(
-        where = Exists(invoke { value::ref }),
+        where = Exists(ref { value }),
         limit = 300u,
         toVersion = 2345uL,
         fromVersion = 1234uL,

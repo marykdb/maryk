@@ -18,7 +18,8 @@ import maryk.core.properties.references.ListReference
 interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX>, CX : IsPropertyContext, in DO : Any> :
     IsListDefinition<T, CX>,
     IsDefinitionWrapper<List<T>, List<TO>, CX, DO>,
-    CacheableReferenceCreator {
+    CacheableReferenceCreator,
+    IsReferenceCreator<ListReference<T, CX>> {
     override val definition: LD
 
     @Suppress("UNCHECKED_CAST")
@@ -38,11 +39,20 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
         this.definition.anyItemRef(this.ref(parentRef))
     }
 
-    /** For quick notation to get any list item reference */
-    fun refToAny(): (AnyOutPropertyReference?) -> ListAnyItemReference<T, CX> =
+    /** For quick notation to get any list item reference. */
+    fun any(): (AnyOutPropertyReference?) -> ListAnyItemReference<T, CX> =
         this::getAnyItemRef
 
-    /** For quick notation to get a list item reference by [index] */
+    /** @deprecated Use [any]. */
+    @Deprecated("Use any()", ReplaceWith("any()"))
+    fun refToAny(): (AnyOutPropertyReference?) -> ListAnyItemReference<T, CX> = any()
+
+    /** Select a list item by [index]. */
+    infix fun at(index: UInt): IsReferenceCreator<ListItemReference<T, CX>> =
+        IsReferenceCreator { this.getItemRef(index, it) }
+
+    /** @deprecated Use [at]. */
+    @Deprecated("Use at(index)", ReplaceWith("at(index)::ref"))
     infix fun refAt(index: UInt): (AnyOutPropertyReference?) -> ListItemReference<T, CX> =
-        { this.getItemRef(index, it) }
+        { this.at(index).ref(it) }
 }

@@ -18,7 +18,7 @@ val getUpdatesMaxRequest = SimpleMarykModel.run {
     getUpdates(
         key1,
         key2,
-        where = Exists(invoke { value::ref }),
+        where = Exists(ref { value }),
         fromVersion = 1234uL,
         toVersion = 12345uL,
         maxVersions = 5u,

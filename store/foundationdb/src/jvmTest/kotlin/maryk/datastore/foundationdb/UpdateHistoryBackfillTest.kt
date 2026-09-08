@@ -173,7 +173,7 @@ class UpdateHistoryBackfillTest {
             val changeStatus = assertIs<ChangeSuccess<*>>(
                 dataStore.execute(
                     Log.change(
-                        key.change(Change(Log { message::ref } with "historic-state-updated"))
+                        key.change(Change(Log.ref { message } with "historic-state-updated"))
                     )
                 ).statuses.first()
             )
@@ -226,7 +226,7 @@ class UpdateHistoryBackfillTest {
                     val status = assertIs<ChangeSuccess<*>>(
                         dataStore.execute(
                             Log.change(
-                                key.change(Change(Log { message::ref } with "historic-state-$index"))
+                                key.change(Change(Log.ref { message } with "historic-state-$index"))
                             )
                         ).statuses.first()
                     )

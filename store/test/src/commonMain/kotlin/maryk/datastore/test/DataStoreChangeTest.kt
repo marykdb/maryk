@@ -157,19 +157,19 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[0].change(
                     Check(
-                        TestMarykModel { string::ref } with "haha1"
+                        TestMarykModel.ref { string } with "haha1"
                     ),
                     lastVersion = lastVersions[0]
                 ),
                 keys[0].change(
                     Check(
-                        TestMarykModel { string::ref } with "wrong"
+                        TestMarykModel.ref { string } with "wrong"
                     ),
                     lastVersion = lastVersions[0]
                 ),
                 keys[0].change(
                     Check(
-                        TestMarykModel { string::ref } with "haha1"
+                        TestMarykModel.ref { string } with "haha1"
                     ),
                     lastVersion = 123uL
                 )
@@ -204,12 +204,12 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { string::ref } with "haha3",
-                        TestMarykModel { listOfString refAt 0u } with "z",
-                        TestMarykModel { map refAt LocalTime(12, 33, 45) } with "changed",
-                        TestMarykModel { list::ref } with newIntList,
-                        TestMarykModel { set::ref } with newDateSet,
-                        TestMarykModel { embeddedValues::ref } with newValues
+                        TestMarykModel.ref { string } with "haha3",
+                        TestMarykModel.ref { listOfString at 0u } with "z",
+                        TestMarykModel.ref { map at LocalTime(12, 33, 45) } with "changed",
+                        TestMarykModel.ref { list } with newIntList,
+                        TestMarykModel.ref { set } with newDateSet,
+                        TestMarykModel.ref { embeddedValues } with newValues
                     )
                 )
             )
@@ -241,7 +241,7 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[5].change(
                     Change(
-                        TestMarykModel { listOfString refAt 0u } with "z"
+                        TestMarykModel.ref { listOfString at 0u } with "z"
                     )
                 )
             )
@@ -256,7 +256,7 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[5].change(
                     Change(
-                        TestMarykModel { map refAt LocalTime(1, 2, 3) } with "new"
+                        TestMarykModel.ref { map at LocalTime(1, 2, 3) } with "new"
                     )
                 )
             )
@@ -271,7 +271,7 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[5].change(
                     Change(
-                        TestMarykModel { embeddedValues { value::ref } } with "test"
+                        TestMarykModel.ref { embeddedValues { value } } with "test"
                     )
                 )
             )
@@ -285,7 +285,7 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
-                    Change(TestMarykModel { reference::ref } with null)
+                    Change(TestMarykModel.ref { reference } with null)
                 )
             )
         )
@@ -308,10 +308,10 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[3].change(
-                    Change(TestMarykModel { map::ref } with null),
-                    Change(TestMarykModel { listOfString::ref } with null),
-                    Change(TestMarykModel { set::ref } with null),
-                    Change(TestMarykModel { multi::ref } with null)
+                    Change(TestMarykModel.ref { map } with null),
+                    Change(TestMarykModel.ref { listOfString } with null),
+                    Change(TestMarykModel.ref { set } with null),
+                    Change(TestMarykModel.ref { multi } with null)
                 )
             )
         )
@@ -337,9 +337,9 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[4].change(
-                    Change(TestMarykModel { map refAt LocalTime(3, 3, 3) } with null),
-                    Change(TestMarykModel { listOfString refAt 1u } with null),
-                    Change(TestMarykModel { set refAt LocalDate(2001, 1, 1) } with null)
+                    Change(TestMarykModel.ref { map at LocalTime(3, 3, 3) } with null),
+                    Change(TestMarykModel.ref { listOfString at 1u } with null),
+                    Change(TestMarykModel.ref { set item LocalDate(2001, 1, 1) } with null)
                 )
             )
         )
@@ -377,7 +377,7 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[4].change(
-                    Change(TestMarykModel { multi refAtType S1 } with null)
+                    Change(TestMarykModel.ref { multi atType S1 } with null)
                 )
             )
         )
@@ -391,10 +391,10 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[0].change(
                     Change(
-                        TestMarykModel { listOfString.refAt(1u) } with null
+                        TestMarykModel.ref { listOfString.at(1u) } with null
                     ),
                     ListChange(
-                        TestMarykModel { listOfString::ref }.change(
+                        TestMarykModel.ref { listOfString }.change(
                             deleteValues = listOf("c"),
                             addValuesAtIndex = mapOf(
                                 0u to "zero"
@@ -425,10 +425,10 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { set.refAt(LocalDate(2018, 11, 25)) } with null
+                        TestMarykModel.ref { set.item(LocalDate(2018, 11, 25)) } with null
                     ),
                     SetChange(
-                        TestMarykModel { set::ref }.change(
+                        TestMarykModel.ref { set }.change(
                             addValues = setOf(LocalDate(2018, 11, 26))
                         )
                     )
@@ -455,11 +455,11 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { map.refAt(LocalTime(1, 2, 3)) } with "test1",
-                        TestMarykModel { map.refAt(LocalTime(2, 3, 4)) } with "test2"
+                        TestMarykModel.ref { map.at(LocalTime(1, 2, 3)) } with "test1",
+                        TestMarykModel.ref { map.at(LocalTime(2, 3, 4)) } with "test2"
                     ),
                     Change(
-                        TestMarykModel { map.refAt(LocalTime(12, 33, 45)) } with null
+                        TestMarykModel.ref { map.at(LocalTime(12, 33, 45)) } with null
                     )
                 )
             )
@@ -499,7 +499,7 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[1].change(
                     ListChange(
-                        TestMarykModel { list::ref }.change(
+                        TestMarykModel.ref { list }.change(
                             deleteValues = listOf(listValue),
                             addValuesAtIndex = mapOf(1u to listValue)
                         )
@@ -520,8 +520,8 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { list::ref } with initialList,
-                        TestMarykModel { map::ref } with initialMap
+                        TestMarykModel.ref { list } with initialList,
+                        TestMarykModel.ref { map } with initialMap
                     )
                 )
             )
@@ -551,7 +551,7 @@ class DataStoreChangeTest(
             val noOp = assertStatusIs<ChangeSuccess<*>>(
                 dataStore.execute(
                     TestMarykModel.change(
-                        keys[0].change(Change(TestMarykModel { string::ref } with "haha1"))
+                        keys[0].change(Change(TestMarykModel.ref { string } with "haha1"))
                     )
                 ).statuses.single()
             )
@@ -576,13 +576,13 @@ class DataStoreChangeTest(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel { incMap.refAt(1u) } with "newA"
+                        TestMarykModel.ref { incMap.at(1u) } with "newA"
                     ),
                     Change(
-                        TestMarykModel { incMap.refAt(2u) } with null
+                        TestMarykModel.ref { incMap.at(2u) } with null
                     ),
                     IncMapChange(
-                        TestMarykModel { incMap::ref }.change(
+                        TestMarykModel.ref { incMap }.change(
                             addValues = listOf("c", "d")
                         )
                     )
@@ -597,7 +597,7 @@ class DataStoreChangeTest(
                     listOf(
                        IncMapAddition(
                            IncMapKeyAdditions(
-                               reference = TestMarykModel { incMap::ref },
+                               reference = TestMarykModel.ref { incMap },
                                addedKeys = listOf(3u, 4u),
                                addedValues = listOf("c", "d")
                            )

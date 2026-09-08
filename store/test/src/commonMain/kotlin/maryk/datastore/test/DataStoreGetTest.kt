@@ -74,7 +74,7 @@ class DataStoreGetTest(
                 *keys.toTypedArray(),
                 aggregations = Aggregations(
                     "count" to ValueCount(
-                        SimpleMarykModel { value::ref }
+                        SimpleMarykModel.ref { value }
                     )
                 )
             )
@@ -86,7 +86,7 @@ class DataStoreGetTest(
         expect(
             AggregationsResponse(
                 "count" to ValueCountResponse(
-                    SimpleMarykModel { value::ref }, 2uL
+                    SimpleMarykModel.ref { value }, 2uL
                 )
             )
         ) {

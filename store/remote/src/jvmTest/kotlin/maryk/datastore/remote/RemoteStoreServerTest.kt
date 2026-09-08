@@ -60,6 +60,7 @@ import maryk.core.query.requests.Requests
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
+import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdateResponse
@@ -581,6 +582,32 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun flowDoesNotAuthorizeReferenceTargetWhenFilterOnlyComparesItsKey() = runBoundedIntegrationTest {
+        val authorizedModels = mutableListOf<String?>()
+        withServer(
+            config = RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request ->
+                    authorizedModels += request.modelName
+                    request.modelName != NamedIndexTargetModel.Meta.name
+                },
+            ),
+            dataModelsById = mapOf(
+                1u to NamedIndexSourceModel,
+                2u to NamedIndexTargetModel,
+            ),
+        ) { baseUrl, client ->
+            val status = client.preparePost("$baseUrl${RemoteStoreProtocol.flowPath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(terminalReferenceFilterFlowPayload())
+            }.execute { response -> response.status.also { response.call.cancel() } }
+
+            assertEquals(HttpStatusCode.OK, status)
+        }
+
+        assertEquals(listOf<String?>(NamedIndexSourceModel.Meta.name), authorizedModels)
+    }
+
+    @Test
     fun executePreflightsLaterAuthorizationBeforeMutatingBatchPrefix() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(
             dataModelsById = mapOf(
@@ -650,6 +677,35 @@ class RemoteStoreServerTest {
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 setBody(crossModelNamedIndexPayload())
+            }
+
+            assertEquals(HttpStatusCode.Forbidden, response.status, response.bodyAsText())
+        }
+
+        assertEquals(
+            listOf<String?>(NamedIndexSourceModel.Meta.name, NamedIndexTargetModel.Meta.name),
+            authorizedModels,
+        )
+    }
+
+    @Test
+    fun flowDeniesNamedIndexWhichMayTraverseUnauthorizedModel() = runBoundedIntegrationTest {
+        val authorizedModels = mutableListOf<String?>()
+        withServer(
+            config = RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request ->
+                    authorizedModels += request.modelName
+                    request.modelName != NamedIndexTargetModel.Meta.name
+                }
+            ),
+            dataModelsById = mapOf(
+                1u to NamedIndexSourceModel,
+                2u to NamedIndexTargetModel,
+            ),
+        ) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(crossModelNamedIndexFlowPayload())
             }
 
             assertEquals(HttpStatusCode.Forbidden, response.status, response.bodyAsText())
@@ -1511,6 +1567,19 @@ private fun terminalReferenceFilterPayload(): ByteArray =
         authorizationRequestContext(),
     )
 
+private fun terminalReferenceFilterFlowPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            NamedIndexSourceModel.scanUpdates(
+                where = Equals(
+                    NamedIndexSourceModel { target::ref } with NamedIndexTargetModel.key(ByteArray(16))
+                ),
+            )
+        ),
+        authorizationRequestContext(),
+    )
+
 private fun crossModelNamedIndexPayload(): ByteArray =
     RemoteStoreCodec.encode(
         Requests.Serializer,
@@ -1518,6 +1587,17 @@ private fun crossModelNamedIndexPayload(): ByteArray =
             NamedIndexSourceModel.scan(
                 where = Matches("related-value" with "classified"),
                 allowTableScan = true,
+            )
+        ),
+        namedIndexRequestContext(),
+    )
+
+private fun crossModelNamedIndexFlowPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            NamedIndexSourceModel.scanUpdates(
+                where = Matches("related-value" with "classified"),
             )
         ),
         namedIndexRequestContext(),

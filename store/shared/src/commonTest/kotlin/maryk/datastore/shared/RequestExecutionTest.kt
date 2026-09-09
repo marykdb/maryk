@@ -317,14 +317,14 @@ class RequestExecutionTest {
                 try {
                     val queuedMutation = store.enqueueMutation("before snapshot")
                     val flow = store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
-                    val initial = async {
+                    val initial = async(start = CoroutineStart.UNDISPATCHED) {
                         flow.take(1).single()
                     }
                     queuedMutation.await()
                     store.initialReadStarted.await()
                     store.releaseInitialRead.complete(Unit)
 
-                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(initial.await()).also {
+                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(withTimeout(2.seconds) { initial.await() }).also {
                         assertEquals("before snapshot", it.values.single().values { value })
                     }
                     store.listenerRemoved.await()

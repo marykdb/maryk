@@ -321,13 +321,13 @@ class RemoteStoreServerTest {
     @Test
     fun flowDoesNotBufferManyLargeUpdateFramesAheadOfSlowClient() = runBoundedIntegrationTest {
         val delegate = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
-        val emitted = AtomicInteger()
-        val store = FastLargeFlowStore(delegate, emitted)
+        val completedEmissions = AtomicInteger()
+        val store = FastLargeFlowStore(delegate, completedEmissions)
         val (server, port) = startTestServer { remoteStoreModule(store) }
         val socket = openRawFlow("http://127.0.0.1:$port")
         try {
             withTimeout(2.seconds) {
-                while (emitted.get() == 0) delay(10)
+                while (completedEmissions.get() == 0) delay(10)
             }
             delay(250)
 
@@ -335,8 +335,8 @@ class RemoteStoreServerTest {
                 // CIO retains up to eight queued MiB frames, while the response writer can hold
                 // one frame that is currently being flushed. The upstream flow must remain bounded
                 // by those nine frames rather than draining the source for a stalled socket.
-                emitted.get() <= 9,
-                "Remote flow buffered ${emitted.get()} large updates ahead of a client that read none",
+                completedEmissions.get() <= 9,
+                "Remote flow buffered ${completedEmissions.get()} large updates ahead of a client that read none",
             )
         } finally {
             socket.close()
@@ -1555,7 +1555,7 @@ private class TestMigrationAdminStore(
 
 private class FastLargeFlowStore(
     private val delegate: IsDataStore,
-    private val emitted: AtomicInteger,
+    private val completedEmissions: AtomicInteger,
 ) : IsDataStore by delegate {
     override suspend fun <DM : IsRootDataModel, RQ, RP> executeFlow(
         request: RQ,
@@ -1563,7 +1563,6 @@ private class FastLargeFlowStore(
                                       RP : IsDataResponse<DM> = flow {
         val sortingKey = Bytes(ByteArray(1024 * 1024))
         repeat(100) { index ->
-            emitted.incrementAndGet()
             emit(
                 OrderedKeysUpdate(
                     keys = emptyList(),
@@ -1571,6 +1570,7 @@ private class FastLargeFlowStore(
                     sortingKeys = listOf(sortingKey),
                 )
             )
+            completedEmissions.incrementAndGet()
         }
     }
 }

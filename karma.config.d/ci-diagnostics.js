@@ -45,3 +45,14 @@ if (process.env.MARYK_KARMA_DIAGNOSTICS_DIR) {
     config.reporters = config.reporters || [];
     config.reporters.push('maryk-karma-diagnostics');
 }
+
+// Karma's webpack framework includes runtime.js as a classic script. Kotlin/Wasm
+// 2.4 emits direct import.meta references in Node-only branches; normalize those
+// references before webpack turns the browser test bundle into a classic script.
+config.webpack = config.webpack || {};
+config.webpack.module = config.webpack.module || {};
+config.webpack.module.rules = config.webpack.module.rules || [];
+config.webpack.module.rules.push({
+    test: /\.mjs$/,
+    use: [{ loader: require('path').resolve(__dirname, '../../../../build-logic/wasm-import-meta-loader.cjs') }],
+});

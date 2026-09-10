@@ -28,7 +28,9 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
+import maryk.core.query.requests.ScanCursor
 import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
@@ -698,9 +700,15 @@ class FoundationDBDataStoreTest {
                 assertIs<AddSuccess<Log>>(it)
             }
 
-            val response = dataStore.execute(Log.scan(limit = 700u))
+            val scannedValues = mutableListOf<ValuesWithMetaData<Log>>()
+            var cursor: ScanCursor? = null
+            do {
+                val response = dataStore.execute(Log.scan(limit = 100u, cursor = cursor))
+                scannedValues.addAll(response.values)
+                cursor = response.nextCursor
+            } while (cursor != null)
 
-            assertEquals(700, response.values.size)
+            assertEquals(700, scannedValues.size)
         } finally {
             dataStore.close()
         }

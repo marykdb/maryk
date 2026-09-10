@@ -3,14 +3,22 @@
 package maryk.datastore.indexeddb
 
 import kotlin.js.JsAny
-import kotlin.js.JsModule
+import kotlin.js.Promise
 import kotlin.js.js
+import kotlinx.coroutines.await
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-internal actual fun installIndexedDbForTests() {
-    fakeIndexedDbAuto
+internal actual suspend fun installIndexedDbForTests() {
+    if (!indexedDbAvailable()) {
+        val fakeIndexedDbModule = loadFakeIndexedDb().await()
+        installFakeIndexedDb(
+            indexedDb = fakeIndexedDb(fakeIndexedDbModule),
+            idbKeyRange = fakeIdbKeyRange(fakeIndexedDbModule),
+            idbCursor = fakeIdbCursor(fakeIndexedDbModule),
+        )
+    }
 }
 
 internal actual suspend fun upgradeNativeIndexedDbForTests(databaseName: String) = suspendCancellableCoroutine<Unit> { continuation ->
@@ -115,8 +123,25 @@ private fun installCursorContinueHook(cursorPrototype: JsAny, hook: () -> Unit):
     """
     )
 
-@JsModule("fake-indexeddb/auto")
-private external val fakeIndexedDbAuto: JsAny?
+private fun loadFakeIndexedDb(): Promise<JsAny> = js("import('fake-indexeddb')")
+
+private fun fakeIndexedDb(module: JsAny): JsAny = js("module.indexedDB")
+
+private fun fakeIdbKeyRange(module: JsAny): JsAny = js("module.IDBKeyRange")
+
+private fun fakeIdbCursor(module: JsAny): JsAny = js("module.IDBCursor")
+
+private fun installFakeIndexedDb(indexedDb: JsAny, idbKeyRange: JsAny, idbCursor: JsAny) {
+    js(
+        """
+        globalThis.indexedDB = indexedDb;
+        globalThis.IDBKeyRange = idbKeyRange;
+        globalThis.IDBCursor = idbCursor;
+        """
+    )
+}
+
+private fun indexedDbAvailable(): Boolean = js("globalThis.indexedDB !== undefined")
 
 private fun cursorPrototype(): JsAny = js("globalThis.IDBCursor.prototype")
 

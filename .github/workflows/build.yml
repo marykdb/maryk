@@ -34,7 +34,7 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            gradle_task: "macosArm64Test tvosSimulatorArm64Test watchosSimulatorArm64Test iosSimulatorArm64 compileKotlinIosArm64 compileKotlinIosX64 compileKotlinTvosArm64 compileKotlinWatchosArm32 compileKotlinWatchosArm64 compileKotlinWatchosDeviceArm64"
+            gradle_task: "macosArm64Test tvosSimulatorArm64Test watchosSimulatorArm64Test iosSimulatorArm64Test compileKotlinIosArm64 compileKotlinIosX64 compileKotlinTvosArm64 compileKotlinWatchosArm32 compileKotlinWatchosArm64 compileKotlinWatchosDeviceArm64"
             job_name: macOS Apple Arm tests
           - os: macos-26-intel
             gradle_task: "macosX64Test"

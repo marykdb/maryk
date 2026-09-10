@@ -3,7 +3,7 @@ package maryk.datastore.indexeddb
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-internal expect fun installIndexedDbForTests()
+internal expect suspend fun installIndexedDbForTests()
 
 internal expect suspend fun upgradeNativeIndexedDbForTests(databaseName: String)
 

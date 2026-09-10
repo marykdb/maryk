@@ -5,7 +5,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.js.js
 
-internal actual fun installIndexedDbForTests() {
+internal actual suspend fun installIndexedDbForTests() {
     installFakeIndexedDb()
 }
 

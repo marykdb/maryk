@@ -99,6 +99,7 @@ export default defineConfig({
                     label: 'Querying',
                     items: [
                         {label: 'Overview', slug: 'querying'},
+                        {label: 'SQL', slug: 'querying/sql'},
                         {label: 'Selecting with Graphs', slug: 'querying/reference-graphs'},
                         {label: 'Filters', slug: 'querying/filters'},
                         {label: 'Aggregations', slug: 'querying/aggregations'},

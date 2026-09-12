@@ -20,6 +20,7 @@ kotlin {
             kotlin.srcDir("src/commonTestExpect/kotlin")
             dependencies {
                 implementation(kotlin("test"))
+                implementation(projects.sql.conformance)
                 implementation(projects.testmodels)
                 implementation(projects.store.test)
             }

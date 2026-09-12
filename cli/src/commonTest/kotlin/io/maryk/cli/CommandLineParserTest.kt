@@ -6,6 +6,20 @@ import kotlin.test.assertIs
 
 class CommandLineParserTest {
     @Test
+    fun preservesSqlLiteralsQuotedNamesAndCommentsVerbatim() {
+        val sql = "SELECT 'it''s  okay', \"Mixed Case\" FROM items -- keep this\nWHERE note = 'a\\b'"
+        val result = assertIs<CommandLineParser.ParseResult.Success>(CommandLineParser.parse("sql $sql"))
+        assertEquals(listOf("sql", sql), result.tokens)
+        assertEquals(listOf("sql", sql), assertIs<CommandLineParser.ParseResult.Success>(CommandLineParser.parse("SQL $sql")).tokens)
+    }
+
+    @Test
+    fun sqlOptionsPreserveTheRemainingStatementAndQuotedFilePath() {
+        assertEquals(listOf("sql", "--snapshot", "SELECT 'a b'"), assertIs<CommandLineParser.ParseResult.Success>(CommandLineParser.parse("sql --snapshot SELECT 'a b'")).tokens)
+        assertEquals(listOf("sql", "--file", "/tmp/a b.sql"), assertIs<CommandLineParser.ParseResult.Success>(CommandLineParser.parse("sql --file '/tmp/a b.sql'")).tokens)
+    }
+
+    @Test
     fun preservesExplicitEmptyQuotedArguments() {
         val result = assertIs<CommandLineParser.ParseResult.Success>(
             CommandLineParser.parse("set value \"\" ''")

@@ -55,11 +55,13 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?,
     decryptValue: DecryptValue? = null
 ): ValuesWithMetaData<DM>? {
+    if (toVersion != null && creationVersion > toVersion) return null
     var maxVersion = creationVersion
     var isDeleted = false
 
     val values: Values<DM> = if (select != null && select.properties.isEmpty()) {
-        // Don't read the values if no values are selected
+        // Preserve metadata without decoding unselected property values.
+        isDeleted = isSoftDeleted(tr, tableDirs, toVersion, key.bytes, decryptValue = decryptValue)
         this.emptyValues()
     } else if (toVersion == null) {
         val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
@@ -227,9 +229,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         )
     }
 
-    // Return null if no values where found but values where selected
-    if (values.size == 0 && (select == null || select.properties.isNotEmpty())) {
-        // Return null if no ValueItems were found
+    // A projection may contain only absent optional properties; the record still exists.
+    if (values.size == 0 && select == null) {
         return null
     }
 

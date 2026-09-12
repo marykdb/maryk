@@ -18,6 +18,7 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
+                implementation(projects.sql.conformance)
                 implementation(projects.testmodels)
                 implementation(projects.store.test)
             }

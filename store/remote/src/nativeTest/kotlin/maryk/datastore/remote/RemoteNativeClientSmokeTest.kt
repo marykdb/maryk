@@ -26,6 +26,8 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.datastore.memory.InMemoryDataStore
 import maryk.test.models.SimpleMarykModel
+import maryk.sql.conformance.assertSqlConformance
+import maryk.sql.conformance.sqlConformanceModels
 import platform.posix.AF_INET
 import platform.posix.INADDR_ANY
 import platform.posix.SOCK_STREAM
@@ -42,6 +44,22 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
 class RemoteNativeClientSmokeTest {
+    @Test
+    fun sqlReadContractAgainstNativeServer() = runBlocking {
+        withTimeout(60.seconds) {
+            val store = InMemoryDataStore.open(dataModelsById = sqlConformanceModels, keepAllVersions = true)
+            val port = allocateLocalPort()
+            val server = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+            try {
+                val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+                try { assertSqlConformance(remote) } finally { remote.close() }
+            } finally {
+                server.stop(500, 500)
+                store.close()
+            }
+        }
+    }
+
     @Test
     fun executesStreamsAndCancelsAgainstNativeServer() = runBlocking {
         withTimeout(30.seconds) {

@@ -127,6 +127,7 @@ kotlin {
                 implementation(libs.kotter)
                 implementation(projects.file)
                 implementation(projects.generator)
+                implementation(projects.sql)
                 implementation(projects.store.rocksdb)
                 implementation(projects.store.foundationdb)
                 implementation(projects.store.remote)

@@ -136,6 +136,15 @@ class HelpCommand : Command {
                 "undelete <model> <key> [--if-version <n>]",
                 "Restore a soft-deleted record.",
             )
+            "sql" -> listOf(
+                "sql [options] SELECT ...",
+                "sql [options] --file <path>",
+                "sql [options] -- <SQL> (for SQL beginning with a -- comment)",
+                "Run read-only SQL on the connected store. SQL quotes and comments are preserved.",
+                "Options: --snapshot, --to-version <n>, --include-deleted, --no-table-scan",
+                "Limits: 10,000 result rows, 8 MiB buffered data, 64 KiB query files.",
+                "Example: sql SELECT category, SUM(amount) FROM Invoice GROUP BY category",
+            )
             "scan" -> listOf(
                 "scan <model> [options]",
                 "Scan records and browse results.",

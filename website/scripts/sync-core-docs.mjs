@@ -17,6 +17,7 @@ export const map = [
   ['src/content/docs/data-modeling/keys.mdx', 'key.md'],
   ['src/content/docs/data-modeling/versioning.mdx', 'versioning.md'],
   ['src/content/docs/querying/index.mdx', 'query.md'],
+  ['src/content/docs/querying/sql.mdx', '../sql/README.md'],
   ['src/content/docs/querying/reference-graphs.mdx', 'reference-graphs.md'],
   ['src/content/docs/querying/filters.mdx', 'filters.md'],
   ['src/content/docs/querying/aggregations.mdx', 'aggregations.md'],

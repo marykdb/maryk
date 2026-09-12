@@ -46,6 +46,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     toVersion: ULong?,
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
 ): ValuesWithMetaData<DM>? {
+    if (toVersion != null && creationVersion > toVersion) return null
     var maxVersion = creationVersion
     var isDeleted = false
 
@@ -233,9 +234,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         )
     }
 
-    // Return null if no values where found but values where selected
-    if (values.size == 0 && (select == null || select.properties.isNotEmpty())) {
-        // Return null if no ValueItems were found
+    // A projection may contain only absent optional properties; the record still exists.
+    if (values.size == 0 && select == null) {
         return null
     }
 

@@ -147,7 +147,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readCurrentValues
     }
 
     if (rows.isEmpty()) {
-        return null
+        return if (select == null) null else dataModel.emptyValues()
     }
 
     return decodeStorageRowsToValues(
@@ -194,7 +194,8 @@ internal fun <DM : IsRootDataModel> decodeStorageRowsToValues(
         }
     )
 
-    if (values.size == 0 && (select == null || select.properties.isNotEmpty())) {
+    // Projecting absent optional fields does not remove an otherwise existing record.
+    if (values.size == 0 && select == null) {
         return null
     }
 

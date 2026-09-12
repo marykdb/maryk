@@ -60,6 +60,14 @@ class ValuesResponseTest {
     }
 
     @Test
+    fun preservesEmptyResultsAcrossResponseFormats() {
+        val response = objectsResponse.copy(values = emptyList())
+        checkProtoBufConversion(response, ValuesResponse, { context })
+        checkJsonConversion(response, ValuesResponse, { context })
+        checkYamlConversion(response, ValuesResponse, { context })
+    }
+
+    @Test
     fun convertToJSONAndBack() {
         checkJsonConversion(this.objectsResponse, ValuesResponse, { this.context })
     }

@@ -64,6 +64,8 @@ include(
     ":json",
     ":yaml",
     ":core",
+    ":sql",
+    ":sql:conformance",
     ":file",
     ":testmodels",
     ":generator",

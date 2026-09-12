@@ -20,6 +20,7 @@ internal fun <DM : IsRootDataModel> DM.recordToValueWithMeta(
     toVersion: HLC?,
     record: DataRecord<DM>
 ): ValuesWithMetaData<DM>? {
+    if (toVersion != null && record.firstVersion > toVersion) return null
     var valueIndex = -1
     var maxVersion = record.firstVersion
 
@@ -65,9 +66,8 @@ internal fun <DM : IsRootDataModel> DM.recordToValueWithMeta(
         )
     }
 
-    // Return null if no values where found but values where selected
-    if (values.size == 0 && (select == null || select.properties.isNotEmpty())) {
-        // Return null if no ValueItems were found
+    // A projection may contain only absent optional properties; the record still exists.
+    if (values.size == 0 && select == null) {
         return null
     }
     return ValuesWithMetaData(

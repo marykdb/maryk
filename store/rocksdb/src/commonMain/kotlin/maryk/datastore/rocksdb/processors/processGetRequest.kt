@@ -109,7 +109,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
                             getRequest.toVersion,
                             cacheReader
                         )?.let { values ->
-                            if (getRequest.toVersion == null) {
+                            if (getRequest.toVersion == null && getRequest.select?.properties?.isEmpty() != true) {
                                 values
                             } else {
                                 val cachedDeleted = deleted ?: softDeleteCache.get(key.bytes, 0, key.size)

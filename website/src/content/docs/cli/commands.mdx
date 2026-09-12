@@ -16,6 +16,7 @@ title: "CLI commands"
 - `undelete &lt;model&gt; &lt;key&gt; [--if-version &lt;n&gt;]` — restore a soft-deleted record.
 - `changes &lt;model&gt; &lt;key&gt; [options]` — show versioned changes for a record.
 - `scan &lt;model&gt; [options]` — browse records in a scrolling list.
+- `sql [options] SELECT ...` or `sql [options] --file &lt;path&gt;` — run a bounded read-only SQL query.
 - `migrations [status|pause|resume|cancel]` — inspect or control managed migrations.
 
 ## Quick example
@@ -43,6 +44,23 @@ Notes:
 - Commands that open interactive viewers (`get` without a subcommand or `connect` without args) are rejected in one-shot mode.
 - `scan` in one-shot mode returns a single page (respecting `--limit`) as plain output.
 - Use `get &lt;model&gt; &lt;key&gt; &lt;subcommand ...&gt;` to run `save`, `load`, `set`, `unset`, `append`, `remove`, or `delete` without entering the viewer.
+
+## SQL
+
+SQL runs against the connected store. The command preserves SQL string literals, quoted names, and comments:
+
+```text
+sql SELECT name FROM Person WHERE name LIKE 'A%' ORDER BY name LIMIT 20
+sql SELECT category, COUNT(*), SUM(amount) FROM Invoice GROUP BY category
+sql --file ./report.sql
+maryk --connect rocksdb --dir ./data --exec "sql SELECT COUNT(*) FROM Invoice"
+```
+
+Options: `--snapshot`, `--to-version &lt;n&gt;`, `--include-deleted`, and `--no-table-scan`.
+Choose at most one consistency option (`--snapshot` or `--to-version`). Use `--` before SQL that starts with a line comment, for example `sql -- -- report` followed by a newline and `SELECT 1`; a SQL file can start with comments directly.
+Versioned reads require retained history and an authoritative snapshot provider. Table scans are enabled by default in the CLI, with at most 10,000 result rows and 8 MiB of logical buffered data. Query files are limited to 64 KiB. Output uses tab-separated columns, quotes strings, renders SQL `NULL` explicitly, and escapes control characters.
+
+Parameters are available through the Kotlin SQL API. In the CLI, use SQL literals or a file. SQL does not expose writes or schema changes; continue using Maryk commands for those operations.
 
 ## Connect
 

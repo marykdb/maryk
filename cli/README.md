@@ -8,6 +8,7 @@ The CLI supports interactive browsing and editing:
 - Connect to RocksDB or FoundationDB stores.
 - List models, inspect schema, and fetch records.
 - Scan through records with keyboard navigation and inline actions.
+- Run read-only SQL with `sql SELECT ...` or `sql --file report.sql`; see the [SQL guide](../sql/README.md).
 - Edit records with `set`, `unset`, `append`, and `remove`, and save/load snapshots.
 
 ## Getting Started

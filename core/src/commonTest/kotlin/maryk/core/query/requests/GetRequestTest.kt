@@ -19,6 +19,17 @@ import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class GetRequestTest {
+    @Test
+    fun preservesEmptyProjectionAcrossTransport() {
+        val request = SimpleMarykModel.get(
+            getRequest.keys.first(),
+            select = SimpleMarykModel.graph { emptyList() },
+        )
+        checkProtoBufConversion(request, GetRequest, { RequestContext(mapOf(SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel))) })
+        checkJsonConversion(request, GetRequest, { context })
+        checkYamlConversion(request, GetRequest, { context })
+    }
+
     private val context = RequestContext(mapOf(
         SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))

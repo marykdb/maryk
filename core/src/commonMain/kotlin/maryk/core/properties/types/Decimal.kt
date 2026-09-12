@@ -35,6 +35,48 @@ class Decimal private constructor(
 
     operator fun div(other: Decimal): Decimal = divideExact(other)
 
+    /** Exact remainder with a quotient truncated towards zero. */
+    operator fun rem(other: Decimal): Decimal {
+        require(other.integer.isNotZero()) { "Cannot divide by zero" }
+        val resultScale = maxOf(scale, other.scale)
+        val numerator = integer.multiplyPowerOfTen((resultScale - scale).toInt())
+        val denominator = other.integer.multiplyPowerOfTen((resultScale - other.scale).toInt())
+        return Decimal(numerator.divideAndRemainder(denominator).second, resultScale)
+    }
+
+    /** Multiply to [resultScale], rounding ties to the nearest even unscaled integer. */
+    fun multiplyRounded(other: Decimal, resultScale: UInt): Decimal {
+        require(resultScale <= MAX_SCALE) { "Decimal scale must be between 0 and $MAX_SCALE" }
+        val product = integer * other.integer
+        val exponent = resultScale.toInt() - scale.toInt() - other.scale.toInt()
+        return Decimal(
+            if (exponent >= 0) product.multiplyPowerOfTen(exponent)
+            else divideHalfEven(product, SignedInteger.powerOfTen(-exponent)),
+            resultScale,
+        )
+    }
+
+    /** Divide to [resultScale], rounding ties to the nearest even unscaled integer. */
+    fun divideRounded(other: Decimal, resultScale: UInt): Decimal {
+        require(other.integer.isNotZero()) { "Cannot divide by zero" }
+        require(resultScale <= MAX_SCALE) { "Decimal scale must be between 0 and $MAX_SCALE" }
+        val exponent = resultScale.toInt() + other.scale.toInt() - scale.toInt()
+        val numerator = if (exponent >= 0) integer.multiplyPowerOfTen(exponent) else integer
+        val denominator = if (exponent >= 0) other.integer else other.integer.multiplyPowerOfTen(-exponent)
+        return Decimal(divideHalfEven(numerator, denominator), resultScale)
+    }
+
+    /** Change scale, rounding ties to the nearest even unscaled integer. */
+    fun rescaleRounded(newScale: UInt): Decimal = divideRounded(fromUnscaled(1L, 0u), newScale)
+
+    private fun divideHalfEven(numerator: SignedInteger, denominator: SignedInteger): SignedInteger {
+        val (quotient, remainder) = numerator.divideAndRemainder(denominator)
+        val halfway = remainder.magnitude.timesTwo().compareTo(denominator.magnitude)
+        return if (halfway > 0 || halfway == 0 && quotient.magnitude.isOdd()) {
+            quotient + SignedInteger.of(numerator.negative != denominator.negative, UnsignedInteger.ONE)
+        } else quotient
+    }
+
     fun divideExact(other: Decimal, resultScale: UInt = scale): Decimal {
         require(other.integer.isNotZero()) { "Cannot divide by zero" }
         require(resultScale <= MAX_SCALE) { "Decimal scale must be between 0 and $MAX_SCALE" }

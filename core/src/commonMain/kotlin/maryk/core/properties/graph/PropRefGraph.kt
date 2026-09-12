@@ -243,7 +243,7 @@ internal fun writePropertiesToJson(
 ) {
     val transformed = PropRefGraph.properties.toSerializable!!.invoke(listOfPropRefGraphNodes, context)!!
 
-    writer.writeStartArray()
+    writer.writeStartArray(isCompact = listOfPropRefGraphNodes.isEmpty())
     for (graphable in transformed) {
         when (val value = graphable.value) {
             is PropRefGraph<*, *> -> PropRefGraph.Serializer.writeObjectAsJson(

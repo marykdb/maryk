@@ -229,7 +229,10 @@ internal class SqlRuntime(
         val table = source.table!!
         val inputs = plan.inputs.filter { it.sourceId == source.id }
         val rootIndices = inputs.mapNotNull { it.indices.firstOrNull() }.distinct()
-        val select = table.model.graph { rootIndices.map { this[it]!! } }
+        // Some stores derive metadata's effective lastVersion from the selected values. Fetch the
+        // whole record whenever SQL needs __version, so an optimistic write guard never receives
+        // a version from a partial projection.
+        val select = if (inputs.any { it.isVersion }) null else table.model.graph { rootIndices.map { this[it]!! } }
         val access = nativeAccess(plan, source)
         val where = access.filter(table, evaluator)
         if (access.keyExpressions != null) {
@@ -239,7 +242,7 @@ internal class SqlRuntime(
                 for (expression in access.keyExpressions) {
                     val value = evaluator.eval(expression)
                     if (value == SqlValue.Null) continue
-                    val binding = source.columns.single { it.indices.isEmpty() && it.outputIndex == null }
+                    val binding = source.columns.single { it.isKey && it.outputIndex == null }
                     val key = domainValue(value, binding, SqlErrorCode.TYPE) as SqlValue.Key
                     if (keys.add(Key(key.value.bytes))) memory.retain(64L + key.value.size)
                 }

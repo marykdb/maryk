@@ -2,9 +2,9 @@ package maryk.sql.syntax
 
 internal class SqlParser(
     private val text: String,
-    private val maxTokens: Int = DEFAULT_MAX_TOKENS,
+    private val maxTokens: Int = DEFAULT_MAX_SQL_TOKENS,
     private val maxDepth: Int = DEFAULT_MAX_DEPTH,
-    private val maxParameters: Int = DEFAULT_MAX_PARAMETERS,
+    private val maxParameters: Int = DEFAULT_MAX_SQL_PARAMETERS,
 ) {
     private lateinit var tokens: List<SqlToken>
     private var tokenIndex = 0
@@ -681,9 +681,7 @@ internal class SqlParser(
     )
 
     private companion object {
-        const val DEFAULT_MAX_TOKENS = 16_384
         const val DEFAULT_MAX_DEPTH = 64
-        const val DEFAULT_MAX_PARAMETERS = 1_024
         val COMPARISON_OPERATORS = setOf("=", "!=", "<>", "<", "<=", ">", ">=")
         val ADDITIVE_OPERATORS = setOf("+", "-")
         val MULTIPLICATIVE_OPERATORS = setOf("*", "/", "%")

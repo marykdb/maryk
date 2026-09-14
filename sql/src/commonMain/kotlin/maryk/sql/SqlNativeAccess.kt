@@ -75,7 +75,7 @@ internal fun nativeAccess(plan: BoundQuery, source: BoundSource): NativeAccess {
         }
         if (expression is SqlExpr.In && !expression.negated) {
             val column = (expression.operand as? SqlExpr.Column)?.let { plan.references[it] }
-            if (column?.sourceId == source.id && column.indices.isEmpty() && column.outputIndex == null && expression.values.all(::constant)) keys = expression.values
+            if (column?.sourceId == source.id && column.isKey && column.outputIndex == null && expression.values.all(::constant)) keys = expression.values
         }
         if (expression !is SqlExpr.Binary || expression.operator !in setOf("=", "<", "<=", ">", ">=")) return
         val left = (expression.left as? SqlExpr.Column)?.let { plan.references[it] }
@@ -85,7 +85,7 @@ internal fun nativeAccess(plan: BoundQuery, source: BoundSource): NativeAccess {
             right?.sourceId == source.id && constant(expression.left) -> Triple(right, expression.left, when (expression.operator) { "<" -> ">"; "<=" -> ">="; ">" -> "<"; ">=" -> "<="; else -> "=" })
             else -> return
         }
-        if (column.indices.isEmpty() && column.outputIndex == null) {
+        if (column.isKey && column.outputIndex == null) {
             if (operator == "=") keys = listOf(value)
         } else filters += NativePredicate(column, operator, value)
     }

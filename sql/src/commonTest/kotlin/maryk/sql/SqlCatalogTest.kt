@@ -22,7 +22,7 @@ class SqlCatalogTest {
     @Test
     fun catalogExposesStoredTypesAndModelKey() {
         val table = SqlTable("items", SqlTestModel)
-        assertEquals(listOf("__key", "id", "category", "amount", "active", "note"), table.columns.map { it.name })
+        assertEquals(listOf("__key", "__version", "id", "category", "amount", "active", "note"), table.columns.map { it.name })
         assertEquals(SqlType.UINT64, table.columns.single { it.name == "id" }.type)
         assertEquals(SqlType.DECIMAL, table.columns.single { it.name == "amount" }.type)
         assertEquals(false, table.columns.single { it.name == "id" }.nullable)
@@ -32,7 +32,7 @@ class SqlCatalogTest {
     fun catalogRejectsAmbiguousNamesAndAllowsExplicitColumnLists() {
         assertFailsWith<SqlException> { SqlCatalog(listOf(SqlTable("Items", SqlTestModel), SqlTable("items", SqlTestModel))) }
         val table = SqlTable("public_items", SqlTestModel, exposedColumns = setOf("id", "category"))
-        assertEquals(listOf("id", "category"), table.columns.map { it.name })
+        assertEquals(listOf("__key", "__version", "id", "category"), table.columns.map { it.name })
         assertFailsWith<SqlException> { SqlTable("bad", SqlTestModel, exposedColumns = setOf("missing")) }
     }
 }

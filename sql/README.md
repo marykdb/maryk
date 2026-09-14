@@ -1,6 +1,6 @@
 # SQL
 
-Maryk SQL is an optional, read-only Kotlin Multiplatform query layer over Maryk's public datastore requests. Use SQL for reporting, ad hoc queries, and tabular integrations while keeping Maryk models and stores as the source of truth.
+Maryk SQL is an optional Kotlin Multiplatform query layer over Maryk's public datastore requests. Use SQL for reporting, ad hoc queries, and tabular integrations while keeping Maryk models and stores as the source of truth.
 
 The parser, binder, expressions, joins, aggregation, and execution live in `commonMain`. There is no embedded SQLite database, JDBC dependency, or duplicate copy of your data to maintain.
 
@@ -36,6 +36,9 @@ val result = sql.query(
 for (row in result.rows) {
     println(row["name"])
 }
+
+val inserted = sql.execute("INSERT INTO people (id, name) VALUES (1, 'Ada')")
+check(inserted.affectedRows == 1)
 ```
 
 Unrestricted scans require an explicit `allowTableScan = true`. Configure budgets for your workload. A selective query can still require a scan when the model has no suitable key or index.
@@ -51,12 +54,12 @@ import maryk.sql.SqlCatalog
 import maryk.sql.SqlTable
 
 val catalog = SqlCatalog(listOf(
-    SqlTable("people", Person, exposedColumns = setOf("__key", "name", "age")),
+    SqlTable("people", Person, exposedColumns = setOf("name", "age")),
 ))
 val sql = MarykSql.create(dataStore, catalog, SqlOptions(allowTableScan = true))
 ```
 
-`__key` is the model's typed record key. Scalar embedded properties are exposed as dotted paths. Reference values retain their target model identity; reading a reference does not automatically join its target. Enums retain their definition identity and index.
+`__key` is the model's typed record key and `__version` is its current Maryk version. Both system columns remain available when an explicit column set is used. Scalar embedded properties are exposed as dotted paths. Reference values retain their target model identity; reading a reference does not automatically join its target. Enums retain their definition identity and index.
 
 Stored missing properties become SQL `NULL`. The layer reads stored values without applying wrapper conversions or filling model defaults. A default actually stored when the record was created remains a real value. An existing record with absent selected properties still contributes a row.
 
@@ -133,7 +136,9 @@ SELECT name FROM Person
 WHERE __key IN (SELECT customer FROM Invoice WHERE amount > 100);
 ```
 
-The layer does not provide writes, DDL, SQL transactions, JDBC, recursive CTEs, correlated subqueries, window functions, live SQL subscriptions, or vendor-specific dialect compatibility. Unsupported forms fail explicitly. Schema creation, migrations, validation, and mutations remain Maryk APIs.
+The first write surface supports single-table `INSERT INTO … (columns) VALUES (…)`, including parameterized multi-row inserts; `UPDATE … SET … WHERE __key = ?`, including expressions over the current row; and `DELETE FROM … WHERE __key = ?` through `MarykSql.execute(...)`. Add `AND __version = ?` to either write for caller-supplied optimistic locking. Updates and soft deletes use guarded Maryk `ChangeRequest`s, preserving validation, authorization, versioning, and store transaction behavior. `UPDATE` and `DELETE` require a typed `SqlValue.Key` parameter, and this first surface updates direct scalar properties only. `NULL` assignments, `RETURNING`, `UPSERT`, `INSERT … SELECT`, SQL transactions, and table-wide or join writes remain unsupported.
+
+The layer does not provide DDL, JDBC, recursive CTEs, correlated subqueries, window functions, live SQL subscriptions, or vendor-specific dialect compatibility. Unsupported forms fail explicitly. Schema creation and migrations remain Maryk APIs.
 
 ## Numeric and null semantics
 

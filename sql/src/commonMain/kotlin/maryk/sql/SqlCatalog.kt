@@ -30,7 +30,10 @@ class SqlTable(val name: String, val model: IsRootDataModel, val schema: String 
 
     init {
         require(name.isNotEmpty() && schema.isNotEmpty()) { "Table and schema names cannot be empty" }
-        val all = mutableListOf(CatalogColumn(SqlColumn("__key", SqlType.KEY, false), emptyList(), null, model.Meta.name, keyModel = model))
+        val all = mutableListOf(
+            CatalogColumn(SqlColumn("__key", SqlType.KEY, false), emptyList(), null, model.Meta.name, keyModel = model, isKey = true),
+            CatalogColumn(SqlColumn("__version", SqlType.UINT64, false), emptyList(), null, isVersion = true),
+        )
         collectColumns(model, emptyList(), "", false, all, 0)
         if (all.groupBy { asciiLower(it.column.name) }.any { it.value.size > 1 }) {
             throw SqlException(SqlErrorCode.BINDING, "Ambiguous columns in table '$name'")
@@ -38,7 +41,7 @@ class SqlTable(val name: String, val model: IsRootDataModel, val schema: String 
         exposedColumns?.forEach { requested ->
             if (all.none { it.column.name == requested }) throw SqlException(SqlErrorCode.BINDING, "Unknown exposed column '$requested'")
         }
-        bindings = all.filter { exposedColumns == null || it.column.name in exposedColumns }
+        bindings = all.filter { it.isSystem || exposedColumns == null || it.column.name in exposedColumns }
         columns = bindings.map { it.column }
     }
 }
@@ -66,9 +69,14 @@ internal data class CatalogColumn(
     val keyModel: IsRootDataModel? = null,
     val identifier: SqlName? = null,
     val parameterOrigins: Set<Int> = emptySet(),
+    val isKey: Boolean = false,
+    val isVersion: Boolean = false,
 ) {
+    val isSystem: Boolean get() = isKey || isVersion
+
     fun read(record: ValuesWithMetaData<*>): SqlValue {
-        if (indices.isEmpty()) return SqlValue.Key(domain!!, record.key)
+        if (isKey) return SqlValue.Key(domain!!, record.key)
+        if (isVersion) return SqlValue.UInt64(record.lastVersion)
         var value: Any? = record.values
         for (index in indices) value = (value as? Values<*>)?.original(index)
         if (value == null) return SqlValue.Null

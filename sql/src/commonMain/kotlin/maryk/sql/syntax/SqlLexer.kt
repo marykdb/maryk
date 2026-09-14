@@ -19,6 +19,18 @@ internal data class SqlToken(
         kind == SqlTokenKind.IDENTIFIER && text.equalsAsciiIgnoreCase(keyword)
 }
 
+internal const val DEFAULT_MAX_SQL_TOKENS = 16_384
+internal const val DEFAULT_MAX_SQL_PARAMETERS = 1_024
+private const val MAX_SQL_LENGTH = 64 * 1024
+
+/** Applies the lexical resource limits shared by read and write statements. */
+internal fun validateSqlText(text: String) {
+    val tokens = SqlLexer(text, DEFAULT_MAX_SQL_TOKENS).tokenize()
+    if (tokens.count { it.kind == SqlTokenKind.PARAMETER } > DEFAULT_MAX_SQL_PARAMETERS) {
+        throw SqlParseException("Parameter limit of $DEFAULT_MAX_SQL_PARAMETERS exceeded", text.length)
+    }
+}
+
 internal class SqlLexer(
     private val text: String,
     private val maxTokens: Int,
@@ -150,7 +162,6 @@ internal class SqlLexer(
         throw SqlParseException("$message at position $position", position)
 
     private companion object {
-        const val MAX_SQL_LENGTH = 64 * 1024
         val DOUBLE_SYMBOLS = setOf("<=", ">=", "<>", "!=", "||")
         val HIGH_SURROGATE_RANGE = 0xD800..0xDBFF
         val LOW_SURROGATE_RANGE = 0xDC00..0xDFFF

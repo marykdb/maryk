@@ -7,7 +7,9 @@ import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.number
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.validateKeys
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.RequestType.Delete
@@ -20,8 +22,9 @@ import maryk.core.values.ObjectValues
  */
 fun <DM : IsRootDataModel> DM.delete(
     vararg objectsToDelete: Key<DM>,
-    hardDelete: Boolean = false
-) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)
+    hardDelete: Boolean = false,
+    lastVersion: ULong? = null,
+) = DeleteRequest(this, objectsToDelete.toList(), hardDelete, lastVersion)
 
 /**
  * A Request to delete [keys] from [dataModel]. If [hardDelete] is false the data will still exist but is
@@ -30,7 +33,9 @@ fun <DM : IsRootDataModel> DM.delete(
 data class DeleteRequest<DM : IsRootDataModel> internal constructor(
     override val dataModel: DM,
     val keys: List<Key<DM>>,
-    val hardDelete: Boolean
+    val hardDelete: Boolean,
+    /** Optional optimistic-concurrency guard, applied to every key in this request. */
+    val lastVersion: ULong? = null,
 ) : IsStoreRequest<DM, DeleteResponse<DM>>, IsTransportableRequest<DeleteResponse<DM>> {
     override val requestType = Delete
     override val responseModel = DeleteResponse
@@ -61,10 +66,13 @@ data class DeleteRequest<DM : IsRootDataModel> internal constructor(
             default = false
         )
 
+        val lastVersion by number(4u, DeleteRequest<*>::lastVersion, UInt64)
+
         override fun invoke(values: ObjectValues<DeleteRequest<*>, Companion>) = DeleteRequest(
             dataModel = values(1u),
             keys = values(2u),
-            hardDelete = values(3u)
+            hardDelete = values(3u),
+            lastVersion = values(lastVersion.index),
         )
     }
 }

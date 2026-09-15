@@ -69,6 +69,13 @@ suspend fun assertSqlConformance(store: IsDataStore) {
     assertEquals(0, sql.execute("DELETE FROM items WHERE __key = ? AND __version = ?", listOf(writeKey, writeVersion)).affectedRows)
     val currentWriteVersion = sql.query("SELECT __version FROM items WHERE id = 8").rows.single()[0]
     assertEquals(1, sql.execute("DELETE FROM items WHERE __key = ? AND __version = ?", listOf(writeKey, currentWriteVersion)).affectedRows)
+    val deletedWriteVersion = sql.query("SELECT __version FROM items WHERE __key = ?", listOf(writeKey), SqlReadOptions(filterSoftDeleted = false)).rows.single()[0]
+    assertEquals(1, sql.execute("UNDELETE FROM items WHERE __key = ? AND __version = ?", listOf(writeKey, deletedWriteVersion)).affectedRows)
+    val restoredWriteVersion = sql.query("SELECT __version FROM items WHERE id = 8").rows.single()[0]
+    assertEquals(1, sql.execute("UPDATE items SET category = 'hard-delete' WHERE __key = ?", listOf(writeKey)).affectedRows)
+    assertEquals(0, sql.execute("DELETE HARD FROM items WHERE __key = ? AND __version = ?", listOf(writeKey, restoredWriteVersion)).affectedRows)
+    val hardDeleteWriteVersion = sql.query("SELECT __version FROM items WHERE id = 8").rows.single()[0]
+    assertEquals(1, sql.execute("DELETE HARD FROM items WHERE __key = ? AND __version = ?", listOf(writeKey, hardDeleteWriteVersion)).affectedRows)
     val ordered = sql.query("SELECT id, amount FROM items WHERE amount >= ? AND id NOT IN (1, 2) ORDER BY id DESC LIMIT 3 OFFSET 1", listOf(SqlValue.Exact(Decimal.parse("2.500"))))
     assertEquals(listOf(6uL, 5uL, 4uL), ordered.rows.map { (it[0] as SqlValue.UInt64).value })
     val grouped = sql.query("SELECT category, COUNT(*), SUM(amount), AVG(amount) FROM items GROUP BY category ORDER BY category")
@@ -125,7 +132,7 @@ suspend fun assertSqlConformance(store: IsDataStore) {
     val historicalPage = store.execute(SqlConformanceItem.scan(select = emptyProjection, filterSoftDeleted = false, limit = 1u, allowTableScan = true, toVersion = deleted.version))
     assertTrue(historicalPage.values.single().isDeleted)
     assertEquals(SqlValue.Int64(6), sql.query("SELECT COUNT(*) FROM items").rows.single()[0])
-    assertEquals(SqlValue.Int64(8), sql.query("SELECT COUNT(*) FROM items", readOptions = SqlReadOptions(filterSoftDeleted = false)).rows.single()[0])
+    assertEquals(SqlValue.Int64(7), sql.query("SELECT COUNT(*) FROM items", readOptions = SqlReadOptions(filterSoftDeleted = false)).rows.single()[0])
     store.execute(SqlConformanceItem.delete(added.first().key, hardDelete = true))
     assertTrue(store.execute(SqlConformanceItem.get(added.first().key, select = emptyProjection, filterSoftDeleted = false)).values.isEmpty())
 }

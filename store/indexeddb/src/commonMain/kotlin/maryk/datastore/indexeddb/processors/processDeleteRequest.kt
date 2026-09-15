@@ -9,6 +9,8 @@ import maryk.core.query.responses.DeleteResponse
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
+import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.properties.exceptions.InvalidValueException
 import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.indexeddb.IndexedDbRecordMeta
 import maryk.datastore.indexeddb.IndexedDbTransactionMode
@@ -56,6 +58,12 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
         byteStore.transaction(writeStoreNames, IndexedDbTransactionMode.READWRITE) { byteStore ->
             val tombstoneVersion = byteStore.get(hardDeleteStoreName, key.bytes)?.readTrailingVersion()
             val currentMeta = byteStore.get(keyStoreName, key.bytes)?.let(::decodeRecordMeta)
+            request.lastVersion?.let { expectedVersion ->
+                if (currentMeta?.lastVersion != expectedVersion) {
+                    statuses += ValidationFail(InvalidValueException(null, "Version of object was different than given: $expectedVersion < ${currentMeta?.lastVersion}"))
+                    return@transaction
+                }
+            }
             if (ignoreIfVersionNotNewer) {
                 val lastAppliedVersion = listOfNotNull(currentMeta?.lastVersion, tombstoneVersion).maxOrNull()
                 if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {

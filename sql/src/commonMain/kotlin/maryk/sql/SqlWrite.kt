@@ -6,12 +6,14 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
+import maryk.core.query.requests.delete
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.sql.syntax.SqlParseException
 import maryk.sql.syntax.validateSqlText
 
@@ -39,7 +41,8 @@ internal class SqlWriter(private val sql: MarykSql) {
             "INSERT" -> insert(text, parameters)
             "UPDATE" -> update(text, parameters)
             "DELETE" -> delete(text, parameters)
-            else -> throw SqlException(SqlErrorCode.SYNTAX, "Expected INSERT, UPDATE, or DELETE")
+            "UNDELETE" -> undelete(text, parameters)
+            else -> throw SqlException(SqlErrorCode.SYNTAX, "Expected INSERT, UPDATE, DELETE, or UNDELETE")
         }
     }
 
@@ -98,7 +101,9 @@ internal class SqlWriter(private val sql: MarykSql) {
     }
 
     private suspend fun delete(text: String, parameters: List<SqlValue>): SqlWriteResult {
-        val from = text.removePrefixIgnoreCase("DELETE FROM").trimStart()
+        val afterDelete = text.removePrefixIgnoreCase("DELETE").trimStart()
+        val hardDelete = afterDelete.removePrefix("HARD").trimStart().let { it.length != afterDelete.length }
+        val from = (if (hardDelete) afterDelete.removePrefix("HARD").trimStart() else afterDelete).removePrefixIgnoreCase("FROM").trimStart()
         val whereAt = keywordIndex(from, "WHERE")
         if (whereAt < 0) throw SqlException(SqlErrorCode.SYNTAX, "DELETE requires WHERE __key = ?")
         val table = table(from.substring(0, whereAt).trim())
@@ -110,7 +115,30 @@ internal class SqlWriter(private val sql: MarykSql) {
         val key = key(table, selected[0])
         val version = (selected[1] as? SqlValue.UInt64)?.value
             ?: throw SqlException(SqlErrorCode.EXECUTION_STATE, "Selected row has no version")
-        val response = sql.dataStore.execute(table.model.change(key.change(ObjectSoftDeleteChange(true), lastVersion = version)))
+        return if (hardDelete) {
+            val response = sql.dataStore.execute(table.model.delete(key, hardDelete = true, lastVersion = version))
+            SqlWriteResult(response.statuses.count { it is DeleteSuccess<*> }, response.statuses.filterNot { it is DeleteSuccess<*> }.map { it.toString() })
+        } else {
+            val response = sql.dataStore.execute(table.model.change(key.change(ObjectSoftDeleteChange(true), lastVersion = version)))
+            SqlWriteResult(response.statuses.count { it is ChangeSuccess<*> }, response.statuses.filterNot { it is ChangeSuccess<*> }.map { it.toString() })
+        }
+    }
+
+    private suspend fun undelete(text: String, parameters: List<SqlValue>): SqlWriteResult {
+        val from = text.removePrefixIgnoreCase("UNDELETE FROM").trimStart()
+        val whereAt = keywordIndex(from, "WHERE")
+        if (whereAt < 0) throw SqlException(SqlErrorCode.SYNTAX, "UNDELETE requires WHERE __key = ?")
+        val table = table(from.substring(0, whereAt).trim())
+        val target = target(from.substring(whereAt + "WHERE".length))
+        val selected = sql.query(
+            "SELECT __key, __version FROM ${quotedIdentifier(table.schema)}.${quotedIdentifier(table.name)} WHERE ${target.whereClause}",
+            parameters,
+            readOptions = SqlReadOptions(filterSoftDeleted = false),
+        ).rows.singleOrNull() ?: return SqlWriteResult(0)
+        val key = key(table, selected[0])
+        val version = (selected[1] as? SqlValue.UInt64)?.value
+            ?: throw SqlException(SqlErrorCode.EXECUTION_STATE, "Selected row has no version")
+        val response = sql.dataStore.execute(table.model.change(key.change(ObjectSoftDeleteChange(false), lastVersion = version)))
         return SqlWriteResult(response.statuses.count { it is ChangeSuccess<*> }, response.statuses.filterNot { it is ChangeSuccess<*> }.map { it.toString() })
     }
 

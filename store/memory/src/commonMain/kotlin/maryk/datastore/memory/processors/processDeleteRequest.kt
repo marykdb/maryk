@@ -38,7 +38,8 @@ internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
                         key,
                         version,
                         deleteRequest.hardDelete,
-                        updateSharedFlow
+                        updateSharedFlow,
+                        deleteRequest.lastVersion,
                     )
                 )
             } catch (e: Throwable) {

@@ -15,7 +15,7 @@ import maryk.core.values.SimpleObjectValues
 /** Failure in validation with [exceptions] */
 data class ValidationFail<DM : IsRootDataModel>(
     val exceptions: List<ValidationException>
-) : IsAddResponseStatus<DM>, IsChangeResponseStatus<DM> {
+) : IsAddResponseStatus<DM>, IsChangeResponseStatus<DM>, IsDeleteResponseStatus<DM> {
     constructor(validationException: ValidationException) : this(
         if (validationException is ValidationUmbrellaException) {
             validationException.exceptions

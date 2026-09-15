@@ -8,6 +8,8 @@ import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
+import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.properties.exceptions.InvalidValueException
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
@@ -41,6 +43,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
     hardDelete: Boolean,
     historicStoreIndexValuesWalker: HistoricStoreIndexValuesWalker?,
     cache: Cache,
+    lastVersion: ULong? = null,
     ignoreIfVersionNotNewer: Boolean = false,
 ): IsDeleteResponseStatus<DM> = try {
     val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
@@ -82,6 +85,12 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
     when {
         exists -> {
             withTransaction { transaction ->
+                if (lastVersion != null) {
+                    val currentVersion = getLastVersion(transaction, columnFamilies, defaultReadOptions, key)
+                    if (currentVersion != lastVersion) {
+                        return@withTransaction ValidationFail<DM>(InvalidValueException(null, "Version of object was different than given: $lastVersion < $currentVersion"))
+                    }
+                }
                 // Create version bytes
                 val versionBytes = HLC.toStorageBytes(version)
 

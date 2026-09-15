@@ -14,6 +14,8 @@ import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
+import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
@@ -55,6 +57,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
     version: HLC,
     dbIndex: UInt,
     hardDelete: Boolean,
+    lastVersion: ULong? = null,
     cache: Cache,
     ignoreIfVersionNotNewer: Boolean = false,
 ): IsDeleteResponseStatus<DM> = try {
@@ -71,6 +74,9 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
             tr.get(packKey(tableDirs.tablePrefix, keyBytes)).awaitResult()?.readHLCTimestampIfExact()
         } else null
         val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
+        if (lastVersion != null && currentVersion != lastVersion) {
+            return@runRequestTransaction ValidationFail(InvalidValueException(null, "Version of object was different than given: $lastVersion < $currentVersion"))
+        }
         if (ignoreIfVersionNotNewer) {
             if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
                 return@runRequestTransaction DeleteSuccess(lastAppliedVersion)

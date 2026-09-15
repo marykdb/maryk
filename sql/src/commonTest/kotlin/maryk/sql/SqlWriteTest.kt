@@ -35,6 +35,14 @@ class SqlWriteTest {
             assertEquals(0, sql.execute("DELETE FROM items WHERE __key = ? AND __version = ?", listOf(key, version)).affectedRows)
             assertEquals(1, sql.execute("DELETE FROM items WHERE __key = ? AND __version = ?", listOf(key, currentVersion)).affectedRows)
             assertEquals(0, sql.query("SELECT id FROM items WHERE id = 8").rows.size)
+            val deletedVersion = sql.query("SELECT __version FROM items WHERE __key = ?", listOf(key), SqlReadOptions(filterSoftDeleted = false)).rows.single()[0]
+            assertEquals(1, sql.execute("UNDELETE FROM items WHERE __key = ? AND __version = ?", listOf(key, deletedVersion)).affectedRows)
+            val restoredVersion = sql.query("SELECT __version FROM items WHERE id = 8").rows.single()[0]
+            assertEquals(1, sql.execute("UPDATE items SET category = 'hard-delete' WHERE __key = ?", listOf(key)).affectedRows)
+            assertEquals(0, sql.execute("DELETE HARD FROM items WHERE __key = ? AND __version = ?", listOf(key, restoredVersion)).affectedRows)
+            val hardDeleteVersion = sql.query("SELECT __version FROM items WHERE id = 8").rows.single()[0]
+            assertEquals(1, sql.execute("DELETE HARD FROM items WHERE __key = ? AND __version = ?", listOf(key, hardDeleteVersion)).affectedRows)
+            assertEquals(0, sql.query("SELECT id FROM items WHERE __key = ?", listOf(key), SqlReadOptions(filterSoftDeleted = false)).rows.size)
         } finally { store.close() }
     }
 

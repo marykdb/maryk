@@ -38,6 +38,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDeleteR
                     version = version,
                     dbIndex = dbIndex,
                     hardDelete = deleteRequest.hardDelete,
+                    lastVersion = deleteRequest.lastVersion,
                     cache = cache,
                 )
             }

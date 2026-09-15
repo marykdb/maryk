@@ -6,6 +6,8 @@ import maryk.core.properties.types.Key
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
+import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.properties.exceptions.InvalidValueException
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.updates.FlowUpdateEmitter
@@ -21,13 +23,17 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
     key: Key<DM>,
     version: HLC,
     hardDelete: Boolean,
-    updateSharedFlow: FlowUpdateEmitter
+    updateSharedFlow: FlowUpdateEmitter,
+    lastVersion: ULong? = null,
 ) : IsDeleteResponseStatus<DM> {
     val index = dataStore.records.binarySearch { it.key compareTo key }
 
     return when {
         index > -1 -> {
             val objectToDelete = dataStore.records[index]
+            if (lastVersion != null && objectToDelete.lastVersion.timestamp != lastVersion) {
+                return ValidationFail<DM>(InvalidValueException(null, "Version of object was different than given: $lastVersion < ${objectToDelete.lastVersion}"))
+            }
             dataStore.removeFromUniqueIndices(
                 objectToDelete,
                 version,

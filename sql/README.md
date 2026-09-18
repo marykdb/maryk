@@ -15,7 +15,11 @@ commonMain.dependencies {
 }
 ```
 
-The module uses the repository's publishing conventions under `io.maryk:sql`. Use the same Maryk version as the rest of your application once that version is published.
+For published applications, use the same Maryk version as the rest of your application:
+
+```kotlin
+implementation("io.maryk:maryk-sql:<maryk-version>")
+```
 
 Create the SQL facade around an existing store:
 
@@ -136,7 +140,7 @@ SELECT name FROM Person
 WHERE __key IN (SELECT customer FROM Invoice WHERE amount > 100);
 ```
 
-The first write surface supports single-table `INSERT INTO … (columns) VALUES (…)`, including parameterized multi-row inserts; `UPDATE … SET … WHERE __key = ?`, `DELETE FROM … WHERE __key = ?`, `UNDELETE FROM … WHERE __key = ?`, and `DELETE HARD FROM … WHERE __key = ?` through `MarykSql.execute(...)`. Add `AND __version = ?` to any row mutation for caller-supplied optimistic locking. Updates, soft deletes, and undeletes use guarded Maryk `ChangeRequest`s; hard deletes use a guarded `DeleteRequest`. `UPDATE`, `DELETE`, and `UNDELETE` require a typed `SqlValue.Key` parameter, and this first surface updates direct scalar properties only. `NULL` assignments, `RETURNING`, `UPSERT`, `INSERT … SELECT`, SQL transactions, and table-wide or join writes remain unsupported.
+The first write surface supports single-table `INSERT INTO … (columns) VALUES (…)`, including parameterized multi-row inserts; `UPDATE … SET … WHERE __key = ?`, `DELETE FROM … WHERE __key = ?`, `UNDELETE FROM … WHERE __key = ?`, and `DELETE HARD FROM … WHERE __key = ?` through `MarykSql.execute(...)`. Add `AND __version = ?` to any row mutation for caller-supplied optimistic locking. Updates, soft deletes, and undeletes use guarded Maryk `ChangeRequest`s; hard deletes use a guarded single-key `DeleteRequest`. A hard delete also finds soft-deleted records. `UPDATE`, `DELETE`, and `UNDELETE` require a typed `SqlValue.Key` parameter, and this first surface updates direct scalar properties only. `NULL` assignments, `RETURNING`, `UPSERT`, `INSERT … SELECT`, SQL transactions, and table-wide or join writes remain unsupported.
 
 The layer does not provide DDL, JDBC, recursive CTEs, correlated subqueries, window functions, live SQL subscriptions, or vendor-specific dialect compatibility. Unsupported forms fail explicitly. Schema creation and migrations remain Maryk APIs.
 
@@ -211,7 +215,7 @@ The CLI preserves SQL quotes and comments. For inline SQL beginning with a line 
 
 ## Development and conformance
 
-`sql/src/commonTest` covers parser, binding, values, relational semantics, execution, and budgets. The unpublished `:sql:conformance` module supplies one contract to each datastore's tests, including native projection behavior, paging, exact aggregation, missing values, and historical reads. Remote runs the same contract through HTTP.
+`sql/src/commonTest` covers parser, binding, values, relational semantics, execution, budgets, and write syntax. The unpublished `:sql:conformance` module supplies one contract to each datastore's tests, including guarded soft and hard deletes, undelete, native projection behavior, paging, exact aggregation, missing values, and historical reads. Remote runs the same contract through HTTP.
 
 ```bash
 ./gradlew :sql:jvmTest

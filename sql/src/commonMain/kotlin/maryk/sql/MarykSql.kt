@@ -85,7 +85,7 @@ class MarykSql private constructor(
         return SqlResult(execution.columns, rows)
     }
 
-    /** Execute a bounded single-table INSERT, UPDATE, or soft DELETE. */
+    /** Execute a bounded single-table INSERT, UPDATE, DELETE, UNDELETE, or DELETE HARD statement. */
     suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlWriteResult =
         SqlWriter(this).execute(statement, parameters)
 

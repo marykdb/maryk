@@ -43,6 +43,11 @@ class SqlWriteTest {
             val hardDeleteVersion = sql.query("SELECT __version FROM items WHERE id = 8").rows.single()[0]
             assertEquals(1, sql.execute("DELETE HARD FROM items WHERE __key = ? AND __version = ?", listOf(key, hardDeleteVersion)).affectedRows)
             assertEquals(0, sql.query("SELECT id FROM items WHERE __key = ?", listOf(key), SqlReadOptions(filterSoftDeleted = false)).rows.size)
+
+            val otherKey = sql.query("SELECT __key FROM items WHERE id = 9").rows.single()[0]
+            assertEquals(1, sql.execute("DELETE FROM items WHERE __key = ?", listOf(otherKey)).affectedRows)
+            assertEquals(1, sql.execute("delete /* permanently */ hard from items WHERE __key = ?", listOf(otherKey)).affectedRows)
+            assertEquals(0, sql.query("SELECT id FROM items WHERE __key = ?", listOf(otherKey), SqlReadOptions(filterSoftDeleted = false)).rows.size)
         } finally { store.close() }
     }
 
@@ -70,11 +75,26 @@ class SqlWriteTest {
     }
 
     @Test
+    fun writesAcceptSqlWhitespaceCommentsAndEscapedLiterals() = sqlTest {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SqlTestModel))
+        try {
+            val sql = MarykSql.create(store, SqlCatalog(listOf(SqlTable("items", SqlTestModel))), SqlOptions(allowTableScan = true))
+            assertEquals(1, sql.execute("""
+                /* report import */ INSERT
+                /* target */ INTO items (id, category) VALUES (10, 'O''Brien')
+            """.trimIndent()).affectedRows)
+            assertEquals(SqlValue.Text("O'Brien"), sql.query("SELECT category FROM items WHERE id = 10").rows.single()[0])
+            val key = sql.query("SELECT __key FROM items WHERE id = 10").rows.single()[0]
+            assertEquals(1, sql.execute("UPDATE /* table */ items /* assignments */ SET category = 'updated' WHERE __key = ?", listOf(key)).affectedRows)
+        } finally { store.close() }
+    }
+
+    @Test
     fun writesApplyTheReadStatementLimits() = sqlTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SqlTestModel))
         try {
             val sql = MarykSql.create(store, SqlCatalog(listOf(SqlTable("items", SqlTestModel))))
-            assertFailsWith<SqlException> { sql.execute("INSERT" + " ".repeat(65 * 1024)) }
+            assertEquals(SqlErrorCode.LIMIT, assertFailsWith<SqlException> { sql.execute("INSERT" + " ".repeat(65 * 1024)) }.code)
             assertFailsWith<SqlException> { sql.execute("INSERT INTO items (id) VALUES " + List(1_025) { "(?)" }.joinToString()) }
         } finally { store.close() }
     }

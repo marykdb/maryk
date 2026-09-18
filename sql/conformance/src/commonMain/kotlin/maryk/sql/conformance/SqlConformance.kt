@@ -3,6 +3,7 @@ package maryk.sql.conformance
 import kotlinx.coroutines.flow.toList
 import maryk.core.models.RootDataModel
 import maryk.core.models.graph
+import maryk.core.models.key
 import maryk.core.properties.definitions.decimal
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.string
@@ -14,6 +15,8 @@ import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
+import maryk.core.query.responses.statuses.DoesNotExist
+import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.sql.MarykSql
@@ -50,6 +53,16 @@ suspend fun assertSqlConformance(store: IsDataStore) {
             amount with Decimal.parse("$index.00")
         })).statuses.single())
     }
+
+    val staleGuard = assertIs<ValidationFail<SqlConformanceItem>>(
+        store.execute(SqlConformanceItem.delete(added.first().key, hardDelete = true, lastVersion = added.first().version + 1u)).statuses.single(),
+    )
+    assertTrue(staleGuard.exceptions.isNotEmpty())
+    assertEquals(1, store.execute(SqlConformanceItem.get(added.first().key)).values.size, "A stale guarded hard delete must not remove the record")
+    val missingKey = SqlConformanceItem.key(ByteArray(SqlConformanceItem.Meta.keyByteSize) { -1 })
+    assertIs<DoesNotExist<SqlConformanceItem>>(
+        store.execute(SqlConformanceItem.delete(missingKey, hardDelete = true, lastVersion = 1u)).statuses.single(),
+    )
 
     // SQL relies on row identity surviving an all-NULL property projection, including over the wire.
     val projection = SqlConformanceItem.graph { listOf(note) }

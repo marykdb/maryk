@@ -84,11 +84,11 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
 
     when {
         exists -> {
-            withTransaction { transaction ->
+            val status: IsDeleteResponseStatus<DM> = withTransaction { transaction ->
                 if (lastVersion != null) {
                     val currentVersion = getLastVersion(transaction, columnFamilies, defaultReadOptions, key)
                     if (currentVersion != lastVersion) {
-                        return@withTransaction ValidationFail<DM>(InvalidValueException(null, "Version of object was different than given: $lastVersion < $currentVersion"))
+                        return@withTransaction ValidationFail<DM>(InvalidValueException(null, "Expected version $lastVersion, found $currentVersion"))
                     }
                 }
                 // Create version bytes
@@ -249,7 +249,10 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                     transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, if (hardDelete) byteArrayOf(1) else EMPTY_ARRAY)
                 }
                 transaction.commit()
+                DeleteSuccess(version.timestamp)
             }
+
+            if (status !is DeleteSuccess) return status
 
             if (hardDelete) {
                 cache.delete(dbIndex, key)
@@ -257,7 +260,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
 
             emitUpdate(Deletion(dataModel, key, version.timestamp, hardDelete))
 
-            DeleteSuccess(version.timestamp)
+            status
         }
         else -> DoesNotExist(key)
     }

@@ -51,4 +51,29 @@ class DeleteRequestTest {
             checkYamlConversion(deleteRequest, DeleteRequest, { this.context })
         }
     }
+
+    @Test
+    fun guardedDeleteRoundTripsAcrossFormats() {
+        val request = SimpleMarykModel.delete(deleteRequest.keys.first(), hardDelete = true, lastVersion = 12345u)
+        checkProtoBufConversion(request, DeleteRequest, { this.context })
+        checkJsonConversion(request, DeleteRequest, { this.context })
+        expect(
+            """
+            from: SimpleMarykModel
+            keys: [B4CeT0fDRxYnEmSTQuLA2A]
+            hardDelete: true
+            lastVersion: 12345
+
+            """.trimIndent()
+        ) {
+            checkYamlConversion(request, DeleteRequest, { this.context })
+        }
+    }
+
+    @Test
+    fun rejectGuardedBatchDelete() {
+        assertFailsWith<RequestException> {
+            SimpleMarykModel.delete(*deleteRequest.keys.toTypedArray(), lastVersion = 12345u)
+        }
+    }
 }

@@ -32,7 +32,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
         index > -1 -> {
             val objectToDelete = dataStore.records[index]
             if (lastVersion != null && objectToDelete.lastVersion.timestamp != lastVersion) {
-                return ValidationFail<DM>(InvalidValueException(null, "Version of object was different than given: $lastVersion < ${objectToDelete.lastVersion}"))
+                return ValidationFail<DM>(InvalidValueException(null, "Expected version $lastVersion, found ${objectToDelete.lastVersion}"))
             }
             dataStore.removeFromUniqueIndices(
                 objectToDelete,

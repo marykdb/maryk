@@ -74,8 +74,11 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
             tr.get(packKey(tableDirs.tablePrefix, keyBytes)).awaitResult()?.readHLCTimestampIfExact()
         } else null
         val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
+        if (lastVersion != null && !exists) {
+            return@runRequestTransaction DoesNotExist(key)
+        }
         if (lastVersion != null && currentVersion != lastVersion) {
-            return@runRequestTransaction ValidationFail(InvalidValueException(null, "Version of object was different than given: $lastVersion < $currentVersion"))
+            return@runRequestTransaction ValidationFail(InvalidValueException(null, "Expected version $lastVersion, found $currentVersion"))
         }
         if (ignoreIfVersionNotNewer) {
             if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {

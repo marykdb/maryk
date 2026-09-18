@@ -58,9 +58,13 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
         byteStore.transaction(writeStoreNames, IndexedDbTransactionMode.READWRITE) { byteStore ->
             val tombstoneVersion = byteStore.get(hardDeleteStoreName, key.bytes)?.readTrailingVersion()
             val currentMeta = byteStore.get(keyStoreName, key.bytes)?.let(::decodeRecordMeta)
+            if (request.lastVersion != null && currentMeta == null) {
+                statuses += DoesNotExist(key)
+                return@transaction
+            }
             request.lastVersion?.let { expectedVersion ->
                 if (currentMeta?.lastVersion != expectedVersion) {
-                    statuses += ValidationFail(InvalidValueException(null, "Version of object was different than given: $expectedVersion < ${currentMeta?.lastVersion}"))
+                    statuses += ValidationFail(InvalidValueException(null, "Expected version $expectedVersion, found ${currentMeta?.lastVersion}"))
                     return@transaction
                 }
             }

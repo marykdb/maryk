@@ -23,7 +23,16 @@ import maryk.core.values.ObjectValues
 fun <DM : IsRootDataModel> DM.delete(
     vararg objectsToDelete: Key<DM>,
     hardDelete: Boolean = false,
-    lastVersion: ULong? = null,
+) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)
+
+/**
+ * Creates a version-guarded delete request for one object. The separate overload preserves the
+ * binary signature of the original delete helper for existing clients.
+ */
+fun <DM : IsRootDataModel> DM.delete(
+    vararg objectsToDelete: Key<DM>,
+    hardDelete: Boolean = false,
+    lastVersion: ULong?,
 ) = DeleteRequest(this, objectsToDelete.toList(), hardDelete, lastVersion)
 
 /**
@@ -43,6 +52,9 @@ data class DeleteRequest<DM : IsRootDataModel> internal constructor(
     init {
         if (keys.size.toUInt() > MAX_REQUEST_BATCH_SIZE) {
             throw RequestException("Delete key count ${keys.size} exceeds maximum $MAX_REQUEST_BATCH_SIZE")
+        }
+        if (lastVersion != null && keys.size != 1) {
+            throw RequestException("A guarded delete requires exactly one key")
         }
         dataModel.validateKeys(keys)
     }

@@ -87,7 +87,7 @@ See [store/README.md](store/README.md) for the decision guide.
 - [Core](core/README.md) – Data models, property types, keys, queries, versioning, serialization.
 - [Library](lib/README.md) – Shared utilities for things like Strings and ByteArrays.
 - [File](file/README.md) – Minimal cross-platform file IO layer used by tooling and stores.
-- [SQL](sql/README.md) – Portable, read-only SQL queries over Maryk stores.
+- [SQL](sql/README.md) – Portable, bounded SQL queries and guarded row mutations over Maryk stores.
 - [JSON](json/README.md) & [YAML](yaml/README.md) – Streaming parsers and writers.
 - [Generator](generator/README.md) – Code generation from YAML and JSON models.
 - [Test Library](testlib/README.md) – Testing utilities and helpers.

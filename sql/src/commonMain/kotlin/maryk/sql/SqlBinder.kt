@@ -276,7 +276,7 @@ internal class SqlBinder(
     }
 
     private fun bindExpr(expression: SqlExpr, allowAggregate: Boolean, expected: SqlType? = null): ExpressionInfo {
-        val info = when (expression) {
+        var info = when (expression) {
             is SqlExpr.Literal -> {
                 val value = literals.getOrPut(expression) { literalValue(expression) }
                 ExpressionInfo(value.type, value == SqlValue.Null)
@@ -387,6 +387,10 @@ internal class SqlBinder(
                 }
                 ExpressionInfo(result, nullable, domain)
             }
+        }
+        if (expected != null && expected != SqlType.ANY && expected != SqlType.NULL && info.type == SqlType.ANY) {
+            parameterOrigins(expression).forEach { inferParameter(it, expected, expression) }
+            info = info.copy(type = expected)
         }
         if (expected != null && expected != SqlType.ANY && info.type != SqlType.NULL && info.type != SqlType.ANY && info.type != expected && !(expected.isNumeric && info.type.isNumeric)) {
             fail("Expected $expected, found ${info.type}", expression)

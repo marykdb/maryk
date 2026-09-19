@@ -297,7 +297,10 @@ internal class SqlEvaluator(
                 if (scale !in 0..18) throw SqlException(SqlErrorCode.TYPE, "ROUND scale must be 0..18")
                 if (first is SqlValue.Float64) {
                     val factor = 10.0.pow(scale.toInt())
-                    SqlValue.Float64(round(first.value * factor) / factor)
+                    val scaled = first.value * factor
+                    // At this magnitude no fractional digits are representable. Avoid an
+                    // intermediate infinity when the original result is already rounded.
+                    SqlValue.Float64(if (scaled.isFinite()) round(scaled) / factor else first.value)
                 } else SqlValue.Exact(first.decimal().rescaleRounded(scale.toUInt()))
             }
             "date_part" -> datePart(first.text(), arguments[1])

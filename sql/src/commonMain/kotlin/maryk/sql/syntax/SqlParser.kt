@@ -693,8 +693,24 @@ internal class SqlParser(
         return true
     }
 
-    private fun isQueryStart(): Boolean =
-        current.isKeyword("SELECT") || current.isKeyword("VALUES") || current.isKeyword("WITH")
+    private fun isQueryStart(): Boolean {
+        var offset = 0
+        while (peek(offset).kind == SqlTokenKind.SYMBOL && peek(offset).text == "(") offset++
+        if (!peek(offset).let { it.isKeyword("SELECT") || it.isKeyword("VALUES") || it.isKeyword("WITH") }) return false
+        if (offset == 0) return true
+        // A scalar expression can itself start with a parenthesized subquery, for example
+        // ((SELECT 1) + 2), or an IN list can continue with a comma after that subquery.
+        var depth = 0
+        var index = 0
+        do {
+            val token = peek(index++)
+            if (token.kind == SqlTokenKind.EOF) return true
+            if (token.kind == SqlTokenKind.SYMBOL) when (token.text) { "(" -> depth++; ")" -> depth-- }
+        } while (depth > 0)
+        val next = peek(index)
+        return next.kind == SqlTokenKind.EOF || next.text in setOf(")", ";") ||
+            listOf("UNION", "INTERSECT", "EXCEPT", "ORDER", "LIMIT", "OFFSET", "FETCH").any(next::isKeyword)
+    }
 
     private fun expectKeyword(keyword: String) {
         if (!matchKeyword(keyword)) fail("Expected $keyword", current.position)

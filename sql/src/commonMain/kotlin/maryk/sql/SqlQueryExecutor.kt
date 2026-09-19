@@ -24,43 +24,38 @@ internal class SqlRuntime(
     private val cache = mutableMapOf<BoundQuery, List<List<SqlValue>>>()
     private val existenceCache = mutableMapOf<BoundQuery, Boolean>()
     private var snapshotCaptured = false
+    private val preflighted = mutableSetOf<Pair<BoundQuery, Boolean>>()
 
     private fun evaluator(plan: BoundQuery) = SqlEvaluator(plan, parameters, budget,
         subquery = { materialize(it) }, exists = { exists(it) })
 
     suspend fun execute(plan: BoundQuery, emit: suspend (List<SqlValue>) -> Unit) {
-        // Validate constant expression/parameter failures in every relation before the first read.
-        val seen = mutableSetOf<Pair<BoundQuery, Boolean>>()
-        suspend fun preflight(current: BoundQuery, existenceOnly: Boolean = false) {
-            if (!seen.add(current to existenceOnly)) return
-            val evaluator = evaluator(current)
-            val query = current.query
-            val offset = query.offset?.let { nonNegative(evaluator.eval(it), "OFFSET") } ?: 0L
-            val discardProjection = existenceOnly && (!query.distinct || offset == 0L)
-            val roots = query.groupBy + listOfNotNull(query.where, query.having, query.limit, query.offset) +
-                current.joins.mapNotNull { it.condition } +
-                (if (discardProjection) emptyList() else query.select.map { it.expression } + query.values.orEmpty().flatten()) +
-                (if (existenceOnly) emptyList() else query.orderBy.map { it.expression })
-            for (expression in roots) {
-                if (!containsColumn(expression) && !containsSubquery(expression) && !containsAggregate(expression)) evaluator.eval(expression)
-            }
-            // Only visit subqueries used by evaluated expressions. An EXISTS projection may
-            // contain an otherwise invalid scalar result that is irrelevant to row existence.
-            suspend fun visit(expression: SqlExpr) {
-                current.subqueries[expression]?.let { preflight(it, expression is SqlExpr.Exists) }
-                children(expression).forEach { visit(it) }
-            }
-            roots.forEach { visit(it) }
-            current.sources.mapNotNull { it.relation }.forEach { preflight(it) }
-            current.body?.let { preflight(it, existenceOnly) }
-            current.setOperands?.let { (left, right) ->
-                val discardOperands = discardProjection && query.setOperation?.let { it.operator == SqlSetOperator.UNION && it.all } == true
-                preflight(left, discardOperands)
-                preflight(right, discardOperands)
-            }
-        }
         preflight(plan)
         produce(plan) { values -> budget.returned(); emit(values); true }
+    }
+
+    private suspend fun preflight(current: BoundQuery, existenceOnly: Boolean = false) {
+        if (!preflighted.add(current to existenceOnly)) return
+        val evaluator = evaluator(current)
+        val query = current.query
+        val offset = query.offset?.let { nonNegative(evaluator.eval(it), "OFFSET") } ?: 0L
+        val discardProjection = existenceOnly && (!query.distinct || offset == 0L)
+        val roots = query.groupBy + listOfNotNull(query.where, query.having, query.limit, query.offset) +
+            current.joins.mapNotNull { it.condition } +
+            (if (discardProjection) emptyList() else query.select.map { it.expression } + query.values.orEmpty().flatten()) +
+            (if (existenceOnly) emptyList() else query.orderBy.map { it.expression })
+        for (expression in roots) {
+            if (!containsColumn(expression) && !containsSubquery(expression) && !containsAggregate(expression)) evaluator.eval(expression)
+        }
+        // Expression subqueries are preflighted by produce only when their branch runs.
+        // Walking them here would evaluate unused CASE/COALESCE/AND/OR branches.
+        current.sources.mapNotNull { it.relation }.forEach { preflight(it) }
+        current.body?.let { preflight(it, existenceOnly) }
+        current.setOperands?.let { (left, right) ->
+            val discardOperands = discardProjection && query.setOperation?.let { it.operator == SqlSetOperator.UNION && it.all } == true
+            preflight(left, discardOperands)
+            preflight(right, discardOperands)
+        }
     }
 
     private suspend fun snapshot() {
@@ -102,6 +97,7 @@ internal class SqlRuntime(
     }
 
     private suspend fun produce(plan: BoundQuery, existenceOnly: Boolean = false, emit: suspend (List<SqlValue>) -> Boolean): Boolean {
+        preflight(plan, existenceOnly)
         val query = plan.query
         val evaluator = evaluator(plan)
         val limit = query.limit?.let { nonNegative(evaluator.eval(it), "LIMIT") } ?: Long.MAX_VALUE

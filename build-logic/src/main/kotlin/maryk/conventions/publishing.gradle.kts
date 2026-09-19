@@ -1,11 +1,17 @@
 package maryk.conventions
 
+import com.vanniktech.maven.publish.Checksum
+
 plugins {
     id("com.vanniktech.maven.publish")
 }
 
 mavenPublishing {
     publishToMavenCentral()
+
+    // Keep Central uploads small by omitting redundant checksum files.
+    checksums(Checksum.MD5, Checksum.SHA1)
+    excludeSignatureChecksums()
 
     signAllPublications()
 }

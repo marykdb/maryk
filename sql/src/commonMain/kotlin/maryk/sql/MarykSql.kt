@@ -5,6 +5,7 @@ import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.sql.syntax.SqlParseException
 import maryk.sql.syntax.SqlParser
+import maryk.sql.syntax.SqlQuery
 
 data class SqlOptions(
     val allowTableScan: Boolean = false,
@@ -56,11 +57,11 @@ class MarykSql private constructor(
 
     /** Parse and bind without reading records. A prepared query can be executed repeatedly. */
     fun prepare(statement: String): PreparedSqlQuery {
-        val parsed = try { SqlParser(statement).parse() } catch (error: SqlParseException) {
-            val message = error.message ?: "Invalid SQL"
-            val limit = listOf("Token limit of", "AST depth limit of", "AST node limit of", "Parameter limit of", "Nesting depth limit of").any { message.startsWith(it) }
-            throw SqlException(if (limit) SqlErrorCode.LIMIT else SqlErrorCode.SYNTAX, message, error.position, error)
-        }
+        val parsed = try { SqlParser(statement).parse() } catch (error: SqlParseException) { throw error.toSqlException() }
+        return prepare(parsed)
+    }
+
+    internal fun prepare(parsed: SqlQuery): PreparedSqlQuery {
         val bound = SqlBinder(catalog, options).bind(parsed)
         val seen = mutableSetOf<BoundQuery>()
         fun checkTables(query: BoundQuery) {
@@ -131,14 +132,25 @@ class PreparedSqlQuery internal constructor(private val sql: MarykSql, internal 
 
     /** Values are checked before any store call. SQL NULL is valid even for required model fields. */
     fun execute(parameters: List<SqlValue> = emptyList(), options: SqlReadOptions = SqlReadOptions()): SqlExecution {
+        val boundParameters = bindParameters(parameters)
+        return execution(boundParameters, options)
+    }
+
+    internal fun bindParameters(parameters: List<SqlValue>): List<SqlValue> {
         if (parameters.size != this.parameters.size) throw SqlException(SqlErrorCode.PARAMETER, "Expected ${this.parameters.size} parameters, received ${parameters.size}")
         val converted = parameters.mapIndexed { index, value -> plan.bindingState.parameterDomains[index]?.let { domainValue(value, it, SqlErrorCode.PARAMETER) } ?: value }
         this.parameters.zip(converted).forEach { (metadata, value) ->
+            if (metadata.index in plan.bindingState.numericParameters && value != SqlValue.Null && !value.type.isNumeric) {
+                throw SqlException(SqlErrorCode.PARAMETER, "Parameter ${metadata.index + 1} requires a numeric value")
+            }
             if (value != SqlValue.Null && metadata.type != SqlType.ANY && value.type != metadata.type && !(metadata.type.isNumeric && value.type.isNumeric && metadata.type != SqlType.FLOAT64 && value.type != SqlType.FLOAT64)) {
                 throw SqlException(SqlErrorCode.PARAMETER, "Parameter ${metadata.index + 1} expects ${metadata.type}, found ${value.type}")
             }
         }
-        val boundParameters = converted.toList()
+        return converted.toList()
+    }
+
+    private fun execution(boundParameters: List<SqlValue>, options: SqlReadOptions): SqlExecution {
         return SqlExecution(columns, sql.options) { budget, emit ->
             if (plan.query.explain && !plan.query.analyze) {
                 budget.returned()
@@ -151,4 +163,10 @@ class PreparedSqlQuery internal constructor(private val sql: MarykSql, internal 
             }
         }
     }
+}
+
+internal fun SqlParseException.toSqlException(): SqlException {
+    val message = message ?: "Invalid SQL"
+    val limit = listOf("Token limit of", "AST depth limit of", "AST node limit of", "Parameter limit of", "Nesting depth limit of", "SQL text exceeds").any(message::startsWith)
+    return SqlException(if (limit) SqlErrorCode.LIMIT else SqlErrorCode.SYNTAX, message, position, this)
 }

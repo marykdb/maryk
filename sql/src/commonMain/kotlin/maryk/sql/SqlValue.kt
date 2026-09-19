@@ -29,22 +29,32 @@ sealed interface SqlValue {
     data class Enum(val domain: String, val index: UInt, val name: String) : SqlValue { override val type = SqlType.ENUM }
 
     companion object {
+        // Static overloads preserve the caller's numeric type even on JavaScript.
+        fun of(value: Byte): SqlValue = Int64(value.toLong())
+        fun of(value: Short): SqlValue = Int64(value.toLong())
+        fun of(value: Int): SqlValue = Int64(value.toLong())
+        fun of(value: Long): SqlValue = Int64(value)
+        fun of(value: Float): SqlValue = Float64(value.toDouble())
+        fun of(value: Double): SqlValue = Float64(value)
+
         /** Convert scalar Kotlin values; use typed Key/Enum values for model identities. */
         fun of(value: Any?): SqlValue = when (value) {
             null -> Null
             is SqlValue -> value
             is Boolean -> Bool(value)
-            is Byte -> Int64(value.toLong())
-            is Short -> Int64(value.toLong())
-            is Int -> Int64(value.toLong())
             is Long -> Int64(value)
+            // JS erases Byte/Short/Int/Float/Double to Number. Its runtime class distinguishes
+            // Int-range integral values from doubles; `is Byte` would also match fractions.
+            is Number -> when (value::class) {
+                Byte::class, Short::class, Int::class -> Int64(value.toLong())
+                Float::class, Double::class -> Float64(value.toDouble())
+                else -> throw SqlException(SqlErrorCode.TYPE, "Unsupported numeric type ${value::class.simpleName}")
+            }
             is UByte -> UInt64(value.toULong())
             is UShort -> UInt64(value.toULong())
             is UInt -> UInt64(value.toULong())
             is ULong -> UInt64(value)
             is Decimal -> Exact(value)
-            is Float -> Float64(value.toDouble())
-            is Double -> Float64(value)
             is String -> Text(value)
             is ByteArray -> Binary(Bytes(value))
             is Bytes -> Binary(value)

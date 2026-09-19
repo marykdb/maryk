@@ -41,7 +41,7 @@ for (row in result.rows) {
     println(row["name"])
 }
 
-val inserted = sql.execute("INSERT INTO people (id, name) VALUES (1, 'Ada')")
+val inserted = sql.execute("INSERT INTO Person (name, age) VALUES ('Ada', 37)")
 check(inserted.affectedRows == 1)
 ```
 
@@ -71,9 +71,13 @@ Use explicit scalar columns for models with lists, sets, maps, multi-types, embe
 
 `SqlValue` represents booleans, signed and unsigned 64-bit integers, arbitrary-size fixed-scale decimals, finite doubles, strings, bytes, dates, times, timestamps, model keys, enums, and `NULL`. `SqlValue.of(...)` converts ordinary scalar Kotlin values. Keys and enums have typed constructors.
 
+Numeric `of(...)` overloads preserve the statically known Kotlin type. JavaScript erases primitive numeric types stored as `Any` or `Number`: the generic overload treats Int-range integral values as integers and other numbers as floating-point values. Use `SqlValue.Int64` or `SqlValue.Float64` explicitly when the numeric category must survive type erasure. Non-finite floating values are rejected.
+
 ## Prepare and stream
 
 Preparation parses and binds the whole statement without reading records. Parameter positions are zero-based in metadata and supplied in textual `?` order. Reuse a prepared query with different values; each execution is independent.
+
+Numeric context infers floating-point or exact parameters where possible. Expressions such as `ABS(?)` accept either numeric category and expose `ANY` output metadata; individual result cells carry their actual numeric type. Nonnumeric parameters are rejected before reads. Key and enum parameters retain their domain checks through `CASE`, `COALESCE`, and `NULLIF`.
 
 ```kotlin
 import kotlinx.coroutines.flow.collect
@@ -101,7 +105,7 @@ SQL `LIMIT` is successful completion. Stopping consumption early, for example wi
 
 The first version supports:
 
-- `SELECT`, expressions and aliases, scalar and qualified wildcards, optional `FROM`, `WHERE`, `DISTINCT`, `ORDER BY`, explicit `NULLS FIRST/LAST`, `LIMIT`, `OFFSET`, and `FETCH FIRST … ROWS ONLY`.
+- `SELECT` (including explicit `ALL`), expressions and aliases, scalar and qualified wildcards, optional `FROM`, `WHERE`, `DISTINCT`, `ORDER BY`, explicit `NULLS FIRST/LAST`, `LIMIT`, `OFFSET … ROWS`, and `FETCH FIRST/NEXT … ROWS ONLY`. Omitting the fetch count means one row. Parenthesized queries retain their own ordering and pagination.
 - Positional parameters, exact literals, temporal literals, arithmetic, concatenation, comparisons, `AND/OR/NOT`, `IS NULL/TRUE/FALSE/UNKNOWN`, `IS DISTINCT FROM`, `IN`, `BETWEEN`, and `LIKE … ESCAPE`.
 - Searched and simple `CASE`, `CAST`, `COALESCE`, `NULLIF`, numeric rounding functions, string functions, and `DATE_PART`.
 - `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, `HAVING`, aggregate `DISTINCT`, and aggregate `FILTER (WHERE …)`.
@@ -109,6 +113,8 @@ The first version supports:
 - Explicit `INNER`, `LEFT`, and `CROSS` joins, with SQL predicate and null-extension semantics.
 - Uncorrelated scalar, `EXISTS`, and `IN` subqueries. A scalar subquery returns `NULL` for no rows and fails for more than one row.
 - `EXPLAIN` and `EXPLAIN ANALYZE`, alongside `PreparedSqlQuery.explain()` and execution counters.
+
+`EXISTS` stops at the first result row and skips projections and ordering that do not affect row existence. Distinct values and set-operation operands are still evaluated when needed to determine cardinality, including after an offset.
 
 Examples:
 
@@ -140,7 +146,21 @@ SELECT name FROM Person
 WHERE __key IN (SELECT customer FROM Invoice WHERE amount > 100);
 ```
 
-The first write surface supports single-table `INSERT INTO … (columns) VALUES (…)`, including parameterized multi-row inserts; `UPDATE … SET … WHERE __key = ?`, `DELETE FROM … WHERE __key = ?`, `UNDELETE FROM … WHERE __key = ?`, and `DELETE HARD FROM … WHERE __key = ?` through `MarykSql.execute(...)`. Add `AND __version = ?` to any row mutation for caller-supplied optimistic locking. Updates, soft deletes, and undeletes use guarded Maryk `ChangeRequest`s; hard deletes use a guarded single-key `DeleteRequest`. A hard delete also finds soft-deleted records. `UPDATE`, `DELETE`, and `UNDELETE` require a typed `SqlValue.Key` parameter, and this first surface updates direct scalar properties only. `NULL` assignments, `RETURNING`, `UPSERT`, `INSERT … SELECT`, SQL transactions, and table-wide or join writes remain unsupported.
+The write surface supports single-table `INSERT INTO … (columns) VALUES (…)`, including parameterized multi-row inserts; `UPDATE … SET … WHERE __key = ?`, `DELETE FROM … WHERE __key = ?`, `UNDELETE FROM … WHERE __key = ?`, and `DELETE HARD FROM … WHERE __key = ?` through `MarykSql.execute(...)`. Writes use the same lexer and expression parser as reads, including SQL comments and escaped identifiers and strings.
+
+Row mutations require exactly one key equality, optionally combined with `AND __version = ?` for caller-supplied optimistic locking. Parenthesized predicates and reversed equalities are accepted. The key and version operands must be constant scalar expressions; `OR`, row-dependent targets, and subqueries are rejected. Pass a typed `SqlValue.Key` or the model's encoded key text. Even without an explicit version predicate, the selected row's version guards the subsequent write. Updates, soft deletes, and undeletes use Maryk `ChangeRequest`s; hard deletes use a guarded single-key `DeleteRequest` and can also find soft-deleted records.
+
+Writes support direct scalar properties. `UPDATE SET field = NULL` removes an optional stored property; `INSERT … VALUES (NULL)` leaves it absent. Required fields reject `NULL`. Omitted insert fields remain absent rather than applying model defaults. Duplicate assignment targets and non-scalar properties are rejected. Values must match the SQL column type, with lossless conversion between exact numeric types; use `CAST` explicitly to change types or round to the stored precision.
+
+```kotlin
+val changed = sql.execute(
+    "UPDATE Person SET nickname = NULL WHERE __key = ? AND __version = ?",
+    listOf(personKey, personVersion),
+)
+check(changed.failures.isEmpty())
+```
+
+`SqlWriteResult.affectedRows` counts successful Maryk statuses; `failures` describes unsuccessful statuses. A missing key or a version predicate that no longer matches yields zero affected rows. A concurrent change after selection is rejected by the store's version guard. Multi-row inserts follow the store's per-record behavior and can partly succeed; inspect both result fields. `RETURNING`, `UPSERT`, `INSERT … SELECT`, SQL transactions, and table-wide or join writes remain unsupported.
 
 The layer does not provide DDL, JDBC, recursive CTEs, correlated subqueries, window functions, live SQL subscriptions, or vendor-specific dialect compatibility. Unsupported forms fail explicitly. Schema creation and migrations remain Maryk APIs.
 
@@ -154,7 +174,9 @@ Exact arithmetic does not pass through `Double`. Signed integers, unsigned integ
 
 Text ordering uses Kotlin's ordinal UTF-16 comparison. `LIKE` and substring character boundaries handle Unicode code points. SQL null ordering defaults to last for ascending and first for descending order. Add an explicit unique tie-breaker when a deterministic total order matters.
 
-Query operands are not writes: a null parameter is legal against a required field, and comparisons outside a property's stored range remain meaningful. Native pushdown is used only when conversion preserves the SQL predicate; remaining predicates execute locally.
+Query operands are not writes: a null parameter is legal against a required field, and comparisons outside a property's stored range remain meaningful. Native pushdown is used only when conversion preserves the SQL predicate; remaining predicates execute locally. Text range comparisons stay local because UTF-8 store indexes can order Unicode characters differently from SQL's UTF-16 comparison. Text equality can still use indexes.
+
+Floating-point comparisons against zero also stay local, preserving SQL equality between positive and negative zero across stores.
 
 ## Consistency and storage engines
 
@@ -197,7 +219,7 @@ SQL targets the same common platforms as Maryk core. An application must also ch
 | Execution timeout | 30 seconds |
 | Expression work | 10,000,000 steps |
 
-Parsing also bounds SQL text, token count, nesting, parameters, and numeric precision. Exceeding a limit fails the execution; it never silently truncates results. Buffer counters estimate retained logical data, not exact platform heap allocation. Fetch counters measure returned records and requests, not physical index entries or network bytes hidden inside a storage engine. Expensive loops check cancellation cooperatively.
+Parsing also bounds SQL text, token count, nesting, parameters, and numeric precision. Exceeding a limit fails the execution with `SqlErrorCode.LIMIT`; it never silently truncates results. A query's own deadline reports `FAILED`, while caller cancellation reports `CANCELLED`. Mutations share one time, request, expression, and buffer budget across selection and the final write; `maxResultRows` also bounds insert rows. Buffer counters estimate retained logical data, not exact platform heap allocation. Fetch counters measure returned records and requests, not physical index entries or network bytes hidden inside a storage engine. Expensive loops check cancellation cooperatively.
 
 Inspect `SqlExecutionSummary` for completion status, fetched/result rows, store requests, expression steps, buffer accounting, the snapshot boundary, and errors. `EXPLAIN ANALYZE` executes the query and reports actual counters.
 
@@ -209,9 +231,13 @@ On a connected CLI store:
 sql SELECT name FROM Person ORDER BY name LIMIT 20
 sql --snapshot SELECT category, SUM(amount) FROM Invoice GROUP BY category
 sql --file ./report.sql
+sql --write INSERT INTO Person (name, age) VALUES ('Ada', 37)
+sql --write UPDATE Person SET nickname = NULL WHERE __key = '<encoded-key>'
 ```
 
 The CLI preserves SQL quotes and comments. For inline SQL beginning with a line comment, place `--` before the SQL text; files may start with comments directly. Files are bounded to 64 KiB. Output has a tab-separated header and data rows, quotes strings, distinguishes `NULL`, and escapes control characters. It enables table scans with limits of 10,000 result rows and 8 MiB of buffers; use `--no-table-scan` to require a selective native access path. Choose at most one of `--snapshot` and `--to-version`.
+
+The CLI runs queries by default. `--write` enables the bounded mutation surface and prints affected rows plus any store failures. It cannot be combined with `--snapshot`, `--to-version`, or `--include-deleted`; use a SQL `__version` predicate to guard a write. Schema changes remain Maryk operations.
 
 ## Development and conformance
 

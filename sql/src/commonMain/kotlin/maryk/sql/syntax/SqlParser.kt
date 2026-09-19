@@ -12,6 +12,51 @@ internal class SqlParser(
     private var nestingDepth = 0
     private var astNodeCount = 0
 
+    fun parseMutation(): SqlMutation {
+        tokens = SqlLexer(text, maxTokens).tokenize()
+        val kind = when {
+            matchKeyword("INSERT") -> { expectKeyword("INTO"); SqlMutationKind.INSERT }
+            matchKeyword("UPDATE") -> SqlMutationKind.UPDATE
+            matchKeyword("DELETE") -> {
+                val hard = matchKeyword("HARD")
+                expectKeyword("FROM")
+                if (hard) SqlMutationKind.HARD_DELETE else SqlMutationKind.DELETE
+            }
+            matchKeyword("UNDELETE") -> { expectKeyword("FROM"); SqlMutationKind.UNDELETE }
+            else -> fail("Expected INSERT, UPDATE, DELETE, or UNDELETE", current.position)
+        }
+        val table = mutableListOf(parseName("table name"))
+        if (matchSymbol(".")) table += parseName("table name")
+        val mutation = when (kind) {
+            SqlMutationKind.INSERT -> {
+                expectSymbol("(")
+                val columns = parseCommaSeparated("column") { parseName("column") }
+                expectSymbol(")")
+                expectKeyword("VALUES")
+                SqlMutation(kind, table, columns = columns, rows = parseValues().values!!, parameterCount = parameterCount)
+            }
+            SqlMutationKind.UPDATE -> {
+                expectKeyword("SET")
+                val assignments = parseCommaSeparated("assignment") {
+                    val column = parseName("column")
+                    expectSymbol("=")
+                    column to parseExpression().expression
+                }
+                expectKeyword("WHERE")
+                val where = parseExpression().expression
+                SqlMutation(kind, table, assignments = assignments, where = where, parameterCount = parameterCount)
+            }
+            else -> {
+                expectKeyword("WHERE")
+                val where = parseExpression().expression
+                SqlMutation(kind, table, where = where, parameterCount = parameterCount)
+            }
+        }
+        matchSymbol(";")
+        if (current.kind != SqlTokenKind.EOF) fail("Unexpected token '${current.text}'", current.position)
+        return mutation
+    }
+
     fun parse(): SqlQuery {
         if (maxDepth < 1) fail("Depth limit must be positive", 0)
         if (maxParameters < 0) fail("Parameter limit must not be negative", 0)
@@ -100,13 +145,14 @@ internal class SqlParser(
         matchSymbol("(") -> nested(previous.position) {
             val query = parseQueryExpression()
             expectSymbol(")")
-            query
+            emptyQuery().copy(body = query)
         }
         else -> fail("Expected SELECT or VALUES", current.position)
     }
 
     private fun parseSelect(): SqlQuery {
         val distinct = matchKeyword("DISTINCT")
+        if (!distinct) matchKeyword("ALL")
         val select = parseCommaSeparated("select expression") {
             val expression = parseExpression().expression
             val alias = parseOptionalAlias("select alias")
@@ -169,11 +215,14 @@ internal class SqlParser(
         var limit: SqlExpr? = null
         var offset: SqlExpr? = null
         if (matchKeyword("LIMIT")) limit = parseExpression().expression
-        if (matchKeyword("OFFSET")) offset = parseExpression().expression
+        if (matchKeyword("OFFSET")) {
+            offset = parseExpression().expression
+            if (!matchKeyword("ROW")) matchKeyword("ROWS")
+        }
         if (matchKeyword("FETCH")) {
             if (limit != null) fail("LIMIT and FETCH cannot both be specified", previous.position)
-            expectKeyword("FIRST")
-            limit = parseExpression().expression
+            if (!matchKeyword("NEXT")) expectKeyword("FIRST")
+            limit = if (current.isKeyword("ROW") || current.isKeyword("ROWS")) SqlExpr.Literal("1", LiteralKind.NUMBER, current.position) else parseExpression().expression
             if (!matchKeyword("ROW")) expectKeyword("ROWS")
             expectKeyword("ONLY")
         }
@@ -290,8 +339,10 @@ internal class SqlParser(
         if (!matchKeyword("NOT")) return parseComparison()
         val position = previous.position
         if (current.isKeyword("EXISTS")) return parseExists(negated = true, position)
-        val operand = parseNot()
-        return node(SqlExpr.Unary("NOT", operand.expression, position), operand.depth + 1)
+        return nested(position) {
+            val operand = parseNot()
+            node(SqlExpr.Unary("NOT", operand.expression, position), operand.depth + 1)
+        }
     }
 
     private fun parseComparison(): ExpressionNode {
@@ -409,8 +460,10 @@ internal class SqlParser(
     private fun parseUnary(): ExpressionNode {
         if (current.kind != SqlTokenKind.SYMBOL || current.text !in UNARY_OPERATORS) return parsePrimary()
         val operator = advance()
-        val operand = parseUnary()
-        return node(SqlExpr.Unary(operator.text, operand.expression, operator.position), operand.depth + 1)
+        return nested(operator.position) {
+            val operand = parseUnary()
+            node(SqlExpr.Unary(operator.text, operand.expression, operator.position), operand.depth + 1)
+        }
     }
 
     private fun parsePrimary(): ExpressionNode {
@@ -687,10 +740,10 @@ internal class SqlParser(
         val MULTIPLICATIVE_OPERATORS = setOf("*", "/", "%")
         val UNARY_OPERATORS = setOf("+", "-")
         val ALIAS_RESERVED_KEYWORDS = setOf(
-            "ANALYZE", "AND", "AS", "ASC", "BETWEEN", "BY", "CASE", "CAST", "CROSS", "DATE",
+            "ALL", "ANALYZE", "AND", "AS", "ASC", "BETWEEN", "BY", "CASE", "CAST", "CROSS", "DATE",
             "DESC", "DISTINCT", "ELSE", "END", "ESCAPE", "EXCEPT", "EXPLAIN", "FALSE", "FETCH",
             "FILTER", "FIRST", "FROM", "FULL", "GROUP", "HAVING", "IN", "INNER", "INTERSECT", "IS",
-            "JOIN", "LAST", "LEFT", "LIKE", "LIMIT", "NOT", "NULL", "NULLS", "OFFSET", "ON", "ONLY",
+            "JOIN", "LAST", "LEFT", "LIKE", "LIMIT", "NEXT", "NOT", "NULL", "NULLS", "OFFSET", "ON", "ONLY",
             "OR", "ORDER", "OUTER", "OVER", "RIGHT", "ROW", "ROWS", "SELECT", "THEN", "TIME",
             "TIMESTAMP", "TRUE", "UNION", "UNKNOWN", "USING", "VALUES", "WHEN", "WHERE", "WITH",
         )

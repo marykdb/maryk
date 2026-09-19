@@ -22,23 +22,42 @@ internal class SqlRuntime(
     private val budget: SqlBudget,
 ) {
     private val cache = mutableMapOf<BoundQuery, List<List<SqlValue>>>()
+    private val existenceCache = mutableMapOf<BoundQuery, Boolean>()
     private var snapshotCaptured = false
 
-    private fun evaluator(plan: BoundQuery) = SqlEvaluator(plan, parameters, budget) { materialize(it) }
+    private fun evaluator(plan: BoundQuery) = SqlEvaluator(plan, parameters, budget,
+        subquery = { materialize(it) }, exists = { exists(it) })
 
     suspend fun execute(plan: BoundQuery, emit: suspend (List<SqlValue>) -> Unit) {
         // Validate constant expression/parameter failures in every relation before the first read.
-        val seen = mutableSetOf<BoundQuery>()
-        suspend fun preflight(current: BoundQuery) {
-            if (!seen.add(current)) return
+        val seen = mutableSetOf<Pair<BoundQuery, Boolean>>()
+        suspend fun preflight(current: BoundQuery, existenceOnly: Boolean = false) {
+            if (!seen.add(current to existenceOnly)) return
             val evaluator = evaluator(current)
             val query = current.query
-            val roots = query.select.map { it.expression } + query.groupBy + query.orderBy.map { it.expression } +
-                listOfNotNull(query.where, query.having, query.limit, query.offset) + current.joins.mapNotNull { it.condition } + query.values.orEmpty().flatten()
+            val offset = query.offset?.let { nonNegative(evaluator.eval(it), "OFFSET") } ?: 0L
+            val discardProjection = existenceOnly && (!query.distinct || offset == 0L)
+            val roots = query.groupBy + listOfNotNull(query.where, query.having, query.limit, query.offset) +
+                current.joins.mapNotNull { it.condition } +
+                (if (discardProjection) emptyList() else query.select.map { it.expression } + query.values.orEmpty().flatten()) +
+                (if (existenceOnly) emptyList() else query.orderBy.map { it.expression })
             for (expression in roots) {
                 if (!containsColumn(expression) && !containsSubquery(expression) && !containsAggregate(expression)) evaluator.eval(expression)
             }
-            current.children.forEach { preflight(it) }
+            // Only visit subqueries used by evaluated expressions. An EXISTS projection may
+            // contain an otherwise invalid scalar result that is irrelevant to row existence.
+            suspend fun visit(expression: SqlExpr) {
+                current.subqueries[expression]?.let { preflight(it, expression is SqlExpr.Exists) }
+                children(expression).forEach { visit(it) }
+            }
+            roots.forEach { visit(it) }
+            current.sources.mapNotNull { it.relation }.forEach { preflight(it) }
+            current.body?.let { preflight(it, existenceOnly) }
+            current.setOperands?.let { (left, right) ->
+                val discardOperands = discardProjection && query.setOperation?.let { it.operator == SqlSetOperator.UNION && it.all } == true
+                preflight(left, discardOperands)
+                preflight(right, discardOperands)
+            }
         }
         preflight(plan)
         produce(plan) { values -> budget.returned(); emit(values); true }
@@ -74,17 +93,29 @@ internal class SqlRuntime(
         return rows
     }
 
-    private suspend fun produce(plan: BoundQuery, emit: suspend (List<SqlValue>) -> Boolean): Boolean {
+    private suspend fun exists(plan: BoundQuery): Boolean {
+        existenceCache[plan]?.let { return it }
+        var found = false
+        produce(plan, existenceOnly = true) { found = true; false }
+        existenceCache[plan] = found
+        return found
+    }
+
+    private suspend fun produce(plan: BoundQuery, existenceOnly: Boolean = false, emit: suspend (List<SqlValue>) -> Boolean): Boolean {
         val query = plan.query
         val evaluator = evaluator(plan)
         val limit = query.limit?.let { nonNegative(evaluator.eval(it), "LIMIT") } ?: Long.MAX_VALUE
         val offset = query.offset?.let { nonNegative(evaluator.eval(it), "OFFSET") } ?: 0L
         if (limit == 0L) return true
+        val discardProjection = existenceOnly && (!query.distinct || offset == 0L)
+        val distinct = query.distinct && !discardProjection
+        val orderBy = if (existenceOnly) emptyList() else query.orderBy
+        val emptyProjection = if (discardProjection) List(plan.columns.size) { SqlValue.Null } else emptyList()
         val memory = SqlMemory(budget)
         try {
             val retained = mutableListOf<InputRow>()
             val outputs = mutableListOf<OutputRow>()
-            val blocking = plan.aggregate || query.orderBy.isNotEmpty() || query.distinct
+            val blocking = plan.aggregate || orderBy.isNotEmpty() || distinct
             var passed = 0L
             var produced = 0L
             var downstream = true
@@ -99,30 +130,32 @@ internal class SqlRuntime(
             suspend fun projected(values: List<SqlValue>, row: InputRow, group: List<InputRow>? = null): Boolean {
                 val normalized = values.zip(plan.columns).map { (value, column) -> coerceSqlValue(value, column.type) }
                 if (!blocking) return deliver(normalized)
-                val order = query.orderBy.map { evaluator.eval(it.expression, row, group) }
+                val order = orderBy.map { evaluator.eval(it.expression, row, group) }
                 memory.retain(96L + normalized.sumOf(::valueBytes) + order.sumOf(::valueBytes))
                 outputs += OutputRow(normalized, order)
                 return true
             }
             when {
-                query.values != null || plan.setOperands != null -> {
+                query.values != null || plan.setOperands != null || plan.body != null -> {
                     suspend fun accept(values: List<SqlValue>): Boolean {
                         val normalized = values.zip(plan.columns).map { (value, column) -> coerceSqlValue(value, column.type) }
                         val row = plan.sources.single().columns.associateWith { normalized[it.outputIndex!!] }
                         return projected(normalized, row)
                     }
-                    if (query.values != null) {
+                    if (plan.body != null) {
+                        produce(plan.body, existenceOnly) { values -> accept(values) }
+                    } else if (query.values != null) {
                         for (expressions in query.values) {
                             budget.step()
-                            if (!accept(expressions.map { evaluator.eval(it) })) break
+                            if (!accept(if (discardProjection) emptyProjection else expressions.map { evaluator.eval(it) })) break
                         }
                     } else {
                         val operands = plan.setOperands!!
                         val operation = query.setOperation!!
                         if (operation.operator == SqlSetOperator.UNION && operation.all) {
                             var keepReading = true
-                            produce(operands.first) { values -> accept(values).also { keepReading = it } }
-                            if (keepReading) produce(operands.second) { values -> accept(values) }
+                            produce(operands.first, discardProjection) { values -> accept(values).also { keepReading = it } }
+                            if (keepReading) produce(operands.second, discardProjection) { values -> accept(values) }
                         } else {
                             val left = materialize(operands.first)
                             val right = materialize(operands.second)
@@ -166,7 +199,7 @@ internal class SqlRuntime(
                             retained += row
                             return true
                         }
-                        return projected(query.select.map { evaluator.eval(it.expression, row) }, row)
+                        return projected(if (discardProjection) emptyProjection else query.select.map { evaluator.eval(it.expression, row) }, row)
                     }
                     val constantFalse = query.where != null && !containsColumn(query.where) && evaluator.eval(query.where).truth() != true
                     if (!constantFalse) {
@@ -176,7 +209,7 @@ internal class SqlRuntime(
                         suspend fun projectGroup(group: List<InputRow>) {
                             val row = group.firstOrNull() ?: emptyMap()
                             if (query.having != null && evaluator.eval(query.having, row, group).truth() != true) return
-                            projected(query.select.map { evaluator.eval(it.expression, row, group) }, row, group)
+                            projected(if (discardProjection) emptyProjection else query.select.map { evaluator.eval(it.expression, row, group) }, row, group)
                         }
                         if (query.groupBy.isEmpty()) projectGroup(retained) else {
                             val groups = linkedMapOf<List<Any>, MutableList<InputRow>>()
@@ -199,7 +232,7 @@ internal class SqlRuntime(
             }
             if (!blocking) return downstream
             var result: List<OutputRow> = outputs
-            if (query.distinct) {
+            if (distinct) {
                 val seen = mutableSetOf<List<Any>>()
                 val unique = mutableListOf<OutputRow>()
                 for (row in result) {
@@ -211,7 +244,7 @@ internal class SqlRuntime(
                 }
                 result = unique
             }
-            if (query.orderBy.isNotEmpty()) result = mergeSort(result, query.orderBy, budget)
+            if (orderBy.isNotEmpty()) result = mergeSort(result, orderBy, budget)
             for (row in result) if (!deliver(row.values)) break
             return downstream
         } finally { memory.close() }

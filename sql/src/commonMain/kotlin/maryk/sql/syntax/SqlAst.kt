@@ -24,6 +24,19 @@ internal data class SqlQuery(
     val ctes: List<SqlCte> = emptyList(),
     val setOperation: SqlSetOperation? = null,
     val values: List<List<SqlExpr>>? = null,
+    val body: SqlQuery? = null,
+)
+
+internal enum class SqlMutationKind { INSERT, UPDATE, DELETE, UNDELETE, HARD_DELETE }
+
+internal data class SqlMutation(
+    val kind: SqlMutationKind,
+    val table: List<SqlName>,
+    val columns: List<SqlName> = emptyList(),
+    val rows: List<List<SqlExpr>> = emptyList(),
+    val assignments: List<Pair<SqlName, SqlExpr>> = emptyList(),
+    val where: SqlExpr? = null,
+    val parameterCount: Int,
 )
 
 internal data class SqlCte(

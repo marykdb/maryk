@@ -8,7 +8,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 
 enum class SqlExecutionStatus { SUCCEEDED, CANCELLED, FAILED }
 
@@ -46,9 +46,11 @@ class SqlExecution internal constructor(
             coroutineScope {
                 job.value = currentCoroutineContext()[Job]
                 if (cancellation.value) throw CancellationException("SQL execution cancelled")
-                withTimeout(options.maxExecutionMillis) {
+                val completed = withTimeoutOrNull(options.maxExecutionMillis) {
                     operation(budget) { emit(it) }
+                    true
                 }
+                if (completed == null) budget.exceeded("Execution time")
             }
         } catch (error: Throwable) {
             failure = error

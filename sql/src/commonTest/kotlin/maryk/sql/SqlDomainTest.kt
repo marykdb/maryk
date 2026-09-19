@@ -31,6 +31,23 @@ private object SqlDomainModel : RootDataModel<SqlDomainModel>(
 }
 
 class SqlDomainTest {
+    @Test fun referenceWritesUseNativeKeysAndEnumNames() = sqlTest {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SqlTestModel, 2u to SqlDomainModel))
+        try {
+            val sql = MarykSql.create(store, options = SqlOptions(allowTableScan = true))
+            val target = SqlTestModel.key(SqlTestModel.create { id with 2uL })
+            assertEquals(1, sql.execute(
+                "INSERT INTO SqlDomainModel (id, at, kind, target, approximate, payload) VALUES (1, TIME '12:00:00', 'V2', ?, 2.5e0, CAST('AQI' AS BINARY))",
+                listOf(SqlValue.Key("SqlTestModel", target)),
+            ).affectedRows)
+            val row = sql.query("SELECT __key, target, kind FROM SqlDomainModel").rows.single()
+            assertEquals(SqlValue.Key("SqlTestModel", target), row[1])
+            assertEquals(SqlValue.Enum("Option", 2u, "V2"), row[2])
+            assertEquals(SqlValue.Float64(2.5), sql.query("SELECT approximate FROM SqlDomainModel WHERE approximate = 2.5e0").rows.single()[0])
+            assertEquals(1, sql.execute("UPDATE SqlDomainModel SET target = ?, kind = 'V1' WHERE __key = ?", listOf(SqlValue.Text(target.toString()), row[0])).affectedRows)
+        } finally { store.close() }
+    }
+
     @Test fun enumAndReferenceTextConversionsUseDefinitionsAndValidateParameters() = sqlTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SqlTestModel, 2u to SqlDomainModel))
         try {

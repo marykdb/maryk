@@ -61,6 +61,7 @@ internal class SqlEvaluator(
     private val parameters: List<SqlValue>,
     val budget: SqlBudget,
     private val subquery: suspend (BoundQuery) -> List<List<SqlValue>> = { throw SqlException(SqlErrorCode.UNSUPPORTED, "Subqueries require a query runtime") },
+    private val exists: suspend (BoundQuery) -> Boolean = { subquery(it).isNotEmpty() },
 ) {
     suspend fun eval(expression: SqlExpr, row: InputRow = emptyMap(), group: List<InputRow>? = null): SqlValue {
         budget.step()
@@ -134,7 +135,7 @@ internal class SqlEvaluator(
                     if (values.size > 1) throw SqlException(SqlErrorCode.TYPE, "Scalar subquery returned more than one row", expression.position)
                     values.singleOrNull()?.single() ?: SqlValue.Null
                 }
-                is SqlExpr.Exists -> SqlValue.Bool(subquery(plan.subqueries.getValue(expression)).isNotEmpty() != expression.negated)
+                is SqlExpr.Exists -> SqlValue.Bool(exists(plan.subqueries.getValue(expression)) != expression.negated)
                 is SqlExpr.InQuery -> {
                     val value = eval(expression.operand, row, group)
                     var result: Boolean? = false

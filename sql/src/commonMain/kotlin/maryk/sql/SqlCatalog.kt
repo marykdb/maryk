@@ -79,6 +79,11 @@ internal data class CatalogColumn(
         if (isVersion) return SqlValue.UInt64(record.lastVersion)
         var value: Any? = record.values
         for (index in indices) value = (value as? Values<*>)?.original(index)
+        return fromNative(value)
+    }
+
+    /** Use the declared type: JavaScript does not distinguish all Kotlin numeric types. */
+    fun fromNative(value: Any?): SqlValue {
         if (value == null) return SqlValue.Null
         return when (column.type) {
             SqlType.INT64 -> SqlValue.Int64(when (value) {

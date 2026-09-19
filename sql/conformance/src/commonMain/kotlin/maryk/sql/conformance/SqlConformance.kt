@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Decimal
 import maryk.core.properties.types.numeric.UInt64
+import maryk.core.properties.types.numeric.Float64
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
@@ -34,7 +35,7 @@ import kotlin.test.assertTrue
 /** One fixture and contract shared by every storage adapter. Not a published module. */
 object SqlConformanceItem : RootDataModel<SqlConformanceItem>(
     keyDefinition = { SqlConformanceItem.id.ref() },
-    indexes = { listOf(SqlConformanceItem.amount.ref()) },
+    indexes = { listOf(SqlConformanceItem.amount.ref(), SqlConformanceItem.category.ref()) },
 ) {
     val id by number(1u, UInt64, final = true)
     val category by string(2u, required = false)
@@ -42,7 +43,19 @@ object SqlConformanceItem : RootDataModel<SqlConformanceItem>(
     val note by string(4u, required = false, default = "not stored")
 }
 
-val sqlConformanceModels = mapOf(1u to SqlConformanceItem)
+object SqlConformanceOptional : RootDataModel<SqlConformanceOptional>() {
+    val value by string(1u, required = false)
+}
+
+object SqlConformanceFloating : RootDataModel<SqlConformanceFloating>(
+    keyDefinition = { SqlConformanceFloating.id.ref() },
+    indexes = { listOf(SqlConformanceFloating.value.ref()) },
+) {
+    val id by number(1u, UInt64, final = true)
+    val value by number(2u, Float64)
+}
+
+val sqlConformanceModels = mapOf(1u to SqlConformanceItem, 2u to SqlConformanceOptional, 3u to SqlConformanceFloating)
 
 /** Requires a fresh store with [sqlConformanceModels] and keepAllVersions enabled. */
 suspend fun assertSqlConformance(store: IsDataStore) {
@@ -148,4 +161,35 @@ suspend fun assertSqlConformance(store: IsDataStore) {
     assertEquals(SqlValue.Int64(7), sql.query("SELECT COUNT(*) FROM items", readOptions = SqlReadOptions(filterSoftDeleted = false)).rows.single()[0])
     store.execute(SqlConformanceItem.delete(added.first().key, hardDelete = true))
     assertTrue(store.execute(SqlConformanceItem.get(added.first().key, select = emptyProjection, filterSoftDeleted = false)).values.isEmpty())
+
+    assertEquals(1, sql.execute("INSERT INTO items (id, category, note) VALUES (9, '😀', NULL)").affectedRows)
+    val nullableKey = sql.query("SELECT __key FROM items WHERE id = 9").rows.single()[0]
+    assertEquals(SqlValue.Null, sql.query("SELECT note FROM items WHERE id = 9").rows.single()[0])
+    assertEquals(1, sql.execute("UPDATE items SET note = 'present' WHERE __key = ?", listOf(nullableKey)).affectedRows)
+    assertEquals(1, sql.execute("UPDATE items SET note = NULL WHERE __key = ?", listOf(nullableKey)).affectedRows)
+    assertEquals(SqlValue.Null, sql.query("SELECT note FROM items WHERE id = 9").rows.single()[0])
+    // Supplementary characters precede U+E000 in SQL's UTF-16 order, but follow it in
+    // the UTF-8 ordering used by persistent indexes. Residual filtering must retain them.
+    assertEquals(listOf(SqlValue.UInt64(9u)), sql.query("SELECT id FROM items WHERE category > 'z' AND category < ''").rows.map { it[0] })
+    assertEquals(1, sql.execute("DELETE FROM items WHERE __key = ?", listOf(nullableKey)).affectedRows)
+    assertEquals(1, sql.execute("DELETE HARD FROM items WHERE __key = ?", listOf(nullableKey)).affectedRows)
+    assertTrue(sql.query("SELECT id FROM items WHERE __key = ?", listOf(nullableKey), SqlReadOptions(filterSoftDeleted = false)).rows.isEmpty())
+
+    val optionalSql = MarykSql.create(store, SqlCatalog(listOf(SqlTable("optional_rows", store.dataModelsById.getValue(2u)))), SqlOptions(allowTableScan = true))
+    assertEquals(1, optionalSql.execute("INSERT INTO optional_rows (value) VALUES (NULL)").affectedRows)
+    val emptyRow = optionalSql.query("SELECT * FROM optional_rows").rows.single()
+    assertEquals(SqlValue.Null, emptyRow[2])
+    val optionalKey = emptyRow[0]
+    assertEquals(1, optionalSql.execute("UPDATE optional_rows SET value = 'present' WHERE __key = ?", listOf(optionalKey)).affectedRows)
+    assertEquals(1, optionalSql.execute("UPDATE optional_rows SET value = NULL WHERE __key = ?", listOf(optionalKey)).affectedRows)
+    assertEquals(SqlValue.Null, optionalSql.query("SELECT * FROM optional_rows").rows.single()[2])
+    assertEquals(1, optionalSql.execute("DELETE FROM optional_rows WHERE __key = ?", listOf(optionalKey)).affectedRows)
+    assertEquals(1, optionalSql.execute("UNDELETE FROM optional_rows WHERE __key = ?", listOf(optionalKey)).affectedRows)
+    assertEquals(1, optionalSql.execute("DELETE HARD FROM optional_rows WHERE __key = ?", listOf(optionalKey)).affectedRows)
+
+    val floatingSql = MarykSql.create(store, SqlCatalog(listOf(SqlTable("floating_rows", store.dataModelsById.getValue(3u)))), SqlOptions(allowTableScan = true))
+    assertEquals(2, floatingSql.execute("INSERT INTO floating_rows (id, value) VALUES (1, -0.0e0), (2, 0.0e0)").affectedRows)
+    for (predicate in listOf("value = 0.0e0", "value >= 0.0e0", "value <= -0.0e0")) {
+        assertEquals(listOf(SqlValue.UInt64(1u), SqlValue.UInt64(2u)), floatingSql.query("SELECT id FROM floating_rows WHERE $predicate ORDER BY id").rows.map { it[0] })
+    }
 }

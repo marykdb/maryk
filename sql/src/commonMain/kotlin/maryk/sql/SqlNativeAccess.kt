@@ -100,8 +100,14 @@ internal fun nativeAccess(plan: BoundQuery, source: BoundSource): NativeAccess {
 internal suspend fun NativeAccess.filter(table: SqlTable, evaluator: SqlEvaluator): IsFilter? {
     val pushed = mutableListOf<IsFilter>()
     for (predicate in filters) {
+        // Store indexes order UTF-8 bytes; SQL text ordering is ordinal UTF-16. Equality is
+        // portable, but range pushdown can discard supplementary Unicode characters incorrectly.
+        if (predicate.column.column.type == SqlType.TEXT && predicate.operator != "=") continue
         val value = evaluator.eval(predicate.expression)
         if (value == SqlValue.Null) continue
+        // Native floating comparisons can distinguish -0.0 from +0.0. SQL cannot, so
+        // preserve both representations for equality and inclusive range boundaries.
+        if (value is SqlValue.Float64 && value.value == 0.0) continue
         val definition = predicate.column.wrapper?.definition as? IsValueDefinition<Any, IsPropertyContext> ?: continue
         val native = try {
             when (value) {
@@ -110,11 +116,7 @@ internal suspend fun NativeAccess.filter(table: SqlTable, evaluator: SqlEvaluato
                 else -> definition.fromString(value.display())
             }
         } catch (_: IllegalArgumentException) { null } catch (_: ParseException) { null } ?: continue
-        val roundtrip = when (value) {
-            is SqlValue.Key -> SqlValue.Key(value.model, native as Bytes)
-            is SqlValue.Enum -> value
-            else -> SqlValue.of(native)
-        }
+        val roundtrip = predicate.column.fromNative(native)
         if (sqlCompare(value, roundtrip) != 0) continue
         val reference = table.model.getPropertyReferenceByName(predicate.column.column.name) as IsPropertyReference<Any, IsValueDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
         val pair = reference with native

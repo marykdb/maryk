@@ -21,6 +21,7 @@ internal class BindingState {
     var sourceId = 0
     val parameterTypes = mutableMapOf<Int, SqlType>()
     val parameterDomains = mutableMapOf<Int, CatalogColumn>()
+    val numericParameters = mutableSetOf<Int>()
     fun node() { if (++nodes > 256) throw SqlException(SqlErrorCode.LIMIT, "SQL plan exceeds 256 relation nodes") }
 }
 
@@ -40,9 +41,10 @@ internal class BoundQuery(
     val setOperands: Pair<BoundQuery, BoundQuery>?,
     val outputBindings: List<CatalogColumn>,
     val bindingState: BindingState,
+    val body: BoundQuery? = null,
 ) {
     val inputs: List<CatalogColumn> = references.values.distinct()
-    val children: List<BoundQuery> = ctes + sources.mapNotNull { it.relation } + subqueries.values + listOfNotNull(setOperands?.first, setOperands?.second)
+    val children: List<BoundQuery> = ctes + sources.mapNotNull { it.relation } + subqueries.values + listOfNotNull(setOperands?.first, setOperands?.second, body)
     val depth: Int = 1 + (children.maxOfOrNull { it.depth } ?: 0)
     init { if (depth > 64) throw SqlException(SqlErrorCode.LIMIT, "SQL plan exceeds 64 relation levels") }
 }
@@ -83,7 +85,7 @@ internal class SqlBinder(
             ctes[cte.name.normalized] = relation
             localCtes += relation
         }
-        if (parsed.values != null || parsed.setOperation != null) return bindCompound(parsed)
+        if (parsed.values != null || parsed.setOperation != null || parsed.body != null) return bindCompound(parsed)
         parsed.from?.let { source ->
             sources += bindSource(source, false)
             source.joins.forEach { join ->
@@ -154,7 +156,7 @@ internal class SqlBinder(
         return finish(query, columns, aggregate)
     }
 
-    private fun finish(query: SqlQuery, columns: List<SqlColumn>, aggregate: Boolean, operands: Pair<BoundQuery, BoundQuery>? = null, outputDomains: List<CatalogColumn?>? = null): BoundQuery {
+    private fun finish(query: SqlQuery, columns: List<SqlColumn>, aggregate: Boolean, operands: Pair<BoundQuery, BoundQuery>? = null, outputDomains: List<CatalogColumn?>? = null, body: BoundQuery? = null): BoundQuery {
         val outputs = columns.mapIndexed { index, column ->
             val selection = query.select.getOrNull(index)
             val expression = selection?.expression
@@ -164,13 +166,13 @@ internal class SqlBinder(
                 parameterOrigins = expression?.let(::parameterOrigins) ?: origin?.parameterOrigins.orEmpty())
         }
         return BoundQuery(query, table, columns, List(query.parameterCount) { SqlParameter(it, parameterTypes[it] ?: SqlType.ANY) }, references.toMap(), literals.toMap(), types.toMap(), aggregate,
-            sources.toList(), joins.toList(), subqueries.toMap(), localCtes.toList(), operands, outputs, state)
+            sources.toList(), joins.toList(), subqueries.toMap(), localCtes.toList(), operands, outputs, state, body)
     }
 
     private fun renamed(plan: BoundQuery, names: List<SqlName>): BoundQuery {
         val columns = plan.columns.zip(names).map { (column, name) -> column.copy(name = name.text) }
         return BoundQuery(plan.query, plan.table, columns, plan.parameters, plan.references, plan.literals, plan.expressionTypes, plan.aggregate,
-            plan.sources, plan.joins, plan.subqueries, plan.ctes, plan.setOperands, plan.outputBindings.mapIndexed { index, binding -> binding.copy(column = columns[index], identifier = names[index]) }, state)
+            plan.sources, plan.joins, plan.subqueries, plan.ctes, plan.setOperands, plan.outputBindings.mapIndexed { index, binding -> binding.copy(column = columns[index], identifier = names[index]) }, state, plan.body)
     }
 
     private fun uniqueOutputs(plan: BoundQuery) {
@@ -201,13 +203,17 @@ internal class SqlBinder(
     }
 
     private fun bindCompound(parsed: SqlQuery): BoundQuery {
+        val body = parsed.body?.let { SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, outerSources).bind(it) }
         val operands = parsed.setOperation?.let {
             SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, outerSources).bind(it.left) to
                 SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, outerSources).bind(it.right)
         }
         val domains: List<CatalogColumn?>
         val columns: List<SqlColumn>
-        if (operands != null) {
+        if (body != null) {
+            domains = body.outputBindings
+            columns = body.columns
+        } else if (operands != null) {
             val (left, right) = operands
             if (left.columns.size != right.columns.size) fail("Set operands must have equal column counts")
             domains = left.outputBindings.zip(right.outputBindings).map { (l, r) ->
@@ -215,6 +221,14 @@ internal class SqlBinder(
                 (if (l.domain != null || r.domain == null) l else r).copy(identifier = l.identifier, parameterOrigins = l.parameterOrigins + r.parameterOrigins)
             }
             columns = left.columns.zip(right.columns).map { (l, r) -> SqlColumn(l.name, commonType(l.type, r.type), l.nullable || r.nullable) }
+            columns.forEachIndexed { index, column ->
+                val domain = domains[index]
+                domain.parameterOrigins.forEach {
+                    val parameter = SqlExpr.Parameter(it, 0)
+                    inferParameter(it, column.type, parameter)
+                    if (domain.domain != null) inferDomain(it, domain, parameter)
+                }
+            }
         } else {
             val values = parsed.values!!
             val width = values.first().size
@@ -226,6 +240,10 @@ internal class SqlBinder(
                 }
             }
             columns = infos.mapIndexed { index, info -> SqlColumn("column${index + 1}", info.type, info.nullable) }
+            values.forEach { row -> row.forEachIndexed { index, expression ->
+                constrainUnknown(expression, columns[index].type)
+                infos[index].domain?.let { bindDomainOperand(expression, it) }
+            } }
             domains = infos.mapIndexed { index, info ->
                 (info.domain ?: CatalogColumn(columns[index], emptyList(), null)).copy(identifier = SqlName(columns[index].name), parameterOrigins = values.flatMap { parameterOrigins(it[index]) }.toSet())
             }
@@ -239,17 +257,22 @@ internal class SqlBinder(
             val expression = order.expression
             val resolved = if (expression is SqlExpr.Literal && expression.kind == LiteralKind.NUMBER && expression.text.all { it.isDigit() }) {
                 val ordinal = expression.text.toIntOrNull() ?: fail("Projection ordinal is too large", expression)
-                SqlExpr.Column(listOf(SqlName(columns.getOrNull(ordinal - 1)?.name ?: fail("Projection ordinal is out of range", expression), true)), expression.position)
+                val binding = outputSource.columns.getOrNull(ordinal - 1) ?: fail("Projection ordinal is out of range", expression)
+                // An ordinal identifies a slot even if multiple output columns share its name.
+                SqlExpr.Column(listOf(SqlName(binding.column.name, true)), expression.position).also {
+                    references[it] = binding
+                    types[it] = ExpressionInfo(binding.column.type, binding.column.nullable, binding.takeIf { it.domain != null })
+                }
             } else expression
             if (operands != null && resolved !is SqlExpr.Column) fail("Compound ORDER BY requires an output column or ordinal", resolved)
-            bindExpr(resolved, false)
+            if (resolved !in types) bindExpr(resolved, false)
             order.copy(expression = resolved)
         }
         listOfNotNull(parsed.limit, parsed.offset).forEach {
             if (containsColumn(it) || containsSubquery(it)) fail("LIMIT/OFFSET must be constant expressions", it)
             bindExpr(it, false, SqlType.DECIMAL)
         }
-        return finish(parsed.copy(orderBy = orderBy), columns, false, operands, domains)
+        return finish(parsed.copy(orderBy = orderBy), columns, false, operands, domains, body)
     }
 
     private fun bindExpr(expression: SqlExpr, allowAggregate: Boolean, expected: SqlType? = null): ExpressionInfo {
@@ -284,9 +307,16 @@ internal class SqlBinder(
                     is SqlExpr.Exists -> ExpressionInfo(SqlType.BOOLEAN, false)
                     is SqlExpr.InQuery -> {
                         var input = bindExpr(expression.operand, allowAggregate)
-                        val domain = bound.outputBindings.single().takeIf { it.domain != null }
+                        val output = bound.outputBindings.single()
+                        val domain = output.takeIf { it.domain != null }
                         if (domain != null) { bindDomainOperand(expression.operand, domain); input = types.getValue(expression.operand) }
                         if (expression.operand is SqlExpr.Parameter) input = bindExpr(expression.operand, allowAggregate, bound.columns.single().type)
+                        if (bound.columns.single().type == SqlType.ANY) {
+                            output.parameterOrigins.forEach { index ->
+                                inferParameter(index, input.type, expression)
+                                input.domain?.let { inferDomain(index, it, expression) }
+                            }
+                        }
                         commonType(input.type, bound.columns.single().type, expression)
                         if (input.domain != null && domain != null && input.domain.domain != domain.domain) fail("Cannot compare different model/enum domains", expression)
                         ExpressionInfo(SqlType.BOOLEAN)
@@ -295,8 +325,9 @@ internal class SqlBinder(
                 }
             }
             is SqlExpr.Unary -> {
-                val operand = bindExpr(expression.operand, allowAggregate, if (expression.operator == "NOT") SqlType.BOOLEAN else SqlType.DECIMAL)
-                ExpressionInfo(if (expression.operator == "NOT") SqlType.BOOLEAN else if (operand.type == SqlType.FLOAT64) SqlType.FLOAT64 else SqlType.DECIMAL, operand.nullable)
+                val operand = if (expression.operator == "NOT") bindExpr(expression.operand, allowAggregate, SqlType.BOOLEAN)
+                    else bindNumeric(expression.operand, allowAggregate)
+                ExpressionInfo(if (expression.operator == "NOT") SqlType.BOOLEAN else numericResultType(operand.type), operand.nullable)
             }
             is SqlExpr.Binary -> bindBinary(expression, allowAggregate)
             is SqlExpr.Is -> {
@@ -350,6 +381,10 @@ internal class SqlBinder(
                     domain = domain ?: branch.domain
                     nullable = nullable || branch.nullable
                 }
+                (expression.branches.map { it.second } + listOfNotNull(expression.otherwise)).forEach {
+                    constrainUnknown(it, result)
+                    domain?.let { domain -> bindDomainOperand(it, domain) }
+                }
                 ExpressionInfo(result, nullable, domain)
             }
         }
@@ -373,10 +408,12 @@ internal class SqlBinder(
             return ExpressionInfo(SqlType.TEXT, left.nullable || right.nullable)
         }
         if (operator in setOf("+", "-", "*", "/", "%")) {
-            val left = bindExpr(expression.left, allowAggregate, SqlType.DECIMAL)
-            val right = bindExpr(expression.right, allowAggregate, SqlType.DECIMAL)
+            val left = bindNumeric(expression.left, allowAggregate)
+            val right = bindNumeric(expression.right, allowAggregate)
             val type = commonType(left.type, right.type, expression)
-            return ExpressionInfo(if (type == SqlType.FLOAT64) SqlType.FLOAT64 else SqlType.DECIMAL, left.nullable || right.nullable)
+            constrainNumeric(expression.left, type)
+            constrainNumeric(expression.right, type)
+            return ExpressionInfo(numericResultType(type), left.nullable || right.nullable)
         }
         bindComparison(expression.left, expression.right, allowAggregate)
         return ExpressionInfo(SqlType.BOOLEAN, !operator.contains("DISTINCT"))
@@ -391,6 +428,8 @@ internal class SqlBinder(
         if (right is SqlExpr.Parameter) r = bindExpr(right, allowAggregate, l.type)
         if (l.type == SqlType.ANY && left is SqlExpr.Column) l = bindExpr(left, allowAggregate, r.type)
         if (r.type == SqlType.ANY && right is SqlExpr.Column) r = bindExpr(right, allowAggregate, l.type)
+        if (l.type == SqlType.ANY) constrainUnknown(left, r.type)
+        if (r.type == SqlType.ANY) constrainUnknown(right, l.type)
         if (l.type != SqlType.NULL && r.type != SqlType.NULL && l.type != SqlType.ANY && r.type != SqlType.ANY) commonType(l.type, r.type, left)
         val leftDomain = l.domain?.domain
         val rightDomain = r.domain?.domain
@@ -400,10 +439,7 @@ internal class SqlBinder(
     private fun bindDomainOperand(expression: SqlExpr, domain: CatalogColumn) {
         fun constrain(indices: Set<Int>) {
             for (index in indices) {
-                val old = state.parameterDomains[index]
-                if (old != null && old.domain != domain.domain) fail("Parameter is used with different model/enum domains", expression)
-                inferParameter(index, domain.column.type, expression)
-                state.parameterDomains[index] = domain
+                inferDomain(index, domain, expression)
             }
             if (indices.isNotEmpty()) types[expression] = ExpressionInfo(domain.column.type, true, domain)
         }
@@ -415,15 +451,53 @@ internal class SqlBinder(
             is SqlExpr.Parameter -> constrain(setOf(expression.index))
             is SqlExpr.Column -> if (references[expression]?.column?.type == SqlType.ANY) constrain(parameterOrigins(expression))
             is SqlExpr.Subquery -> if (subqueries[expression]?.columns?.singleOrNull()?.type == SqlType.ANY) constrain(parameterOrigins(expression))
-            else -> Unit
+            else -> if (types[expression]?.type == SqlType.ANY) constrain(parameterOrigins(expression))
         }
     }
 
+    private fun inferDomain(index: Int, domain: CatalogColumn, expression: SqlExpr) {
+        val old = state.parameterDomains[index]
+        if (old != null && old.domain != domain.domain) fail("Parameter is used with different model/enum domains", expression)
+        inferParameter(index, domain.column.type, expression)
+        state.parameterDomains[index] = domain
+    }
+
     private fun inferParameter(index: Int, expected: SqlType, expression: SqlExpr) {
+        if (expected == SqlType.ANY || expected == SqlType.NULL) return
         val target = if (expected.isNumeric && expected != SqlType.FLOAT64) SqlType.DECIMAL else expected
         val old = parameterTypes[index]
         if (old != null && old != target) fail("Conflicting parameter types", expression)
         parameterTypes[index] = target
+    }
+
+    private fun constrainUnknown(expression: SqlExpr, type: SqlType) {
+        if (types[expression]?.type == SqlType.ANY) parameterOrigins(expression).forEach { inferParameter(it, type, expression) }
+    }
+
+    private fun bindNumeric(expression: SqlExpr, allowAggregate: Boolean): ExpressionInfo {
+        val info = bindExpr(expression, allowAggregate)
+        if (!info.type.isNumeric && info.type != SqlType.ANY && info.type != SqlType.NULL) fail("Expected a numeric value", expression)
+        if (info.type == SqlType.ANY) state.numericParameters += parameterOrigins(expression)
+        return info
+    }
+
+    private fun constrainNumeric(expression: SqlExpr, type: SqlType) {
+        constrainUnknown(expression, type)
+        if (types[expression]?.type != SqlType.ANY) return
+        when (expression) {
+            is SqlExpr.Unary -> constrainNumeric(expression.operand, type)
+            is SqlExpr.Binary -> if (expression.operator in setOf("+", "-", "*", "/", "%")) {
+                constrainNumeric(expression.left, type)
+                constrainNumeric(expression.right, type)
+            }
+            is SqlExpr.Call -> if (expression.name.normalized in setOf("abs", "floor", "ceil", "ceiling", "round")) constrainNumeric(expression.arguments.first(), type)
+            else -> Unit
+        }
+    }
+
+    private fun numericResultType(type: SqlType): SqlType = when (type) {
+        SqlType.ANY, SqlType.FLOAT64 -> type
+        else -> SqlType.DECIMAL
     }
 
     private fun parameterOrigins(expression: SqlExpr): Set<Int> = when (expression) {
@@ -444,9 +518,9 @@ internal class SqlBinder(
             val input = if (argument is SqlExpr.Star) {
                 if (name != "count" || call.distinct || argument.qualifier != null) fail("Only COUNT(*) accepts a wildcard", call)
                 ExpressionInfo(SqlType.ANY)
-            } else bindExpr(argument, false, if (name in setOf("sum", "avg")) SqlType.DECIMAL else null)
+            } else if (name in setOf("sum", "avg")) bindNumeric(argument, false) else bindExpr(argument, false)
             call.filter?.let { bindExpr(it, false, SqlType.BOOLEAN) }
-            return ExpressionInfo(when (name) { "count" -> SqlType.INT64; "sum", "avg" -> if (input.type == SqlType.FLOAT64) SqlType.FLOAT64 else SqlType.DECIMAL; else -> input.type }, name != "count", input.domain.takeIf { name == "min" || name == "max" })
+            return ExpressionInfo(when (name) { "count" -> SqlType.INT64; "sum", "avg" -> numericResultType(input.type); else -> input.type }, name != "count", input.domain.takeIf { name == "min" || name == "max" })
         }
         if (call.distinct || call.filter != null) fail("DISTINCT/FILTER require an aggregate", call)
         val arity = when (name) {
@@ -459,6 +533,7 @@ internal class SqlBinder(
         }
         if (call.arguments.size !in arity) fail("Wrong number of arguments for $name", call)
         val inputs = call.arguments.mapIndexed { index, argument ->
+            if (index == 0 && name in setOf("abs", "floor", "ceil", "ceiling", "round")) return@mapIndexed bindNumeric(argument, allowAggregate)
             val expected = when (name) {
                 "abs", "floor", "ceil", "ceiling", "round" -> SqlType.DECIMAL
                 "lower", "upper", "length", "char_length", "trim", "ltrim", "rtrim", "concat" -> SqlType.TEXT
@@ -472,10 +547,15 @@ internal class SqlBinder(
             "coalesce", "nullif" -> {
                 val domains = inputs.mapNotNull { it.domain }
                 if (domains.map { it.domain }.distinct().size > 1) fail("Function arguments use different model/enum domains", call)
-                ExpressionInfo(inputs.fold(SqlType.NULL) { type, input -> commonType(type, input.type, call) }, name == "nullif" || inputs.all { it.nullable }, domains.firstOrNull())
+                val type = inputs.fold(SqlType.NULL) { type, input -> commonType(type, input.type, call) }
+                call.arguments.forEach {
+                    constrainUnknown(it, type)
+                    domains.firstOrNull()?.let { domain -> bindDomainOperand(it, domain) }
+                }
+                ExpressionInfo(type, name == "nullif" || inputs.all { it.nullable }, domains.firstOrNull())
             }
             "length", "char_length", "date_part" -> ExpressionInfo(SqlType.INT64, inputs.any { it.nullable })
-            "abs", "floor", "ceil", "ceiling", "round" -> ExpressionInfo(if (inputs.first().type == SqlType.FLOAT64) SqlType.FLOAT64 else SqlType.DECIMAL, inputs.any { it.nullable })
+            "abs", "floor", "ceil", "ceiling", "round" -> ExpressionInfo(numericResultType(inputs.first().type), inputs.any { it.nullable })
             else -> ExpressionInfo(SqlType.TEXT, inputs.any { it.nullable })
         }
     }
@@ -510,11 +590,14 @@ internal class SqlBinder(
 
     private fun boundKey(expression: SqlExpr): String = if (expression is SqlExpr.Column) {
         references[expression]?.let { "column:${it.sourceId}:${it.column.name}" } ?: expressionKey(expression)
-    } else expressionKey(expression).substringBefore('[') + children(expression).joinToString(prefix = "[", postfix = "]") { boundKey(it) }
+    } else expressionHead(expression) + children(expression).joinToString(prefix = "[", postfix = "]") { boundKey(it).let { key -> "${key.length}:$key" } }
 
     private fun commonType(left: SqlType, right: SqlType, expression: SqlExpr? = null): SqlType = when {
-        left == SqlType.NULL || left == SqlType.ANY -> right
-        right == SqlType.NULL || right == SqlType.ANY || left == right -> left
+        left == SqlType.NULL -> right
+        right == SqlType.NULL -> left
+        left == SqlType.ANY && right.isNumeric && right != SqlType.FLOAT64 || right == SqlType.ANY && left.isNumeric && left != SqlType.FLOAT64 -> SqlType.DECIMAL
+        left == SqlType.ANY -> right
+        right == SqlType.ANY || left == right -> left
         left.isNumeric && right.isNumeric && left != SqlType.FLOAT64 && right != SqlType.FLOAT64 -> SqlType.DECIMAL
         else -> fail("Incompatible types $left and $right; use an explicit CAST", expression)
     }
@@ -580,7 +663,10 @@ internal fun containsSubquery(expression: SqlExpr): Boolean = expression is SqlE
 
 /** Structural identity ignores source offsets but preserves quoted identifier semantics. */
 internal fun expressionKey(expression: SqlExpr): String {
-    val head = when (expression) {
+    return expressionHead(expression) + children(expression).joinToString(prefix = "[", postfix = "]") { child -> expressionKey(child).let { "${it.length}:$it" } }
+}
+
+private fun expressionHead(expression: SqlExpr): String = when (expression) {
         is SqlExpr.Literal -> "literal:${expression.kind}:${expression.text.length}:${expression.text}"
         is SqlExpr.Column -> "column:" + expression.path.joinToString(".") { it.normalized }
         is SqlExpr.Parameter -> "parameter:${expression.index}"
@@ -597,6 +683,4 @@ internal fun expressionKey(expression: SqlExpr): String {
         is SqlExpr.Subquery -> "subquery:${expression.query}"
         is SqlExpr.Exists -> "exists:${expression.negated}:${expression.query}"
         is SqlExpr.InQuery -> "inquery:${expression.negated}:${expression.query}"
-    }
-    return head + children(expression).joinToString(prefix = "[", postfix = "]") { child -> expressionKey(child).let { "${it.length}:$it" } }
 }

@@ -14,7 +14,7 @@
 - `undelete <model> <key> [--if-version <n>]` — restore a soft-deleted record.
 - `changes <model> <key> [options]` — show versioned changes for a record.
 - `scan <model> [options]` — browse records in a scrolling list.
-- `sql [options] SELECT ...` or `sql [options] --file <path>` — run a bounded read-only SQL query.
+- `sql [options] SELECT ...` or `sql [options] --file <path>` — run a bounded SQL query; `--write` enables row mutations.
 - `migrations [status|pause|resume|cancel]` — inspect or control managed migrations.
 
 ## Quick example
@@ -58,7 +58,15 @@ Options: `--snapshot`, `--to-version <n>`, `--include-deleted`, and `--no-table-
 Choose at most one consistency option (`--snapshot` or `--to-version`). Use `--` before SQL that starts with a line comment, for example `sql -- -- report` followed by a newline and `SELECT 1`; a SQL file can start with comments directly.
 Versioned reads require retained history and an authoritative snapshot provider. Table scans are enabled by default in the CLI, with at most 10,000 result rows and 8 MiB of logical buffered data. Query files are limited to 64 KiB. Output uses tab-separated columns, quotes strings, renders SQL `NULL` explicitly, and escapes control characters.
 
-Parameters are available through the Kotlin SQL API. In the CLI, use SQL literals or a file. SQL does not expose writes or schema changes; continue using Maryk commands for those operations.
+Parameters are available through the Kotlin SQL API. In the CLI, use SQL literals or a file. Add `--write` to execute bounded `INSERT`, `UPDATE`, `DELETE`, `UNDELETE`, or `DELETE HARD` statements:
+
+```text
+sql --write INSERT INTO Person (name, age) VALUES ('Ada', 37)
+sql --write UPDATE Person SET nickname = NULL WHERE __key = '<encoded-key>' AND __version = 12345
+sql --write --file ./mutation.sql
+```
+
+Writes require a key equality for each row mutation, with an optional version equality. Optional scalar properties can be set to `NULL`. The CLI prints affected rows and failures; a multi-row insert can partly succeed. `--write` cannot be combined with `--snapshot`, `--to-version`, or `--include-deleted`. Schema changes remain Maryk operations. See the [SQL module](../../sql/README.md) for types, guards, limits, and supported syntax.
 
 ## Connect
 

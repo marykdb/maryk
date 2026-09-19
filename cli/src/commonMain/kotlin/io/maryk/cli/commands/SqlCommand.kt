@@ -12,17 +12,19 @@ import maryk.sql.SqlValue
 
 class SqlCommand : Command {
     override val name = "sql"
-    override val description = "Run a read-only SQL query on the connected store."
+    override val description = "Run SQL queries or explicit --write mutations on the connected store."
     override fun execute(context: CommandContext, arguments: List<String>): CommandResult {
         val connection = context.state.currentConnection ?: return error("Not connected to any store. Use `connect` first.")
         var consistency: SqlConsistency = SqlConsistency.Current
         var consistencySelected = false
         var includeDeleted = false
         var allowTableScan = true
+        var write = false
         var statement: String? = null
         var index = 0
         while (index < arguments.size) {
             when (val token = arguments[index++]) {
+                "--write" -> write = true
                 "--snapshot" -> {
                     if (consistencySelected) return error("Provide only one consistency option: --snapshot or --to-version")
                     consistencySelected = true
@@ -60,18 +62,27 @@ class SqlCommand : Command {
                 "Usage: sql [options] SELECT ...",
                 "       sql [options] --file <path>",
                 "       sql [options] -- <SQL> (for SQL beginning with a -- comment)",
-                "Options: --snapshot, --to-version <n>, --include-deleted, --no-table-scan",
+                "Options: --write, --snapshot, --to-version <n>, --include-deleted, --no-table-scan",
                 "Examples: sql SELECT * FROM Person LIMIT 20",
                 "          sql SELECT category, COUNT(*) FROM Item GROUP BY category",
-                "Read-only; maximum 10,000 result rows and 8 MiB of buffered results.",
+                "Queries by default; --write enables bounded INSERT/UPDATE/DELETE/UNDELETE.",
+                "Maximum 10,000 result rows and 8 MiB of buffered results.",
             ), isError = true,
         )
+        if (write && (consistencySelected || includeDeleted)) return error("--write cannot be combined with snapshot, versioned-read, or include-deleted options")
         return try {
             val sql = MarykSql.create(connection.dataStore, options = SqlOptions(
                 allowTableScan = allowTableScan,
                 maxResultRows = 10_000,
                 maxBufferedBytes = 8L * 1024 * 1024,
             ))
+            if (write) {
+                val result = runBlocking { sql.execute(sqlText) }
+                return CommandResult(
+                    listOf("Affected rows: ${result.affectedRows}") + result.failures.map { "Failed: ${escaped(it)}" },
+                    isError = result.failures.isNotEmpty(),
+                )
+            }
             val result = runBlocking { sql.query(sqlText, readOptions = SqlReadOptions(consistency, !includeDeleted)) }
             CommandResult(buildList {
                 add(result.columns.joinToString("\t") { escaped(it.name) })

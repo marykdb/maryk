@@ -1,0 +1,30 @@
+product:
+  type: kmp/lib
+  platforms: [jvm, linuxX64, macosArm64, macosX64]
+
+apply:
+  - //toolchain/common.module-template.yaml
+  - //toolchain/publishing.module-template.yaml
+
+dependencies:
+  - //lib: exported
+  - //core: exported
+  - //store/shared: exported
+  - $libs.kotlinx.coroutines.core
+  - $libs.ktor.client.core
+  - $libs.ktor.client.cio
+  - $libs.ktor.server.core
+  - $libs.ktor.server.cio
+
+test-dependencies:
+  - //sql/conformance
+  - //testmodels
+  - //store/memory
+  - //file
+
+test-dependencies@jvm:
+  - $libs.ktor.client.mock
+
+settings:
+  publishing:
+    artifactId: maryk-remote

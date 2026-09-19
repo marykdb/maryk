@@ -17,7 +17,6 @@ kotlin {
 
     sourceSets {
         getByName("commonTest") {
-            kotlin.srcDir("src/commonTestExpect/kotlin")
             dependencies {
                 implementation(kotlin("test"))
                 implementation(projects.sql.conformance)
@@ -37,14 +36,24 @@ kotlin {
             }
         }
         androidHostTest {
-            kotlin.srcDir("src/androidUnitTest/kotlin")
+            kotlin.setSrcDirs(listOf("test@android"))
         }
         androidDeviceTest {
-            kotlin.srcDir("src/commonTest/kotlin")
+            kotlin.srcDir("test")
+            // Device tests provide their own Android folder helpers. These files
+            // previously lived in commonTestExpect, outside the device source set.
+            kotlin.exclude(
+                "maryk/assertTestDatabaseCanBeDeletedAndReused.kt",
+                "maryk/createFolder.kt",
+                "maryk/createTestDBFolder.kt",
+                "maryk/deleteFolder.kt",
+                "maryk/doesFolderExist.kt",
+            )
             dependencies {
                 implementation(libs.androidx.test.core)
                 implementation(libs.androidx.test.runner)
                 implementation(kotlin("test"))
+                implementation(projects.sql.conformance)
                 implementation(projects.testmodels)
                 implementation(projects.store.test)
             }

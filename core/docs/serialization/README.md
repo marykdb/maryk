@@ -10,7 +10,7 @@ Maryk transports three things: your data models, the data itself, and the reques
 
 - Models (YAML/JSON): Define and exchange DataModels. These formats are easy to inspect, diff, and use for tooling or code generation. See [Data Models](../datamodel.md).
 - Data (YAML/JSON/ProtoBuf): Serialize model values in all three formats. ProtoBuf is typically preferred in production for its size and speed.
-- Requests/Responses (YAML/JSON/ProtoBuf): Serialize batch [Requests](https://github.com/marykdb/maryk/blob/main/core/src/commonMain/kotlin/maryk/core/query/requests/Requests.kt) and typed responses (e.g., [ValuesResponse](https://github.com/marykdb/maryk/blob/main/core/src/commonMain/kotlin/maryk/core/query/responses/ValuesResponse.kt)). Requests use a stable multi‑type envelope so multiple operations (Get/Scan/Add/Change/Delete/…) can be combined in one payload.
+- Requests/Responses (YAML/JSON/ProtoBuf): Serialize batch [Requests](https://github.com/marykdb/maryk/blob/main/core/src/maryk/core/query/requests/Requests.kt) and typed responses (e.g., [ValuesResponse](https://github.com/marykdb/maryk/blob/main/core/src/maryk/core/query/responses/ValuesResponse.kt)). Requests use a stable multi‑type envelope so multiple operations (Get/Scan/Add/Change/Delete/…) can be combined in one payload.
 
 ## Choosing a Format
 

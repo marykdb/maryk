@@ -49,8 +49,8 @@ Maryk exposes CRUD-style actions and query variants:
 
 ### Add
 
-With [`AddRequest`](../src/commonMain/kotlin/maryk/core/query/requests/AddRequest.kt), objects can be
-added to a store. When applied, it will deliver an [`AddResponse`](../src/commonMain/kotlin/maryk/core/query/responses/AddResponse.kt)
+With [`AddRequest`](../src/maryk/core/query/requests/AddRequest.kt), objects can be
+added to a store. When applied, it will deliver an [`AddResponse`](../src/maryk/core/query/responses/AddResponse.kt)
 with a status on each object added.
 
 **Example:**
@@ -72,8 +72,8 @@ val addRequest = Person.add(
 
 ### Change
 
-With [`ChangeRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ChangeRequest.kt), objects can be
-modified in a store. When applied, it will deliver an [`ChangeResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ChangeResponse.kt)
+With [`ChangeRequest`](../src/maryk/core/query/requests/ChangeRequest.kt), objects can be
+modified in a store. When applied, it will deliver an [`ChangeResponse`](../src/maryk/core/query/responses/ChangeResponse.kt)
 with a status on each change.
 
 Refer to [property operations](properties/operations.md) to see how to apply
@@ -117,12 +117,12 @@ val changeRequest = Person.run {
 
 ### Delete
 
-With [`DeleteRequest`](../src/commonMain/kotlin/maryk/core/query/requests/DeleteRequest.kt),
+With [`DeleteRequest`](../src/maryk/core/query/requests/DeleteRequest.kt),
 objects can be deleted from a store. The objects can be deleted by passing
 a list of object [`keys`](key.md). Objects can either be hard or soft deleted.
 With a hard delete, the data is permanently removed; with a soft delete (the default), it remains in the store but is
 not viewable unless specifically requested.
-When applied, it will deliver an [`DeleteResponse`](../src/commonMain/kotlin/maryk/core/query/responses/DeleteResponse.kt)
+When applied, it will deliver an [`DeleteResponse`](../src/maryk/core/query/responses/DeleteResponse.kt)
 with a status on each deletion.
 
 **Example:**
@@ -140,7 +140,7 @@ val deleteRequest = Person.delete(
 
 ### Get
 
-With [`GetRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetRequest.kt),
+With [`GetRequest`](../src/maryk/core/query/requests/GetRequest.kt),
 multiple specific objects can be queried by their [key](key.md).
 To select a subset of values in the query, use `select` with a [graph](reference-graphs.md).
 It is possible to filter the results with [filters](filters.md) or include soft-deleted results by
@@ -149,8 +149,8 @@ passing `filterSoftDeleted=false`.
 You can also view the objects at a certain version with `toVersion`
 if the store supports viewing past versions.
 
-When applied, it will deliver an [`ValuesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ValuesResponse.kt)
-with a list of [`ValuesWithMetaData`](../src/commonMain/kotlin/maryk/core/query/ValuesWithMetaData.kt)
+When applied, it will deliver an [`ValuesResponse`](../src/maryk/core/query/responses/ValuesResponse.kt)
+with a list of [`ValuesWithMetaData`](../src/maryk/core/query/ValuesWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion`, and `isDeleted`.
 
 **Example:**
@@ -187,7 +187,7 @@ val getRequest = Person.run {
 
 ### Scan
 
-With [`ScanRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanRequest.kt),
+With [`ScanRequest`](../src/maryk/core/query/requests/ScanRequest.kt),
 multiple objects can be queried by passing a `startKey` to scan from and filters on key parts to end it.
 To select a subset of values in the query, use `select` with a [graph](reference-graphs.md).
 It is possible to filter the results with [filters](filters.md), order, or limit the results (default= 100).
@@ -195,8 +195,8 @@ You can also include soft-deleted results by passing `filterSoftDeleted=false`.
 
 Additionally, you can view the objects at a certain version with `toVersion` if the store supports historical views.
 
-When applied, it will deliver an [`ValuesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ValuesResponse.kt)
-with a list of [`ValuesWithMetaData`](../src/commonMain/kotlin/maryk/core/query/ValuesWithMetaData.kt)
+When applied, it will deliver an [`ValuesResponse`](../src/maryk/core/query/responses/ValuesResponse.kt)
+with a list of [`ValuesWithMetaData`](../src/maryk/core/query/ValuesWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion`, and `isDeleted`.
 
 For pagination, pass `response.nextCursor` unchanged into the next scan. The opaque,
@@ -251,11 +251,11 @@ val scanRequest = Logs.run {
 
 ### Get/Scan Changes
 
-Use [`GetChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetChangesRequest.kt)
-and [`ScanChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanChangesRequest.kt)
+Use [`GetChangesRequest`](../src/maryk/core/query/requests/GetChangesRequest.kt)
+and [`ScanChangesRequest`](../src/maryk/core/query/requests/ScanChangesRequest.kt)
 to fetch versioned changes as stored in the data store, grouped per object.
 
-Response shape: a [`ChangesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ChangesResponse.kt)
+Response shape: a [`ChangesResponse`](../src/maryk/core/query/responses/ChangesResponse.kt)
 containing a list of `DataObjectVersionedChange` entries with the object `key`, optional `sortingKey` (for index scans),
 and a list of `VersionedChanges` items. Each `VersionedChanges` contains a `version` and a list of field-level changes
 at that version (for example: `ObjectCreate`, `Change`, `ObjectDelete`).
@@ -311,13 +311,13 @@ val scanRequest = Logs.scanChanges(
 ### Get/Scan Updates
 
 You can request updates on objects ordered by version with
-[`GetUpdatesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetUpdatesRequest.kt)
-or [`ScanUpdatesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanUpdatesRequest.kt).
+[`GetUpdatesRequest`](../src/maryk/core/query/requests/GetUpdatesRequest.kt)
+or [`ScanUpdatesRequest`](../src/maryk/core/query/requests/ScanUpdatesRequest.kt).
 `maxVersions` (default=1) can be used to control how many versions are returned
 at maximum. To return more than one version, the DataStore needs to have `keepAllVersions` set to `true`.
 
-When applied, it will deliver an [`UpdatesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/UpdatesResponse.kt)
-with a list of [`IsUpdatesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/updates/IsUpdateResponse.kt)
+When applied, it will deliver an [`UpdatesResponse`](../src/maryk/core/query/responses/UpdatesResponse.kt)
+with a list of [`IsUpdatesResponse`](../src/maryk/core/query/responses/updates/IsUpdateResponse.kt)
 which are either `AdditionUpdate`, `ChangeUpdate`, `RemovalUpdate`, and always starts with `OrderedKeysUpdate`,
 reflecting the initial ordering of keys.
 

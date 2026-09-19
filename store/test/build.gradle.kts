@@ -10,7 +10,7 @@ plugins {
 tasks.withType<Test>().configureEach {
     systemProperty(
         "maryk.store.test.commonMain",
-        layout.projectDirectory.dir("src/commonMain/kotlin/maryk/datastore/test").asFile.absolutePath,
+        layout.projectDirectory.dir("src/maryk/datastore/test").asFile.absolutePath,
     )
 }
 

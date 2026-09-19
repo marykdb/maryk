@@ -1,0 +1,14 @@
+tasks:
+  jvm:
+    action: !maryk.build.testFoundationDb
+      projectRoot: ${project.rootDir}
+      platform: jvm
+  native:
+    action: !maryk.build.testFoundationDb
+      projectRoot: ${project.rootDir}
+      platform: host
+commands:
+  - name: foundationdbJvmTest
+    performedBy: jvm
+  - name: foundationdbNativeTest
+    performedBy: native

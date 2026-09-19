@@ -4,11 +4,11 @@ A streaming YAML library written in Kotlin Multiplatform.
 
 ## Writing YAML
 
-The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) class provides methods for writing YAML constructions to the output.
+The [`YamlWriter`](src/maryk/yaml/YamlWriter.kt) class provides methods for writing YAML constructions to the output.
 
 ### Creating a Writer
 
-The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) constructor takes a single argument:
+The [`YamlWriter`](src/maryk/yaml/YamlWriter.kt) constructor takes a single argument:
  
 - `writer` - a function that consumes a `String` and adds it to the output.
 
@@ -25,7 +25,7 @@ var output = buildString {
 
 ### Writing with the YamlWriter
 
-The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) class has several methods for writing different YAML constructions:
+The [`YamlWriter`](src/maryk/yaml/YamlWriter.kt) class has several methods for writing different YAML constructions:
 
 Methods compatible with the [`JsonWriter`](../json/README.md) interface:
 
@@ -110,7 +110,7 @@ pets:
 
 ## Reading YAML
 
-You can read YAML values by constructing a [`YamlReader`](src/commonMain/kotlin/maryk/yaml/YamlReader.kt) object. 
+You can read YAML values by constructing a [`YamlReader`](src/maryk/yaml/YamlReader.kt) object.
 The YamlReader reads YAML elements represented by tokens. The `YamlReader` takes a reader function that returns one character at a time.
 This way, you can use any output stream implementation or string reader from any framework.
 

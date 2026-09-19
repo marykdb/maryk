@@ -1,0 +1,3 @@
+product: jvm/amper-plugin
+apply:
+  - ../common.module-template.yaml

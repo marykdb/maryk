@@ -1,0 +1,9 @@
+# Toolchain 0.12.2 only consumes production cinterop definitions. Isolate the
+# local linker paths in a test dependency so they never enter published modules.
+product:
+  type: kmp/lib
+  platforms: [linuxX64, linuxArm64, macosArm64, macosX64]
+apply:
+  - ../common.module-template.yaml
+plugins:
+  foundationdb-link: enabled

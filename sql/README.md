@@ -215,7 +215,7 @@ The CLI preserves SQL quotes and comments. For inline SQL beginning with a line 
 
 ## Development and conformance
 
-`sql/src/commonTest` covers parser, binding, values, relational semantics, execution, budgets, and write syntax. The unpublished `:sql:conformance` module supplies one contract to each datastore's tests, including guarded soft and hard deletes, undelete, native projection behavior, paging, exact aggregation, missing values, and historical reads. Remote runs the same contract through HTTP.
+`sql/test` covers parser, binding, values, relational semantics, execution, budgets, and write syntax. The unpublished `:sql:conformance` module supplies one contract to each datastore's tests, including guarded soft and hard deletes, undelete, native projection behavior, paging, exact aggregation, missing values, and historical reads. Remote runs the same contract through HTTP.
 
 ```bash
 ./gradlew :sql:jvmTest

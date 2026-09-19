@@ -149,9 +149,9 @@ export function rewriteLinks(md, prefix) {
     ['(../foundationdb/README.md)', withPrefix('stores/foundationdb/')],
     ['(./remote/README.md)', '(./remote/)'],
     // Map code links to GitHub full URLs (main branch)
-    ['(src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/)', '(https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/)'],
-    ['(src/commonMain/kotlin/maryk/datastore/foundationdb/processors/)', '(https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/)'],
-    ['(src/commonMain/kotlin/maryk/datastore/foundationdb/', '(https://github.com/marykdb/maryk/blob/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/'],
+    ['(src/maryk/datastore/foundationdb/processors/helpers/)', '(https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/maryk/datastore/foundationdb/processors/helpers/)'],
+    ['(src/maryk/datastore/foundationdb/processors/)', '(https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/maryk/datastore/foundationdb/processors/)'],
+    ['(src/maryk/datastore/foundationdb/', '(https://github.com/marykdb/maryk/blob/main/store/foundationdb/src/maryk/datastore/foundationdb/'],
     ['(../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     ['(../../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     ['(../../core/src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],

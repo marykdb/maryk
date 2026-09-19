@@ -4,7 +4,7 @@ A streaming JSON library written in Kotlin for Multiplatform usage
 
 ## Writing JSON
 
-The [`JsonWriter`](src/commonMain/kotlin/maryk/json/JsonWriter.kt) class provides an interface for constructing JSON data. It takes two properties:
+The [`JsonWriter`](src/maryk/json/JsonWriter.kt) class provides an interface for constructing JSON data. It takes two properties:
 
 - `pretty` - Default is `false`. If set to `true` the writer will add whitespace
   for easier readability.
@@ -21,7 +21,7 @@ var output = buildString {
 
 ### Writing with the JsonWriter
 
-The [`JsonWriter`](src/commonMain/kotlin/maryk/json/JsonWriter.kt) class has several 
+The [`JsonWriter`](src/maryk/json/JsonWriter.kt) class has several
 methods for writing different elements of a JSON document:
 
 - `writeStartObject()` - Writes a `{` character
@@ -73,7 +73,7 @@ The resulting JSON string will look like this:
 
 ## Reading JSON
 
-The [`JsonReader`](src/commonMain/kotlin/maryk/json/JsonReader.kt) class provides an interface for reading JSON data. 
+The [`JsonReader`](src/maryk/json/JsonReader.kt) class provides an interface for reading JSON data.
 It takes a single property, `reader`, which is a function that returns one character at a time. This allows the reader 
 to be used with any output stream implementation or string reader from any framework.
 
@@ -148,4 +148,4 @@ this, even if the skipped field contains complex nested arrays and objects.
 
 The `skipUntilNextField()` method takes a single argument, a function that will consume any skipped JSON tokens. 
 This function allows you to collect the skipped tokens and parse them later if needed. To do this, you can use a
-[`PresetJsonTokenReader`](src/commonMain/kotlin/maryk/json/PresetJsonTokenReader.kt).
+[`PresetJsonTokenReader`](src/maryk/json/PresetJsonTokenReader.kt).

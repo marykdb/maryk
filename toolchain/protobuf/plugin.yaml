@@ -1,0 +1,23 @@
+tasks:
+  provision:
+    action: !maryk.build.provisionProtoc
+      catalog: ${project.rootDir}/gradle/libs.versions.toml
+      verificationMetadata: ${project.rootDir}/gradle/verification-metadata.xml
+      bin: ${taskOutputDir}
+  generate:
+    action: !maryk.build.generateProto
+      bin: ${tasks.provision.action.bin}
+      sourceDir: ${module.rootDir}/src/test/proto
+      javaOutputDir: ${taskOutputDir}/java
+      resourceOutputDir: ${taskOutputDir}/resources
+
+generated:
+  sources:
+    - language: java
+      directory: ${tasks.generate.action.javaOutputDir}
+      fragment:
+        isTest: true
+  resources:
+    - directory: ${tasks.generate.action.resourceOutputDir}
+      fragment:
+        isTest: true

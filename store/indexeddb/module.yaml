@@ -1,0 +1,21 @@
+product:
+  type: kmp/lib
+  platforms: [js, wasmJs]
+
+apply:
+  - //toolchain/common.module-template.yaml
+  - //toolchain/publishing.module-template.yaml
+
+dependencies:
+  - //lib: exported
+  - //core: exported
+  - //store/shared: exported
+
+test-dependencies:
+  - //sql/conformance
+  - //testmodels
+  - //store/test
+
+settings:
+  publishing:
+    artifactId: maryk-indexeddb

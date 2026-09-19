@@ -16,10 +16,21 @@ The CLI supports interactive browsing and editing:
 Run the CLI from the project root:
 
 ```bash
-./gradlew :cli:runJvm
+./kotlin run -m cli-jvm
 ```
 
-For release builds on macOS, you can run:
+Build a standalone JVM executable JAR (Java 17 or newer required to run it):
+
+```bash
+./kotlin package -m cli-jvm
+java -jar build/tasks/_cli-jvm_executableJarJvm/cli-jvm-jvm-executable.jar
+```
+
+The package includes RocksDB's JVM dependency. FoundationDB connections still
+require the FoundationDB client library and cluster configuration. Gradle's
+`./gradlew :cli:runJvm` command remains available.
+
+For native release builds on macOS, use Gradle:
 
 ```bash
 ./gradlew :cli:runReleaseExecutableMacosArm64
@@ -70,7 +81,7 @@ Keep the Maryk server loopback-bound behind TLS termination or use SSH tunneling
 
 - Commands are registered through `CommandRegistry` and return structured output so the UI can render consistently.
 - The CLI uses a lightweight command line parser that supports quoted arguments, preparing the client for future commands like store connections and queries.
-- Tests live in `cli/src/commonTest/kotlin` and can be executed via `./gradlew :cli:jvmTest`.
+- Tests live in `cli/test` and `cli/test@jvm`. Run `./kotlin test -p jvm -m cli` or `./gradlew :cli:jvmTest`.
 
 ## Commands
 

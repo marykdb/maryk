@@ -1,0 +1,11 @@
+product: jvm/lib
+layout: maven-like
+apply:
+  - //toolchain/common.module-template.yaml
+plugins:
+  protobuf: enabled
+dependencies:
+  - //generator: exported
+test-dependencies:
+  - //testmodels
+  - $libs.protobuf.kotlin

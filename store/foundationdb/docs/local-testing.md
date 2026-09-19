@@ -1,11 +1,31 @@
 # Local Test Server
 
-This module can automatically install and run a local FoundationDB server for JVM tests.
+This module can automatically install and run a local FoundationDB server for JVM and host-native tests.
 
 - **Automatic test lifecycle:** macOS/Linux only. `scripts/run-fdb-for-tests.sh` starts `fdbserver` on `127.0.0.1:4500`, writes logs to `build/testdatastore/logs`, and PID to `build/testdatastore/fdbserver.pid`; `scripts/stop-fdb-for-tests.sh` stops that managed server and removes the test database directory.
 - **Windows:** unsupported for Maryk FoundationDB JVM tests. `scripts/install-foundationdb.ps1` exits intentionally because the required release artifacts and checksums are not pinned. Do not use it as an installer; use macOS/Linux for the managed local test lifecycle.
 - **Install location:** Binaries are placed under `store/foundationdb/bin` and native libs under `store/foundationdb/bin/lib`.
-  The Gradle JVM test task sets `java.library.path` and `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH` to this location.
+  The managed test commands set `java.library.path` and `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH` to this location.
+
+### Kotlin Toolchain Integration
+
+Run from the repository root:
+
+```bash
+./kotlin do foundationdbJvmTest -m foundationdb
+./kotlin do foundationdbNativeTest -m foundationdb
+```
+
+Both commands provision the pinned binaries, hold the same file lock used by
+Gradle, reset the test database, wait for readiness, and stop the server after
+the suite. The native command chooses the current macOS/Linux architecture and
+supplies the native client linker paths through generated test bindings.
+Cleanup runs on success, test/startup failure, and normal process termination.
+Logs are retained after the run; the database data is removed.
+
+Exclude this module from direct aggregate runs with
+`./kotlin test -p jvm --exclude-module foundationdb`, then run its managed command.
+A direct `./kotlin test -m foundationdb` does not start a server.
 
 ### Gradle Integration
 

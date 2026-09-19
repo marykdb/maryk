@@ -182,7 +182,7 @@ Full migration operations guide: [Migrations](./migrations.md).
 
 ## Where to look in code
 
-- Data store: `store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/FoundationDBDataStore.kt`
-- Processors: `store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/…`
-- Helpers: `store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/…`
-- Tests: `store/foundationdb/src/commonTest/kotlin/maryk/datastore/foundationdb/FoundationDBDataStoreTest.kt` and shared test suite in `store/test/…`
+- Data store: `store/foundationdb/src/maryk/datastore/foundationdb/FoundationDBDataStore.kt`
+- Processors: `store/foundationdb/src/maryk/datastore/foundationdb/processors/…`
+- Helpers: `store/foundationdb/src/maryk/datastore/foundationdb/processors/helpers/…`
+- Tests: `store/foundationdb/test/maryk/datastore/foundationdb/FoundationDBDataStoreTest.kt` and shared test suite in `store/test/…`

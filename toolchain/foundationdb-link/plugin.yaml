@@ -1,0 +1,9 @@
+tasks:
+  nativeLink:
+    action: !maryk.build.prepareFoundationDbLink
+      projectRoot: ${project.rootDir}
+      defFile: ${taskOutputDir}/foundationdb-test.def
+
+generated:
+  cinteropDefinitions:
+    - defFile: ${tasks.nativeLink.action.defFile}

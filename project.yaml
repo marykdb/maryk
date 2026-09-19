@@ -1,0 +1,30 @@
+modules:
+  - cli
+  - core
+  - file
+  - generator
+  - generator/jvmTest
+  - json
+  - lib
+  - sql
+  - sql/conformance
+  - store/foundationdb
+  - store/indexeddb
+  - store/memory
+  - store/remote
+  - store/rocksdb
+  - store/shared
+  - store/test
+  - testlib
+  - testmodels
+  - toolchain/cli-jvm
+  - toolchain/foundationdb-link
+  - toolchain/foundationdb-native-test-support
+  - toolchain/foundationdb-tests
+  - toolchain/protobuf
+  - yaml
+
+plugins:
+  - ./toolchain/foundationdb-link
+  - ./toolchain/foundationdb-tests
+  - ./toolchain/protobuf

@@ -1,0 +1,18 @@
+settings:
+  publishing:
+    enabled: true
+    group: io.maryk
+    version: 0.13.0-SNAPSHOT
+    publishSources: true
+    pom:
+      name: Maryk
+      description: Kotlin Multiplatform data modeling and storage.
+      url: https://github.com/marykdb/maryk
+      scm: https://github.com/marykdb/maryk.git
+      developers:
+        - id: jurmous
+          name: Jurriaan Mous
+          url: https://github.com/jurmous/
+      licenses:
+        - name: The Apache License, Version 2.0
+          url: https://www.apache.org/licenses/LICENSE-2.0.txt

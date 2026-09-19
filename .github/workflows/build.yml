@@ -16,6 +16,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  kotlin-toolchain:
+    name: Kotlin Toolchain ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: JVM libraries and CLI
+            test_args: "-p jvm --exclude-module foundationdb"
+          - os: macos-latest
+            name: Native stores
+            test_args: "-p macosArm64 -m lib -m rocksdb"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      TZ: UTC
+      KOTLIN_NATIVE_BACKTRACE: full
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: zulu
+          java-version: 21
+      - name: Test selected modules
+        run: ./kotlin test ${{ matrix.test_args }}
+      - name: Test managed FoundationDB JVM suite
+        if: runner.os == 'Linux'
+        run: ./kotlin do foundationdbJvmTest -m foundationdb
+      - name: Test managed FoundationDB native suite
+        if: runner.os == 'macOS'
+        run: ./kotlin do foundationdbNativeTest -m foundationdb
+      - name: Package and smoke-test JVM CLI
+        if: runner.os == 'Linux'
+        run: |
+          ./kotlin package -m cli-jvm
+          java -jar build/tasks/_cli-jvm_executableJarJvm/cli-jvm-jvm-executable.jar --connect rocksdb --dir "$RUNNER_TEMP/maryk-cli-smoke" --exec list
+      - name: Compile web libraries
+        if: runner.os == 'Linux'
+        run: ./kotlin build -p js -p wasmJs -m indexeddb
+
   publish-provenance-check:
     name: Publish workflow provenance check
     runs-on: ubuntu-latest
@@ -40,8 +81,8 @@ jobs:
             gradle_task: "macosX64Test"
             job_name: macOS Apple Intel tests
           - os: ubuntu-latest
-            gradle_task: linuxX64Test compileKotlinLinuxArm64 jvmTest :generator:jvmTest:test :generator:gradle-plugin:validatePlugins :generator:gradle-plugin:test
-            job_name: Linux JVM/JS tests
+            gradle_task: linuxX64Test compileKotlinLinuxArm64 :app:jvmTest :generator:gradle-plugin:validatePlugins :generator:gradle-plugin:test
+            job_name: Linux native and Gradle integration
           - os: windows-latest
             gradle_task: mingwX64Test :core:jvmTest
             job_name: Windows MinGW tests

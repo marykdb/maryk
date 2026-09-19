@@ -152,7 +152,7 @@ Notes:
 
 ## Testing
 
-The `store/test` module contains a reusable test suite that the RocksDB store runs in `commonTest`. It covers adds/changes/deletes, uniques, indexes, scans, and historic queries. See `RocksDBDataStoreTest.kt` and related tests in `src/commonTest`.
+The `store/test` module contains a reusable test suite that the RocksDB store runs in `commonTest`. It covers adds/changes/deletes, uniques, indexes, scans, and historic queries. See `RocksDBDataStoreTest.kt` and related tests in `test`.
 
 ## File Map (selected)
 

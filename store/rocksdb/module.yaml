@@ -1,0 +1,31 @@
+product:
+  type: kmp/lib
+  platforms: [jvm, android, linuxX64, linuxArm64, mingwX64, iosArm64, iosSimulatorArm64, macosArm64, macosX64, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, tvosArm64, tvosSimulatorArm64, androidNativeArm32, androidNativeArm64, androidNativeX86, androidNativeX64]
+
+apply:
+  - //toolchain/common.module-template.yaml
+  - //toolchain/publishing.module-template.yaml
+
+dependencies:
+  - $libs.maryk.rocksdb.multiplatform: exported
+  - //lib: exported
+  - //core: exported
+  - //store/shared: exported
+  - //file: exported
+
+test-dependencies:
+  - //sql/conformance
+  - //testmodels
+  - //store/test
+
+settings:
+  publishing:
+    artifactId: maryk-rocksdb
+  android:
+    namespace: io.maryk
+    compileSdk: 36
+    minSdk: 21
+
+settings@mingwX64:
+  kotlin:
+    linkerOptions: [-lrpcrt4]

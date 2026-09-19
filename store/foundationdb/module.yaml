@@ -1,0 +1,36 @@
+product:
+  type: kmp/lib
+  platforms: [jvm, linuxX64, linuxArm64, macosArm64, macosX64]
+
+apply:
+  - //toolchain/common.module-template.yaml
+  - //toolchain/publishing.module-template.yaml
+
+dependencies:
+  - //lib: exported
+  - //core: exported
+  - //store/shared: exported
+  - $libs.maryk.foundationdb.multiplatform: exported
+
+test-dependencies:
+  - //sql/conformance
+  - //testmodels
+  - //store/test
+
+settings:
+  publishing:
+    artifactId: maryk-foundationdb
+
+plugins:
+  foundationdb-tests: enabled
+
+test-settings@jvm:
+  jvm:
+    test:
+      freeJvmArgs:
+        - --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+        - --add-opens=java.base/java.lang=ALL-UNNAMED
+        - -Djava.library.path=bin/lib
+
+test-dependencies@native:
+  - //toolchain/foundationdb-native-test-support

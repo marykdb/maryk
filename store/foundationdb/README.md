@@ -202,9 +202,9 @@ Observability:
 You can run the tests locally using the local FDB server. See [Local Testing](./docs/local-testing.md) for more details.
 
 Relevant code:
-- Entry: [FoundationDBDataStore.kt](src/commonMain/kotlin/maryk/datastore/foundationdb/FoundationDBDataStore.kt)
-- Processors: [processors](src/commonMain/kotlin/maryk/datastore/foundationdb/processors/)
-- Helpers: [processor helpers](src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/)
+- Entry: [FoundationDBDataStore.kt](src/maryk/datastore/foundationdb/FoundationDBDataStore.kt)
+- Processors: [processors](src/maryk/datastore/foundationdb/processors/)
+- Helpers: [processor helpers](src/maryk/datastore/foundationdb/processors/helpers/)
 
 Run module tests:
 ```bash

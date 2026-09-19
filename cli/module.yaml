@@ -1,0 +1,16 @@
+product:
+  type: kmp/lib
+  platforms: [jvm, linuxX64, macosArm64, macosX64]
+apply:
+  - //toolchain/common.module-template.yaml
+dependencies:
+  - $libs.kotter
+  - //file
+  - //generator
+  - //sql
+  - //store/rocksdb
+  - //store/foundationdb
+  - //store/remote
+  - $libs.kotlinx.coroutines.core
+test-dependencies:
+  - //testmodels

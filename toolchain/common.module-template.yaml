@@ -1,0 +1,23 @@
+settings:
+  kotlin:
+    version: 2.4.20
+    languageVersion: 2.4
+    apiVersion: 2.4
+    allWarningsAsErrors: true
+    freeCompilerArgs: [-progressive, -Xconsistent-data-class-copy-visibility]
+  jvm:
+    jdk:
+      version: 21
+    release: 17
+
+# 0.12.2 passes deprecated Kotlin 2.4 compiler flags on web targets. Keep
+# source warnings visible; the retained Gradle web checks still enforce Werror.
+settings@web:
+  kotlin:
+    allWarningsAsErrors: false
+
+# Kotlin 2.4 reports macOS Intel target deprecation as a native argument warning.
+# Keep it visible, while retaining -Werror for source diagnostics.
+settings@macosX64:
+  kotlin:
+    freeCompilerArgs: [-Xwarning-level=KONAN_ARGUMENT_STRONG_WARNING:warning]

@@ -104,9 +104,26 @@ See [store/README.md](store/README.md) for the decision guide.
 
 ## Repository Development
 
-Requires JDK 21. Confirm with `java -version` before running Gradle.
+The libraries and JVM CLI can be built with Kotlin Toolchain 0.12.2. Its checked-in
+`kotlin` / `kotlin.bat` wrappers provision the runtime and JDK automatically.
+The build pins Kotlin 2.4.20 and uses JDK 21 with Java 17 compatibility.
 
-Useful commands:
+```bash
+./kotlin build -p jvm
+./kotlin test -p jvm --exclude-module foundationdb
+./kotlin test -p jvm -m memory
+./kotlin do foundationdbJvmTest -m foundationdb
+./kotlin package -m cli-jvm
+```
+
+This is a staged migration: Gradle currently covers web tests, Android
+verification, the generator Gradle plugin, the remaining native platform matrix,
+native CLI/desktop packaging, and release publishing. FoundationDB orchestration,
+Protobuf interoperability, and JVM CLI tests/packaging also run through the toolchain.
+Both builds use the same sources. See [toolchain development](toolchain/README.md)
+for the source layout, supported commands, and remaining gaps.
+
+Gradle requires JDK 21. Existing commands remain available:
 
 ```bash
 ./gradlew jvmTest

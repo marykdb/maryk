@@ -23,6 +23,21 @@ plugins {
 kotlin {
     jvmToolchain(21)
 
+    // During the toolchain migration both builds consume the same source files.
+    if (file("module.yaml").isFile) {
+        sourceSets.configureEach {
+            val isTest = name.endsWith("Test")
+            val platform = name.removeSuffix(if (isTest) "Test" else "Main")
+            val qualifier = when (platform) {
+                "common" -> ""
+                "androidHost" -> "@android"
+                else -> "@$platform"
+            }
+            kotlin.setSrcDirs(listOf("${if (isTest) "test" else "src"}$qualifier"))
+            resources.setSrcDirs(listOf("${if (isTest) "testResources" else "resources"}$qualifier"))
+        }
+    }
+
     compilerOptions {
         apiVersion = KOTLIN_2_4
         languageVersion = KOTLIN_2_4

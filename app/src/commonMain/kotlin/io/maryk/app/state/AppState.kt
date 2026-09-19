@@ -95,6 +95,13 @@ class BrowserState(
     private val connector: StoreConnector,
     private val scope: CoroutineScope,
 ) {
+    val sqlConsole = SqlConsoleState(scope)
+
+    fun runSql(parameterCount: Int, explain: Boolean = false) {
+        if (timeTravelEnabled && timeTravelVersion == null) return
+        sqlConsole.run(parameterCount, explain, if (timeTravelEnabled) timeTravelVersion else null)
+    }
+
     var activeConnection by mutableStateOf<StoreConnection?>(null)
         private set
 
@@ -262,8 +269,10 @@ class BrowserState(
                     isWorking = false
                 }
                 is ConnectResult.Success -> {
+                    sqlConsole.detach()
                     val closeFailure = runCatchingNonFatal { activeConnection?.close() }.exceptionOrNull()
                     activeConnection = result.connection
+                    sqlConsole.attach(result.connection.dataStore)
                     unclaimedConnection = null
                     models = collectModels(result.connection.dataStore)
                     refreshModelCounts(result.connection.dataStore)
@@ -299,6 +308,7 @@ class BrowserState(
     }
 
     fun disconnect() {
+        sqlConsole.detach()
         connectJob?.cancel()
         connectJob = null
         modelCountJob?.cancel()

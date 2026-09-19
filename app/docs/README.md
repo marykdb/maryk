@@ -34,6 +34,44 @@ From repo root:
 7. Edit with the form.
 8. Save and verify in History tab.
 
+## SQL queries and writes
+
+Open a store and optionally select a model in the catalog. Click **SQL** beside the
+time-travel button to open a separate modal. Click **Use selected model** to start a
+bounded query for that model, or type SQL directly.
+The editor highlights keywords, functions, strings, numbers, comments, and parameters.
+
+- Suggestions include tables, scalar columns, table aliases, keywords, and supported
+  functions. Type a prefix or an alias followed by a dot; **Ctrl+Space** also opens
+  suggestions. Use **Up/Down** to choose, **Tab/Enter** to insert, and **Escape** to dismiss.
+- **Ctrl+Enter** or **⌘+Enter** runs the statement. **Cancel** stops the current execution.
+- **Parameters** exposes one typed input per `?`, ignoring question marks inside strings
+  and comments. Read queries infer initial types where possible; select a type explicitly
+  for writes or unconstrained parameters. Choose `NULL` for SQL null, and `TEXT` for encoded
+  keys or enum names. Text values are supplied directly, without SQL quotes.
+- **Explain** shows the prepared read plan without executing it. Results show column names
+  and types; **Copy TSV** copies the full displayed result with escaped tabs and newlines.
+  SQL `NULL` is distinct from the string `'NULL'`.
+- Completion statistics show requests, fetched rows, expression work, buffer use, and the
+  snapshot version when applicable. On failure or cancellation, displayed rows are explicitly
+  marked as partial. Syntax errors link to their editor position.
+- **Snapshot** uses a retained-history snapshot when the connected store supports it.
+  The browser's time-travel controls also apply to SQL reads. **Include deleted** exposes
+  soft-deleted rows.
+
+Queries are bounded to 10,000 rows, 4 MiB of SQL intermediate data, a separate 4 MiB of
+displayed results, and 30 seconds. Exceeding a limit reports an error rather than silently
+truncating the query. Closing the modal cancels execution while preserving its draft and
+results for reopening. Disconnecting the store clears connection-specific results.
+
+Turn on **Enable writes** to run `INSERT`, `UPDATE`, `DELETE`, `UNDELETE`, or `DELETE HARD`.
+Updates and deletes require a single-key predicate and use version guards. Writes cannot
+run with time travel, snapshot, or include-deleted read options. Multi-row inserts can
+partly succeed; inspect the affected-row count and failures. Cancellation does not roll
+back writes. Close the SQL modal and reload the record browser to view changed data.
+
+See [SQL](../../sql/README.md) for the supported language, types, and consistency guarantees.
+
 ## Store types
 
 - RocksDB:

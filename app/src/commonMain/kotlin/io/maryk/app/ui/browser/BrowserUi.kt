@@ -70,6 +70,7 @@ import io.maryk.app.ui.ModalSecondaryButton
 import io.maryk.app.ui.catalog.CatalogDrawer
 import io.maryk.app.ui.handPointer
 import io.maryk.app.ui.horizontalResizeCursor
+import io.maryk.app.ui.sql.SqlConsoleDialog
 
 @Composable
 fun Browser(
@@ -82,6 +83,7 @@ fun Browser(
     var appliedLastModel by remember(scopeKey) { mutableStateOf(false) }
     var leftPanelWidth by remember { mutableStateOf(280.dp) }
     var rightPanelWidth by remember { mutableStateOf(360.dp) }
+    var showSql by remember(scopeKey) { mutableStateOf(false) }
 
     LaunchedEffect(scopeKey, state.models) {
         if (scopeKey == null) {
@@ -121,6 +123,7 @@ fun Browser(
         uiState = uiState,
         onToggleCatalog = { uiState.toggleCatalog() },
         onToggleInspector = { uiState.toggleInspector() },
+        onOpenSql = { showSql = true },
         content = {
             Box(
                 modifier = Modifier
@@ -216,6 +219,10 @@ fun Browser(
         },
         bottomBar = {},
     )
+
+    if (showSql) {
+        SqlConsoleDialog(state, onDismiss = { state.sqlConsole.cancel(); showSql = false })
+    }
 
     state.exportDialog?.let { request ->
         ExportFormatDialog(

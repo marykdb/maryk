@@ -8,6 +8,7 @@ Built with Compose Multiplatform.
 - Store manager (RocksDB / FoundationDB / Remote).
 - Model catalog + schema inspection.
 - Record scan/filter/sort + pinned columns.
+- SQL modal with highlighting, catalog autocomplete, typed parameters, results, and guarded writes.
 - Record inspector (data tree, YAML, history/diff).
 - Typed form editor.
 - Schema export plus data import/export.

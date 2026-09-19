@@ -223,6 +223,13 @@ Parsing also bounds SQL text, token count, nesting, parameters, and numeric prec
 
 Inspect `SqlExecutionSummary` for completion status, fetched/result rows, store requests, expression steps, buffer accounting, the snapshot boundary, and errors. `EXPLAIN ANALYZE` executes the query and reports actual counters.
 
+## Desktop app
+
+The desktop store browser also exposes a **SQL** button beside time travel. It opens
+a separate modal with syntax highlighting,
+catalog and alias completion, typed parameter inputs, Run/Cancel, Explain, results,
+and explicit write mode. See the [app guide](../app/docs/README.md#sql-queries-and-writes).
+
 ## CLI
 
 On a connected CLI store:

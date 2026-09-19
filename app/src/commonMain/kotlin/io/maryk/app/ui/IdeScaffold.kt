@@ -35,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
@@ -74,6 +75,7 @@ fun AppScaffold(
     uiState: BrowserUiState,
     onToggleCatalog: () -> Unit,
     onToggleInspector: () -> Unit,
+    onOpenSql: () -> Unit,
     content: @Composable () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
@@ -110,6 +112,9 @@ fun AppScaffold(
                     }
                     StoreChrome(state = state)
                     Spacer(modifier = Modifier.weight(1f))
+                    TextButton(onClick = onOpenSql, enabled = state.activeConnection != null, modifier = Modifier.handPointer()) {
+                        Text("SQL")
+                    }
                     IconButton(onClick = { state.toggleTimeTravel() }, modifier = Modifier.size(32.dp).handPointer()) {
                         Icon(
                             Icons.Default.History,

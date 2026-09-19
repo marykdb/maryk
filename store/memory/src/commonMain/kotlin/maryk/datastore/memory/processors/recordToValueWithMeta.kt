@@ -22,7 +22,7 @@ internal fun <DM : IsRootDataModel> DM.recordToValueWithMeta(
 ): ValuesWithMetaData<DM>? {
     if (toVersion != null && record.firstVersion > toVersion) return null
     var valueIndex = -1
-    var maxVersion = record.firstVersion
+    var maxVersion = if (select == null && toVersion == null) record.lastVersion else record.firstVersion
 
     val values = if (select != null && select.properties.isEmpty()) {
         // Don't read the values if no values are selected
@@ -56,20 +56,23 @@ internal fun <DM : IsRootDataModel> DM.recordToValueWithMeta(
                                 }
                                 latest.value
                             }
-                            is DeletedValue<*> -> null
+                            is DeletedValue<*> -> {
+                                if (latest.version > maxVersion) maxVersion = latest.version
+                                null
+                            }
                             else -> throw TypeException("Unknown value type")
                         }
                     }
-                    is DeletedValue<*> -> null
+                    is DeletedValue<*> -> {
+                        if ((toVersion == null || node.version <= toVersion) && node.version > maxVersion) maxVersion = node.version
+                        null
+                    }
                 }
             }
         )
     }
 
-    // A projection may contain only absent optional properties; the record still exists.
-    if (values.size == 0 && select == null) {
-        return null
-    }
+    // Record identity survives even when its last optional property has been removed.
     return ValuesWithMetaData(
         key = record.key,
         values = values,

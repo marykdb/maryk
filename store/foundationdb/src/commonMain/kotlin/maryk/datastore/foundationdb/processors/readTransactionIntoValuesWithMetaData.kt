@@ -72,6 +72,13 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
 
         checkExistence(iterator, prefixWithKeyRange)
 
+        // The current record marker contains the latest version, including property removals.
+        if (select == null) {
+            val marker = iterator.current.value
+            if (marker.size != VERSION_BYTE_SIZE) throw StorageException("Invalid stored latest version: ${marker.size} bytes")
+            maxVersion = maxOf(maxVersion, marker.readVersionBytes())
+        }
+
         // Will start by going to next key so will miss the creation timestamp
         val getQualifier = iterator.nonHistoricQualifierRetriever(prefixWithKeyRange)
 
@@ -229,10 +236,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         )
     }
 
-    // A projection may contain only absent optional properties; the record still exists.
-    if (values.size == 0 && select == null) {
-        return null
-    }
+    // The existence marker, rather than the presence of property values, identifies the row.
 
     return ValuesWithMetaData(
         key = key,

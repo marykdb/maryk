@@ -67,7 +67,12 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                 val currentVersion: ULong
                 when (storageType) {
                     ObjectDelete -> {
-                        if (iterator.key().last() == 0.toByte()) {
+                        if (select == null && iterator.key().last() == LAST_VERSION_INDICATOR) {
+                            val value = iterator.value()
+                            if (value.size != VERSION_BYTE_SIZE) throw StorageException("Invalid stored latest version: ${value.size} bytes")
+                            currentVersion = value.readVersionBytes()
+                            false
+                        } else if (iterator.key().last() == 0.toByte()) {
                             val value = iterator.value()
                             if (value.size == VERSION_BYTE_SIZE + 1) {
                                 currentVersion = maxOf(value.readVersionBytes(), maxVersion)
@@ -234,10 +239,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         )
     }
 
-    // A projection may contain only absent optional properties; the record still exists.
-    if (values.size == 0 && select == null) {
-        return null
-    }
+    // The existence marker, rather than the presence of property values, identifies the row.
 
     return ValuesWithMetaData(
         key = key,

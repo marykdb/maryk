@@ -148,7 +148,11 @@ class HistoricMalformedQualifierTraversalTest {
                 )
             )
 
-            assertEquals(0, response.values.size)
+            // A deleted optional value is absent, but the record's existence marker remains.
+            val record = response.values.single()
+            assertEquals(addStatus.key, record.key)
+            assertEquals(0, record.values.size)
+            assertEquals(addStatus.version, record.lastVersion)
 
             dataStore.close()
         } finally {

@@ -180,11 +180,11 @@ install_macos() {
 
 install_linux_from_deb() {
   local arch
-  arch="$(uname -m)"
+  arch="${FDB_TARGET_ARCH:-$(uname -m)}"
   local deb_arch
   case "$arch" in
-    x86_64|amd64) deb_arch="amd64";;
-    aarch64|arm64) deb_arch="aarch64";;
+    x86_64|amd64|x64) deb_arch="amd64";;
+    aarch64|arm64|arm64-v8a) deb_arch="aarch64";;
     *) err "Unsupported Linux arch: $arch";;
   esac
 

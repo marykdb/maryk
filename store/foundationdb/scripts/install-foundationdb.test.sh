@@ -101,6 +101,16 @@ grep -Fq 'Checksum mismatch' <<< "$output" || {
   exit 1
 }
 
+if output="$(FDB_TARGET_ARCH=arm64 FAKE_UNAME_OS=Linux FAKE_UNAME_ARCH=x86_64 PATH="$FAKE_BIN:/usr/bin:/bin" bash "$PATH_SCRIPTS/install-foundationdb.sh" 2>&1)"; then
+  echo "Expected the cross-target ARM64 artifact to fail checksum verification in the fixture." >&2
+  exit 1
+fi
+grep -Fq 'foundationdb-clients_7.3.79-1_aarch64.deb' <<< "$output" || {
+  echo "Expected FDB_TARGET_ARCH=arm64 to select the ARM64 FoundationDB package, got:" >&2
+  echo "$output" >&2
+  exit 1
+}
+
 while read -r artifact expected; do
   actual="$(bash -c 'source "$1"; pinned_sha256 "$2"' _ "$INSTALLER" "$artifact")"
   [[ "$actual" == "$expected" ]] || {

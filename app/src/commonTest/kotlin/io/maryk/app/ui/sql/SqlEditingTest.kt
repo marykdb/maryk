@@ -46,6 +46,17 @@ class SqlEditingTest {
         assertEquals("SELECT \"nickname\" FROM Person", applySqlCompletion(text, suggestion).first)
     }
 
+    @Test fun selfJoinColumnsKeepBothSourceAliases() {
+        val text = "SELECT na FROM Person a JOIN Person b ON a.__key = b.__key"
+        val completions = sqlCompletions(text, text.indexOf(" FROM"), catalog)
+        assertEquals(setOf("\"a\".\"name\"", "\"b\".\"name\""), completions.map { it.insertion }.toSet())
+        for (alias in listOf("a", "b")) {
+            val qualified = text.replace("SELECT na", "SELECT $alias.na")
+            val completion = sqlCompletions(qualified, qualified.indexOf(" FROM"), catalog).single()
+            assertEquals("\"name\"", completion.insertion)
+        }
+    }
+
     @Test fun noSuggestionsInsideStringsOrCommentsAndExplicitEmptyPrefixWorks() {
         for (text in listOf("SELECT 'na", "SELECT 1 -- na", "SELECT /* na")) {
             assertTrue(sqlCompletions(text, text.length, catalog, explicit = true).isEmpty())

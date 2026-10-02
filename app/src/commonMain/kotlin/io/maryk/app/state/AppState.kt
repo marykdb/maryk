@@ -553,6 +553,7 @@ class BrowserState(
 
     fun updateTimeTravelEnabled(enabled: Boolean) {
         if (timeTravelEnabled == enabled) return
+        if (enabled) sqlConsole.writeMode = false
         timeTravelEnabled = enabled
         invalidateRecordLoadRequests()
         if (enabled && timeTravelDate.isBlank() && timeTravelTime.isBlank()) {

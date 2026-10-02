@@ -87,7 +87,7 @@ internal fun sqlCompletions(text: String, caret: Int, catalog: SqlCatalog?, expl
     if (!explicit && prefix.isEmpty() && before.lastOrNull()?.text != ".") return emptyList()
     val tables = catalog?.tables.orEmpty()
     val aliases = mutableMapOf<String, SqlTable>()
-    val sourceNames = mutableMapOf<SqlTable, String>()
+    val sources = mutableListOf<Pair<SqlTable, String>>()
     for (index in tokens.indices) {
         if (tokens[index].style != SqlTokenStyle.KEYWORD || tokens[index].text.uppercase() !in setOf("FROM", "JOIN", "UPDATE", "INTO")) continue
         val name = tokens.getOrNull(index + 1) ?: continue
@@ -100,29 +100,30 @@ internal fun sqlCompletions(text: String, caret: Int, catalog: SqlCatalog?, expl
         val alias = tokens.getOrNull(after)?.takeIf { it.style in setOf(SqlTokenStyle.WORD, SqlTokenStyle.IDENTIFIER) }?.name()
         val qualifier = alias ?: table.name
         aliases[qualifier.lowercase()] = table
-        sourceNames[table] = qualifier
+        sources += table to qualifier
     }
     val result = mutableListOf<SqlCompletion>()
     fun add(label: String, insertion: String, detail: String) {
         if (label.startsWith(prefix, ignoreCase = true)) result += SqlCompletion(label, insertion, detail, start, end)
     }
-    fun columns(table: SqlTable, qualified: Boolean) {
+    fun columns(table: SqlTable, qualifier: String? = null) {
         table.columns.filter { it.type != SqlType.ANY }.forEach { column ->
             val path = column.name.split('.').joinToString(".", transform = ::sqlIdentifier)
-            val insertion = if (qualified) "${sqlIdentifier(sourceNames[table] ?: table.name)}.$path" else path
-            add(column.name, insertion, "${table.name} · ${column.type}${if (column.nullable) " · nullable" else ""}")
+            val insertion = if (qualifier != null) "${sqlIdentifier(qualifier)}.$path" else path
+            val source = qualifier?.let { "$it · ${table.name}" } ?: table.name
+            add(column.name, insertion, "$source · ${column.type}${if (column.nullable) " · nullable" else ""}")
         }
     }
     if (before.lastOrNull()?.text == ".") {
         val qualifier = before.getOrNull(before.lastIndex - 1)?.name().orEmpty()
         val table = aliases[qualifier.lowercase()] ?: tables.singleOrNull { it.name.equals(qualifier, true) }
-        if (table != null) columns(table, false)
+        if (table != null) columns(table)
         else tables.filter { it.schema.equals(qualifier, true) }.forEach { add(it.name, sqlIdentifier(it.name), "Table · ${it.schema}") }
     } else if (before.lastOrNull()?.text?.uppercase() in setOf("FROM", "JOIN", "INTO", "UPDATE")) {
         tables.forEach { add(it.name, sqlTableName(it), "Table · ${it.schema}") }
     } else {
-        val referenced = sourceNames.keys.toList()
-        (referenced.ifEmpty { tables }).forEach { columns(it, referenced.size > 1) }
+        if (sources.isEmpty()) tables.forEach { columns(it) }
+        else sources.forEach { (table, qualifier) -> columns(table, qualifier.takeIf { sources.size > 1 }) }
         keywords.forEach { add(it, it, "Keyword") }
         functions.forEach { add(it, "$it(", "Function") }
         tables.forEach { add(it.name, sqlTableName(it), "Table · ${it.schema}") }

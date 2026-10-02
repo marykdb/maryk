@@ -1,6 +1,7 @@
 package io.maryk.app.state
 
 import androidx.compose.ui.text.input.TextFieldValue
+import io.maryk.app.config.StoreConnector
 import io.maryk.app.ui.sql.sqlResultsTsv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -33,6 +34,19 @@ private object ConsoleItem : RootDataModel<ConsoleItem>(keyDefinition = { Consol
 class SqlConsoleStateTest {
     private suspend fun SqlConsoleState.finished() = withTimeout(5000) { while (running) yield() }
 
+    @Test fun enteringTimeTravelClearsPersistedWriteMode() = runBlocking {
+        val browser = BrowserState(StoreConnector(), this)
+        browser.sqlConsole.editor = TextFieldValue("SELECT 1")
+        browser.sqlConsole.writeMode = true
+        browser.sqlConsole.cancel() // Closing the modal retains its draft and mode.
+        browser.updateTimeTravelEnabled(true)
+        assertTrue(browser.timeTravelEnabled)
+        assertFalse(browser.sqlConsole.writeMode)
+        assertEquals("SELECT 1", browser.sqlConsole.editor.text)
+        browser.updateTimeTravelEnabled(false)
+        assertFalse(browser.sqlConsole.writeMode)
+    }
+
     @Test fun readsWritesParametersAndErrorsAreVisible() = runBlocking {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to ConsoleItem))
         val state = SqlConsoleState(this)
@@ -61,6 +75,17 @@ class SqlConsoleStateTest {
             assertNotNull(state.errorPosition)
             state.selectError()
             assertEquals(state.errorPosition, state.editor.selection.start)
+        } finally { state.detach(); store.close() }
+    }
+
+    @Test fun aggregateArithmeticInitializesFloatingParameters() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to ConsoleItem))
+        val state = SqlConsoleState(this)
+        try {
+            state.attach(store)
+            state.editor = TextFieldValue("SELECT SUM(?) + 1.0e0")
+            state.initializeParameters(1)
+            assertEquals(SqlParameterKind.FLOAT, state.parameters.single().kind)
         } finally { state.detach(); store.close() }
     }
 

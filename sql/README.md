@@ -176,6 +176,8 @@ Text ordering uses Kotlin's ordinal UTF-16 comparison. `LIKE` and substring char
 
 Query operands are not writes: a null parameter is legal against a required field, and comparisons outside a property's stored range remain meaningful. Native pushdown is used only when conversion preserves the SQL predicate; remaining predicates execute locally. Text range comparisons stay local because UTF-8 store indexes can order Unicode characters differently from SQL's UTF-16 comparison. Text equality can still use indexes.
 
+Key `IN` lists containing only literals or parameters can use native key access. Computed candidates remain local so an earlier match can skip their evaluation. Native filters and hash joins also keep later predicates local when an earlier computed condition could fail; these queries may require an allowed table scan.
+
 Floating-point comparisons against zero also stay local, preserving SQL equality between positive and negative zero across stores.
 
 ## Consistency and storage engines

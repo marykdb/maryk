@@ -62,6 +62,19 @@ internal fun domainValue(value: SqlValue, column: CatalogColumn, code: SqlErrorC
 internal data class NativeAccess(val keyExpressions: List<SqlExpr>?, val filters: List<NativePredicate>)
 internal data class NativePredicate(val column: CatalogColumn, val operator: String, val expression: SqlExpr)
 
+// Optimized filters and joins must not discard rows before an earlier computed
+// predicate can report its error. Bound scalar comparisons and boolean tests are safe.
+internal fun isSafeToReorder(expression: SqlExpr): Boolean = when (expression) {
+    is SqlExpr.Literal, is SqlExpr.Parameter, is SqlExpr.Column -> true
+    is SqlExpr.Binary -> expression.operator in setOf("AND", "OR", "=", "!=", "<>", "<", "<=", ">", ">=", "IS DISTINCT FROM", "IS NOT DISTINCT FROM") &&
+        isSafeToReorder(expression.left) && isSafeToReorder(expression.right)
+    is SqlExpr.Unary -> expression.operator == "NOT" && isSafeToReorder(expression.operand)
+    is SqlExpr.Is -> isSafeToReorder(expression.operand)
+    is SqlExpr.In -> isSafeToReorder(expression.operand) && expression.values.all(::isSafeToReorder)
+    is SqlExpr.Between -> isSafeToReorder(expression.operand) && isSafeToReorder(expression.lower) && isSafeToReorder(expression.upper)
+    else -> false
+}
+
 /** Only conjunctions imply individual predicates. OR, NOT and nullable tests remain local. */
 internal fun nativeAccess(plan: BoundQuery, source: BoundSource): NativeAccess {
     var keys: List<SqlExpr>? = null
@@ -74,12 +87,14 @@ internal fun nativeAccess(plan: BoundQuery, source: BoundSource): NativeAccess {
             visit(expression.left, conditional)
             // Computed operands may fail. Keep them in the residual predicate if a
             // preceding AND branch can skip them; literals and parameters stay indexable.
-            visit(expression.right, conditional = true)
+            if (isSafeToReorder(expression.left)) visit(expression.right, conditional = true)
             return
         }
         if (expression is SqlExpr.In && !expression.negated) {
             val column = (expression.operand as? SqlExpr.Column)?.let { plan.references[it] }
-            if (column?.sourceId == source.id && column.isKey && column.outputIndex == null && expression.values.all { constant(it, conditional) }) keys = expression.values
+            // IN stops at its first match, so every later candidate is conditional
+            // even when the IN expression itself is the first WHERE predicate.
+            if (column?.sourceId == source.id && column.isKey && column.outputIndex == null && expression.values.all { constant(it, conditional = true) }) keys = expression.values
         }
         if (expression !is SqlExpr.Binary || expression.operator !in setOf("=", "<", "<=", ">", ">=")) return
         val left = (expression.left as? SqlExpr.Column)?.let { plan.references[it] }

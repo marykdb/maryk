@@ -353,7 +353,11 @@ internal class SqlRuntime(
             rightRows += rows
             val pairs = mutableListOf<Pair<CatalogColumn, CatalogColumn>>()
             fun equi(expression: SqlExpr) {
-                if (expression is SqlExpr.Binary && expression.operator == "AND") { equi(expression.left); equi(expression.right) }
+                if (expression is SqlExpr.Binary && expression.operator == "AND") {
+                    equi(expression.left)
+                    if (isSafeToReorder(expression.left)) equi(expression.right)
+                    return
+                }
                 if (expression is SqlExpr.Binary && expression.operator == "=") {
                     val l = (expression.left as? SqlExpr.Column)?.let { plan.references[it] }
                     val r = (expression.right as? SqlExpr.Column)?.let { plan.references[it] }

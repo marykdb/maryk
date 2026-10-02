@@ -63,6 +63,38 @@ class SqlExecutionRegressionTest {
         }
     } }
 
+    @Test fun nativeKeyInKeepsLaterCandidatesLazy() = sqlTest { withSql { sql ->
+        sql.execute("INSERT INTO SqlTestModel (id) VALUES (1)")
+        val key = sql.query("SELECT __key FROM SqlTestModel").rows.single()[0]
+        val statement = "SELECT id FROM SqlTestModel WHERE __key IN (?, CASE WHEN 1 / 0 = 0 THEN ? ELSE NULL END)"
+        assertEquals(SqlValue.UInt64(1u), sql.query(statement, listOf(key, key)).rows.single()[0])
+        assertEquals(SqlErrorCode.ARITHMETIC, assertFailsWith<SqlException> {
+            sql.query(statement, listOf(SqlValue.Null, key))
+        }.code)
+        val indexed = MarykSql.create(sql.dataStore)
+        assertEquals(SqlValue.UInt64(1u), indexed.query("SELECT id FROM SqlTestModel WHERE __key IN (?, ?)", listOf(key, SqlValue.Null)).rows.single()[0])
+    } }
+
+    @Test fun nativeFiltersDoNotHideEarlierArithmeticErrors() = sqlTest { withSql { sql ->
+        sql.execute("INSERT INTO SqlTestModel (id) VALUES (1)")
+        assertEquals(SqlErrorCode.ARITHMETIC, assertFailsWith<SqlException> {
+            sql.query("SELECT id FROM SqlTestModel WHERE id / 0 > 0 AND id = 99")
+        }.code)
+    } }
+
+    @Test fun hashJoinsPreservePredicateErrorOrder() = sqlTest { withSql { sql ->
+        sql.execute("INSERT INTO SqlTestModel (id) VALUES (1)")
+        for (join in listOf("JOIN", "LEFT JOIN")) {
+            assertEquals(SqlErrorCode.ARITHMETIC, assertFailsWith<SqlException> {
+                sql.query("SELECT a.id FROM SqlTestModel a $join (VALUES (2)) b ON a.id / 0 > 0 AND a.id = b.column1")
+            }.code, join)
+        }
+        assertEquals(emptyList(), sql.query("SELECT a.id FROM SqlTestModel a JOIN (VALUES (2)) b ON a.id = b.column1 AND a.id / 0 > 0").rows)
+        assertEquals(SqlErrorCode.ARITHMETIC, assertFailsWith<SqlException> {
+            sql.query("SELECT a.id FROM SqlTestModel a JOIN (VALUES (1)) b ON a.id = b.column1 AND a.id / 0 > 0")
+        }.code)
+    } }
+
     @Test fun numericCategoryReachesAggregateParameters() = sqlTest { withSql { sql ->
         for (aggregate in listOf("SUM", "AVG", "MIN", "MAX")) {
             val prepared = sql.prepare("SELECT $aggregate(?) + 1.0e0")

@@ -781,6 +781,16 @@ private suspend fun ApplicationCall.authorizeRequestModels(
         )
     ) return false
 
+    // A ChangeRequest can contain a deletion (or creation). Apply the same semantic
+    // permissions as update ingestion, including requests unwrapped from Collect.
+    if (request is ChangeRequest<*>) {
+        val changeTypes = authorizationRequestTypes(request.objects.flatMap { it.changes })
+        for (changeType in changeTypes) {
+            if (changeType == requestType) continue
+            if (!authorize(config, principal, operation, changeType, primaryModelName, respondOnFailure)) return false
+        }
+    }
+
     val referencedModelNames = (request as? IsFetchRequest<*, *>)
         ?.let { fetchRequest ->
             fetchRequest.where?.referencedModelNames(fetchRequest.dataModel)

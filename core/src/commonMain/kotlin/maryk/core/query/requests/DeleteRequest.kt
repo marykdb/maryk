@@ -78,7 +78,7 @@ data class DeleteRequest<DM : IsRootDataModel> internal constructor(
             default = false
         )
 
-        val lastVersion by number(4u, DeleteRequest<*>::lastVersion, UInt64)
+        val lastVersion by number(4u, DeleteRequest<*>::lastVersion, UInt64, required = false)
 
         override fun invoke(values: ObjectValues<DeleteRequest<*>, Companion>) = DeleteRequest(
             dataModel = values(1u),

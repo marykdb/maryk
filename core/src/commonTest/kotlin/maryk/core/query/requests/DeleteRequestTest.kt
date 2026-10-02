@@ -55,6 +55,7 @@ class DeleteRequestTest {
     @Test
     fun guardedDeleteRoundTripsAcrossFormats() {
         val request = SimpleMarykModel.delete(deleteRequest.keys.first(), hardDelete = true, lastVersion = 12345u)
+        DeleteRequest.validate(request)
         checkProtoBufConversion(request, DeleteRequest, { this.context })
         checkJsonConversion(request, DeleteRequest, { this.context })
         expect(
@@ -68,6 +69,12 @@ class DeleteRequestTest {
         ) {
             checkYamlConversion(request, DeleteRequest, { this.context })
         }
+    }
+
+    @Test
+    fun unguardedDeletesRemainValid() {
+        DeleteRequest.validate(deleteRequest)
+        DeleteRequest.validate(SimpleMarykModel.delete(deleteRequest.keys.first()))
     }
 
     @Test

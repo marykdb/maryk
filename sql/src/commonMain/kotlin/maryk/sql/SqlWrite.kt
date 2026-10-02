@@ -97,15 +97,14 @@ internal class SqlWriter(private val sql: MarykSql) {
         val selected = rows.single()
         val key = Key<IsRootDataModel>((selected[0] as SqlValue.Key).value.bytes)
         val version = (selected[1] as SqlValue.UInt64).value
-        if (mutation.kind == SqlMutationKind.HARD_DELETE) {
+        if (mutation.kind == SqlMutationKind.DELETE || mutation.kind == SqlMutationKind.HARD_DELETE) {
             budget.checkpoint()
             budget.request()
-            val response = sql.dataStore.execute(table.model.delete(key, hardDelete = true, lastVersion = version))
+            val response = sql.dataStore.execute(table.model.delete(key, hardDelete = mutation.kind == SqlMutationKind.HARD_DELETE, lastVersion = version))
             return SqlWriteResult(response.statuses.count { it is DeleteSuccess<*> }, response.statuses.filterNot { it is DeleteSuccess<*> }.map { it.toString() })
         }
         val change = when (mutation.kind) {
             SqlMutationKind.UPDATE -> Change(*assignments.mapIndexed { index, column -> pair(column, selected[index + 2]) }.toTypedArray())
-            SqlMutationKind.DELETE -> ObjectSoftDeleteChange(true)
             SqlMutationKind.UNDELETE -> ObjectSoftDeleteChange(false)
             else -> error("Unexpected mutation")
         }

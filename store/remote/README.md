@@ -72,6 +72,10 @@ Denied add/change/delete requests return an `AuthFail` status per input object.
 Denied reads and unsupported update shapes return HTTP 403. Authentication failures
 return HTTP 401.
 
+Change requests also require permission for their contents: soft deletion requires
+`Delete`, creation requires `Add`, and restoring a soft-deleted object requires
+`Change`. These checks also apply inside collected requests and execute batches.
+
 FoundationDB:
 
 ```text

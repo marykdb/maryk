@@ -77,7 +77,7 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.ObjectValues
 import maryk.datastore.shared.IsDataStore
-import maryk.datastore.shared.SnapshotVersionProvider
+import maryk.datastore.shared.ConditionalSnapshotVersionProvider
 import maryk.datastore.shared.migration.MigrationAdmin
 import maryk.datastore.shared.migration.MigrationAdminSnapshot
 import maryk.datastore.shared.rethrowIfFatal
@@ -121,7 +121,8 @@ class RemoteDataStore private constructor(
     override val keepUpdateHistoryIndex: Boolean,
     override val supportsFuzzyQualifierFiltering: Boolean,
     override val supportsSubReferenceFiltering: Boolean,
-) : IsDataStore, MigrationAdmin, SnapshotVersionProvider {
+    override val supportsSnapshotVersion: Boolean,
+) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider {
     private val definitionsMutex = Mutex()
     private val sshTunnelMutex = Mutex()
     private val lifecycleMutex = Mutex()
@@ -215,6 +216,7 @@ class RemoteDataStore private constructor(
                     keepUpdateHistoryIndex = infoResult.info.keepUpdateHistoryIndex,
                     supportsFuzzyQualifierFiltering = infoResult.info.supportsFuzzyQualifierFiltering,
                     supportsSubReferenceFiltering = infoResult.info.supportsSubReferenceFiltering,
+                    supportsSnapshotVersion = infoResult.info.supportsSnapshotVersion,
                 )
             } catch (error: Throwable) {
                 if (ownsClient) {

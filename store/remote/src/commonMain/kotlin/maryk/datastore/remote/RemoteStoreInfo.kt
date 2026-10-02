@@ -34,6 +34,7 @@ internal data class RemoteStoreInfo(
     val supportsFuzzyQualifierFiltering: Boolean,
     val supportsSubReferenceFiltering: Boolean,
     val keepUpdateHistoryIndex: Boolean = false,
+    val supportsSnapshotVersion: Boolean = false,
 ) {
     companion object : DefinitionModel<RemoteStoreInfo>() {
         val definitions by embedObject(
@@ -60,6 +61,11 @@ internal data class RemoteStoreInfo(
             getter = RemoteStoreInfo::keepUpdateHistoryIndex,
             default = false
         )
+        val supportsSnapshotVersion by boolean(
+            index = 7u,
+            getter = RemoteStoreInfo::supportsSnapshotVersion,
+            default = false,
+        )
 
         override fun invoke(values: ObjectValues<RemoteStoreInfo, IsObjectDataModel<RemoteStoreInfo>>) = RemoteStoreInfo(
             definitions = values(definitions.index),
@@ -68,6 +74,7 @@ internal data class RemoteStoreInfo(
             supportsFuzzyQualifierFiltering = values(supportsFuzzyQualifierFiltering.index),
             supportsSubReferenceFiltering = values(supportsSubReferenceFiltering.index),
             keepUpdateHistoryIndex = values(keepUpdateHistoryIndex.index),
+            supportsSnapshotVersion = values(supportsSnapshotVersion.index),
         )
     }
 }

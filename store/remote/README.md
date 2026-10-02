@@ -222,6 +222,11 @@ Remote client and server together before relying on that guarantee: a newer
 client intentionally fails closed when an older server lacks the endpoint rather
 than exporting pages from different points in time.
 
+The info response advertises `supportsSnapshotVersion` from the actual backend,
+separately from `keepAllVersions`. SQL historical reads require both capabilities.
+An older info response without this flag defaults to unsupported; upgrade both
+client and server to advertise historical SQL support.
+
 Remote execute protocol changes require a matched client and server deployment.
 Upgrade both together before using `X-Maryk-Execute-Protocol: 2` batches or
 relying on their framed response contract. Mixed protocol generations are not a

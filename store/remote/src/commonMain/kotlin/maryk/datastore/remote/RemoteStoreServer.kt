@@ -89,6 +89,7 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.ObjectValues
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.supportsSnapshotVersion
 import maryk.datastore.shared.captureSnapshotVersion
 import maryk.datastore.shared.migration.MigrationAdmin
 import maryk.datastore.shared.requireSafeUpdateVersion
@@ -1007,6 +1008,7 @@ private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
         keepUpdateHistoryIndex = dataStore.keepUpdateHistoryIndex,
         supportsFuzzyQualifierFiltering = dataStore.supportsFuzzyQualifierFiltering,
         supportsSubReferenceFiltering = dataStore.supportsSubReferenceFiltering,
+        supportsSnapshotVersion = dataStore.supportsSnapshotVersion,
     )
 }
 

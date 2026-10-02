@@ -2,7 +2,7 @@ package maryk.sql
 
 import kotlinx.coroutines.flow.collect
 import maryk.datastore.shared.IsDataStore
-import maryk.datastore.shared.SnapshotVersionProvider
+import maryk.datastore.shared.supportsSnapshotVersion
 import maryk.sql.syntax.SqlParseException
 import maryk.sql.syntax.SqlParser
 import maryk.sql.syntax.SqlQuery
@@ -53,7 +53,7 @@ class MarykSql private constructor(
     val catalog: SqlCatalog,
     val options: SqlOptions,
 ) {
-    val capabilities = SqlCapabilities(dataStore.keepAllVersions && dataStore is SnapshotVersionProvider)
+    val capabilities = SqlCapabilities(dataStore.keepAllVersions && dataStore.supportsSnapshotVersion)
 
     /** Parse and bind without reading records. A prepared query can be executed repeatedly. */
     fun prepare(statement: String): PreparedSqlQuery {

@@ -11,13 +11,35 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
+import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertContentEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class RemoteStoreCodecTest {
+    @Test
+    fun snapshotCapabilityRoundTripsAndDefaultsOffForOlderServers() {
+        val info = RemoteStoreInfo(
+            definitions = RemoteDataStore.collectDefinitions(listOf(SimpleMarykModel)),
+            modelIds = listOf(RemoteStoreModelId(1u, SimpleMarykModel.Meta.name)),
+            keepAllVersions = true,
+            supportsFuzzyQualifierFiltering = false,
+            supportsSubReferenceFiltering = false,
+            supportsSnapshotVersion = true,
+        )
+        val encoded = RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info, DefinitionsConversionContext())
+        assertTrue(RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded, DefinitionsConversionContext()).supportsSnapshotVersion)
+        // Field 7 is an additive boolean. Removing it recreates the pre-capability wire format.
+        assertContentEquals(byteArrayOf(0x38, 1), encoded.takeLast(2).toByteArray())
+        val legacy = RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded.dropLast(2).toByteArray(), DefinitionsConversionContext())
+        assertFalse(legacy.supportsSnapshotVersion)
+        assertTrue(legacy.keepAllVersions)
+    }
+
     @Test
     fun lengthPrefixRejectsNegativeLength() {
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -115,6 +137,7 @@ class RemoteStoreCodecTest {
         assertEquals(4u, RemoteStoreInfo.supportsFuzzyQualifierFiltering.index)
         assertEquals(5u, RemoteStoreInfo.supportsSubReferenceFiltering.index)
         assertEquals(6u, RemoteStoreInfo.keepUpdateHistoryIndex.index)
+        assertEquals(7u, RemoteStoreInfo.supportsSnapshotVersion.index)
     }
 }
 

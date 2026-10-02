@@ -4,3 +4,13 @@ package maryk.datastore.shared
 interface SnapshotVersionProvider {
     suspend fun captureSnapshotVersion(): ULong
 }
+
+/** A proxy whose watermark support depends on the capabilities of its backend. */
+interface ConditionalSnapshotVersionProvider : SnapshotVersionProvider {
+    val supportsSnapshotVersion: Boolean
+}
+
+/** Whether the store can supply an authoritative watermark; retained history is a separate requirement. */
+val IsDataStore.supportsSnapshotVersion: Boolean
+    get() = this is SnapshotVersionProvider &&
+        (this !is ConditionalSnapshotVersionProvider || this.supportsSnapshotVersion)

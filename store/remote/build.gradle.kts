@@ -6,6 +6,7 @@ plugins {
 kotlin {
     applyDefaultHierarchyTemplate()
     linuxX64()
+    linuxArm64()
     macosArm64()
     macosX64()
 

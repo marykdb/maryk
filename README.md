@@ -21,13 +21,13 @@ Start with the [website](https://marykdb.github.io/maryk/) for the best reading 
 
 Maryk is Kotlin Multiplatform. Platform support depends on the module:
 
-- Core modeling, validation, querying, JSON/YAML serialization, generator support, Memory Store, shared store logic, test models, and test helpers target JVM, Android, JS, WasmJS, Linux, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
+- Core modeling, validation, querying, JSON/YAML serialization, generator support, Memory Store, shared store logic, test models, and test helpers target JVM, Android, JS, WasmJS, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
 - IndexedDB Store targets JS browser and WasmJS browser for persistent browser storage.
-- File IO targets JVM, Linux, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
-- RocksDB Store targets JVM, Android, Linux, Windows, iOS, macOS, watchOS, tvOS, and Android Native through the `rocksdb-multiplatform` bindings.
-- FoundationDB Store targets JVM, Linux, and macOS where the FoundationDB client library (`libfdb_c`) is available.
-- Remote Store targets JVM, Linux, and macOS.
-- CLI native binaries target Linux and macOS, with JVM execution also available.
+- File IO targets JVM, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
+- RocksDB Store targets JVM, Android, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native through the `rocksdb-multiplatform` bindings.
+- FoundationDB Store targets JVM, Linux x64 and ARM64, and macOS where the FoundationDB client library (`libfdb_c`) is available.
+- Remote Store targets JVM, Linux x64 and ARM64, and macOS.
+- CLI native binaries target Linux x64 and ARM64 and macOS, with JVM execution also available.
 - The desktop App runs on the JVM.
 
 ## Getting Started

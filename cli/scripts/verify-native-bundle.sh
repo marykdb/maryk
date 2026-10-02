@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-archive="${1:?Usage: verify-native-bundle.sh <archive> <linux-x64|macos-arm64>}"
-platform="${2:?Usage: verify-native-bundle.sh <archive> <linux-x64|macos-arm64>}"
+archive="${1:?Usage: verify-native-bundle.sh <archive> <linux-x64|linux-arm64|macos-arm64>}"
+platform="${2:?Usage: verify-native-bundle.sh <archive> <linux-x64|linux-arm64|macos-arm64>}"
 
 [[ -f "$archive" ]] || { echo "Missing archive: $archive" >&2; exit 1; }
 
 bundle_name="maryk-cli-${platform}"
 case "$platform" in
-  linux-x64) library="libfdb_c.so" ;;
+  linux-x64|linux-arm64) library="libfdb_c.so" ;;
   macos-arm64) library="libfdb_c.dylib" ;;
   *) echo "Unsupported platform: $platform" >&2; exit 1 ;;
 esac
@@ -25,7 +25,7 @@ license_file="$temp_dir/$bundle_name/LICENSE.txt"
 [[ -f "$license_file" ]] || { echo "Missing license: $license_file" >&2; exit 1; }
 
 case "$platform" in
-  linux-x64)
+  linux-x64|linux-arm64)
     readelf -d "$binary" | grep -F 'RUNPATH' | grep -F '$ORIGIN/../lib'
     ;;
   macos-arm64)
@@ -36,4 +36,9 @@ case "$platform" in
     ;;
 esac
 
-"$binary" --exec help >/dev/null
+if [[ "$platform" == "linux-arm64" ]]; then
+  readelf -h "$binary" | grep -F 'Machine:' | grep -F 'AArch64'
+  readelf -h "$bundled_library" | grep -F 'Machine:' | grep -F 'AArch64'
+else
+  "$binary" --exec help >/dev/null
+fi

@@ -14,6 +14,8 @@ import maryk.sql.syntax.SqlJoinType
 import maryk.sql.syntax.SqlOrder
 import maryk.sql.syntax.SqlSetOperator
 
+private enum class QueryOutput { VALUES, EXISTS, ROW_COUNT }
+
 /** All nested relations share one cache, consistency boundary and execution budget. */
 internal class SqlRuntime(
     private val sql: MarykSql,
@@ -24,7 +26,7 @@ internal class SqlRuntime(
     private val cache = mutableMapOf<BoundQuery, List<List<SqlValue>>>()
     private val existenceCache = mutableMapOf<BoundQuery, Boolean>()
     private var snapshotCaptured = false
-    private val preflighted = mutableSetOf<Pair<BoundQuery, Boolean>>()
+    private val preflighted = mutableSetOf<Pair<BoundQuery, QueryOutput>>()
 
     private fun evaluator(plan: BoundQuery) = SqlEvaluator(plan, parameters, budget,
         subquery = { materialize(it) }, exists = { exists(it) })
@@ -34,28 +36,50 @@ internal class SqlRuntime(
         produce(plan) { values -> budget.returned(); emit(values); true }
     }
 
-    private suspend fun preflight(current: BoundQuery, existenceOnly: Boolean = false) {
-        if (!preflighted.add(current to existenceOnly)) return
+    private suspend fun preflight(current: BoundQuery, output: QueryOutput = QueryOutput.VALUES) {
+        if (!preflighted.add(current to output)) return
         val evaluator = evaluator(current)
         val query = current.query
         val offset = query.offset?.let { nonNegative(evaluator.eval(it), "OFFSET") } ?: 0L
-        val discardProjection = existenceOnly && (!query.distinct || offset == 0L)
-        val roots = query.groupBy + listOfNotNull(query.where, query.having, query.limit, query.offset) +
-            current.joins.mapNotNull { it.condition } +
-            (if (discardProjection) emptyList() else query.select.map { it.expression } + query.values.orEmpty().flatten()) +
-            (if (existenceOnly) emptyList() else query.orderBy.map { it.expression })
+        val discardProjection = output != QueryOutput.VALUES && (!query.distinct || output == QueryOutput.EXISTS && offset == 0L)
+        val childOutput = childOutput(output, discardProjection, offset)
+        val roots = expressions(current, discardProjection, output != QueryOutput.VALUES)
         for (expression in roots) {
             if (!containsColumn(expression) && !containsSubquery(expression) && !containsAggregate(expression)) evaluator.eval(expression)
         }
         // Expression subqueries are preflighted by produce only when their branch runs.
         // Walking them here would evaluate unused CASE/COALESCE/AND/OR branches.
         current.sources.mapNotNull { it.relation }.forEach { preflight(it) }
-        current.body?.let { preflight(it, existenceOnly) }
+        current.body?.let { preflight(it, childOutput) }
         current.setOperands?.let { (left, right) ->
-            val discardOperands = discardProjection && query.setOperation?.let { it.operator == SqlSetOperator.UNION && it.all } == true
-            preflight(left, discardOperands)
-            preflight(right, discardOperands)
+            val operandOutput = if (query.setOperation?.let { it.operator == SqlSetOperator.UNION && it.all } == true) childOutput else QueryOutput.VALUES
+            preflight(left, operandOutput)
+            preflight(right, operandOutput)
         }
+    }
+
+    private fun childOutput(output: QueryOutput, discardProjection: Boolean, offset: Long): QueryOutput = when {
+        !discardProjection -> QueryOutput.VALUES
+        output == QueryOutput.ROW_COUNT || offset > 0L -> QueryOutput.ROW_COUNT
+        else -> QueryOutput.EXISTS
+    }
+
+    private fun expressions(plan: BoundQuery, discardProjection: Boolean, discardOrdering: Boolean): List<SqlExpr> {
+        val query = plan.query
+        return query.groupBy + listOfNotNull(query.where, query.having, query.limit, query.offset) +
+            plan.joins.mapNotNull { it.condition } +
+            (if (discardProjection) emptyList() else query.select.map { it.expression } + query.values.orEmpty().flatten()) +
+            (if (discardOrdering) emptyList() else query.orderBy.map { it.expression })
+    }
+
+    private fun inputs(plan: BoundQuery, expressions: List<SqlExpr>): List<CatalogColumn> {
+        val needed = linkedSetOf<CatalogColumn>()
+        fun visit(expression: SqlExpr) {
+            if (expression is SqlExpr.Column) plan.references[expression]?.let(needed::add)
+            children(expression).forEach(::visit)
+        }
+        expressions.forEach(::visit)
+        return needed.toList()
     }
 
     private suspend fun snapshot() {
@@ -91,21 +115,23 @@ internal class SqlRuntime(
     private suspend fun exists(plan: BoundQuery): Boolean {
         existenceCache[plan]?.let { return it }
         var found = false
-        produce(plan, existenceOnly = true) { found = true; false }
+        produce(plan, QueryOutput.EXISTS) { found = true; false }
         existenceCache[plan] = found
         return found
     }
 
-    private suspend fun produce(plan: BoundQuery, existenceOnly: Boolean = false, emit: suspend (List<SqlValue>) -> Boolean): Boolean {
-        preflight(plan, existenceOnly)
+    private suspend fun produce(plan: BoundQuery, output: QueryOutput = QueryOutput.VALUES, emit: suspend (List<SqlValue>) -> Boolean): Boolean {
+        preflight(plan, output)
         val query = plan.query
         val evaluator = evaluator(plan)
         val limit = query.limit?.let { nonNegative(evaluator.eval(it), "LIMIT") } ?: Long.MAX_VALUE
         val offset = query.offset?.let { nonNegative(evaluator.eval(it), "OFFSET") } ?: 0L
         if (limit == 0L) return true
-        val discardProjection = existenceOnly && (!query.distinct || offset == 0L)
+        val discardProjection = output != QueryOutput.VALUES && (!query.distinct || output == QueryOutput.EXISTS && offset == 0L)
+        val childOutput = childOutput(output, discardProjection, offset)
         val distinct = query.distinct && !discardProjection
-        val orderBy = if (existenceOnly) emptyList() else query.orderBy
+        val orderBy = if (output != QueryOutput.VALUES) emptyList() else query.orderBy
+        val inputs = inputs(plan, expressions(plan, discardProjection, output != QueryOutput.VALUES))
         val emptyProjection = if (discardProjection) List(plan.columns.size) { SqlValue.Null } else emptyList()
         val memory = SqlMemory(budget)
         try {
@@ -139,7 +165,7 @@ internal class SqlRuntime(
                         return projected(normalized, row)
                     }
                     if (plan.body != null) {
-                        produce(plan.body, existenceOnly) { values -> accept(values) }
+                        produce(plan.body, childOutput) { values -> accept(values) }
                     } else if (query.values != null) {
                         for (expressions in query.values) {
                             budget.step()
@@ -150,8 +176,8 @@ internal class SqlRuntime(
                         val operation = query.setOperation!!
                         if (operation.operator == SqlSetOperator.UNION && operation.all) {
                             var keepReading = true
-                            produce(operands.first, discardProjection) { values -> accept(values).also { keepReading = it } }
-                            if (keepReading) produce(operands.second, discardProjection) { values -> accept(values) }
+                            produce(operands.first, childOutput) { values -> accept(values).also { keepReading = it } }
+                            if (keepReading) produce(operands.second, childOutput) { values -> accept(values) }
                         } else {
                             val left = materialize(operands.first)
                             val right = materialize(operands.second)
@@ -199,7 +225,7 @@ internal class SqlRuntime(
                     }
                     val constantFalse = query.where != null && !containsColumn(query.where) && evaluator.eval(query.where).truth() != true
                     if (!constantFalse) {
-                        if (plan.sources.isEmpty()) consume(emptyMap()) else joinRows(plan, evaluator, memory, ::consume)
+                        if (plan.sources.isEmpty()) consume(emptyMap()) else joinRows(plan, inputs, evaluator, memory, ::consume)
                     }
                     if (plan.aggregate) {
                         suspend fun projectGroup(group: List<InputRow>) {
@@ -246,7 +272,7 @@ internal class SqlRuntime(
         } finally { memory.close() }
     }
 
-    private suspend fun sourceRows(plan: BoundQuery, source: BoundSource, evaluator: SqlEvaluator, emit: suspend (InputRow) -> Boolean): Boolean {
+    private suspend fun sourceRows(plan: BoundQuery, source: BoundSource, requiredInputs: List<CatalogColumn>, evaluator: SqlEvaluator, emit: suspend (InputRow) -> Boolean): Boolean {
         val relation = source.relation
         if (relation != null) {
             for (values in materialize(relation)) {
@@ -256,7 +282,7 @@ internal class SqlRuntime(
             return true
         }
         val table = source.table!!
-        val inputs = plan.inputs.filter { it.sourceId == source.id }
+        val inputs = requiredInputs.filter { it.sourceId == source.id }
         val rootIndices = inputs.mapNotNull { it.indices.firstOrNull() }.distinct()
         // Some stores derive metadata's effective lastVersion from the selected values. Fetch the
         // whole record whenever SQL needs __version, so an optimistic write guard never receives
@@ -312,14 +338,14 @@ internal class SqlRuntime(
         return true
     }
 
-    private suspend fun joinRows(plan: BoundQuery, evaluator: SqlEvaluator, memory: SqlMemory, emit: suspend (InputRow) -> Boolean) {
-        if (plan.joins.isEmpty()) { sourceRows(plan, plan.sources.first(), evaluator, emit); return }
+    private suspend fun joinRows(plan: BoundQuery, inputs: List<CatalogColumn>, evaluator: SqlEvaluator, memory: SqlMemory, emit: suspend (InputRow) -> Boolean) {
+        if (plan.joins.isEmpty()) { sourceRows(plan, plan.sources.first(), inputs, evaluator, emit); return }
         val rightRows = mutableListOf<List<InputRow>>()
         val keys = mutableListOf<List<Pair<CatalogColumn, CatalogColumn>>>()
         val hashes = mutableListOf<Map<List<Any>, List<InputRow>>?>()
         for (join in plan.joins) {
             val rows = mutableListOf<InputRow>()
-            sourceRows(plan, join.source, evaluator) { row ->
+            sourceRows(plan, join.source, inputs, evaluator) { row ->
                 memory.retain(128L + row.values.sumOf(::valueBytes))
                 rows += row
                 true
@@ -375,7 +401,7 @@ internal class SqlRuntime(
             }
             return true
         }
-        sourceRows(plan, plan.sources.first(), evaluator) { expand(it, 0) }
+        sourceRows(plan, plan.sources.first(), inputs, evaluator) { expand(it, 0) }
     }
 }
 

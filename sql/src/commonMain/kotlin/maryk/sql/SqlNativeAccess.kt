@@ -66,23 +66,27 @@ internal data class NativePredicate(val column: CatalogColumn, val operator: Str
 internal fun nativeAccess(plan: BoundQuery, source: BoundSource): NativeAccess {
     var keys: List<SqlExpr>? = null
     val filters = mutableListOf<NativePredicate>()
-    fun constant(expression: SqlExpr) = !containsColumn(expression) && !containsSubquery(expression) && !containsAggregate(expression)
-    fun visit(expression: SqlExpr) {
+    fun constant(expression: SqlExpr, conditional: Boolean) =
+        !containsColumn(expression) && !containsSubquery(expression) && !containsAggregate(expression) &&
+            (!conditional || expression is SqlExpr.Literal || expression is SqlExpr.Parameter)
+    fun visit(expression: SqlExpr, conditional: Boolean = false) {
         if (expression is SqlExpr.Binary && expression.operator == "AND") {
-            visit(expression.left)
-            visit(expression.right)
+            visit(expression.left, conditional)
+            // Computed operands may fail. Keep them in the residual predicate if a
+            // preceding AND branch can skip them; literals and parameters stay indexable.
+            visit(expression.right, conditional = true)
             return
         }
         if (expression is SqlExpr.In && !expression.negated) {
             val column = (expression.operand as? SqlExpr.Column)?.let { plan.references[it] }
-            if (column?.sourceId == source.id && column.isKey && column.outputIndex == null && expression.values.all(::constant)) keys = expression.values
+            if (column?.sourceId == source.id && column.isKey && column.outputIndex == null && expression.values.all { constant(it, conditional) }) keys = expression.values
         }
         if (expression !is SqlExpr.Binary || expression.operator !in setOf("=", "<", "<=", ">", ">=")) return
         val left = (expression.left as? SqlExpr.Column)?.let { plan.references[it] }
         val right = (expression.right as? SqlExpr.Column)?.let { plan.references[it] }
         val (column, value, operator) = when {
-            left?.sourceId == source.id && constant(expression.right) -> Triple(left, expression.right, expression.operator)
-            right?.sourceId == source.id && constant(expression.left) -> Triple(right, expression.left, when (expression.operator) { "<" -> ">"; "<=" -> ">="; ">" -> "<"; ">=" -> "<="; else -> "=" })
+            left?.sourceId == source.id && constant(expression.right, conditional) -> Triple(left, expression.right, expression.operator)
+            right?.sourceId == source.id && constant(expression.left, conditional) -> Triple(right, expression.left, when (expression.operator) { "<" -> ">"; "<=" -> ">="; ">" -> "<"; ">=" -> "<="; else -> "=" })
             else -> return
         }
         if (column.isKey && column.outputIndex == null) {
@@ -91,7 +95,7 @@ internal fun nativeAccess(plan: BoundQuery, source: BoundSource): NativeAccess {
     }
     // Filtering a nullable right input using WHERE can turn an unmatched LEFT row into a match.
     // Keep such predicates entirely after joins. Single-table access remains maximally useful.
-    if (plan.joins.isEmpty()) plan.query.where?.let(::visit)
+    if (plan.joins.isEmpty()) plan.query.where?.let { visit(it) }
     return NativeAccess(keys, filters)
 }
 

@@ -494,7 +494,7 @@ internal class SqlBinder(
                 constrainNumeric(expression.left, type)
                 constrainNumeric(expression.right, type)
             }
-            is SqlExpr.Call -> if (expression.name.normalized in setOf("abs", "floor", "ceil", "ceiling", "round")) constrainNumeric(expression.arguments.first(), type)
+            is SqlExpr.Call -> if (expression.name.normalized in setOf("abs", "floor", "ceil", "ceiling", "round", "sum", "avg", "min", "max")) constrainNumeric(expression.arguments.first(), type)
             else -> Unit
         }
     }
@@ -509,7 +509,7 @@ internal class SqlBinder(
         is SqlExpr.Column -> references[expression]?.parameterOrigins.orEmpty()
         is SqlExpr.Subquery -> subqueries[expression]?.outputBindings?.singleOrNull()?.parameterOrigins.orEmpty()
         is SqlExpr.Case -> (expression.branches.flatMap { parameterOrigins(it.second) } + expression.otherwise?.let(::parameterOrigins).orEmpty()).toSet()
-        is SqlExpr.Call -> if (expression.name.normalized in setOf("coalesce", "nullif")) expression.arguments.flatMap(::parameterOrigins).toSet() else emptySet()
+        is SqlExpr.Call -> if (expression.name.normalized in setOf("coalesce", "nullif", "sum", "avg", "min", "max")) expression.arguments.flatMap(::parameterOrigins).toSet() else emptySet()
         else -> emptySet()
     }
 

@@ -188,7 +188,7 @@ internal class SqlEvaluator(
         }
         val l = left.decimal()
         val r = right.decimal()
-        if (r == Decimal.parse("0") && operator in setOf("/", "%")) throw ArithmeticException("Division by zero")
+        if (r.compareTo(Decimal.parse("0")) == 0 && operator in setOf("/", "%")) throw ArithmeticException("Division by zero")
         return SqlValue.Exact(when (operator) {
             "+" -> l + r
             "-" -> l - r

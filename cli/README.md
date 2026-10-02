@@ -2,6 +2,9 @@
 
 The Maryk CLI is an interactive terminal client that communicates with Maryk stores. It is built with the [Kotter](https://github.com/varabyte/kotter) terminal UI library to provide a block-oriented command experience. It can connect to both RocksDB and FoundationDB stores.
 
+Native CLI builds support Linux x64 and macOS. Linux ARM64 is not a native CLI
+target because Kotter does not publish that variant; the JVM CLI remains available.
+
 ## Status
 
 The CLI supports interactive browsing and editing:

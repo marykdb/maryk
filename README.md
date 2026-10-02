@@ -27,7 +27,7 @@ Maryk is Kotlin Multiplatform. Platform support depends on the module:
 - RocksDB Store targets JVM, Android, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native through the `rocksdb-multiplatform` bindings.
 - FoundationDB Store targets JVM, Linux x64 and ARM64, and macOS where the FoundationDB client library (`libfdb_c`) is available.
 - Remote Store targets JVM, Linux x64 and ARM64, and macOS.
-- CLI native binaries target Linux x64 and ARM64 and macOS, with JVM execution also available.
+- CLI native binaries target Linux x64 and macOS, with JVM execution also available.
 - The desktop App runs on the JVM.
 
 ## Getting Started

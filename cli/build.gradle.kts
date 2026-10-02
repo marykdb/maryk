@@ -39,7 +39,6 @@ kotlin {
 
     listOf(
         linuxX64(),
-        linuxArm64(),
         macosArm64(),
         macosX64(),
     ).forEach { nativeTarget ->
@@ -74,11 +73,7 @@ kotlin {
 
             fun isLinuxLibArchitectureCompatible(file: File): Boolean {
                 if (family != Family.LINUX) return true
-                val expectedMachine = when {
-                    nativeTarget.name.contains("x64", ignoreCase = true) -> "Advanced Micro Devices X86-64"
-                    nativeTarget.name.contains("arm64", ignoreCase = true) -> "AArch64"
-                    else -> return true
-                }
+                val expectedMachine = "Advanced Micro Devices X86-64"
 
                 return try {
                     val process = ProcessBuilder("readelf", "-h", file.absolutePath)
@@ -180,7 +175,6 @@ private data class NativeCliBundle(
 
 listOf(
     NativeCliBundle("linuxX64", "linux-x64", "libfdb_c.so"),
-    NativeCliBundle("linuxArm64", "linux-arm64", "libfdb_c.so"),
     NativeCliBundle("macosArm64", "macos-arm64", "libfdb_c.dylib"),
 ).forEach { bundle ->
     val targetTaskName = bundle.target.replaceFirstChar { it.uppercase() }

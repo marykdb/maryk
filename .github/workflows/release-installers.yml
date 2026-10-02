@@ -82,11 +82,6 @@ jobs:
             name: Linux x64 DEB and CLI
             gradle_task: :app:packageDeb :cli:nativeDistZipLinuxX64
             cli_platform: linux-x64
-          - os: ubuntu-latest
-            name: Linux ARM64 CLI
-            gradle_task: :cli:nativeDistZipLinuxArm64
-            cli_platform: linux-arm64
-            fdb_target_arch: arm64
           - os: windows-latest
             name: Windows MSI
             gradle_task: :app:packageMsi
@@ -129,8 +124,6 @@ jobs:
           cache-cleanup: on-success
 
       - name: Build distribution
-        env:
-          FDB_TARGET_ARCH: ${{ matrix.fdb_target_arch || '' }}
         shell: bash
         run: ./gradlew :app:verifyDistributionVersion ${{ matrix.gradle_task }} -PreleaseTag="$RELEASE_TAG" --dependency-verification=strict --stacktrace --build-cache --no-parallel
 

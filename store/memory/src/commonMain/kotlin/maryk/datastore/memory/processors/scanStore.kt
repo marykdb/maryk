@@ -43,7 +43,8 @@ internal fun <DM : IsRootDataModel> scanStore(
                 }.let { index ->
                     when {
                         index < 0 -> index * -1 - 1 // If negative start and thus not found at first entry point
-                        !range.startInclusive -> index + 1 // Skip the match if not inclusive
+                        // The start key has already advanced unless its bytes were at their maximum.
+                        range.keyBeforeStart(startKey) || scanRange.keyBeforeStart(startKey) -> index + 1
                         else -> index
                     }
                 }

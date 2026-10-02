@@ -5,6 +5,8 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.number
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.filters.GreaterThan
+import maryk.core.query.filters.LessThanEquals
+import maryk.core.query.orders.Order
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
@@ -16,6 +18,30 @@ import kotlin.test.assertTrue
 
 class InMemoryKeyRangeTest {
     @Test
+    fun descendingExclusiveStartAtRangeEndDoesNotRepeatTheBoundary() = runTest {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SequentialKeyModel))
+        try {
+            store.execute(SequentialKeyModel.add(*Array(3) { index ->
+                SequentialKeyModel.create { id with (index + 1).toULong() }
+            }))
+            val filter = LessThanEquals(SequentialKeyModel.ref { id } with 3uL)
+            val firstPage = store.execute(SequentialKeyModel.scan(
+                where = filter, order = Order.descending, limit = 1u, allowTableScan = true,
+            ))
+            assertEquals(3uL, firstPage.values.single().values { id })
+            val nextPage = store.execute(SequentialKeyModel.scan(
+                where = filter, order = Order.descending,
+                startKey = firstPage.values.single().key, includeStart = false, allowTableScan = true,
+            ))
+            assertEquals(listOf(2uL, 1uL), nextPage.values.map { it.values { id } })
+            assertTrue(store.execute(SequentialKeyModel.scan(
+                order = Order.descending, startKey = nextPage.values.last().key,
+                includeStart = false, allowTableScan = true,
+            )).values.isEmpty())
+        } finally { store.close() }
+    }
+
+    @Test
     fun exclusiveMaximumBoundaryDoesNotRepeatTheLastRecord() = runTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SequentialKeyModel))
         try {
@@ -23,12 +49,15 @@ class InMemoryKeyRangeTest {
                 SequentialKeyModel.create { id with ULong.MAX_VALUE }
             )).statuses.single())
             for (filter in listOf(null, GreaterThan(SequentialKeyModel.ref { id } with 0uL))) {
-                assertTrue(store.execute(SequentialKeyModel.scan(
-                    where = filter,
-                    startKey = added.key,
-                    includeStart = false,
-                    allowTableScan = true,
-                )).values.isEmpty())
+                for (order in listOf(Order.ascending, Order.descending)) {
+                    assertTrue(store.execute(SequentialKeyModel.scan(
+                        where = filter,
+                        order = order,
+                        startKey = added.key,
+                        includeStart = false,
+                        allowTableScan = true,
+                    )).values.isEmpty())
+                }
             }
             assertTrue(store.execute(SequentialKeyModel.scan(
                 where = GreaterThan(SequentialKeyModel.ref { id } with ULong.MAX_VALUE),

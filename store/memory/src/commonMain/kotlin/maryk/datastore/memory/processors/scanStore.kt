@@ -97,6 +97,10 @@ internal fun <DM : IsRootDataModel> scanStore(
                         break
                     }
 
+                    if (range.keyOutOfRange(recordKey) || scanRange.keyAfterStart(recordKey)) {
+                        continue
+                    }
+
                     if (!scanRange.matchesPartials(recordKey)) {
                         continue
                     }

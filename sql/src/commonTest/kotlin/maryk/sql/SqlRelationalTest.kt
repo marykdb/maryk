@@ -30,6 +30,22 @@ class SqlRelationalTest {
         assertEquals(false, left.columns[0].nullable)
         assertEquals(true, left.columns[1].nullable)
         assertEquals(1, sql.query("SELECT a.id FROM items a LEFT JOIN items b ON a.id = b.id AND b.id < 2 WHERE b.id IS NOT NULL").rows.size)
+        assertEquals(listOf(SqlValue.UInt64(2u), SqlValue.UInt64(3u)), sql.query("SELECT a.id FROM items a LEFT JOIN items b ON a.id = b.id AND b.id < 2 WHERE b.id IS NULL ORDER BY a.id").rows.map { it[0] })
+    } }
+
+    @Test fun emptyAndConstantAggregateInputsKeepTheirCardinality() = sqlTest { withSql { sql ->
+        val cases = mapOf(
+            "SELECT COUNT(*) FROM (SELECT 1 WHERE FALSE) t" to 0L,
+            "SELECT COUNT(*) FILTER (WHERE FALSE)" to 0L,
+            "SELECT COUNT(*) FROM (VALUES (1), (2)) t GROUP BY (1 + 1)" to 2L,
+        )
+        for ((statement, expected) in cases) {
+            assertEquals(listOf(SqlValue.Int64(expected)), sql.query(statement).rows.map { it[0] }, statement)
+        }
+    } }
+
+    @Test fun nullOnlyConditionalCallsReturnNull() = sqlTest { withSql { sql ->
+        assertEquals(listOf(SqlValue.Null, SqlValue.Null), sql.query("SELECT COALESCE(NULL, NULL), NULLIF(NULL, 1)").rows.single().values)
     } }
 
     @Test fun valuesDerivedTablesAndReusableCtes() = sqlTest { withSql { sql ->

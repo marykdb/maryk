@@ -81,7 +81,9 @@ class SqlReviewRegressionTest {
         for (statement in listOf("SELECT COALESCE(?, 1) FROM items", "VALUES (?), (1)", "SELECT CASE WHEN TRUE THEN ? ELSE 1 END FROM items", "SELECT id FROM items WHERE id IN (VALUES (?))", "SELECT id FROM items WHERE (SELECT ?) = id")) {
             assertEquals(SqlErrorCode.PARAMETER, assertFailsWith<SqlException>(statement) { sql.prepare(statement).execute(listOf(SqlValue.Text("wrong"))) }.code)
         }
-        assertEquals(SqlValue.Exact(Decimal.parse("2")), sql.prepare("SELECT COALESCE(?, 1)").execute(listOf(SqlValue.UInt64(2u))).rows.toList().single()[0])
+        for (statement in listOf("SELECT COALESCE(?, 1)", "SELECT CASE WHEN TRUE THEN ? ELSE 1 END")) {
+            assertEquals(SqlValue.Exact(Decimal.parse("2")), sql.prepare(statement).execute(listOf(SqlValue.UInt64(2u))).rows.toList().single()[0], statement)
+        }
         sql.execute("INSERT INTO items (id) VALUES (1)")
         val key = sql.query("SELECT __key FROM items").rows.single()[0] as SqlValue.Key
         assertEquals(1, sql.query("SELECT id FROM items WHERE __key IN (VALUES (?))", listOf(SqlValue.Text(key.value.toString()))).rows.size)

@@ -77,7 +77,7 @@ Numeric `of(...)` overloads preserve the statically known Kotlin type. JavaScrip
 
 Preparation parses and binds the whole statement without reading records. Parameter positions are zero-based in metadata and supplied in textual `?` order. Reuse a prepared query with different values; each execution is independent.
 
-Numeric context infers floating-point or exact parameters where possible. Expressions such as `ABS(?)` accept either numeric category and expose `ANY` output metadata; individual result cells carry their actual numeric type. Nonnumeric parameters are rejected before reads. Key and enum parameters retain their domain checks through `CASE`, `COALESCE`, and `NULLIF`.
+Numeric context infers floating-point or exact parameters where possible. Expressions such as `ABS(?)` accept either numeric category and expose `ANY` output metadata; individual result cells carry their actual numeric type. Numeric constraints also propagate through unary arithmetic and numeric functions in compound and derived outputs. Conflicting nonnumeric constraints fail during preparation; nonnumeric parameter values are rejected before reads. Key and enum parameters retain their domain checks through `CASE`, `COALESCE`, and `NULLIF`.
 
 ```kotlin
 import kotlinx.coroutines.flow.collect

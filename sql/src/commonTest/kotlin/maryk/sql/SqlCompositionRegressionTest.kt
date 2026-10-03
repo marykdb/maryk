@@ -12,6 +12,7 @@ import maryk.test.models.Option
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 private object SqlCompositionItem : RootDataModel<SqlCompositionItem>(
     keyDefinition = { SqlCompositionItem.id.ref() },
@@ -44,6 +45,44 @@ class SqlCompositionRegressionTest {
             assertFailsWith<IllegalArgumentException> { SqlValue.of(erased) }
         }
     }
+
+    @Test fun numericParameterCategoriesPropagateThroughCompoundOutputs() = sqlTest { withSql { sql ->
+        for (expression in listOf("-?", "ABS(?)", "? + ?", "SUM(-?)", "ROUND(?)", "FLOOR(?)", "CEIL(?)")) {
+            val statement = "SELECT $expression UNION ALL SELECT 1.0e0"
+            val prepared = sql.prepare(statement)
+            assertTrue(prepared.parameters.all { it.type == SqlType.FLOAT64 }, statement)
+            val parameters = prepared.parameters.map { SqlValue.Float64(2.0) }
+            assertEquals(2, prepared.execute(parameters).rows.toList().size, statement)
+            assertEquals(SqlErrorCode.PARAMETER, assertFailsWith<SqlException> {
+                prepared.execute(parameters.map { SqlValue.Int64(2) })
+            }.code, statement)
+        }
+        for (statement in listOf(
+            "WITH x(n) AS (SELECT ABS(?)) SELECT n + 1.0e0 FROM x",
+            "SELECT (SELECT ABS(?)) + 1.0e0",
+        )) {
+            val prepared = sql.prepare(statement)
+            assertEquals(SqlType.FLOAT64, prepared.parameters.single().type, statement)
+            assertEquals(SqlValue.Float64(3.0), prepared.execute(listOf(SqlValue.Float64(2.0))).rows.toList().single()[0], statement)
+        }
+    } }
+
+    @Test fun numericOutputConstraintsPreserveExplicitCastsAndRoundScales() = sqlTest { withSql { sql ->
+        val rounded = sql.prepare("SELECT ROUND(?, ?) UNION ALL SELECT 1.0e0")
+        assertEquals(listOf(SqlType.FLOAT64, SqlType.DECIMAL), rounded.parameters.map { it.type })
+        assertEquals(SqlValue.Float64(2.35), rounded.execute(listOf(SqlValue.Float64(2.346), SqlValue.Int64(2))).rows.toList().first()[0])
+        val cast = sql.prepare("SELECT CAST(? AS DOUBLE) UNION ALL SELECT 1.0e0")
+        assertEquals(SqlType.ANY, cast.parameters.single().type)
+        assertEquals(SqlValue.Float64(2.0), cast.execute(listOf(SqlValue.Int64(2))).rows.toList().first()[0])
+        assertEquals(SqlValue.Text("2"), sql.query("SELECT COALESCE(CAST(SUM(?) AS TEXT), 'empty')", listOf(SqlValue.Int64(2))).rows.single()[0])
+        assertEquals(SqlValue.Exact(Decimal.parse("2")), sql.query("SELECT -? UNION ALL SELECT 1", listOf(SqlValue.Int64(-2))).rows.first()[0])
+    } }
+
+    @Test fun numericParametersRejectNonnumericOutputConstraintsDuringBinding() = sqlTest { withSql { sql ->
+        for (statement in listOf("SELECT COALESCE(SUM(?), 'bad')", "SELECT SUM(?) UNION SELECT 'bad'", "SELECT CASE WHEN TRUE THEN SUM(?) ELSE 'bad' END")) {
+            assertEquals(SqlErrorCode.BINDING, assertFailsWith<SqlException> { sql.prepare(statement) }.code, statement)
+        }
+    } }
 
     @Test fun signedZeroNativeFiltersAgreeWithResiduals() = sqlTest { withSql { sql ->
         sql.execute("INSERT INTO SqlCompositionItem (id, value) VALUES (1, -0.0e0), (2, 0.0e0), (3, -1.0e0), (4, 1.0e0)")

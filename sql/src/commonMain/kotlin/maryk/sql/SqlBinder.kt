@@ -468,6 +468,7 @@ internal class SqlBinder(
 
     private fun inferParameter(index: Int, expected: SqlType, expression: SqlExpr) {
         if (expected == SqlType.ANY || expected == SqlType.NULL) return
+        if (index in state.numericParameters && !expected.isNumeric) fail("Numeric parameter has a nonnumeric constraint", expression)
         val target = if (expected.isNumeric && expected != SqlType.FLOAT64) SqlType.DECIMAL else expected
         val old = parameterTypes[index]
         if (old != null && old != target) fail("Conflicting parameter types", expression)
@@ -481,7 +482,11 @@ internal class SqlBinder(
     private fun bindNumeric(expression: SqlExpr, allowAggregate: Boolean): ExpressionInfo {
         val info = bindExpr(expression, allowAggregate)
         if (!info.type.isNumeric && info.type != SqlType.ANY && info.type != SqlType.NULL) fail("Expected a numeric value", expression)
-        if (info.type == SqlType.ANY) state.numericParameters += parameterOrigins(expression)
+        if (info.type == SqlType.ANY) {
+            val origins = parameterOrigins(expression)
+            if (origins.any { parameterTypes[it]?.isNumeric == false }) fail("Expected a numeric parameter", expression)
+            state.numericParameters += origins
+        }
         return info
     }
 
@@ -508,8 +513,14 @@ internal class SqlBinder(
         is SqlExpr.Parameter -> setOf(expression.index)
         is SqlExpr.Column -> references[expression]?.parameterOrigins.orEmpty()
         is SqlExpr.Subquery -> subqueries[expression]?.outputBindings?.singleOrNull()?.parameterOrigins.orEmpty()
+        is SqlExpr.Unary -> if (expression.operator in setOf("+", "-")) parameterOrigins(expression.operand) else emptySet()
+        is SqlExpr.Binary -> if (expression.operator in setOf("+", "-", "*", "/", "%")) parameterOrigins(expression.left) + parameterOrigins(expression.right) else emptySet()
         is SqlExpr.Case -> (expression.branches.flatMap { parameterOrigins(it.second) } + expression.otherwise?.let(::parameterOrigins).orEmpty()).toSet()
-        is SqlExpr.Call -> if (expression.name.normalized in setOf("coalesce", "nullif", "sum", "avg", "min", "max")) expression.arguments.flatMap(::parameterOrigins).toSet() else emptySet()
+        is SqlExpr.Call -> when (expression.name.normalized) {
+            "coalesce", "nullif", "sum", "avg", "min", "max" -> expression.arguments.flatMap(::parameterOrigins).toSet()
+            "abs", "floor", "ceil", "ceiling", "round" -> parameterOrigins(expression.arguments.first())
+            else -> emptySet()
+        }
         else -> emptySet()
     }
 

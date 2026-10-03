@@ -184,7 +184,9 @@ internal class SqlEvaluator(
         if (left == SqlValue.Null || right == SqlValue.Null) return SqlValue.Null
         if (left is SqlValue.Float64 && right is SqlValue.Float64) {
             if (right.value == 0.0 && operator in setOf("/", "%")) throw ArithmeticException("Division by zero")
-            return SqlValue.Float64(when (operator) { "+" -> left.value + right.value; "-" -> left.value - right.value; "*" -> left.value * right.value; "/" -> left.value / right.value; "%" -> left.value % right.value; else -> error("Unknown arithmetic operator") })
+            val result = when (operator) { "+" -> left.value + right.value; "-" -> left.value - right.value; "*" -> left.value * right.value; "/" -> left.value / right.value; "%" -> left.value % right.value; else -> error("Unknown arithmetic operator") }
+            if (!result.isFinite()) throw ArithmeticException("Floating arithmetic overflow")
+            return SqlValue.Float64(result)
         }
         val l = left.decimal()
         val r = right.decimal()

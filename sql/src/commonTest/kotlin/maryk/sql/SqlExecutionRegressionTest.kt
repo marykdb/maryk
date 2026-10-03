@@ -55,6 +55,14 @@ class SqlExecutionRegressionTest {
         assertEquals(1, sql.query("SELECT id FROM SqlTestModel WHERE TRUE AND id = 1").rows.size)
     } }
 
+    @Test fun floatingOverflowHasAnArithmeticErrorCategory() = sqlTest { withSql { sql ->
+        for (statement in listOf("SELECT 1e308 * 1e308", "SELECT 1e308 + 1e308", "SELECT SUM(column1) FROM (VALUES (1e308), (1e308)) t")) {
+            assertEquals(SqlErrorCode.ARITHMETIC, assertFailsWith<SqlException> { sql.query(statement) }.code, statement)
+        }
+        assertEquals(SqlValue.Float64(1e308), sql.query("SELECT 1e308 * 1.0e0").rows.single()[0])
+        assertEquals(SqlValue.Float64(1.0), sql.query("SELECT CASE WHEN TRUE THEN 1.0e0 ELSE 1e308 * 1e308 END").rows.single()[0])
+    } }
+
     @Test fun zeroDivisionAndRemainderUseArithmeticErrorsAtEveryScale() = sqlTest { withSql { sql ->
         for (operator in listOf("/", "%")) for (zero in listOf("0", "0.0", "0.00", "-0.00")) {
             assertEquals(SqlErrorCode.ARITHMETIC, assertFailsWith<SqlException> {

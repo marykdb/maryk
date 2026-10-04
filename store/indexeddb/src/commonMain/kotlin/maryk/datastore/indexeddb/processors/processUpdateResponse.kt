@@ -7,6 +7,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
 import maryk.core.models.key
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.change
 import maryk.core.query.requests.add
@@ -62,6 +63,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                         request = dataModel.add(update.key to dataModel.fromChanges(null, update.changes)),
                         response = response,
                     ),
+                    isDeleted = update.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
                     ignoreIfVersionNotNewer = true,
                 )
                 storeAction.response.complete(ProcessResponse(update.version, response.await()))
@@ -106,6 +108,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                                 request = dataModel.add(change.key to dataModel.fromChanges(null, versionedChange.changes)),
                                 response = response,
                             ),
+                            isDeleted = versionedChange.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
                             ignoreIfVersionNotNewer = true,
                         )
                         statuses += response.await().statuses

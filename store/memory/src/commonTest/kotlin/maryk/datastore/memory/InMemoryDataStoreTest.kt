@@ -70,6 +70,18 @@ import kotlin.time.Duration.Companion.seconds
 
 class InMemoryDataStoreTest {
     @Test
+    fun deletedCreationChangesRemainDeleted() = runTest {
+        for (keepVersions in listOf(false, true)) {
+            val store = InMemoryDataStore.open(keepAllVersions = keepVersions, dataModelsById = dataModelsForTests)
+            try {
+                runDataStoreTests(store, "executeProcessDeletedCreateChangesRequest")
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
     fun rejectedHistoricChangeDoesNotLeakOrCommitOnLaterRequest() = runTest {
         val dataStore = InMemoryDataStore.open(
             keepAllVersions = true,

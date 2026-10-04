@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.responses.AddOrChangeResponse
 import maryk.core.query.responses.UpdateResponse
@@ -47,6 +48,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
                             key = change.key,
                             version = HLC(versionedChange.version),
                             objectToAdd = addedValues,
+                            isDeleted = versionedChange.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
                             ignoreIfVersionNotNewer = true,
                         ) { updateToEmit = it }
                         transaction.commit()

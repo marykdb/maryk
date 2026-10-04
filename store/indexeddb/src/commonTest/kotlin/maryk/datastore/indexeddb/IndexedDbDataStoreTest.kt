@@ -1346,6 +1346,7 @@ class IndexedDbDataStoreTest {
             runTestCase(DataStoreScanChangesTest(dataStore), "executeScanChangesRequestWithMaxVersions")
             runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessAddRequest")
             runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessDeletedAddRequest")
+            runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessDeletedCreateChangesRequest")
             runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessUpdatesRespectHardDeleteTombstone")
             runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessChangeRequest")
             runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessAddInChangeRequest")

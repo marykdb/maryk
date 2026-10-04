@@ -6,6 +6,9 @@ Not intended as a standalone store.
 ## What it contains
 
 - Unified datastore contracts and request orchestration used by all engines.
+- Replication creation changes retain their final soft-delete state in both single
+  updates and initial history replay. Deleted creations remain excluded from normal
+  reads and active indexes until an explicit later undelete.
 - Shared update/listener flow behavior.
 - Shared versioning/query semantics.
 - Shared sensitive-field encryption contracts:

@@ -6,6 +6,7 @@ import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.DataObjectVersionedChange
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
@@ -44,6 +45,7 @@ class DataStoreProcessUpdateTest(
     override val allTests = mapOf(
         "executeProcessAddRequest" to ::executeProcessAddRequest,
         "executeProcessDeletedAddRequest" to ::executeProcessDeletedAddRequest,
+        "executeProcessDeletedCreateChangesRequest" to ::executeProcessDeletedCreateChangesRequest,
         "executeProcessStaleChangeRequest" to ::executeProcessStaleChangeRequest,
         "executeProcessUpdatesRespectHardDeleteTombstone" to ::executeProcessUpdatesRespectHardDeleteTombstone,
         "executeProcessChangeRequest" to ::executeProcessChangeRequest,
@@ -379,6 +381,36 @@ class DataStoreProcessUpdateTest(
 
         expect(1) { getResponse.values.size }
         expect(editedMessage) { getResponse.values.first().values { message } }
+    }
+
+    private suspend fun executeProcessDeletedCreateChangesRequest() {
+        for (initial in listOf(false, true)) {
+            val key = keys[if (initial) 1 else 0]
+            val changes = listOf(
+                ObjectCreate,
+                Change(Log.ref { message } with "deleted on creation"),
+                Change(Log.ref { severity } with ERROR),
+                Change(Log.ref { timestamp } with LocalDateTime(2020, 9, 5, 12, 0)),
+                ObjectSoftDeleteChange(true),
+                ObjectSoftDeleteChange(false),
+                ObjectSoftDeleteChange(true),
+            )
+            keysToDelete.add(key)
+            val update = if (initial) InitialChangesUpdate(
+                version = 1234uL,
+                changes = listOf(DataObjectVersionedChange(key = key, changes = listOf(VersionedChanges(1234uL, changes)))),
+            ) else ChangeUpdate(key, 1234uL, 0, changes)
+            dataStore.processUpdate(UpdateResponse(Log, update))
+
+            assertTrue(dataStore.execute(Log.get(key)).values.isEmpty(), "Deleted creation must not become visible")
+            val deleted = dataStore.execute(Log.get(key, filterSoftDeleted = false)).values.single()
+            assertTrue(deleted.isDeleted)
+            assertEquals("deleted on creation", deleted.values { message })
+
+            dataStore.processUpdate(UpdateResponse(Log, ChangeUpdate(key, 1235uL, 0, listOf(ObjectSoftDeleteChange(false)))))
+            val restored = dataStore.execute(Log.get(key)).values.single()
+            assertEquals(false, restored.isDeleted)
+        }
     }
 
     private suspend fun executeProcessAddInChangeRequest() {

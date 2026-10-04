@@ -245,3 +245,18 @@ Streaming format:
 - Serve a local RocksDB/FoundationDB store for remote tooling.
 - Connect the App or a programmatic client to a server-side store over HTTP or SSH.
 - Build future thin gateways without rewriting store logic.
+
+### Remote regular-expression filters
+
+`RegEx` and `MatchesRegEx` accept a bounded subset on the server: at most 256
+pattern characters, literal characters, outer `^`/`$` anchors, `.`, flat character
+classes, escaped literal punctuation or `\d`, `\D`, `\s`, `\S`, `\w`, `\W`,
+`\n`, `\r`, `\t`, `\f`, and at most one `*`, `+`, or `?` repetition of a
+consuming character atom. For example, `^garcia.*$` remains supported.
+
+Groups, alternation, counted repeats, backreferences, lookarounds, flags, nested or
+intersected classes, and multiple repetitions return HTTP 400 before datastore
+execution. The same check applies to nested filters, collected reads, flows, and
+mutation batches. This bounds backtracking in full-string matching; local trusted
+queries retain the complete regex API. Exact and prefix named search remain
+available through `Matches` and `MatchesPrefix`.

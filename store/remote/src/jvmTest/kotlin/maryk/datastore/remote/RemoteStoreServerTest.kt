@@ -53,6 +53,8 @@ import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Exists
 import maryk.core.query.filters.Matches
+import maryk.core.query.filters.MatchesRegEx
+import maryk.core.query.filters.RegEx
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.IsFlowRequest
@@ -665,6 +667,34 @@ class RemoteStoreServerTest {
 
             assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
             assertTrue(response.bodyAsText().contains("filter work"))
+        }
+    }
+
+    @Test
+    fun executeAndFlowRejectUnsafeRegexFiltersBeforeMutation() = runBoundedIntegrationTest {
+        val models = mapOf(1u to SimpleMarykModel, 2u to RegexRemoteModel)
+        val store = InMemoryDataStore.open(dataModelsById = models)
+        withServer(dataStore = store) { baseUrl, client ->
+            store.execute(RegexRemoteModel.add(RegexRemoteModel.create { value with "aaaa!" }))
+            for (named in listOf(false, true)) {
+                for (flow in listOf(false, true)) {
+                    val path = if (flow) RemoteStoreProtocol.flowPath else RemoteStoreProtocol.executePath
+                    val response = client.post("$baseUrl$path") {
+                        header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                        setBody(unsafeRegexPayload(named, flow))
+                    }
+                    assertEquals(HttpStatusCode.BadRequest, response.status, response.bodyAsText())
+                    assertTrue(response.bodyAsText().contains("regular expression"))
+                }
+            }
+            for (collect in listOf(false, true)) {
+                val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                    header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                    setBody(unsafeRegexMutationPayload(collect))
+                }
+                assertEquals(HttpStatusCode.BadRequest, response.status, response.bodyAsText())
+                assertTrue(store.execute(SimpleMarykModel.scan(allowTableScan = true)).values.isEmpty())
+            }
         }
     }
 
@@ -1782,6 +1812,42 @@ private fun filterWorkPayload(): ByteArray =
         ),
         testRequestContext(),
     )
+
+private fun unsafeRegexPayload(named: Boolean, flow: Boolean): ByteArray {
+    val regex = Regex("(a|aa)+")
+    val filter = if (named) And(MatchesRegEx("text" with regex))
+        else And(RegEx(RegexRemoteModel.ref { value } with regex))
+    val request = if (flow) RegexRemoteModel.scanUpdates(where = filter)
+        else RegexRemoteModel.scan(where = filter)
+    return RemoteStoreCodec.encode(Requests.Serializer, Requests(request), regexRequestContext())
+}
+
+private fun regexRequestContext() = RequestContext(
+    DefinitionsContext(dataModels = mutableMapOf(
+        RegexRemoteModel.Meta.name to DataModelReference(RegexRemoteModel),
+        SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel),
+    )),
+    dataModel = RegexRemoteModel,
+)
+
+private object RegexRemoteModel : RootDataModel<RegexRemoteModel>(
+    minimumKeyScanByteRange = 0u,
+    indexes = { listOf(AnyOf("text", RegexRemoteModel.value.ref())) },
+) {
+    val value by string(1u)
+}
+
+private fun unsafeRegexMutationPayload(collect: Boolean): ByteArray {
+    val scan = RegexRemoteModel.scan(where = RegEx(RegexRemoteModel.ref { value } with Regex("a*a*a*b")))
+    return RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            SimpleMarykModel.add(SimpleMarykModel.create { value with "must-not-be-added" }),
+            if (collect) CollectRequest("rows", scan) else scan,
+        ),
+        regexRequestContext(),
+    )
+}
 
 private fun aggregationWorkPayload(): ByteArray =
     RemoteStoreCodec.encode(

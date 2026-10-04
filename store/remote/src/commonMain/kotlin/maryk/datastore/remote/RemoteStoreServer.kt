@@ -60,6 +60,7 @@ import maryk.core.query.filters.IsFilterList
 import maryk.core.query.filters.IsReferenceAnyPairsFilter
 import maryk.core.query.filters.Matches
 import maryk.core.query.filters.MatchesPrefix
+import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.MatchesRegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.requests.CollectRequest
@@ -838,7 +839,14 @@ private fun IsFilter.validateFilterWork(maxWork: Int) {
             is ValueIn -> filter.referenceValuePairs.sumOf { maxOf(1, it.values.size) }
             is Matches -> maxOf(1, filter.nameValuePairs.size)
             is MatchesPrefix -> maxOf(1, filter.nameValuePairs.size)
-            is MatchesRegEx -> maxOf(1, filter.nameRegexPairs.size)
+            is MatchesRegEx -> {
+                filter.nameRegexPairs.forEach { it.regex.requireSafeRemoteRegex() }
+                maxOf(1, filter.nameRegexPairs.size)
+            }
+            is RegEx -> {
+                filter.referenceValuePairs.forEach { it.regex.requireSafeRemoteRegex() }
+                maxOf(1, filter.referenceValuePairs.size)
+            }
             is GeoWithinPolygon -> maxOf(1, filter.vertices.size)
             is IsReferenceAnyPairsFilter<*> -> maxOf(1, filter.referenceValuePairs.size)
             is Exists -> maxOf(1, filter.references.size)
@@ -851,6 +859,15 @@ private fun IsFilter.validateFilterWork(maxWork: Int) {
             )
         }
         work += currentWork
+    }
+}
+
+private fun Regex.requireSafeRemoteRegex() {
+    if (!isSafeRemoteRegex()) {
+        throw RequestValidationException(
+            HttpStatusCode.BadRequest,
+            "Remote regular expression exceeds the bounded grammar; use a simple pattern, Matches or MatchesPrefix",
+        )
     }
 }
 

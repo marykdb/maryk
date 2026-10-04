@@ -55,10 +55,17 @@ Current handler hooks:
 ## Dependency ordering and cycles
 
 Migrations are executed in dependency order across models.
-- A model migrates after models it references.
+- A model migrates after models it references, including their index backfill,
+  version-update hook writes, and schema metadata publication. Dependent backfills
+  therefore read the finalized dependency data.
 - Cycles are rejected before execution with `MigrationException`.
 
 This prevents dependent models from migrating against stale referenced schemas.
+Compatible legacy index-format conversion runs before dependency version hooks use
+normal requests. When combining a legacy index-format upgrade with incompatible
+dependent schema changes, first open with the compatible source models to convert
+the index format, then apply the dependent schema migrations. Requests remain
+blocked while an incompatible legacy format has not yet been converted.
 
 ## Startup handoff to background
 

@@ -216,6 +216,7 @@ class RocksDBDataStore private constructor(
     }
     private val modelMetas: MutableMap<UInt, ModelMeta> = storeMeta.models.toMutableMap()
     private val storeInitializationComplete = atomic(false)
+    private var hasRequiredModelMigration = false
     private val indexKeyFormatReady = atomic(
         storeMeta.indexKeyFormatVersion == CURRENT_INDEX_KEY_FORMAT_VERSION
     )
@@ -240,7 +241,7 @@ class RocksDBDataStore private constructor(
 
     internal fun createReadContext() = RocksDBReadContext.create(db)
 
-    private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
+    private val scheduledVersionUpdateHandlers = linkedMapOf<UInt, suspend () -> Unit>()
     private val updateHistoryReadyModelIds = atomic(setOf<UInt>())
     internal val pendingMigrationModelIds = atomic(setOf<UInt>())
     internal val dependencyWaitingMigrationModelIds = atomic(setOf<UInt>())
@@ -346,6 +347,12 @@ class RocksDBDataStore private constructor(
         }
 
         initializeDurableClockWatermark()
+        // Compatible schemas can convert legacy index bytes before dependency version hooks
+        // use the normal request API. Incompatible schemas must still backfill first.
+        if (!indexKeyFormatReady.value && !hasRequiredModelMigration) {
+            validateStoredIndexKeyFormat()
+            indexKeyFormatReady.value = true
+        }
         startFlows()
 
         suspend fun processModelMigration(
@@ -435,8 +442,16 @@ class RocksDBDataStore private constructor(
                     dependencyId in dependencyWaitingMigrationModelIds.value
             }
             if (pendingDependencies.isEmpty()) {
+                // Publish dependency indexes, version-hook writes, and schema metadata before
+                // dependent migration phases can read or copy their data.
+                for (dependencyId in dependencyIdsByModelId[index].orEmpty()) {
+                    scheduledVersionUpdateHandlers.remove(dependencyId)?.let { finalizer ->
+                        finalizer()
+                        writeStoreMeta()
+                    }
+                }
                 processModelMigration(index) { finalizer ->
-                    scheduledVersionUpdateHandlers.add(finalizer)
+                    scheduledVersionUpdateHandlers[index] = finalizer
                 }
                 continue
             }
@@ -496,7 +511,7 @@ class RocksDBDataStore private constructor(
         storeInitializationComplete.value = true
         migrateStoredIndexKeyFormatIfReady()
 
-        scheduledVersionUpdateHandlers.forEach {
+        scheduledVersionUpdateHandlers.values.forEach {
             it()
             writeStoreMeta()
         }
@@ -595,6 +610,7 @@ class RocksDBDataStore private constructor(
                 onlyCheckVersion = onlyCheckModelVersion,
                 conversionContext = conversionContext,
             )
+            if (migrationStatus is NeedsMigration) hasRequiredModelMigration = true
             if (
                 migrationStatus is NeedsMigration &&
                 migrationConfiguration.migrationExpandHandler == null &&

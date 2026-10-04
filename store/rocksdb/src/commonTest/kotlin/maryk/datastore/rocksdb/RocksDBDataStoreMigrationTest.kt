@@ -26,6 +26,10 @@ import maryk.core.models.migration.MigrationRuntimeState
 import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.NoopMigrationLease
+import maryk.datastore.rocksdb.metadata.LEGACY_INDEX_KEY_FORMAT_VERSION
+import maryk.datastore.rocksdb.metadata.StoreMeta
+import maryk.datastore.rocksdb.metadata.readMetaFile
+import maryk.datastore.rocksdb.metadata.writeStoreMetaFile
 import maryk.datastore.rocksdb.model.RocksDBLocalMigrationLease
 import maryk.datastore.rocksdb.model.modelMigrationStateKey
 import maryk.core.properties.definitions.embed
@@ -1022,6 +1026,77 @@ class RocksDBDataStoreMigrationTest {
     }
 
     @Test
+    fun compatibleLegacyDependenciesCanReadInsideVersionHooks() = runTest {
+        val path = createTestDBFolder("legacyCompatibleDependencyHooks")
+        try {
+            RocksDBDataStore.open(
+                relativePath = path,
+                dataModelsById = mapOf(2u to Phase6OrderBaseV1, 1u to Phase6OrderDependentV1),
+            ).close()
+            writeStoreMetaFile(path, StoreMeta(readMetaFile(path), LEGACY_INDEX_KEY_FORMAT_VERSION))
+            var dependentHookRead = false
+            RocksDBDataStore.open(
+                relativePath = path,
+                dataModelsById = mapOf(2u to SafeOrderBaseV2, 1u to SafeOrderDependentV2),
+                versionUpdateHandler = { store, _, model ->
+                    when (model) {
+                        SafeOrderBaseV2 -> store.execute(SafeOrderBaseV2.add(SafeOrderBaseV2.create { value with "published" }))
+                        SafeOrderDependentV2 -> {
+                            assertEquals(listOf("published"), store.execute(SafeOrderBaseV2.scan()).values.map { it.values { value } })
+                            dependentHookRead = true
+                        }
+                    }
+                },
+            ).close()
+            assertTrue(dependentHookRead)
+        } finally {
+            deleteFolder(path)
+        }
+    }
+
+    @Test
+    fun dependentBackfillReadsFinalizedDependencyData() = runTest {
+        val path = createTestDBFolder("migrationDependencyFinalizedData")
+        try {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(2u to Phase6OrderBaseV1, 1u to Phase6OrderDependentV1),
+            ).close()
+
+            val store = RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(2u to Phase6OrderBaseV2, 1u to Phase6OrderDependentV2),
+                versionUpdateHandler = { dataStore, oldModel, newModel ->
+                    if (oldModel != null && newModel === Phase6OrderBaseV2) {
+                        dataStore.execute(Phase6OrderBaseV2.add(Phase6OrderBaseV2.create { value with 123 }))
+                    }
+                },
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { context ->
+                        if (context.newDataModel === Phase6OrderDependentV2) {
+                            for (record in context.store.execute(Phase6OrderBaseV2.scan()).values) {
+                                context.store.execute(Phase6OrderDependentV2.add(
+                                    Phase6OrderDependentV2.create { value with record.values { value } }
+                                ))
+                            }
+                        }
+                        MigrationOutcome.Success
+                    },
+                ),
+            )
+            try {
+                assertEquals(listOf(123), store.execute(Phase6OrderDependentV2.scan()).values.map { it.values { value } })
+            } finally {
+                store.close()
+            }
+        } finally {
+            deleteFolder(path)
+        }
+    }
+
+    @Test
     fun backgroundMigrationWaitsForDependencyCompletion() = runTest {
         val path = createTestDBFolder("migrationBackgroundDependencyCompletion")
         RocksDBDataStore.open(
@@ -1588,6 +1663,7 @@ private object Phase6OrderBaseV1 : RootDataModel<Phase6OrderBaseV1>(
 private object Phase6OrderBaseV2 : RootDataModel<Phase6OrderBaseV2>(
     name = "Phase6OrderBase",
     version = Version(2),
+    minimumKeyScanByteRange = 0u,
 ) {
     val value by number(index = 1u, type = SInt32, required = true)
 }
@@ -1603,6 +1679,7 @@ private object Phase6OrderDependentV1 : RootDataModel<Phase6OrderDependentV1>(
 private object Phase6OrderDependentV2 : RootDataModel<Phase6OrderDependentV2>(
     name = "Phase6OrderDependent",
     version = Version(2),
+    minimumKeyScanByteRange = 0u,
 ) {
     val base by embed(index = 1u, required = false, dataModel = { Phase6OrderBaseV2 })
     val value by number(index = 2u, type = SInt32, required = true)
@@ -1634,4 +1711,22 @@ private object Phase6ReferenceTargetModel : RootDataModel<Phase6ReferenceTargetM
     version = Version(1),
 ) {
     val value by string(index = 1u)
+}
+
+private object SafeOrderBaseV2 : RootDataModel<SafeOrderBaseV2>(
+    name = "Phase6OrderBase",
+    version = Version(1, 1),
+    minimumKeyScanByteRange = 0u,
+) {
+    val value by string(1u)
+    val extra by string(2u, required = false)
+}
+
+private object SafeOrderDependentV2 : RootDataModel<SafeOrderDependentV2>(
+    name = "Phase6OrderDependent",
+    version = Version(1, 1),
+) {
+    val base by embed(1u, required = false, dataModel = { SafeOrderBaseV2 })
+    val value by string(2u)
+    val extra by string(3u, required = false)
 }

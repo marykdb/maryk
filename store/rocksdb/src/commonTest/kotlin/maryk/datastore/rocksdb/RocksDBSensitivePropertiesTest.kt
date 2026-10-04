@@ -10,6 +10,8 @@ import kotlinx.coroutines.yield
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.index.AnyOf
+import maryk.core.properties.definitions.index.Normalize
 import maryk.core.properties.definitions.fixedBytes
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Bytes
@@ -50,6 +52,25 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 
 class RocksDBSensitivePropertiesTest {
+    @Test
+    fun sensitiveCompositeIndexesAndKeysAreRejected() = runTest {
+        listOf(SensitiveAnyOfRocksModel, SensitiveNormalizedRocksModel, SensitiveKeyRocksModel).forEachIndexed { index, model ->
+            val folder = createTestDBFolder("sensitive-unsafe-index-$index")
+            try {
+                assertFailsWith<RequestException> {
+                    RocksDBDataStore.open(
+                        relativePath = folder,
+                        keepAllVersions = false,
+                        dataModelsById = mapOf(1u to model),
+                        fieldEncryptionProvider = XorFieldEncryptionProvider(),
+                    ).close()
+                }
+            } finally {
+                deleteFolder(folder)
+            }
+        }
+    }
+
     @Test
     fun closeCancelsBlockedEncryptionProvider() = runTest {
         val folder = createTestDBFolder("close-blocked-encryption-provider")
@@ -775,4 +796,22 @@ object SensitiveUniqueRocksModel : RootDataModel<SensitiveUniqueRocksModel>(
         this.id with id
         this.secret with secret
     }
+}
+
+private object SensitiveAnyOfRocksModel : RootDataModel<SensitiveAnyOfRocksModel>(
+    indexes = { listOf(AnyOf("search", SensitiveAnyOfRocksModel.secret.ref())) },
+) {
+    val secret by string(1u, sensitive = true)
+}
+
+private object SensitiveNormalizedRocksModel : RootDataModel<SensitiveNormalizedRocksModel>(
+    indexes = { listOf(Normalize(Normalize(SensitiveNormalizedRocksModel.secret.ref()))) },
+) {
+    val secret by string(1u, sensitive = true)
+}
+
+private object SensitiveKeyRocksModel : RootDataModel<SensitiveKeyRocksModel>(
+    keyDefinition = { SensitiveKeyRocksModel.secret.ref() },
+) {
+    val secret by fixedBytes(1u, byteSize = 16, final = true, sensitive = true)
 }

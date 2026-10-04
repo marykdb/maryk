@@ -5,15 +5,13 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionContext
 import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
+import maryk.datastore.shared.encryption.mayContainPropertyReference
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.lib.bytes.combineToByteArray
@@ -238,12 +236,11 @@ internal class IndexedDbSensitiveFieldSupport(
     ): Boolean {
         val definition = wrapper.definition
         val isUnique = (definition as? IsComparableDefinition<*, *>)?.unique == true
-        val indexed = rootDataModel.Meta.indexes?.any {
-            it.isForPropertyReference(propertyReference)
-        } == true
+        val indexed = rootDataModel.Meta.keyDefinition.mayContainPropertyReference(propertyReference) ||
+            rootDataModel.Meta.indexes?.any { it.mayContainPropertyReference(propertyReference) } == true
         if (indexed) {
             throw RequestException(
-                "Sensitive property ${dataModel.Meta.name}.${wrapper.name} (modelId=$modelId) cannot be indexed yet. Use explicit blind-index field"
+                "Sensitive property ${dataModel.Meta.name}.${wrapper.name} (modelId=$modelId) cannot be used in a key or index. Use explicit blind-index field"
             )
         }
         return isUnique
@@ -251,12 +248,6 @@ internal class IndexedDbSensitiveFieldSupport(
 }
 
 private val ChangeLogContextReference = byteArrayOf(0) + "maryk-change-log-v1:".encodeToByteArray()
-
-private fun IsIndexable.isForPropertyReference(propertyReference: AnyPropertyReference): Boolean = when (this) {
-    is IsIndexablePropertyReference<*> -> isForPropertyReference(propertyReference)
-    is Multiple -> references.any { it is IsIndexablePropertyReference<*> && it.isForPropertyReference(propertyReference) }
-    else -> false
-}
 
 private fun ByteArray.hasPrefix(prefix: ByteArray): Boolean {
     if (size < prefix.size) return false

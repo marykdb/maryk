@@ -20,6 +20,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
+import maryk.core.properties.definitions.index.AnyOf
+import maryk.core.properties.definitions.index.Normalize
 import maryk.core.models.RootDataModel
 import maryk.core.models.emptyValues
 import maryk.core.models.graph
@@ -2636,6 +2638,20 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
+    fun sensitiveCompositeIndexesAndKeysAreRejected() = runTest {
+        installIndexedDbForTests()
+        listOf(SensitiveAnyOfRecord, SensitiveNormalizedRecord, SensitiveKeyRecord).forEachIndexed { index, model ->
+            assertFailsWith<RequestException> {
+                IndexedDbDataStore.open(
+                    databaseName = "maryk-indexeddb-unsafe-sensitive-$index-${Random.nextInt()}",
+                    dataModelsById = mapOf(902u to model),
+                    fieldEncryptionProvider = XorFieldEncryptionProvider(),
+                ).close()
+            }
+        }
+    }
+
+    @Test
     fun sensitivePropertyCannotBeIndexed() = runTest {
         installIndexedDbForTests()
 
@@ -3197,4 +3213,22 @@ private suspend fun runTestCase(
     } finally {
         testCase.resetData()
     }
+}
+
+private object SensitiveAnyOfRecord : RootDataModel<SensitiveAnyOfRecord>(
+    indexes = { listOf(AnyOf("search", SensitiveAnyOfRecord.secret.ref())) },
+) {
+    val secret by string(1u, sensitive = true)
+}
+
+private object SensitiveNormalizedRecord : RootDataModel<SensitiveNormalizedRecord>(
+    indexes = { listOf(Normalize(Normalize(SensitiveNormalizedRecord.secret.ref()))) },
+) {
+    val secret by string(1u, sensitive = true)
+}
+
+private object SensitiveKeyRecord : RootDataModel<SensitiveKeyRecord>(
+    keyDefinition = { SensitiveKeyRecord.secret.ref() },
+) {
+    val secret by fixedBytes(1u, byteSize = 16, final = true, sensitive = true)
 }

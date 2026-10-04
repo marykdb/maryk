@@ -68,3 +68,12 @@ Browser checks when available:
 ./gradlew :store:indexeddb:jsBrowserTest
 ./gradlew :store:indexeddb:wasmJsBrowserTest
 ```
+
+## Sensitive field indexes
+
+Sensitive properties cannot contribute to primary keys or secondary indexes,
+including composite and transformed indexes. Use a separate explicit blind-index
+field for search. Custom indexes without a dependency contract are rejected when
+sensitive properties are present. Existing plaintext key/index bytes from an unsafe
+older definition are not erased by startup validation; recover data into a fresh
+store with safe definitions and retire old database copies and backups.

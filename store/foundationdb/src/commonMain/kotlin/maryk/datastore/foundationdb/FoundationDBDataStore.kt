@@ -44,10 +44,8 @@ import maryk.core.models.migration.orderMigrationModelIds
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.addDataModelReferences
@@ -131,6 +129,7 @@ import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
 import maryk.datastore.shared.ReplicationTombstoneCompactor
+import maryk.datastore.shared.encryption.mayContainPropertyReference
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionContext
 import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
@@ -1886,21 +1885,14 @@ class FoundationDBDataStore private constructor(
     ): Boolean {
         val definition = wrapper.definition
         val isUnique = (definition as? IsComparableDefinition<*, *>)?.unique == true
-        val indexed = rootDataModel.Meta.indexes?.any {
-            it.isForPropertyReference(propertyReference)
-        } == true
+        val indexed = rootDataModel.Meta.keyDefinition.mayContainPropertyReference(propertyReference) ||
+            rootDataModel.Meta.indexes?.any { it.mayContainPropertyReference(propertyReference) } == true
         if (indexed) {
             throw RequestException(
-                "Sensitive property ${dataModel.Meta.name}.${wrapper.name} (modelId=$modelId) cannot be indexed yet. Use explicit blind-index field"
+                "Sensitive property ${dataModel.Meta.name}.${wrapper.name} (modelId=$modelId) cannot be used in a key or index. Use explicit blind-index field"
             )
         }
         return isUnique
-    }
-
-    private fun IsIndexable.isForPropertyReference(propertyReference: AnyPropertyReference): Boolean = when (this) {
-        is IsIndexablePropertyReference<*> -> isForPropertyReference(propertyReference)
-        is Multiple -> references.any { it is IsIndexablePropertyReference<*> && it.isForPropertyReference(propertyReference) }
-        else -> false
     }
 
     private fun readMaxClusterHlc(log: ClusterUpdateLog, tr: Transaction): ULong {

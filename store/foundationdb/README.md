@@ -150,7 +150,13 @@ Notes:
 - Reads auto-decrypt based on an encrypted payload marker.
 - Supported for simple value properties.
 - Sensitive+`unique` is supported when `fieldEncryptionProvider` also implements `SensitiveIndexTokenProvider`.
-- Sensitive+indexed is not supported.
+- Sensitive properties cannot contribute to primary keys or secondary indexes,
+  including composite and transformed indexes. Use a separate explicit blind-index
+  field when search is required. Custom indexes without a dependency contract are
+  rejected when the model contains sensitive properties.
+- Earlier versions could accept unsafe composite indexes. This validation does not
+  erase existing plaintext key/index bytes or physical backups. Recover affected
+  data into a fresh store with safe definitions, then securely retire old copies.
 
 ## Cluster-Wide ExecuteFlow Updates (Optional)
 

@@ -78,7 +78,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
         }
         val endKey = when (scanDirection) {
             ASC -> range.end
-            DESC -> range.getDescendingStartKey(keyScanRange.startKey, keyScanRange.includeStart)
+            DESC -> range.getDescendingStartKey(keyScanRange.startKey)
         }
         byteStore.scanInBatches(
             storeName = keyStoreName,
@@ -91,6 +91,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
         ) { keyBytes, rowValue ->
             if (scanDirection == ASC && range.keyOutOfRange(keyBytes)) return@scanInBatches false
             if (scanDirection == DESC && range.keyBeforeStart(keyBytes)) return@scanInBatches false
+            if (scanDirection == ASC && keyScanRange.keyBeforeStart(keyBytes)) return@scanInBatches true
+            if (scanDirection == DESC && keyScanRange.keyAfterStart(keyBytes)) return@scanInBatches true
             if (!keyScanRange.keyWithinRanges(keyBytes, 0) || !keyScanRange.matchesPartials(keyBytes, 0)) return@scanInBatches true
 
             val toVersion = request.toVersion

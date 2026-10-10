@@ -91,17 +91,35 @@ class CareQueryRegressionTest {
 
 
 
+    @Test
+    fun ascendingTableContinuationExhaustsAtMaximumKey() = runTest {
+        withBoundaryCases { it.ascendingTableContinuationExhaustsAtMaximumKey() }
+    }
 
+    @Test
+    fun descendingTableContinuationExhaustsAtMinimumKey() = runTest {
+        withBoundaryCases { it.descendingTableContinuationExhaustsAtMinimumKey() }
+    }
 
+    @Test
+    fun scopedChangeScanKeepsDescendingRangeAndContinuation() = runTest {
+        withBoundaryCases { it.scopedChangeScanKeepsDescendingRangeAndContinuation() }
+    }
 
+    @Test
+    fun ascendingContinuationAcrossByteCarryKeepsAdjacentRecords() = runTest {
+        withBoundaryCases { it.ascendingContinuationAcrossByteCarryKeepsAdjacentRecords() }
+    }
 
+    @Test
+    fun descendingContinuationKeepsAdjacentRecords() = runTest {
+        withBoundaryCases { it.descendingContinuationKeepsAdjacentRecords() }
+    }
 
-
-
-
-
-
-
+    @Test
+    fun descendingMaximumBytePrefixAdvances() = runTest {
+        withBoundaryCases { it.descendingMaximumBytePrefixAdvances() }
+    }
 
     private suspend fun withBoundaryCases(block: suspend (CareQueryRegressionCases) -> Unit) {
         val folder = createTestDBFolder("care-byte-boundaries")
@@ -161,11 +179,31 @@ class CareQueryRegressionTest {
         }
     }
 
+    @Test
+    fun descendingStatusWithResidualEnumTerminates() = runTest {
+        withStore("care-desc-residual-enum") { store ->
+            val expected = (1L..105L).map { store.addRecord(time = it) }.asReversed()
+            val response = store.boundedScan(QueryRecord.scan(
+                where = Equals(
+                    QueryRecord.ref { status } with Option.V1,
+                    QueryRecord.ref { direction } with Option.V2,
+                ),
+                order = Orders(QueryRecord.ref { status }.descending(), QueryRecord.ref { updatedAt }.descending()),
+                limit = 200u,
+            ))
+            assertEquals(expected.map { it.key }, response.values.map { it.key })
+        }
+    }
 
+    @Test
+    fun descendingStatusCursorReachesOlderRecordWithoutRepeatingPages() = runTest {
+        verifyStatusContinuation(rootKeyContinuation = false)
+    }
 
-
-
-
+    @Test
+    fun descendingStatusRootKeyReachesOlderRecordWithoutRepeatingPages() = runTest {
+        verifyStatusContinuation(rootKeyContinuation = true)
+    }
 
     private suspend fun verifyStatusContinuation(rootKeyContinuation: Boolean) {
         withStore("care-desc-status-cursor") { store ->
@@ -181,9 +219,56 @@ class CareQueryRegressionTest {
         }
     }
 
+    @Test
+    fun descendingParticipantCursorTraversesMoreThanFiveHundredRecords() = runTest {
+        withStore("care-desc-participant-cursor") { store ->
+            val older = store.addRecord(time = 0L, direction = Option.V1)
+            val newer = (1L..505L).map { store.addRecord(time = it) }
+            val request = QueryRecord.scan(
+                where = Equals(QueryRecord.ref { participant } with "participant"),
+                order = Orders(QueryRecord.ref { participant }.descending(), QueryRecord.ref { updatedAt }.descending()),
+                limit = 100u,
+            )
+            assertEquals(newer.asReversed().map { it.key } + older.key, store.allPages(request))
+        }
+    }
 
-
-
+    @Test
+    fun descendingActorDateRangesTerminateWithoutContinuation() = runTest {
+        withStore("care-desc-audit-range") { store ->
+            suspend fun addEvent(time: LocalDateTime): AddSuccess<AuditEvent> =
+                assertIs<AddSuccess<AuditEvent>>(store.execute(AuditEvent.add(AuditEvent.create {
+                    actor with "actor"
+                    timestamp with time
+                })).statuses.single())
+            val historical = addEvent(LocalDateTime(2024, 1, 1, 10, 0))
+            val recent = (0..11).map { addEvent(LocalDateTime(2026, 1, 1, 10, it)) }
+            val current = addEvent(LocalDateTime(2026, 10, 10, 10, 0))
+            val broadFilter = And(
+                Equals(AuditEvent.ref { actor } with "actor"),
+                GreaterThanEquals(AuditEvent.ref { timestamp } with LocalDateTime(2000, 1, 1, 0, 0)),
+                LessThanEquals(AuditEvent.ref { timestamp } with LocalDateTime(2100, 1, 1, 0, 0)),
+            )
+            val order = Orders(AuditEvent.ref { actor }.descending(), AuditEvent.ref { timestamp }.descending())
+            val broad = store.boundedScan(AuditEvent.scan(where = broadFilter, order = order, limit = 10u))
+            assertEquals(listOf(current.key) + recent.asReversed().take(9).map { it.key }, broad.values.map { it.key })
+            val narrow = store.boundedScan(AuditEvent.scan(
+                where = And(
+                    Equals(AuditEvent.ref { actor } with "actor"),
+                    GreaterThanEquals(AuditEvent.ref { timestamp } with LocalDateTime(2024, 1, 1, 0, 0)),
+                    LessThanEquals(AuditEvent.ref { timestamp } with LocalDateTime(2024, 12, 31, 23, 59, 59)),
+                ),
+                order = order,
+                limit = 1u,
+            ))
+            assertEquals(listOf(historical.key), narrow.values.map { it.key })
+            // The workflow also lists this scope before exporting. Exhausting it
+            // must stop at the namespace boundary, even with no continuation.
+            val complete = store.boundedScan(AuditEvent.scan(where = broadFilter, order = order, limit = 100u))
+            assertEquals(listOf(current.key) + recent.asReversed().map { it.key } + historical.key,
+                complete.values.map { it.key })
+        }
+    }
 
 
 

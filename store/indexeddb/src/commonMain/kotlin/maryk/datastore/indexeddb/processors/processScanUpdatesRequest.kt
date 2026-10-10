@@ -220,13 +220,15 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectTableScanU
         byteStore.scanInBatches(
             storeName = keyStoreName,
             startKey = if (direction == ASC) range.getAscendingStartKey(keyScanRange.startKey, keyScanRange.includeStart) else range.start.takeUnless { it.isEmpty() },
-            endKey = if (direction == ASC) range.end else range.getDescendingStartKey(keyScanRange.startKey, keyScanRange.includeStart),
+            endKey = if (direction == ASC) range.end else range.getDescendingStartKey(keyScanRange.startKey),
             includeEnd = direction == DESC || range.endInclusive,
             reverse = direction == DESC,
             targetLimit = UInt.MAX_VALUE,
         ) { keyBytes, snapshotBytes ->
             if (direction == ASC && range.keyOutOfRange(keyBytes)) return@scanInBatches false
             if (direction == DESC && range.keyBeforeStart(keyBytes)) return@scanInBatches false
+            if (direction == ASC && keyScanRange.keyBeforeStart(keyBytes)) return@scanInBatches true
+            if (direction == DESC && keyScanRange.keyAfterStart(keyBytes)) return@scanInBatches true
             if (!keyScanRange.keyWithinRanges(keyBytes, 0) || !keyScanRange.matchesPartials(keyBytes, 0)) return@scanInBatches true
 
             val toVersion = request.toVersion

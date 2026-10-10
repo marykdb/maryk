@@ -55,17 +55,31 @@ class CareQueryRegressionTest {
 
 
 
+    @Test
+    fun ascendingTableContinuationExhaustsAtMaximumKey() = runTest {
+        cases.ascendingTableContinuationExhaustsAtMaximumKey()
+    }
 
+    @Test
+    fun descendingTableContinuationExhaustsAtMinimumKey() = runTest {
+        cases.descendingTableContinuationExhaustsAtMinimumKey()
+    }
 
+    @Test
+    fun scopedChangeScanKeepsDescendingRangeAndContinuation() = runTest {
+        cases.scopedChangeScanKeepsDescendingRangeAndContinuation()
+    }
 
+    @Test
+    fun ascendingContinuationAcrossByteCarryKeepsAdjacentRecords() = runTest {
+        cases.ascendingContinuationAcrossByteCarryKeepsAdjacentRecords()
+    }
 
+    @Test
+    fun descendingContinuationKeepsAdjacentRecords() = runTest { cases.descendingContinuationKeepsAdjacentRecords() }
 
-
-
-
-
-
-
+    @Test
+    fun descendingMaximumBytePrefixAdvances() = runTest { cases.descendingMaximumBytePrefixAdvances() }
 
     @Test
     fun compositeEqualityWithNonLeadingEnum() = runTest { cases.compositeEqualityWithNonLeadingEnum() }
@@ -73,15 +87,20 @@ class CareQueryRegressionTest {
     @Test
     fun compositeEqualityWithTwoEnums() = runTest { cases.compositeEqualityWithTwoEnums() }
 
+    @Test
+    fun descendingStatusWithResidualEnumTerminates() = runTest { cases.descendingStatusWithResidualEnumTerminates() }
 
+    @Test
+    fun descendingStatusCursorReachesOlderRecordWithoutRepeatingPages() = runTest { cases.descendingStatusCursorReachesOlderRecordWithoutRepeatingPages() }
 
+    @Test
+    fun descendingStatusRootKeyReachesOlderRecordWithoutRepeatingPages() = runTest { cases.descendingStatusRootKeyReachesOlderRecordWithoutRepeatingPages() }
 
+    @Test
+    fun descendingParticipantCursorTraversesMoreThanFiveHundredRecords() = runTest { cases.descendingParticipantCursorTraversesMoreThanFiveHundredRecords() }
 
-
-
-
-
-
+    @Test
+    fun descendingActorDateRangesTerminateWithoutContinuation() = runTest { cases.descendingActorDateRangesTerminateWithoutContinuation() }
 
 
 

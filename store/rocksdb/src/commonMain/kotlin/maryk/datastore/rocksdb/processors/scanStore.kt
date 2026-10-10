@@ -54,7 +54,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
                             break
                         }
 
-                        if (!scanRange.matchesPartials(key.bytes)) {
+                        if (scanRange.keyBeforeStart(key.bytes) || !scanRange.matchesPartials(key.bytes)) {
                             iterator.next()
                             continue
                         }
@@ -90,7 +90,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
                 overallEndKey = scanRange.ranges.last().getAscendingStartKey()
 
                 for (range in scanRange.ranges.reversed()) {
-                    val lastKey = range.getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
+                    // Keep the cursor bound intact; the row check applies exclusivity even at the minimum key.
+                    val lastKey = range.getDescendingStartKey(scanRange.startKey)
 
                     lastKey?.let { last ->
                         iterator.seekForPrev(last)
@@ -108,7 +109,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
                             break
                         }
 
-                        if (!scanRange.matchesPartials(key.bytes)) {
+                        if (range.keyOutOfRange(key.bytes) || scanRange.keyAfterStart(key.bytes) || !scanRange.matchesPartials(key.bytes)) {
                             iterator.prev()
                             continue
                         }

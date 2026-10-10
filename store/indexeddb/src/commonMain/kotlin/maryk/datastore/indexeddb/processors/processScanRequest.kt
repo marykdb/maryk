@@ -220,6 +220,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
                     targetLimit = UInt.MAX_VALUE,
                 ) { keyBytes, snapshotBytes ->
                     if (range.keyOutOfRange(keyBytes)) return@scanInBatches false
+                    if (keyScanRange.keyBeforeStart(keyBytes)) return@scanInBatches true
                     if (!keyScanRange.keyWithinRanges(keyBytes, 0) || !keyScanRange.matchesPartials(keyBytes, 0)) return@scanInBatches true
 
                     val toVersion = request.toVersion
@@ -254,7 +255,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
             overallEndKey = keyScanRange.ranges.last().getAscendingStartKey()
 
             rangeLoop@ for (range in keyScanRange.ranges.asReversed()) {
-                val upperKey = range.getDescendingStartKey(keyScanRange.startKey, keyScanRange.includeStart)
+                // Apply cursor exclusivity to rows so the minimum key remains a finite bound.
+                val upperKey = range.getDescendingStartKey(keyScanRange.startKey)
                 byteStore.scanInBatches(
                     storeName = keyStoreName,
                     startKey = range.start.takeUnless { it.isEmpty() },
@@ -264,6 +266,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
                     targetLimit = UInt.MAX_VALUE,
                 ) { keyBytes, snapshotBytes ->
                     if (range.keyBeforeStart(keyBytes)) return@scanInBatches false
+                    if (keyScanRange.keyAfterStart(keyBytes)) return@scanInBatches true
                     if (!keyScanRange.keyWithinRanges(keyBytes, 0) || !keyScanRange.matchesPartials(keyBytes, 0)) return@scanInBatches true
 
                     val toVersion = request.toVersion

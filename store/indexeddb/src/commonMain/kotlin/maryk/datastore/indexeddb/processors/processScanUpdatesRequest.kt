@@ -281,6 +281,13 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectIndexScanU
         request.dataModel.createScanRange(request.where, null, request.includeStart)
     }
     val baseIndexRanges = indexScan.index.createScanRange(request.where, indexKeyScanRange)
+    if (baseIndexRanges.ranges.isEmpty()) {
+        return ScanUpdateRows(
+            rows = emptyList(),
+            sortingKeys = emptyList(),
+            dataFetchType = FetchByIndexScan(indexScan.index.referenceStorageByteArray.bytes, indexScan.direction, null, null),
+        )
+    }
     val startIndexValue = request.startKey?.let { startKey ->
         val toVersion = request.toVersion
         val record = if (toVersion != null) {
@@ -312,11 +319,11 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectIndexScanU
         ASC -> startIndexValue?.let {
             indexRanges.ranges.first().getAscendingStartKey(it, keyScanRange.includeStart)
         } ?: indexRanges.ranges.first().start
-        DESC -> indexRanges.ranges.first().getDescendingStartKey(startIndexValue, keyScanRange.includeStart)
+        DESC -> indexRanges.ranges.last().getDescendingStartKey(startIndexValue, keyScanRange.includeStart)
     }
     val overallStopKey = when (indexScan.direction) {
         ASC -> indexRanges.ranges.last().getDescendingStartKey()
-        DESC -> indexRanges.ranges.last().getAscendingStartKey()
+        DESC -> indexRanges.ranges.first().getAscendingStartKey()
     }
 
     val rangeList = if (indexScan.direction == ASC) indexRanges.ranges else indexRanges.ranges.asReversed()

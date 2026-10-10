@@ -9,9 +9,6 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
-import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
-import maryk.core.processors.datastore.matchers.IndexPartialToMatch
-import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.IndexValueMatch
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -76,6 +73,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
 ): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    if (indexScanRange.ranges.isEmpty()) {
+        return FetchByIndexScan(indexReference, indexScan.direction, null, null)
+    }
 
     val keySize = scanRequest.dataModel.Meta.keyByteSize
     val baseOffset = tableDirs.indexPrefix.size
@@ -136,11 +136,11 @@ internal fun <DM : IsRootDataModel> scanIndex(
         ASC -> startIndexKey?.let {
             indexScanRange.ranges.first().getAscendingStartKey(it, keyScanRange.includeStart)
         } ?: indexScanRange.ranges.first().start
-        DESC -> indexScanRange.ranges.first().getDescendingStartKey(startIndexKey, keyScanRange.includeStart)
+        DESC -> indexScanRange.ranges.last().getDescendingStartKey(startIndexKey, keyScanRange.includeStart)
     }
     val responseStopKey = when (indexScan.direction) {
         ASC -> indexScanRange.ranges.last().getDescendingStartKey()
-        DESC -> indexScanRange.ranges.last().getAscendingStartKey()
+        DESC -> indexScanRange.ranges.first().getAscendingStartKey()
     }
 
     data class Rec(val sort: ByteArray, val keyBytes: ByteArray, val created: ULong)
@@ -154,15 +154,13 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
         when (indexScan.direction) {
             ASC -> {
-                var startKeyFilter = startIndexKey
-                var includeStartFilter = keyScanRange.includeStart
-                for (i in ranges.indices) {
+                // Continuation must bound every range, including those after the first.
+                for (range in ranges) {
                     if (emitted >= scanRequest.limit) break
-                    val range = ranges[i]
-                    val effectiveStartKey = startKeyFilter.takeIf { i == 0 }
+                    val effectiveStartKey = startIndexKey
 
                     val startSeg = effectiveStartKey?.let {
-                        range.getAscendingStartKey(it, if (i == 0) includeStartFilter else true)
+                        range.getAscendingStartKey(it, keyScanRange.includeStart)
                     } ?: range.start
                     val begin = concatArrays(base, startSeg)
                     val end = when (val endExclusiveSeg = range.getDescendingStartKey()) {
@@ -211,7 +209,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                         effectiveStartKey
                                     )
                                     if (cmp < 0) return@forEachInRangeBatch true
-                                    if (!includeStartFilter && cmp == 0) return@forEachInRangeBatch true
+                                    if (!keyScanRange.includeStart && cmp == 0) return@forEachInRangeBatch true
                                 }
 
                                 if (continuation != null) {
@@ -246,11 +244,6 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
                         if (result.completed || emitted >= scanRequest.limit) break
                         nextBegin = result.lastKey?.let { it + byteArrayOf(0) } ?: break
-                    }
-
-                    if (startKeyFilter != null) {
-                        startKeyFilter = null
-                        includeStartFilter = true
                     }
                 }
             }
@@ -369,8 +362,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
         var descendingUpperBoundApplied = false
 
         val ranges = indexScanRange.ranges
-        for (i in ranges.indices) {
-            val range = ranges[i]
+        for (range in ranges) {
             if (indexScan.direction == DESC && startIndexKey != null &&
                 range.keyBeforeStart(startIndexKey, 0, startIndexKey.size)
             ) {
@@ -378,8 +370,8 @@ internal fun <DM : IsRootDataModel> scanIndex(
             }
 
             val startSeg = when (indexScan.direction) {
-                ASC -> startIndexKey.takeIf { i == 0 }?.let {
-                    range.getAscendingStartKey(it, if (i == 0) keyScanRange.includeStart else true)
+                ASC -> startIndexKey?.let {
+                    range.getAscendingStartKey(it, keyScanRange.includeStart)
                 } ?: range.start
                 DESC -> range.getAscendingStartKey(null, true)
             }
@@ -897,25 +889,7 @@ private fun ScanRange.matchesIndexValue(
 }
 
 private fun indexRangeLength(indexScanRange: IndexableScanRanges, range: ScanRange, valueSize: Int): Int =
-    if (
-        range.start.isNotEmpty() &&
-        range.startInclusive &&
-        range.endInclusive &&
-        range.end?.contentEquals(range.start) == true &&
-        indexScanRange.partialMatches?.any {
-            (it is IndexPartialSizeToMatch && it.size == range.start.size) ||
-                (it is IndexPartialToMatch &&
-                    it.partialMatch &&
-                    it.toMatch.contentEquals(range.start)) ||
-                (it is IndexPartialToBeOneOf &&
-                    it.partialMatch &&
-                    it.toBeOneOf.any(range.start::contentEquals))
-        } == true
-    ) {
-        range.start.size
-    } else {
-        valueSize
-    }
+    indexScanRange.rangeLength(range, valueSize)
 
 private fun compareDefinedRange(
     source: ByteArray,

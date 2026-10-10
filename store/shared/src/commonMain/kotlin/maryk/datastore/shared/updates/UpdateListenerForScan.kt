@@ -5,8 +5,6 @@ import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
-import maryk.core.processors.datastore.matchers.IndexPartialToMatch
-import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.ScanRange
@@ -479,19 +477,4 @@ private fun ScanRange.matchesIndexValue(indexScanRange: IndexableScanRanges, ind
 }
 
 private fun indexRangeLength(indexScanRange: IndexableScanRanges, range: ScanRange, valueSize: Int): Int =
-    if (
-        range.start.isNotEmpty() &&
-        range.startInclusive &&
-        range.endInclusive &&
-        range.end?.contentEquals(range.start) == true &&
-        indexScanRange.partialMatches?.any {
-            (it is IndexPartialSizeToMatch && it.size == range.start.size) ||
-                (it is IndexPartialToMatch &&
-                    it.partialMatch &&
-                    it.toMatch.contentEquals(range.start))
-        } == true
-    ) {
-        range.start.size
-    } else {
-        valueSize
-    }
+    indexScanRange.rangeLength(range, valueSize)

@@ -38,5 +38,8 @@ internal fun createRanges(
         )
     }
 
+    // Multiplying membership alternatives groups ranges by the last property.
+    // Every scanner needs the ranges in storage order to preserve continuation.
+    ranges.sortWith { first, second -> first.start compareTo second.start }
     return ranges
 }

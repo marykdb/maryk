@@ -19,6 +19,8 @@ import maryk.core.query.filters.Range
 import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
+import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.number
 import maryk.test.models.CompleteMarykModel.string
@@ -32,6 +34,84 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 class IndexableScanRangesTest {
+    @Test
+    fun equalityPrefixRemainsAnchoredWithMembershipAfterAnUnfilteredPart() {
+        val composite = Multiple(number.ref(), time.ref(), string.ref(), CompleteMarykModel.booleanForKey.ref())
+        val ranges = composite.createScanRange(And(
+            Equals(number.ref() with 5u, time.ref() with LocalTime(11, 10, 9)),
+            ValueIn(CompleteMarykModel.booleanForKey.ref() with setOf(true)),
+        ), keyScanRange)
+        val row = composite.toStorageByteArrayForIndex(matchDO, matchKey.bytes)!!
+        val valueSize = composite.toStorageByteArrays(matchDO).single().size
+        val range = ranges.ranges.single()
+
+        assertTrue(ranges.matchesPartials(row, length = valueSize))
+        assertEquals(range.start.size, ranges.rangeLength(range, valueSize))
+        assertFalse(range.keyOutOfRange(row, length = ranges.rangeLength(range, valueSize)))
+    }
+
+    @Test
+    fun compositeEqualityPrefixUsesSumOfAnchoredPartSizes() {
+        val composite = Multiple(number.ref(), time.ref(), string.ref())
+        val ranges = composite.createScanRange(Equals(
+            number.ref() with 5u,
+            time.ref() with LocalTime(11, 10, 9),
+        ), keyScanRange)
+        val row = composite.toStorageByteArrayForIndex(matchDO, matchKey.bytes)!!
+        val valueSize = composite.toStorageByteArrays(matchDO).single().size
+        val range = ranges.ranges.single()
+
+        assertTrue(ranges.matchesPartials(row, length = valueSize))
+        assertEquals(range.start.size, ranges.rangeLength(range, valueSize))
+        assertFalse(range.keyOutOfRange(row, length = ranges.rangeLength(range, valueSize)))
+    }
+
+    @Test
+    fun variableLengthMembershipAnchorsFollowingEquality() {
+        val composite = Multiple(string.ref(), number.ref(), time.ref())
+        val ranges = composite.createScanRange(And(
+            ValueIn(string.ref() with setOf("J", "Jannes")),
+            Equals(number.ref() with 5u),
+        ), keyScanRange)
+        val row = composite.toStorageByteArrayForIndex(matchDO, matchKey.bytes)!!
+        val valueSize = composite.toStorageByteArrays(matchDO).single().size
+        val range = ranges.ranges.single { row.matchesRangePart(0, it.start, sourceLength = valueSize) }
+        assertTrue(ranges.matchesPartials(row, length = valueSize))
+        assertEquals(range.start.size, ranges.rangeLength(range, valueSize))
+        assertFalse(range.keyOutOfRange(row, length = ranges.rangeLength(range, valueSize)))
+    }
+
+    @Test
+    fun membershipPrefixMustEndOnTheActualPropertyBoundary() {
+        val composite = Multiple(string.ref(), number.ref(), time.ref())
+        val longerValue = "J\u0000\u0000\u0000\u000c"
+        val ranges = composite.createScanRange(And(
+            ValueIn(string.ref() with setOf("J", longerValue)),
+            Equals(number.ref() with 12u),
+        ), keyScanRange)
+        val wrongValues = CompleteMarykModel.create {
+            string with longerValue
+            number with 13u
+            time with LocalTime(11, 10, 9)
+            booleanForKey with true
+            dateForKey with LocalDate(2019, 3, 3)
+            multiForKey with S1("test")
+            enumEmbedded with E1
+        }
+        val row = composite.toStorageByteArrayForIndex(wrongValues, CompleteMarykModel.key(wrongValues).bytes)!!
+        val valueSize = composite.toStorageByteArrays(wrongValues).single().size
+        assertFalse(ranges.matchesPartials(row, length = valueSize))
+    }
+
+    @Test
+    fun membershipAnchorsLeadingFixedSizePart() {
+        val ranges = indexable.createScanRange(ValueIn(number.ref() with setOf(2u, 5u)), keyScanRange)
+        val range = ranges.ranges.single { matchCompositeIndexValue.matchesRangePart(0, it.start, sourceLength = matchCompositeValueSize) }
+        assertTrue(ranges.matchesPartials(matchCompositeIndexValue, length = matchCompositeValueSize))
+        assertEquals(range.start.size, ranges.rangeLength(range, matchCompositeValueSize))
+        assertFalse(range.keyOutOfRange(matchCompositeIndexValue, length = ranges.rangeLength(range, matchCompositeValueSize)))
+    }
+
     private val keyScanRange = KeyScanRanges(
         ranges = listOf(
             ScanRange(
@@ -372,6 +452,8 @@ class IndexableScanRangesTest {
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
         assertEquals(4, scanRange.ranges.size)
+        assertTrue(scanRange.ranges.zipWithNext().all { (first, second) -> first.start <= second.start },
+            "Membership ranges must be ordered for forward and backward traversal")
 
         for (numberValue in numbers) {
             for (timeValue in times) {

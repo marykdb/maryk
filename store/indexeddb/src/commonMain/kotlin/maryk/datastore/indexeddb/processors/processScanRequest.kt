@@ -336,6 +336,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
         request.dataModel.createScanRange(request.where, null, request.includeStart)
     }
     val baseIndexRanges = indexScan.index.createScanRange(request.where, indexKeyScanRange)
+    if (baseIndexRanges.ranges.isEmpty()) {
+        return ValuesResponse(
+            dataModel = request.dataModel,
+            values = emptyList(),
+            aggregations = aggregator?.toResponse(),
+            dataFetchType = FetchByIndexScan(indexScan.index.referenceStorageByteArray.bytes, indexScan.direction, null, null),
+        )
+    }
 
     fun selectCanonicalIndexValue(valuesGetter: IsValuesGetter, keyBytes: ByteArray): ByteArray? {
         val candidates = indexScan.index.toStorageByteArraysForIndex(valuesGetter, keyBytes)
@@ -377,11 +385,11 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
         ASC -> startIndexValue?.let {
             indexRanges.ranges.first().getAscendingStartKey(it, keyScanRange.includeStart)
         } ?: indexRanges.ranges.first().start
-        DESC -> indexRanges.ranges.first().getDescendingStartKey(startIndexValue, keyScanRange.includeStart)
+        DESC -> indexRanges.ranges.last().getDescendingStartKey(startIndexValue, keyScanRange.includeStart)
     }
     val overallStopKey = when (indexScan.direction) {
         ASC -> indexRanges.ranges.last().getDescendingStartKey()
-        DESC -> indexRanges.ranges.last().getAscendingStartKey()
+        DESC -> indexRanges.ranges.first().getAscendingStartKey()
     }
 
     val rangeList = if (indexScan.direction == ASC) indexRanges.ranges else indexRanges.ranges.asReversed()
@@ -402,7 +410,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
                     createIndexKeyWithPrefix(indexPrefix, rangeEnd)
                 }
             }
-            DESC -> when (val descendingStart = range.getDescendingStartKey(startIndexValue, keyScanRange.includeStart)) {
+            // IndexedDB applies the cursor's inclusivity to the range itself. Using
+            // the predecessor here would exclude an adjacent record a second time.
+            DESC -> when (val descendingStart = range.getDescendingStartKey(startIndexValue, inclusiveStartKey = true)) {
                 null -> createIndexRangeEnd(indexScan.index.referenceStorageByteArray.bytes)
                 else -> if (descendingStart.isEmpty()) {
                     createIndexRangeEnd(indexScan.index.referenceStorageByteArray.bytes)

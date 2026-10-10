@@ -167,6 +167,13 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
         request.dataModel.createScanRange(request.where, null, request.includeStart)
     }
     val baseIndexRanges = indexScan.index.createScanRange(request.where, indexKeyScanRange)
+    if (baseIndexRanges.ranges.isEmpty()) {
+        return ChangesResponse(
+            dataModel = request.dataModel,
+            changes = emptyList(),
+            dataFetchType = FetchByIndexScan(indexScan.index.referenceStorageByteArray.bytes, indexScan.direction, null, null),
+        )
+    }
     val startIndexValue = request.startKey?.let { startKey ->
         val record = if (toVersion != null) {
             readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, startKey.bytes, toVersion, null)
@@ -198,11 +205,11 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
         ASC -> startIndexValue?.let {
             indexRanges.ranges.first().getAscendingStartKey(it, keyScanRange.includeStart)
         } ?: indexRanges.ranges.first().start
-        DESC -> indexRanges.ranges.first().getDescendingStartKey(startIndexValue, keyScanRange.includeStart)
+        DESC -> indexRanges.ranges.last().getDescendingStartKey(startIndexValue, keyScanRange.includeStart)
     }
     val overallStopKey = when (indexScan.direction) {
         ASC -> indexRanges.ranges.last().getDescendingStartKey()
-        DESC -> indexRanges.ranges.last().getAscendingStartKey()
+        DESC -> indexRanges.ranges.first().getAscendingStartKey()
     }
 
     val rangeList = if (indexScan.direction == ASC) indexRanges.ranges else indexRanges.ranges.asReversed()

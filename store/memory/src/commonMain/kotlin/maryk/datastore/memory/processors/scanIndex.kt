@@ -6,9 +6,6 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
-import maryk.core.processors.datastore.matchers.IndexPartialToMatch
-import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
-import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
 import maryk.core.processors.datastore.scanRange.IndexValueMatch
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -49,6 +46,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
     val seenKeys = mutableSetOf<Bytes>()
 
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    if (indexScanRange.ranges.isEmpty()) {
+        return FetchByIndexScan(indexReference, indexScan.direction, null, null)
+    }
     val startKey = continuation?.let {
         it.orderKey?.bytes ?: throw RequestException("Scan cursor has no index ordering boundary")
     } ?: scanRequest.startKey?.let { startKey ->
@@ -185,13 +185,13 @@ internal fun <DM : IsRootDataModel> scanIndex(
             overallStartKey = if (!keyScanRange.includeStart &&
                 startKey != null &&
                 startKey.all { it == 0.toByte() } &&
-                indexScanRange.ranges.first().end?.let { end -> end.isEmpty() || startKey < end } != false
+                indexScanRange.ranges.last().end?.let { end -> end.isEmpty() || startKey < end } != false
             ) {
                 null
             } else {
-                indexScanRange.ranges.first().getDescendingStartKey(startKey, keyScanRange.includeStart)
+                indexScanRange.ranges.last().getDescendingStartKey(startKey, keyScanRange.includeStart)
             }
-            overallStopKey = indexScanRange.ranges.last().getAscendingStartKey()
+            overallStopKey = indexScanRange.ranges.first().getAscendingStartKey()
 
             for (indexRange in indexScanRange.ranges.reversed()) {
                 val rangeEnd = indexRange.end
@@ -336,25 +336,7 @@ private fun ScanRange.matchesIndexValue(indexScanRange: IndexableScanRanges, ind
 }
 
 private fun indexRangeLength(indexScanRange: IndexableScanRanges, range: ScanRange, valueSize: Int): Int =
-    if (
-        range.start.isNotEmpty() &&
-        range.startInclusive &&
-        range.endInclusive &&
-        range.end?.contentEquals(range.start) == true &&
-        indexScanRange.partialMatches?.any {
-            (it is IndexPartialSizeToMatch && it.size == range.start.size) ||
-                (it is IndexPartialToMatch &&
-                    it.partialMatch &&
-                    it.toMatch.contentEquals(range.start)) ||
-                (it is IndexPartialToBeOneOf &&
-                    it.partialMatch &&
-                    it.toBeOneOf.any(range.start::contentEquals))
-        } == true
-    ) {
-        range.start.size
-    } else {
-        valueSize
-    }
+    indexScanRange.rangeLength(range, valueSize)
 
 private fun resolveIndexValueSize(indexValue: ByteArray, keySize: Int, indexPartCount: Int): Int? {
     if (indexPartCount <= 0 || indexValue.size < keySize) return null

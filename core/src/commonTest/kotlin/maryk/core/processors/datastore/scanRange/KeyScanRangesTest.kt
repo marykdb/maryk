@@ -12,6 +12,7 @@ import maryk.core.query.filters.LessThanEquals
 import maryk.core.query.filters.Range
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
+import maryk.lib.extensions.compare.compareTo
 import maryk.test.models.Log
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
@@ -450,6 +451,8 @@ class KeyScanRangesTest {
         val scanRange = Log.createScanRange(filter, null)
 
         assertEquals(4, scanRange.ranges.size)
+        assertTrue(scanRange.ranges.zipWithNext().all { (first, second) -> first.start <= second.start },
+            "Membership ranges must be ordered for forward and backward traversal")
 
         for (timestamp in timestamps) {
             for (severity in severities) {

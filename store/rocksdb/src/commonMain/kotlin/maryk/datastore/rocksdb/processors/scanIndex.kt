@@ -6,9 +6,6 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
-import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
-import maryk.core.processors.datastore.matchers.IndexPartialToMatch
-import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.IndexValueMatch
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -44,7 +41,6 @@ import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareToRange
-import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.exceptions.ParseException
 import maryk.rocksdb.ColumnFamilyHandle
@@ -66,6 +62,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
     val indexKeyPrefix = createIndexKeyPrefix(indexReference)
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    if (indexScanRange.ranges.isEmpty()) {
+        return FetchByIndexScan(indexReference, indexScan.direction, null, null)
+    }
 
     val startKey = continuation?.let {
         it.orderKey?.bytes ?: throw RequestException("Scan cursor has no index ordering boundary")
@@ -114,11 +113,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
         ASC -> startKey?.let {
             indexScanRange.ranges.first().getAscendingStartKey(it, keyScanRange.includeStart)
         } ?: indexScanRange.ranges.first().start
-        DESC -> indexScanRange.ranges.first().getDescendingStartKey(startKey, keyScanRange.includeStart)
+        DESC -> indexScanRange.ranges.last().getDescendingStartKey(startKey, keyScanRange.includeStart)
     }
     overallStopKey = when (indexScan.direction) {
         ASC -> indexScanRange.ranges.last().getDescendingStartKey()
-        DESC -> indexScanRange.ranges.last().getAscendingStartKey()
+        DESC -> indexScanRange.ranges.first().getAscendingStartKey()
     }
 
     val indexColumnHandle = if(scanRequest.toVersion == null) {
@@ -354,8 +353,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                 }
             }
             DESC -> {
-                overallStartKey = indexScanRange.ranges.first().getDescendingStartKey(startKey, keyScanRange.includeStart)
-                overallStopKey = indexScanRange.ranges.last().getAscendingStartKey()
+                overallStartKey = indexScanRange.ranges.last().getDescendingStartKey(startKey, keyScanRange.includeStart)
+                overallStopKey = indexScanRange.ranges.first().getAscendingStartKey()
 
                 for (indexRange in indexScanRange.ranges.reversed()) {
                     val indexStartKey = indexRange.getDescendingStartKey(startKey, keyScanRange.includeStart)?.let {
@@ -697,13 +696,22 @@ private fun <DM : IsRootDataModel> checkAndProcess(
     softDeleteCache: RequestKeySoftDeleteCache?,
     next: (ByteArray, Int, Int) -> Unit
 ): UInt {
+    fun advance() {
+        when (indexScan.direction) {
+            ASC -> iterator.next()
+            DESC -> iterator.prev()
+        }
+    }
     var currentSize = emitted
     while (iterator.isValid()) {
         val indexRecord = iterator.key()
+        // Check the index namespace before decoding its layout. Adjacent indexes
+        // can have different part counts and cannot be parsed with this index.
+        if (!indexRecord.matchesRangePart(0, indexKeyPrefix, length = indexKeyPrefix.size)) break
         if (versionSize == 0) {
             val valueSize = findIndexValueSize(indexRecord, valueOffset, indexRecord.size, keySize, indexPartCount)
             if (valueSize < 0) {
-                iterator.next()
+                advance()
                 continue
             }
             val keyOffset = indexRecord.size - keySize
@@ -796,12 +804,12 @@ private fun <DM : IsRootDataModel> checkAndProcess(
 
         val qualifierEnd = indexRecord.size - versionSize
         if (qualifierEnd <= valueOffset + keySize || indexRecord.size < versionSize) {
-            iterator.next()
+            advance()
             continue
         }
         val valueSize = findIndexValueSize(indexRecord, valueOffset, qualifierEnd, keySize, indexPartCount)
         if (valueSize < 0) {
-            iterator.next()
+            advance()
             continue
         }
         val keyOffset = qualifierEnd - keySize
@@ -1153,25 +1161,7 @@ private fun ScanRange.matchesIndexValue(
 }
 
 private fun indexRangeLength(indexScanRange: IndexableScanRanges, range: ScanRange, valueSize: Int): Int =
-    if (
-        range.start.isNotEmpty() &&
-        range.startInclusive &&
-        range.endInclusive &&
-        range.end?.contentEquals(range.start) == true &&
-        indexScanRange.partialMatches?.any {
-            (it is IndexPartialSizeToMatch && it.size == range.start.size) ||
-                (it is IndexPartialToMatch &&
-                    it.partialMatch &&
-                    it.toMatch.contentEquals(range.start)) ||
-                (it is IndexPartialToBeOneOf &&
-                    it.partialMatch &&
-                    it.toBeOneOf.any(range.start::contentEquals))
-        } == true
-    ) {
-        range.start.size
-    } else {
-        valueSize
-    }
+    indexScanRange.rangeLength(range, valueSize)
 
 private fun isKeyInIndexRange(
     key: ByteArray,

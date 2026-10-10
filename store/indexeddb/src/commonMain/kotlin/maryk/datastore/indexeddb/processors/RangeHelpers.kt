@@ -1,9 +1,6 @@
 package maryk.datastore.indexeddb.processors
 
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
-import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
-import maryk.core.processors.datastore.matchers.IndexPartialToMatch
-import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.ScanRange
 import maryk.lib.extensions.compare.nextByteInSameLength
@@ -32,22 +29,4 @@ internal fun indexRangeLength(
     range: ScanRange,
     valueSize: Int
 ): Int =
-    if (
-        range.start.isNotEmpty() &&
-        range.startInclusive &&
-        range.endInclusive &&
-        range.end?.contentEquals(range.start) == true &&
-        indexScanRange.partialMatches?.any {
-            (it is IndexPartialSizeToMatch && it.size == range.start.size) ||
-                (it is IndexPartialToMatch &&
-                    it.partialMatch &&
-                    it.toMatch.contentEquals(range.start)) ||
-                (it is IndexPartialToBeOneOf &&
-                    it.partialMatch &&
-                    it.toBeOneOf.any(range.start::contentEquals))
-        } == true
-    ) {
-        range.start.size
-    } else {
-        valueSize
-    }
+    indexScanRange.rangeLength(range, valueSize)

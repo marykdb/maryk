@@ -229,7 +229,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                 index = 0
                                 initIntByVar { valueBytes[index++] }
                             }
-                            Embed -> {}
+                            Embed -> if (iterator.value().isHistoricDeleteMarker()) null else Unit
                             TypeValue -> throw StorageException("Not used in direct encoding")
                             ObjectDelete -> null
                         }

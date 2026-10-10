@@ -117,6 +117,7 @@ class CareQueryRegressionTest {
     @Test
     fun descendingActorDateRangesTerminateWithoutContinuation() = runTest { cases.descendingActorDateRangesTerminateWithoutContinuation() }
 
-
+    @Test
+    fun historicalNameScanKeepsDeletedOptionalEmbedAbsent() = runTest { cases.historicalNameScanKeepsDeletedOptionalEmbedAbsent() }
 
 }

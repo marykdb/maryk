@@ -764,7 +764,32 @@ class CareQueryRegressionCases(private val createStore: suspend (String) -> IsDa
         }
     }
 
+    suspend fun historicalNameScanKeepsDeletedOptionalEmbedAbsent() {
+        withStore("care-historic-deleted-embed") { store ->
+            val original = store.addRecord(recipient = Profile.create { label with "recipient" })
+            val deletion = assertIs<ChangeSuccess<QueryRecord>>(store.execute(QueryRecord.change(
+                original.key.change(Change(QueryRecord.ref { recipient } with null)),
+            )).statuses.single())
 
+            assertNull(store.execute(QueryRecord.get(original.key)).values.single().values { recipient })
+            for (version in listOf(original.version, deletion.version)) {
+                val result = store.boundedScan(QueryRecord.scan(
+                    where = Equals(QueryRecord.ref { familyName } with "Mous"),
+                    order = QueryRecord.ref { familyName }.ascending(),
+                    toVersion = version,
+                )).values.single()
+                assertEquals(original.key, result.key)
+                assertEquals("practitioner", result.values { practitioner }?.get(Profile.label.ref()))
+                if (version == deletion.version) {
+                    assertNull(result.values { recipient })
+                    assertNull(store.execute(QueryRecord.get(original.key, toVersion = version))
+                        .values.single().values { recipient })
+                } else {
+                    assertEquals("recipient", result.values { recipient }?.get(Profile.label.ref()))
+                }
+            }
+        }
+    }
 
     private suspend fun IsDataStore.allPages(
         request: ScanRequest<QueryRecord>,

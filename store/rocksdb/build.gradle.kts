@@ -42,6 +42,7 @@ kotlin {
         androidDeviceTest {
             kotlin.srcDir("src/commonTest/kotlin")
             dependencies {
+                implementation(projects.sql.conformance)
                 implementation(libs.androidx.test.core)
                 implementation(libs.androidx.test.runner)
                 implementation(kotlin("test"))

@@ -44,7 +44,8 @@ class AtomicRequestTest {
     @Test
     fun batchEnvelope() {
         checkProtoBufConversion(Requests(request), Requests, ::context, checker = { converted, _ ->
-            val value: Any = converted.requests.single()
+            // Batch envelopes retain ObjectValues until request injections are resolved.
+            val value = (converted.requests as List<*>).single()
             val decoded = if (value is ObjectValues<*, *>) value.toDataObject() else value
             compare(assertIs<AtomicRequest>(decoded), request)
         })

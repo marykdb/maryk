@@ -148,7 +148,7 @@ private fun ScanRequest<*>.queryFingerprint(): ULong {
     return hash
 }
 
-private fun IsRootDataModel.schemaFingerprint(): ULong {
+internal fun IsRootDataModel.schemaFingerprint(): ULong {
     val encoder = ScanLayoutEncoder()
     encoder.writeByte(SCAN_LAYOUT_FINGERPRINT_VERSION)
     encoder.writeBytes(

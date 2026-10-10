@@ -119,6 +119,16 @@ val store = FoundationDBDataStore.open(
 )
 ```
 
+### Update history
+
+`getUpdateHistory(key, ...)` and `scanUpdateHistory(...)` return finite,
+newest-first pages when both history options are enabled and the history index
+is ready. Continue with `UpdatesResponse.nextCursor`; the limit counts complete
+record-version entries, independently of property-history `maxVersions`.
+Both queries scan the existing model-wide history index. See
+[history paging](../../core/docs/query.md#getscan-update-history) for filters,
+projections, and hard-delete retention limits.
+
 ### Sensitive Field Encryption (Optional)
 
 Mark a property as sensitive in a model:

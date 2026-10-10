@@ -25,6 +25,7 @@ import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
+import maryk.core.query.requests.getUpdateHistory
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.IsResponse
@@ -49,6 +50,12 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class RequestExecutionTest {
+    @Test
+    fun getUpdateHistoryIsARead() {
+        val key = SimpleMarykModel.key(SimpleMarykModel.create { value with "haha" })
+        assertEquals(RequestExecutionKind.Read, SimpleMarykModel.getUpdateHistory(key).requestExecutionKind)
+    }
+
     @Test
     fun fastReadCanCompleteWhileEarlierReadIsSuspended() {
         runTest {

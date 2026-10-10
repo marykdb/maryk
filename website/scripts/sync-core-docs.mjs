@@ -97,6 +97,8 @@ export function rewriteLinks(md, prefix) {
     ['(query.md#scan)', withPrefix('querying/#scan')],
     ['(query.md#getscan-changes)', withPrefix('querying/#getscan-changes')],
     ['(query.md#getscan-updates)', withPrefix('querying/#getscan-updates')],
+    ['(query.md#getscan-update-history)', withPrefix('querying/#getscan-update-history')],
+    ['(../../core/docs/query.md#getscan-update-history)', withPrefix('querying/#getscan-update-history')],
     ['(index-design.md)', withPrefix('data-modeling/index-design/')],
     ['(README.md)', withPrefix('serialization/')],
     ['(serialization.md)', withPrefix('serialization/')],

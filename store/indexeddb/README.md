@@ -22,7 +22,7 @@ suspend fun openStore() = IndexedDbDataStore.open(
 )
 ```
 
-Enable history only when the app needs `toVersion`, `getChanges`, `scanChanges`, or `scanUpdateHistory` semantics. History adds extra IndexedDB rows for snapshots, indexes, uniques, changes, and update-history scans.
+Enable history only when the app needs `toVersion`, `getChanges`, `scanChanges`, `getUpdateHistory`, or `scanUpdateHistory` semantics. History adds extra IndexedDB rows for snapshots, indexes, uniques, changes, and update-history scans.
 
 ## Documentation
 
@@ -36,7 +36,7 @@ Enable history only when the app needs `toVersion`, `getChanges`, `scanChanges`,
 - Index scans over Maryk-encoded secondary index rows.
 - Unique lookups over direct IndexedDB gets.
 - Historic `toVersion` get/table/index/unique reads when `keepAllVersions` is enabled.
-- `getChanges`, `scanChanges`, and `scanUpdateHistory` over durable history rows.
+- `getChanges`, `scanChanges`, `getUpdateHistory`, and `scanUpdateHistory` over durable history rows.
 - Sensitive value encryption through the shared Maryk field encryption provider API.
 - Browser-native WebCrypto AES-GCM/HMAC-SHA256 provider for JS and WasmJS.
 - Metadata-backed startup migration with safe-add handling, index backfill, and
@@ -44,6 +44,13 @@ Enable history only when the app needs `toVersion`, `getChanges`, `scanChanges`,
 - JS and WasmJS test coverage through `fake-indexeddb`.
 
 ## Important Limits
+
+`getUpdateHistory(key, ...)` and `scanUpdateHistory(...)` return finite,
+newest-first pages of record-version entries using `UpdatesResponse.nextCursor`.
+Both require `keepAllVersions` and `keepUpdateHistoryIndex`. Filters use values
+at each event version before the returned selection is applied. See
+[history paging](../../core/docs/query.md#getscan-update-history) for bounds,
+continuation, and hard-delete retention limits.
 
 - IndexedDB transactions cannot safely wrap the whole suspend common request processor. Mutations are serialized with Web Locks when available, then written through native batched `readwrite` transactions.
 - Without Web Locks, mutations use a renewable lease stored atomically in IndexedDB. `BroadcastChannel` wakes waiting tabs promptly; timed retries cover browsers without it. Every write batch checks the lease in its native transaction, fencing out expired owners.

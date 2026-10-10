@@ -29,6 +29,7 @@ import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.GetUpdateHistoryRequest
 import maryk.core.query.requests.ScanUpdateHistoryRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.requests.add
@@ -426,7 +427,7 @@ class IndexedDbDataStore private constructor(
                                 is GetUpdatesRequest<*> -> processGetUpdatesRequest(storeAction as GetUpdatesStoreAction<IsRootDataModel>)
                                 is ScanRequest<*> -> processScanRequest(storeAction as ScanStoreAction<IsRootDataModel>)
                                 is ScanChangesRequest<*> -> processScanChangesRequest(storeAction as ScanChangesStoreAction<IsRootDataModel>)
-                                is ScanUpdateHistoryRequest<*> -> processScanUpdateHistoryRequest(storeAction as ScanUpdateHistoryStoreAction<IsRootDataModel>)
+                                is ScanUpdateHistoryRequest<*>, is GetUpdateHistoryRequest<*> -> processScanUpdateHistoryRequest(storeAction as ScanUpdateHistoryStoreAction<IsRootDataModel>)
                                 is ScanUpdatesRequest<*> -> processScanUpdatesRequest(storeAction as ScanUpdatesStoreAction<IsRootDataModel>)
                                 is UpdateResponse<*> -> processUpdateResponse(storeAction as ProcessUpdateResponseStoreAction<IsRootDataModel>)
                                 else -> throw TypeException("Unknown request type ${storeAction.request}")

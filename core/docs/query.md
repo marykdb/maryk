@@ -19,6 +19,7 @@ Use:
 - `Get` when you know keys.
 - `Scan` when you need a range, filter, index order or page.
 - `GetChanges` / `ScanChanges` for object history.
+- `GetUpdateHistory` / `ScanUpdateHistory` for bounded, newest-first historical update entries.
 - `GetUpdates` / `ScanUpdates` for chronological sync.
 - `executeFlow(...)` for live views.
 
@@ -34,7 +35,9 @@ Use reference graphs with reads to fetch only the fields you need.
 | Browse a range or page | `Model.scan(...)` |
 | Fetch only a few fields | Add `select` with a reference graph |
 | Build a live view | `executeFlow(Model.scanUpdates(...))` |
-| Inspect history | `Model.getChanges(...)` or `Model.scanChanges(...)` |
+| Inspect field history | `Model.getChanges(...)` or `Model.scanChanges(...)` |
+| Page through record revisions | `Model.getUpdateHistory(key, ...)` |
+| Browse historical update entries | `Model.scanUpdateHistory(...)` |
 
 Start with `add`, `get`, and `scan`. Add filters, ordering, reference graphs, and update streams when the access pattern needs them.
 
@@ -308,13 +311,78 @@ val scanRequest = Logs.scanChanges(
 )
 ```
 
+### Get/Scan Update History
+
+Use `getUpdateHistory(key, ...)` for one known record and `scanUpdateHistory(...)`
+for historical updates across a model. Both return an `UpdatesResponse` with
+newest-first `AdditionUpdate`, `ChangeUpdate`, or `RemovalUpdate` entries. A record
+may occur more than once. These are finite history queries, not live flows, and do
+not include an `OrderedKeysUpdate` header.
+
+`limit` counts matching `(key, version)` entries, rather than records or property
+versions. All selected changes at one record version are returned together.
+Both requests require `keepAllVersions` and a ready `keepUpdateHistoryIndex`.
+The get request filters the key before materializing record data. Current engines
+use the existing model-wide history index, so this does not promise a separate
+record-key index lookup or constant scan work.
+
+```kotlin
+import maryk.core.query.requests.getUpdateHistory
+import maryk.core.query.requests.scanUpdateHistory
+
+val query = Person.getUpdateHistory(
+    personKey,
+    limit = 25u,
+    filterSoftDeleted = false
+)
+val firstPage = store.execute(query)
+val secondPage = firstPage.nextCursor?.let { cursor ->
+    store.execute(query.copy(cursor = cursor))
+}
+
+val scanQuery = Person.scanUpdateHistory(limit = 25u)
+val firstScanPage = store.execute(scanQuery)
+val secondScanPage = firstScanPage.nextCursor?.let { cursor ->
+    store.execute(scanQuery.copy(cursor = cursor))
+}
+```
+
+`fromVersion` and `toVersion` are inclusive event-version bounds and must satisfy
+`fromVersion <= toVersion` when an upper bound is supplied. Filters are
+applied at each event's version; `select` limits the returned fields. Events with
+no selected changes are omitted, while creation and deletion events remain
+meaningful. Use `filterSoftDeleted = false` to include soft-delete transitions
+and revisions whose record is soft-deleted at that version.
+
+Forward `nextCursor` unchanged with the same request. A cursor binds the model,
+record key for get requests, selection, filters, and version bounds. The page
+size may change. Continuation is exclusive by version and then ascending record
+key, so records sharing a version are neither skipped nor repeated. The cursor
+also retains the first page's version ceiling, excluding later higher-version
+writes. `nextCursor == null` means no more matching entries were found; lookahead
+checks one additional matching entry before returning a cursor.
+
+A cursor does not retain erased history or isolate later imports of older
+versions. Hard deletion can remove earlier values permanently. Where a retained
+hard-delete marker exists, an unfiltered query can return its `RemovalUpdate`;
+filters requiring erased values cannot be evaluated in persistent stores.
+Memory can evaluate hard-delete filters against its archived pre-delete values.
+
+Creation entries contain selected values, and subsequent change entries contain
+deltas. History paging does not return a complete snapshot for every entry; use
+`get(key, toVersion = entry.version, ...)` for a retained point-in-time state.
+
 ### Get/Scan Updates
 
 You can request updates on objects ordered by version with
 [`GetUpdatesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetUpdatesRequest.kt)
 or [`ScanUpdatesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanUpdatesRequest.kt).
-`maxVersions` (default=1) can be used to control how many versions are returned
-at maximum. To return more than one version, the DataStore needs to have `keepAllVersions` set to `true`.
+`maxVersions` (default=1) bounds the history read for each selected record. In
+RocksDB and FoundationDB, it applies per stored property, so it is not a bound on
+the total number of returned record revisions. The current Memory and IndexedDB
+paths limit grouped non-creation revisions and handle creation separately.
+Use update-history requests when you need a page bounded by historical entries.
+Returning more than one version requires `keepAllVersions = true`.
 
 When applied, it will deliver an [`UpdatesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/UpdatesResponse.kt)
 with a list of [`IsUpdatesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/updates/IsUpdateResponse.kt)
@@ -348,7 +416,6 @@ val getRequest = Person.run {
             Equals(ref { firstName } with "Clark"),
             Exists(ref { lastName })
         ),
-        order = ref { lastName }.ascending(),
         toVersion = 2000uL,
         filterSoftDeleted = false,
         fromVersion = 1000uL,

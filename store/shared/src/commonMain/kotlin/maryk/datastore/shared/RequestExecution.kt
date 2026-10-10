@@ -6,6 +6,7 @@ import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.GetUpdatesRequest
+import maryk.core.query.requests.GetUpdateHistoryRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdateHistoryRequest
@@ -21,6 +22,7 @@ val Any.requestExecutionKind: RequestExecutionKind
         is GetRequest<*>,
         is GetChangesRequest<*>,
         is GetUpdatesRequest<*>,
+        is GetUpdateHistoryRequest<*>,
         is ScanRequest<*>,
         is ScanChangesRequest<*>,
         is ScanUpdateHistoryRequest<*>,

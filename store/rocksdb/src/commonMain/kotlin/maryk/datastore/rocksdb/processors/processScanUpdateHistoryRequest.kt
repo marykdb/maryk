@@ -8,8 +8,7 @@ import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.ObjectCreate
-import maryk.core.query.requests.ScanUpdateHistoryRequest
-import maryk.core.query.responses.FetchByUpdateHistoryIndex
+import maryk.core.query.requests.IsUpdateHistoryRequest
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -27,9 +26,10 @@ import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.UpdateHistoryPaging
 import maryk.datastore.shared.StoreAction
 
-internal typealias ScanUpdateHistoryStoreAction<DM> = StoreAction<DM, ScanUpdateHistoryRequest<DM>, UpdatesResponse<DM>>
+internal typealias ScanUpdateHistoryStoreAction<DM> = StoreAction<DM, IsUpdateHistoryRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyScanUpdateHistoryStoreAction = ScanUpdateHistoryStoreAction<IsRootDataModel>
 
 internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryRequest(
@@ -40,6 +40,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
     val defaultReadOptions = readContext.defaultReadOptions
     val sequentialReadOptions = readContext.sequentialReadOptions
     val scanRequest = storeAction.request
+    val paging = UpdateHistoryPaging(scanRequest)
     val dbIndex = getDataModelId(scanRequest.dataModel)
     val columnFamilies = getColumnFamilies(dbIndex)
     val historicColumnFamilies = columnFamilies as? HistoricTableColumnFamilies
@@ -103,12 +104,17 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
             }
 
         dbAccessor.getIterator(sequentialReadOptions, columnFamilies.updateHistory).use { historyIterator ->
-        when (val toVersion = scanRequest.toVersion) {
-            null -> historyIterator.seekToFirst()
-            else -> historyIterator.seek(toVersion.toReversedVersionBytes())
+        val continuation = paging.continuation
+        val upperBound = paging.toVersion
+        when {
+            continuation != null -> historyIterator.seek(
+                continuation.version.toReversedVersionBytes() + continuation.key.bytes + byteArrayOf(0)
+            )
+            upperBound != null -> historyIterator.seek(upperBound.toReversedVersionBytes())
+            else -> historyIterator.seekToFirst()
         }
 
-        while (historyIterator.isValid() && updates.size.toUInt() < scanRequest.limit) {
+        while (historyIterator.isValid() && updates.size.toUInt() < paging.scanLimit) {
             val historyKey = historyIterator.key()
             if (historyKey.size != VERSION_BYTE_SIZE + keySize) {
                 historyIterator.next()
@@ -120,6 +126,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
             var keyReadIndex = VERSION_BYTE_SIZE
             val key = scanRequest.dataModel.key {
                 historyKey[keyReadIndex++]
+            }
+            if (!paging.accepts(version, key)) {
+                historyIterator.next()
+                continue
             }
             val isHardDelete = historyIterator.value().firstOrNull() == 1.toByte()
             // A tombstone belongs to this event, even if the key now identifies a new record.
@@ -227,11 +237,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
     }
 
     storeAction.response.complete(
-        UpdatesResponse(
-            dataModel = scanRequest.dataModel,
-            updates = updates,
-            dataFetchType = FetchByUpdateHistoryIndex(),
-        )
+        paging.response(updates)
     )
 }
 

@@ -60,6 +60,13 @@ val changes = store.execute(
 
 See [`GetChanges`/`ScanChanges`](query.md#getscan-changes).
 
+For newest-first pages bounded by distinct record-version entries, use
+`getUpdateHistory(key, limit = 25u)` or `scanUpdateHistory(limit = 25u)`. Both use
+`UpdatesResponse.nextCursor` for continuation and require a ready update-history
+index as well as retained values. Their page limit is independent of the
+property-history `maxVersions` behavior in RocksDB and FoundationDB.
+See [update-history paging](query.md#getscan-update-history).
+
 ## Updates: chronological stream
 
 Use `GetUpdates` or `ScanUpdates` when chronological order matters. Updates include additions, changes and removals, including hard deletes.

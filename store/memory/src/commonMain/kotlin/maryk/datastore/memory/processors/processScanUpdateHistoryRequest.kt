@@ -5,8 +5,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
-import maryk.core.query.requests.ScanUpdateHistoryRequest
-import maryk.core.query.responses.FetchByUpdateHistoryIndex
+import maryk.core.query.requests.IsUpdateHistoryRequest
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -14,10 +13,13 @@ import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.memory.IsStoreFetcher
+import maryk.datastore.memory.records.DataStore.UpdateHistoryRecord
+import maryk.lib.extensions.compare.compareTo
 import maryk.datastore.memory.records.DataRecord
+import maryk.datastore.shared.UpdateHistoryPaging
 import maryk.datastore.shared.StoreAction
 
-internal typealias ScanUpdateHistoryStoreAction<DM> = StoreAction<DM, ScanUpdateHistoryRequest<DM>, UpdatesResponse<DM>>
+internal typealias ScanUpdateHistoryStoreAction<DM> = StoreAction<DM, IsUpdateHistoryRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyScanUpdateHistoryStoreAction = ScanUpdateHistoryStoreAction<IsRootDataModel>
 
 internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
@@ -25,6 +27,7 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
     dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val scanRequest = storeAction.request
+    val paging = UpdateHistoryPaging(scanRequest)
     val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
 
     if (!dataStore.keepAllVersions || !dataStore.keepUpdateHistoryIndex) {
@@ -34,12 +37,17 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
     val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
 
-    for (entry in dataStore.updateHistory) {
-        if (entry.version > (scanRequest.toVersion ?: ULong.MAX_VALUE)) continue
+    val orderedHistory = dataStore.updateHistory.sortedWith(
+        compareByDescending<UpdateHistoryRecord> { it.version }
+            .thenComparator { left, right -> left.keyBytes compareTo right.keyBytes }
+    )
+    for (entry in orderedHistory) {
+        if (entry.version > (paging.toVersion ?: ULong.MAX_VALUE)) continue
         if (entry.version < scanRequest.fromVersion) break
-        if (updates.size.toUInt() >= scanRequest.limit) break
+        if (updates.size.toUInt() >= paging.scanLimit) break
 
         val key = Key<DM>(entry.keyBytes)
+        if (!paging.accepts(entry.version, key)) continue
         val version = HLC(entry.version)
         val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, version)
 
@@ -121,11 +129,7 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
     }
 
     storeAction.response.complete(
-        UpdatesResponse(
-            dataModel = scanRequest.dataModel,
-            updates = updates,
-            dataFetchType = FetchByUpdateHistoryIndex(),
-        )
+        paging.response(updates)
     )
 }
 

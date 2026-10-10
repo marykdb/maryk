@@ -517,7 +517,7 @@ class RemoteDataStore private constructor(
             RequestType.Delete -> DeleteResponse
             RequestType.Get, RequestType.Scan -> maryk.core.query.responses.ValuesResponse
             RequestType.GetChanges, RequestType.ScanChanges -> ChangesResponse
-            RequestType.GetUpdates, RequestType.ScanUpdates, RequestType.ScanUpdateHistory -> UpdatesResponse
+            RequestType.GetUpdates, RequestType.ScanUpdates, RequestType.ScanUpdateHistory, RequestType.GetUpdateHistory -> UpdatesResponse
             RequestType.Collect -> error("CollectRequest handled above")
         } as IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>
 

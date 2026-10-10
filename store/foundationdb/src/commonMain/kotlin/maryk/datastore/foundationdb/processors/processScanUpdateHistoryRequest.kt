@@ -5,8 +5,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.ObjectCreate
-import maryk.core.query.requests.ScanUpdateHistoryRequest
-import maryk.core.query.responses.FetchByUpdateHistoryIndex
+import maryk.core.query.requests.IsUpdateHistoryRequest
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -23,12 +22,13 @@ import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.UpdateHistoryPaging
 import maryk.datastore.shared.StoreAction
 import maryk.foundationdb.Transaction
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.foundationdb.Range as FDBRange
 
-internal typealias ScanUpdateHistoryStoreAction<DM> = StoreAction<DM, ScanUpdateHistoryRequest<DM>, UpdatesResponse<DM>>
+internal typealias ScanUpdateHistoryStoreAction<DM> = StoreAction<DM, IsUpdateHistoryRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyScanUpdateHistoryStoreAction = ScanUpdateHistoryStoreAction<IsRootDataModel>
 private val nextKeySuffix = byteArrayOf(0)
 
@@ -38,6 +38,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
     readContext: FoundationDBReadContext,
 ) {
     val scanRequest = storeAction.request
+    val paging = UpdateHistoryPaging(scanRequest)
     val dbIndex = getDataModelId(scanRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex) as? HistoricTableDirectories
         ?: throw updateHistoryNotAvailable()
@@ -50,7 +51,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     val keySize = scanRequest.dataModel.Meta.keyByteSize
     val historyPrefix = tableDirs.updateHistoryPrefix
-    val historyStart = scanRequest.toVersion?.let { packKey(historyPrefix, it.toReversedVersionBytes()) } ?: historyPrefix
+    val historyStart = paging.continuation?.let {
+        packKey(historyPrefix, it.version.toReversedVersionBytes(), it.key.bytes) + nextKeySuffix
+    } ?: paging.toVersion?.let { packKey(historyPrefix, it.toReversedVersionBytes()) } ?: historyPrefix
     val historyEnd = if (scanRequest.fromVersion == 0uL) {
         historyPrefix.nextByteInSameLength()
     } else {
@@ -62,10 +65,10 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
         }
 
     var nextStart = historyStart
-    while (updates.size.toUInt() < scanRequest.limit) {
+    while (updates.size.toUInt() < paging.scanLimit) {
         val result = runScanTransaction { tr ->
             tr.forEachInRangeBatch(FDBRange(nextStart, historyEnd), false) { historyEntry ->
-                if (updates.size.toUInt() >= scanRequest.limit) return@forEachInRangeBatch false
+                if (updates.size.toUInt() >= paging.scanLimit) return@forEachInRangeBatch false
                 if (historyEntry.key.size != historyPrefix.size + VERSION_BYTE_SIZE + keySize) return@forEachInRangeBatch true
                 val version = historyEntry.key.readReversedVersionBytes(historyPrefix.size)
                 if (version < scanRequest.fromVersion) return@forEachInRangeBatch false
@@ -75,13 +78,14 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                 val key = scanRequest.dataModel.key {
                     historyEntry.key[keyReadIndex++]
                 }
+                if (!paging.accepts(version, key)) return@forEachInRangeBatch true
                 val isHardDelete = historyEntry.value.firstOrNull() == 1.toByte()
                 // Deletion is an event of the old record even after this key is reused.
                 if (isHardDelete) {
                     if (scanRequest.where == null) {
                         updates += RemovalUpdate(key = key, version = version, reason = HardDelete)
                     }
-                    return@forEachInRangeBatch updates.size.toUInt() < scanRequest.limit
+                    return@forEachInRangeBatch updates.size.toUInt() < paging.scanLimit
                 }
                 val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, version)
                     ?: return@forEachInRangeBatch true
@@ -125,7 +129,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                 }
                 if (creationVersion == version) {
                     addCreation(version)
-                    return@forEachInRangeBatch updates.size.toUInt() < scanRequest.limit
+                    return@forEachInRangeBatch updates.size.toUInt() < paging.scanLimit
                 }
 
                 val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
@@ -167,20 +171,16 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                         )
                     }
                 }
-                updates.size.toUInt() < scanRequest.limit
+                updates.size.toUInt() < paging.scanLimit
             }
         }
 
-        if (result.completed || result.stoppedByCallback || updates.size.toUInt() >= scanRequest.limit) break
+        if (result.completed || result.stoppedByCallback || updates.size.toUInt() >= paging.scanLimit) break
         nextStart = result.lastKey?.let { it + nextKeySuffix } ?: break
     }
 
     storeAction.response.complete(
-        UpdatesResponse(
-            dataModel = scanRequest.dataModel,
-            updates = updates,
-            dataFetchType = FetchByUpdateHistoryIndex(),
-        )
+        paging.response(updates)
     )
 }
 

@@ -14,7 +14,7 @@ import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
-import maryk.core.query.requests.ScanUpdateHistoryRequest
+import maryk.core.query.requests.IsUpdateHistoryRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.requests.add
 import maryk.core.query.responses.AddResponse
@@ -40,7 +40,7 @@ internal typealias GetUpdatesStoreAction<DM> = StoreAction<DM, GetUpdatesRequest
 internal typealias ProcessUpdateResponseStoreAction<DM> = StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>
 internal typealias ScanChangesStoreAction<DM> = StoreAction<DM, ScanChangesRequest<DM>, ChangesResponse<DM>>
 internal typealias ScanStoreAction<DM> = StoreAction<DM, ScanRequest<DM>, ValuesResponse<DM>>
-internal typealias ScanUpdateHistoryStoreAction<DM> = StoreAction<DM, ScanUpdateHistoryRequest<DM>, UpdatesResponse<DM>>
+internal typealias ScanUpdateHistoryStoreAction<DM> = StoreAction<DM, IsUpdateHistoryRequest<DM>, UpdatesResponse<DM>>
 internal typealias ScanUpdatesStoreAction<DM> = StoreAction<DM, ScanUpdatesRequest<DM>, UpdatesResponse<DM>>
 
 internal data class ScanUpdateRows<DM : IsRootDataModel>(

@@ -109,6 +109,16 @@ For a deeper dive into how data is laid out and how queries execute, check the [
 - `keepAllVersions`: Keep historic table/index/unique column families for time-travel and change-history reads.
 - `keepUpdateHistoryIndex`: Add an `UpdateHistory` column family keyed by change version + key. With this enabled, `scanUpdates(order = null)` reads newest-first from this engine index by default.
 
+## Update history
+
+For finite, newest-first revision pages, use `getUpdateHistory(key, ...)` or
+`scanUpdateHistory(...)` with both history options enabled and a ready history
+index. Continue with `UpdatesResponse.nextCursor`; the limit counts complete
+record-version entries, independently of property-history `maxVersions`.
+Both queries scan the existing model-wide history index. See
+[history paging](../../core/docs/query.md#getscan-update-history) for filters,
+projections, and hard-delete retention limits.
+
 ## Sensitive Properties
 
 `RocksDBDataStore.open` accepts a `fieldEncryptionProvider` argument using the shared encryption contract

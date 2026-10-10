@@ -7,7 +7,6 @@ import maryk.core.query.changes.ObjectCreate
 import maryk.core.values.Values
 import maryk.core.query.changes.change
 import maryk.core.query.requests.change
-import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -16,11 +15,13 @@ import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.indexeddb.scanInBatches
+import maryk.datastore.shared.UpdateHistoryPaging
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdateHistoryRequest(
     storeAction: ScanUpdateHistoryStoreAction<DM>,
 ) {
     val request = storeAction.request
+    val paging = UpdateHistoryPaging(request)
     if (!(keepAllVersions && keepUpdateHistoryIndex)) {
         throw RequestException("Update history queries require keepAllVersions and keepUpdateHistoryIndex")
     }
@@ -40,29 +41,21 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
     }
 
 
-    if (request.limit == 0u) {
-        storeAction.response.complete(
-            UpdatesResponse(
-                dataModel = request.dataModel,
-                updates = emptyList(),
-                dataFetchType = FetchByUpdateHistoryIndex(),
-            )
-        )
-        return
-    }
-
-
     byteStore.scanInBatches(
         storeName = "uh:$modelId",
+        startKey = paging.continuation?.let { createUpdateHistoryRowKey(it.version, it.key.bytes) }
+            ?: paging.toVersion?.let { (ULong.MAX_VALUE - it).toBigEndianBytes() },
+        includeStart = paging.continuation == null,
         targetLimit = UInt.MAX_VALUE,
     ) { rowKey, rowValue ->
         val version = rowKey.readInvertedVersion()
         if (rowKey.size != 8 + request.dataModel.Meta.keyByteSize) return@scanInBatches true
-        val toVersion = request.toVersion
+        val toVersion = paging.toVersion
         if (version < request.fromVersion) return@scanInBatches false
         if (toVersion != null && version > toVersion) return@scanInBatches true
 
         val keyBytes = rowKey.copyOfRange(rowKey.size - request.dataModel.Meta.keyByteSize, rowKey.size)
+        if (!paging.accepts(version, request.dataModel.key(keyBytes))) return@scanInBatches true
         if (rowValue.isHardDeleteTombstone()) {
             if (request.where == null) {
                 updates += RemovalUpdate(
@@ -71,7 +64,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
                     reason = HardDelete,
                 )
             }
-            return@scanInBatches updates.size.toUInt() < request.limit
+            return@scanInBatches updates.size.toUInt() < paging.scanLimit
         }
 
         if (rowValue.isUnserializableChangeLogMarker()) {
@@ -100,7 +93,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
                 isDeleted = historicRecord.isDeleted,
                 values = historicRecord.values,
             )
-            return@scanInBatches updates.size.toUInt() < request.limit
+            return@scanInBatches updates.size.toUInt() < paging.scanLimit
         }
 
         val decoded = decodeVersionedChange(
@@ -140,14 +133,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
                 changes = filteredChanges,
             )
         }
-        updates.size.toUInt() < request.limit
+        updates.size.toUInt() < paging.scanLimit
     }
 
     storeAction.response.complete(
-        UpdatesResponse(
-            dataModel = request.dataModel,
-            updates = updates,
-            dataFetchType = FetchByUpdateHistoryIndex(),
-        )
+        paging.response(updates)
     )
 }

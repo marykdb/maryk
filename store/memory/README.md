@@ -48,3 +48,10 @@ The `.use { ... }` scope closes the store automatically.
 
 - `keepAllVersions`: Keep historic values/indexes/uniques for `toVersion`, changes, and history queries.
 - `keepUpdateHistoryIndex`: Keep an engine-level update history index ordered by latest change. With this enabled, `scanUpdates(order = null)` uses newest-first change order by default.
+
+`getUpdateHistory(key, ...)` and `scanUpdateHistory(...)` require both options
+and return finite, newest-first pages using `UpdatesResponse.nextCursor`.
+The limit counts record-version entries; change entries contain selected deltas.
+Memory retains archived hard-deleted records and can evaluate deletion filters
+against their pre-delete state. Persistent engines cannot evaluate such filters
+after those values are erased. See [history paging](../../core/docs/query.md#getscan-update-history).

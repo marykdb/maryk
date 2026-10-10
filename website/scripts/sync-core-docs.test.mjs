@@ -78,6 +78,50 @@ test('syncDocs keeps normal generated pages at their existing relative depth', (
   );
 });
 
+test('syncDocs links versioning to the generated update-history section', () => {
+  const root = mkdtempSync(join(tmpdir(), 'maryk-docs-sync-'));
+  const siteRoot = join(root, 'website');
+  const coreDocs = join(root, 'core', 'docs');
+  const target = join(siteRoot, 'src/content/docs/data-modeling/versioning.mdx');
+  mkdirSync(coreDocs, { recursive: true });
+  writeFileSync(join(coreDocs, 'versioning.md'),
+    '# Versioning\n\n[Update-history paging](query.md#getscan-update-history)\n');
+
+  syncDocs({
+    siteRoot,
+    repoRoot: root,
+    coreDocs,
+    map: [['src/content/docs/data-modeling/versioning.mdx', 'versioning.md']],
+    removedTargets: [],
+  });
+
+  assert.match(readFileSync(target, 'utf8'),
+    /\[Update-history paging\]\(\.\.\/\.\.\/querying\/#getscan-update-history\)/);
+});
+
+test('syncDocs links backend history documentation to the querying section', () => {
+  const root = mkdtempSync(join(tmpdir(), 'maryk-docs-sync-'));
+  const siteRoot = join(root, 'website');
+  const coreDocs = join(root, 'core', 'docs');
+  const sourceDirectory = join(root, 'store', 'memory');
+  const target = join(siteRoot, 'src/content/docs/stores/memory.mdx');
+  mkdirSync(coreDocs, { recursive: true });
+  mkdirSync(sourceDirectory, { recursive: true });
+  writeFileSync(join(sourceDirectory, 'README.md'),
+    '# Memory\n\n[History paging](../../core/docs/query.md#getscan-update-history)\n');
+
+  syncDocs({
+    siteRoot,
+    repoRoot: root,
+    coreDocs,
+    map: [['src/content/docs/stores/memory.mdx', '../store/memory/README.md']],
+    removedTargets: [],
+  });
+
+  assert.match(readFileSync(target, 'utf8'),
+    /\[History paging\]\(\.\.\/\.\.\/querying\/#getscan-update-history\)/);
+});
+
 test('syncDocs fails when a mapped source has been removed', () => {
   const root = mkdtempSync(join(tmpdir(), 'maryk-docs-sync-'));
   const siteRoot = join(root, 'website');

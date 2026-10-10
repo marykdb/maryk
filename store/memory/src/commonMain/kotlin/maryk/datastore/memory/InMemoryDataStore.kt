@@ -16,6 +16,7 @@ import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
+import maryk.core.query.requests.GetUpdateHistoryRequest
 import maryk.core.query.requests.ScanUpdateHistoryRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
@@ -142,7 +143,7 @@ class InMemoryDataStore private constructor(
                                 processScanRequest(storeAction as AnyScanStoreAction, dataStoreFetcher)
                             is ScanChangesRequest<*> ->
                                 processScanChangesRequest(storeAction as AnyScanChangesStoreAction, dataStoreFetcher)
-                            is ScanUpdateHistoryRequest<*> ->
+                            is ScanUpdateHistoryRequest<*>, is GetUpdateHistoryRequest<*> ->
                                 processScanUpdateHistoryRequest(storeAction as AnyScanUpdateHistoryStoreAction, dataStoreFetcher)
                             is ScanUpdatesRequest<*> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, dataStoreFetcher)

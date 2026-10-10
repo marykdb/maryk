@@ -13,6 +13,14 @@ Platform notes:
 - Server runs with Ktor CIO on JVM and Kotlin/Native desktop targets.
 - Native client uses Ktor CIO and the system `ssh` binary for tunnels.
 
+## Update history
+
+The client transports `getUpdateHistory` and `scanUpdateHistory`, including
+their continuation cursors. The server must support these requests and its
+backing store must retain values and a ready update-history index. An older
+server does not gain the new request type through a client upgrade. See
+[history paging](../../core/docs/query.md#getscan-update-history).
+
 ## Start a server
 
 CLI (recommended for local serving):

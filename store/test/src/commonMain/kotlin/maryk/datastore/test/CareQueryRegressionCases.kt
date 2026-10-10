@@ -402,11 +402,116 @@ class CareQueryRegressionCases(private val createStore: suspend (String) -> IsDa
         }
     }
 
+    suspend fun updateHistoryKeepsAdjacentVersionsDistinct() = withContext(Dispatchers.Default) {
+        withStore("care-history-adjacent-versions") { store ->
+            val values = QueryRecord.create {
+                messageType with "Patient"
+                direction with Option.V2
+                status with Option.V1
+                updatedAt with 10L
+                deliveryDueAt with 10L
+                participant with "participant"
+                actor with "actor"
+                timestamp with 10L
+                familyName with "Mous"
+            }
+            val key = QueryRecord.key(values)
+            store.processUpdate(UpdateResponse(QueryRecord, AdditionUpdate(key, 10uL, 10uL, 0, false, values)))
+            for (version in listOf(20uL, 21uL)) {
+                store.processUpdate(UpdateResponse(QueryRecord, ChangeUpdate(
+                    key = key, version = version, index = 0,
+                    changes = listOf(Change(QueryRecord.ref { updatedAt } with version.toLong())),
+                )))
+            }
+            assertEquals(21L, store.execute(QueryRecord.get(key)).values.single().values[QueryRecord.ref { updatedAt }])
+            for (toVersion in listOf(null, 20uL)) {
+                for (limit in listOf(1u, 10u)) {
+                    val expected = (if (toVersion == null) listOf(21uL, 20uL) else listOf(20uL)).take(limit.toInt())
+                    val history = withTimeout(10.seconds) {
+                        store.execute(QueryRecord.scanUpdateHistory(fromVersion = 20uL, toVersion = toVersion, limit = limit))
+                    }
+                    assertEquals(expected, history.updates.map { it.version }, "Each history entry must read only its own version")
+                    history.updates.zip(expected).forEach { (update, version) ->
+                        val change = assertIs<ChangeUpdate<QueryRecord>>(update)
+                        assertEquals(key, change.key)
+                        assertEquals(listOf(Change(QueryRecord.ref { updatedAt } with version.toLong())), change.changes)
+                    }
+                }
+            }
+        }
+    }
 
+    suspend fun updateHistoryReturnsCreationsAsAdditions() = withContext(Dispatchers.Default) {
+        withStore("care-history-creations") { store ->
+            val additions = (1u..2u).map { idValue ->
+                assertIs<AddSuccess<BoundaryRecord>>(store.execute(BoundaryRecord.add(BoundaryRecord.create {
+                    id with idValue.toUShort()
+                    scope with idValue.toUByte()
+                    ordinal with 1u.toUByte()
+                })).statuses.single())
+            }
+            for (emptySelection in listOf(false, true)) {
+                for (lastVersion in listOf(null, additions.first().version)) {
+                    val expected = if (lastVersion == null) additions.asReversed() else listOf(additions.first())
+                    val history = withTimeout(10.seconds) {
+                        store.execute(BoundaryRecord.scanUpdateHistory(
+                            fromVersion = additions.first().version, toVersion = lastVersion, limit = 10u,
+                            select = if (emptySelection) BoundaryRecord.graph { emptyList() } else null,
+                        ))
+                    }
+                    assertEquals(expected.map { it.version }, history.updates.map { it.version })
+                    history.updates.zip(expected).forEach { (update, added) ->
+                        val creation = assertIs<AdditionUpdate<BoundaryRecord>>(update)
+                        assertEquals(added.key, creation.key)
+                        assertEquals(added.version, creation.firstVersion)
+                        if (emptySelection) assertEquals(BoundaryRecord.emptyValues(), creation.values)
+                        else assertEquals((additions.indexOf(added) + 1).toUShort(), creation.values[BoundaryRecord.ref { id }])
+                    }
+                }
+            }
+        }
+    }
 
-
-
-
+    suspend fun updateHistoryKeepsHardDeleteAfterKeyReuse() = withContext(Dispatchers.Default) {
+        withStore("care-history-key-reuse") { store ->
+            suspend fun add(scopeValue: UByte) = assertIs<AddSuccess<BoundaryRecord>>(
+                store.execute(BoundaryRecord.add(BoundaryRecord.create {
+                    id with 1u.toUShort()
+                    scope with scopeValue
+                    ordinal with 1u.toUByte()
+                })).statuses.single()
+            )
+            val original = add(1u.toUByte())
+            val deletion = assertIs<DeleteSuccess<BoundaryRecord>>(
+                store.execute(BoundaryRecord.delete(original.key, hardDelete = true)).statuses.single()
+            )
+            val replacement = add(2u.toUByte())
+            assertEquals(original.key, replacement.key)
+            for (version in listOf(null, replacement.version)) {
+                val history = withTimeout(10.seconds) {
+                    store.execute(BoundaryRecord.scanUpdateHistory(fromVersion = deletion.version, toVersion = version, limit = 10u))
+                }
+                assertEquals(listOf(replacement.version, deletion.version), history.updates.map { it.version },
+                    "Key reuse must retain the earlier hard deletion at version $version")
+                val added = assertIs<AdditionUpdate<BoundaryRecord>>(history.updates[0])
+                assertEquals(replacement.key, added.key)
+                assertEquals(replacement.version, added.firstVersion)
+                assertEquals(2u.toUByte(), added.values[BoundaryRecord.ref { scope }])
+                val removed = assertIs<RemovalUpdate<BoundaryRecord>>(history.updates[1])
+                assertEquals(original.key, removed.key)
+                assertEquals(HardDelete, removed.reason)
+            }
+            val beforeReplacement = withTimeout(10.seconds) {
+                store.execute(BoundaryRecord.scanUpdateHistory(
+                    fromVersion = deletion.version, toVersion = deletion.version, limit = 10u,
+                ))
+            }
+            assertEquals(listOf(deletion.version), beforeReplacement.updates.map { it.version })
+            assertIs<RemovalUpdate<BoundaryRecord>>(beforeReplacement.updates.single())
+            val current = store.execute(BoundaryRecord.get(replacement.key)).values.single()
+            assertEquals(2u.toUByte(), current.values[BoundaryRecord.ref { scope }])
+        }
+    }
 
     suspend fun descendingTableContinuationExhaustsAtMinimumKey() {
         verifyTableBoundaryContinuation(reversed = true)

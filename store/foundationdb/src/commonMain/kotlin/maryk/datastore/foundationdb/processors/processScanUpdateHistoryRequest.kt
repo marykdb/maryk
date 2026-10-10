@@ -76,17 +76,15 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     historyEntry.key[keyReadIndex++]
                 }
                 val isHardDelete = historyEntry.value.firstOrNull() == 1.toByte()
-                val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
-                if (creationVersion == null) {
-                    if (isHardDelete && scanRequest.where == null) {
-                        updates += RemovalUpdate(
-                            key = key,
-                            version = version,
-                            reason = HardDelete
-                        )
+                // Deletion is an event of the old record even after this key is reused.
+                if (isHardDelete) {
+                    if (scanRequest.where == null) {
+                        updates += RemovalUpdate(key = key, version = version, reason = HardDelete)
                     }
-                    return@forEachInRangeBatch true
+                    return@forEachInRangeBatch updates.size.toUInt() < scanRequest.limit
                 }
+                val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, version)
+                    ?: return@forEachInRangeBatch true
 
                 if (scanRequest.shouldBeFiltered(
                         transaction = tr,
@@ -102,6 +100,32 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
 
                 val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
                     cache.readValue(dbIndex, key, reference, readVersion, valueReader)
+                }
+
+                fun addCreation(creationEventVersion: ULong) {
+                    scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                        tr = tr,
+                        creationVersion = creationVersion,
+                        tableDirs = tableDirs,
+                        key = key,
+                        select = scanRequest.select,
+                        toVersion = creationEventVersion,
+                        cachedRead = cacheReader,
+                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                    )?.let { valuesWithMeta ->
+                        updates += AdditionUpdate(
+                            key = key,
+                            version = creationEventVersion,
+                            firstVersion = valuesWithMeta.firstVersion,
+                            insertionIndex = updates.size,
+                            isDeleted = valuesWithMeta.isDeleted,
+                            values = valuesWithMeta.values
+                        )
+                    }
+                }
+                if (creationVersion == version) {
+                    addCreation(version)
+                    return@forEachInRangeBatch updates.size.toUInt() < scanRequest.limit
                 }
 
                 val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
@@ -133,25 +157,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                 updatedObjectChange?.changes?.forEach { versionedChange ->
                     val changes = versionedChange.changes
                     if (changes.contains(ObjectCreate)) {
-                        scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                            tr = tr,
-                            creationVersion = creationVersion,
-                            tableDirs = tableDirs,
-                            key = key,
-                            select = scanRequest.select,
-                            toVersion = versionedChange.version,
-                            cachedRead = cacheReader,
-                            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
-                        )?.let { valuesWithMeta ->
-                            updates += AdditionUpdate(
-                                key = key,
-                                version = versionedChange.version,
-                                firstVersion = valuesWithMeta.firstVersion,
-                                insertionIndex = updates.size,
-                                isDeleted = valuesWithMeta.isDeleted,
-                                values = valuesWithMeta.values
-                            )
-                        }
+                        addCreation(versionedChange.version)
                     } else {
                         updates += ChangeUpdate(
                             key = key,
@@ -179,4 +185,4 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
 }
 
 private fun updateHistoryNotAvailable() =
-    RequestException("scanUpdateHistory requires keepAllVersions and a ready update history index")
+    RequestException("Update history queries require keepAllVersions and a ready update history index")

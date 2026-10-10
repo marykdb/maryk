@@ -91,11 +91,20 @@ class CareQueryRegressionTest {
         withBoundaryCases { it.compositeMembershipKeepsMatchingRecords() }
     }
 
+    @Test
+    fun updateHistoryKeepsAdjacentVersionsDistinct() = runTest {
+        withBoundaryCases { it.updateHistoryKeepsAdjacentVersionsDistinct() }
+    }
 
+    @Test
+    fun updateHistoryReturnsCreationsAsAdditions() = runTest {
+        withBoundaryCases { it.updateHistoryReturnsCreationsAsAdditions() }
+    }
 
-
-
-
+    @Test
+    fun updateHistoryKeepsHardDeleteAfterKeyReuse() = runTest {
+        withBoundaryCases { it.updateHistoryKeepsHardDeleteAfterKeyReuse() }
+    }
 
     @Test
     fun ascendingTableContinuationExhaustsAtMaximumKey() = runTest {

@@ -1418,6 +1418,7 @@ class IndexedDbDataStoreTest {
             runTestCase(DataStoreScanUpdateHistoryTest(dataStore), "executeScanUpdateHistoryReturnsVersionOrderedEntries")
             runTestCase(DataStoreScanUpdateHistoryTest(dataStore), "executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion")
             runTestCase(DataStoreScanUpdateHistoryTest(dataStore), "executeScanUpdateHistoryCanIncludeHardDelete")
+            runTestCase(DataStoreScanUpdateHistoryTest(dataStore), "executeScanUpdateHistoryFiltersOutsideSelection")
             runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex")
             runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex")
             runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey")

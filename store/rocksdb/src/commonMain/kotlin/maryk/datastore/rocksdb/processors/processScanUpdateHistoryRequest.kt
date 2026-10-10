@@ -122,21 +122,22 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
                 historyKey[keyReadIndex++]
             }
             val isHardDelete = historyIterator.value().firstOrNull() == 1.toByte()
+            // A tombstone belongs to this event, even if the key now identifies a new record.
+            if (isHardDelete) {
+                if (scanRequest.where == null) {
+                    updates += RemovalUpdate(key = key, version = version, reason = HardDelete)
+                }
+                historyIterator.next()
+                continue
+            }
             val creationVersion = readCreationVersion(
                 dbAccessor,
                 historicColumnFamilies,
                 defaultReadOptions,
                 key.bytes,
-                scanRequest.toVersion
+                version
             )
             if (creationVersion == null) {
-                if (isHardDelete && scanRequest.where == null) {
-                    updates += RemovalUpdate(
-                        key = key,
-                        version = version,
-                        reason = HardDelete
-                    )
-                }
                 historyIterator.next()
                 continue
             }
@@ -159,6 +160,24 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
                 runBlocking {
                     cache.readValue(dbIndex, key, reference, readVersion, valueReader)
                 }
+            }
+
+            fun addCreation(creationEventVersion: ULong) {
+                getSingleValues(key, creationVersion, creationEventVersion, cacheReader)?.let { valuesWithMeta ->
+                    updates += AdditionUpdate(
+                        key = key,
+                        version = creationEventVersion,
+                        firstVersion = valuesWithMeta.firstVersion,
+                        insertionIndex = updates.size,
+                        isDeleted = valuesWithMeta.isDeleted,
+                        values = valuesWithMeta.values
+                    )
+                }
+            }
+            if (creationVersion == version) {
+                addCreation(version)
+                historyIterator.next()
+                continue
             }
 
             val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
@@ -188,16 +207,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
             updatedObjectChange?.changes?.forEach { versionedChange ->
                 val changes = versionedChange.changes
                 if (changes.contains(ObjectCreate)) {
-                    getSingleValues(key, creationVersion, versionedChange.version, cacheReader)?.let { valuesWithMeta ->
-                        updates += AdditionUpdate(
-                            key = key,
-                            version = versionedChange.version,
-                            firstVersion = valuesWithMeta.firstVersion,
-                            insertionIndex = updates.size,
-                            isDeleted = valuesWithMeta.isDeleted,
-                            values = valuesWithMeta.values
-                        )
-                    }
+                    addCreation(versionedChange.version)
                 } else {
                     updates += ChangeUpdate(
                         key = key,
@@ -226,4 +236,4 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
 }
 
 private fun updateHistoryNotAvailable() =
-    RequestException("scanUpdateHistory requires keepAllVersions and a ready update history index")
+    RequestException("Update history queries require keepAllVersions and a ready update history index")

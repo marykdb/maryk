@@ -75,30 +75,40 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
 
         if (scanRequest.shouldBeFiltered(record, version, recordFetcher)) continue
 
+        fun addCreation(creationVersion: ULong) {
+            scanRequest.dataModel.recordToValueWithMeta(
+                scanRequest.select,
+                HLC(creationVersion),
+                record
+            )?.let { valuesWithMeta ->
+                updates += AdditionUpdate(
+                    key = key,
+                    version = creationVersion,
+                    firstVersion = valuesWithMeta.firstVersion,
+                    insertionIndex = updates.size,
+                    isDeleted = valuesWithMeta.isDeleted,
+                    values = valuesWithMeta.values
+                )
+            }
+        }
+
+        // Creation is an event even when the selected projection has no properties.
+        if (record.firstVersion.timestamp == entry.version) {
+            addCreation(entry.version)
+            continue
+        }
+
         scanRequest.dataModel.recordToObjectChanges(
             scanRequest.select,
             entry.version,
-            entry.version.nextVersionOrNull(),
+            entry.version,
             1u,
             null,
             record
         )?.changes?.forEach { versionedChange ->
             val changes = versionedChange.changes
             if (changes.contains(ObjectCreate)) {
-                scanRequest.dataModel.recordToValueWithMeta(
-                    scanRequest.select,
-                    HLC(versionedChange.version),
-                    record
-                )?.let { valuesWithMeta ->
-                    updates += AdditionUpdate(
-                        key = key,
-                        version = versionedChange.version,
-                        firstVersion = valuesWithMeta.firstVersion,
-                        insertionIndex = updates.size,
-                        isDeleted = valuesWithMeta.isDeleted,
-                        values = valuesWithMeta.values
-                    )
-                }
+                addCreation(versionedChange.version)
             } else {
                 updates += ChangeUpdate(
                     key = key,
@@ -120,7 +130,4 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
 }
 
 private fun updateHistoryNotAvailable() =
-    RequestException("scanUpdateHistory requires keepAllVersions and a ready update history index")
-
-private fun ULong.nextVersionOrNull(): ULong? =
-    if (this == ULong.MAX_VALUE) null else this + 1uL
+    RequestException("Update history queries require keepAllVersions and a ready update history index")

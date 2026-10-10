@@ -4,6 +4,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.values.Values
 import maryk.core.query.changes.change
 import maryk.core.query.requests.change
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
@@ -21,12 +22,23 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
 ) {
     val request = storeAction.request
     if (!(keepAllVersions && keepUpdateHistoryIndex)) {
-        throw RequestException("Scan update history requires keepAllVersions and keepUpdateHistoryIndex")
+        throw RequestException("Update history queries require keepAllVersions and keepUpdateHistoryIndex")
     }
 
     val modelId = getDataModelId(request.dataModel)
     val historicTableStoreName = "ht:$modelId"
+    val select = request.select
     val updates = mutableListOf<IsUpdateResponse<DM>>()
+
+    suspend fun matchesHistoryFilter(keyBytes: ByteArray, version: ULong, selectedValues: Values<DM>): Boolean {
+        val valuesForFilter = if (select != null && request.where != null) {
+            readHistoricRecordDecrypted(
+                byteStore, request.dataModel, historicTableStoreName, keyBytes, version, select = null,
+            )?.values ?: return false
+        } else selectedValues
+        return valuesMatchFilter(request.dataModel, valuesForFilter, request.where, version)
+    }
+
 
     if (request.limit == 0u) {
         storeAction.response.complete(
@@ -39,11 +51,13 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
         return
     }
 
+
     byteStore.scanInBatches(
         storeName = "uh:$modelId",
         targetLimit = UInt.MAX_VALUE,
     ) { rowKey, rowValue ->
         val version = rowKey.readInvertedVersion()
+        if (rowKey.size != 8 + request.dataModel.Meta.keyByteSize) return@scanInBatches true
         val toVersion = request.toVersion
         if (version < request.fromVersion) return@scanInBatches false
         if (toVersion != null && version > toVersion) return@scanInBatches true
@@ -71,10 +85,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
             if (historicRecord?.firstVersion != version) return@scanInBatches true
 
             if (request.filterSoftDeleted && historicRecord.isDeleted) return@scanInBatches true
-            if (!valuesMatchFilter(request.dataModel, historicRecord.values, request.where, version)) return@scanInBatches true
+            if (!matchesHistoryFilter(keyBytes, version, historicRecord.values)) return@scanInBatches true
 
             val changes = (listOf(ObjectCreate) + historicRecord.values.toChanges().toList()).mapNotNull { change ->
-                request.select?.let { change.filterWithSelect(it) } ?: change
+                if (select == null) change else change.filterWithSelect(select)
             }
             if (changes.isEmpty()) return@scanInBatches true
 
@@ -101,11 +115,11 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
             select = request.select,
         ) ?: return@scanInBatches true
         if (request.filterSoftDeleted && historicRecord.isDeleted) return@scanInBatches true
-        if (!valuesMatchFilter(request.dataModel, historicRecord.values, request.where, version)) return@scanInBatches true
+        if (!matchesHistoryFilter(keyBytes, version, historicRecord.values)) return@scanInBatches true
 
         val versionedChanges = decoded.changes.firstOrNull() ?: return@scanInBatches true
         val filteredChanges = versionedChanges.changes.mapNotNull { change ->
-            request.select?.let { change.filterWithSelect(it) } ?: change
+            if (select == null) change else change.filterWithSelect(select)
         }
         if (filteredChanges.isEmpty()) return@scanInBatches true
 

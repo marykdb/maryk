@@ -1,5 +1,9 @@
 package maryk.datastore.test
 
+import maryk.core.query.filters.Exists
+
+import maryk.core.models.graph
+
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
@@ -31,6 +35,7 @@ class DataStoreScanUpdateHistoryTest(
     private var highestInitVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
+        "executeScanUpdateHistoryFiltersOutsideSelection" to ::executeScanUpdateHistoryFiltersOutsideSelection,
         "executeScanUpdateHistoryFailsWithoutIndex" to ::executeScanUpdateHistoryFailsWithoutIndex,
         "executeScanUpdateHistoryReturnsVersionOrderedEntries" to ::executeScanUpdateHistoryReturnsVersionOrderedEntries,
         "executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion" to ::executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion,
@@ -164,4 +169,25 @@ class DataStoreScanUpdateHistoryTest(
         assertEquals(addStatus.key, update.key)
         assertEquals(HardDelete, update.reason)
     }
+    private suspend fun executeScanUpdateHistoryFiltersOutsideSelection() {
+        if (!(dataStore.keepAllVersions && dataStore.keepUpdateHistoryIndex)) return
+        val key = testKeys[1]
+        val version = assertStatusIs<ChangeSuccess<*>>(
+            dataStore.execute(TestMarykModel.change(key.change(
+                Change(TestMarykModel.ref { string } with "ha selected history")
+            ))).statuses.first()
+        ).version
+        val response = dataStore.execute(TestMarykModel.scanUpdateHistory(
+            select = TestMarykModel.graph { listOf(string) },
+            where = Exists(TestMarykModel.ref { double }),
+            fromVersion = version,
+            toVersion = version,
+            limit = 1u,
+        ))
+        val update = assertIs<ChangeUpdate<TestMarykModel>>(response.updates.single())
+        assertEquals(key, update.key)
+        assertEquals(version, update.version)
+        assertEquals(listOf(Change(TestMarykModel.ref { string } with "ha selected history")), update.changes)
+    }
+
 }

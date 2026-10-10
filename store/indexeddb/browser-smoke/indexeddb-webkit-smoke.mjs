@@ -50,6 +50,8 @@ const browser = await webkit.launch();
 
 try {
   const page = await browser.newPage();
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
   await page.goto(`http://127.0.0.1:${port}`);
   await page.evaluate(() => {
     globalThis.define = undefined;
@@ -64,6 +66,11 @@ try {
     "kotlin/kotlinx-atomicfu.js",
     "kotlin/kotlinx-coroutines-core.js",
     "kotlin/kotlinx-serialization-kotlinx-serialization-core.js",
+    "kotlin/kotlinx-io-kotlinx-io-bytestring.js",
+    "kotlin/kotlinx-io-kotlinx-io-core.js",
+    "kotlin/cryptography-kotlin-cryptography-random.js",
+    "kotlin/cryptography-kotlin-cryptography-bigint.js",
+    "kotlin/cryptography-kotlin-cryptography-core.js",
     "kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js",
     "kotlin/maryk-lib.js",
     "kotlin/maryk-json.js",
@@ -74,6 +81,9 @@ try {
     "kotlin/maryk-store-indexeddb.js",
   ]) {
     await page.addScriptTag({ url: `http://127.0.0.1:${port}/js/${script}` });
+    if (pageErrors.length) {
+      throw new Error(`Failed to initialize ${script}: ${pageErrors[0].message}`, { cause: pageErrors[0] });
+    }
   }
 
   await page.evaluate(async () => {

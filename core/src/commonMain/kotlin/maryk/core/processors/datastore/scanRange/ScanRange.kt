@@ -36,13 +36,18 @@ data class ScanRange internal constructor(
     } == true
 
     /** Get the descending start key for scans */
-    fun getDescendingStartKey(startKey: ByteArray? = null, inclusiveStartKey: Boolean = true): ByteArray? =
-        when {
-            startKey != null && (end == null || end.isEmpty() || startKey < end) ->
+    fun getDescendingStartKey(startKey: ByteArray? = null, inclusiveStartKey: Boolean = true): ByteArray? {
+        // An inclusive prefix ends at its successor. Full index cursors inside the
+        // prefix sort after the prefix itself, but before this exclusive boundary.
+        val upperBound = if (endInclusive) {
+            end?.nextByteInSameLength()?.takeUnless { it === end && it.isNotEmpty() }
+        } else end
+        return when {
+            startKey != null && (upperBound == null || upperBound.isEmpty() || startKey < upperBound) ->
                 if (inclusiveStartKey) startKey else startKey.takeUnless { key -> key.all { it == 0.toByte() } }?.prevByteInSameLength()
-            endInclusive -> end?.nextByteInSameLength()
-            else -> end
+            else -> upperBound
         }
+    }
 
     /** Get the ascending start key for scans */
     fun getAscendingStartKey(startKey: ByteArray? = null, inclusiveStartKey: Boolean = true): ByteArray =

@@ -79,7 +79,7 @@ class DataStoreScanWithFilterTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1),
+            stopKey = null,
         )) { scanResponse.dataFetchType }
 
         scanResponse.values[0].let {
@@ -111,7 +111,7 @@ class DataStoreScanWithFilterTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1),
+            stopKey = null,
         )) { scanResponseForLatest.dataFetchType }
 
         // Only test if all versions are kept

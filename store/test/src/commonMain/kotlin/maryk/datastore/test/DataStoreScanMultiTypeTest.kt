@@ -116,7 +116,7 @@ class DataStoreScanMultiTypeTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(*keys[2].bytes),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+            stopKey = null,
         )) { scanResponse.dataFetchType }
 
         // Mind that Measurement is sorted in reverse, so it goes back in time going forward
@@ -245,7 +245,7 @@ class DataStoreScanMultiTypeTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(*keys[2].bytes),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+            stopKey = null,
         )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
@@ -274,7 +274,7 @@ class DataStoreScanMultiTypeTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+            stopKey = null,
         )) { scanResponse.dataFetchType }
 
         // Reverse order

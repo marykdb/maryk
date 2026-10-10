@@ -162,8 +162,8 @@ fun ByteArray.matchesRangePart(fromOffset: Int, bytes: ByteArray, sourceLength: 
 }
 
 /**
- * Higher the range with 1 byte while keeping length the same
- * Will return same byte array if it cannot be highered
+ * Returns the next byte array in unsigned order while keeping its length.
+ * Returns the same byte array when every byte is already at its maximum.
  */
 fun ByteArray.nextByteInSameLength(): ByteArray {
     val newArray = this.copyOf()
@@ -172,6 +172,7 @@ fun ByteArray.nextByteInSameLength(): ByteArray {
             newArray[i]++
             return newArray
         }
+        newArray[i] = 0
     }
     return this // All bytes are max bytes
 }

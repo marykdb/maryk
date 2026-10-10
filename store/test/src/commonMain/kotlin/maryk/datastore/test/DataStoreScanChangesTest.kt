@@ -91,7 +91,7 @@ class DataStoreScanChangesTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(*keys[2].bytes),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+            stopKey = null,
         )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
@@ -223,7 +223,7 @@ class DataStoreScanChangesTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(*keys[2].bytes),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+            stopKey = null,
         )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
@@ -256,7 +256,7 @@ class DataStoreScanChangesTest(
             expect(FetchByTableScan(
                 direction = Direction.ASC,
                 startKey = byteArrayOf(*keys[2].bytes),
-                stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+                stopKey = null,
             )) { scanResponse.dataFetchType }
         } else {
             assertFailsWith<RequestException> {
@@ -305,7 +305,7 @@ class DataStoreScanChangesTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(*keys[2].bytes),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+            stopKey = null,
         )) { scanResponse.dataFetchType }
     }
 
@@ -325,7 +325,7 @@ class DataStoreScanChangesTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(*keys[2].bytes),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+            stopKey = null,
         )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
@@ -392,7 +392,7 @@ class DataStoreScanChangesTest(
             expect(FetchByTableScan(
                 direction = Direction.ASC,
                 startKey = byteArrayOf(*keys[2].bytes),
-                stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+                stopKey = null,
             )) { scanResponse.dataFetchType }
 
             // Mind that Log is sorted in reverse, so it goes back in time going forward

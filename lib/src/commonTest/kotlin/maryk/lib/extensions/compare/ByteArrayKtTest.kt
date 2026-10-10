@@ -71,8 +71,8 @@ class ByteArrayKtTest {
     @Test
     fun nextByteInSameLength() {
         expect("000001") { "000000".hexToByteArray().nextByteInSameLength().toHexString() }
-        expect("0001ff") { "0000ff".hexToByteArray().nextByteInSameLength().toHexString() }
-        expect("01ffff") { "00ffff".hexToByteArray().nextByteInSameLength().toHexString() }
+        expect("000100") { "0000ff".hexToByteArray().nextByteInSameLength().toHexString() }
+        expect("010000") { "00ffff".hexToByteArray().nextByteInSameLength().toHexString() }
         expect("ffffff") { "ffffff".hexToByteArray().nextByteInSameLength().toHexString() }
         expect("0000ff") { "0000fe".hexToByteArray().nextByteInSameLength().toHexString() }
     }

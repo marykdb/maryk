@@ -89,7 +89,7 @@ class DataStoreScanTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(127, -1, -1, -92, 19, -23, -19, 127, -112, 0, 1),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+            stopKey = null
         )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
@@ -126,7 +126,7 @@ class DataStoreScanTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(127, -1, -1, -92, 19, -23, -19, 127, -112, 0, 1),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+            stopKey = null
         )) { scanResponse.dataFetchType }
 
         expect(
@@ -208,7 +208,7 @@ class DataStoreScanTest(
             expect(FetchByTableScan(
                 direction = Direction.ASC,
                 startKey = byteArrayOf(127, -1, -1, -92, 19, -23, -19, 127, -112, 0, 1),
-                stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+                stopKey = null
             )) { scanResponse.dataFetchType }
         } else {
             assertFailsWith<RequestException> {
@@ -236,7 +236,7 @@ class DataStoreScanTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(127, -1, -1, -92, 19, -23, -19, 127, -112, 0, 1),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+            stopKey = null
         )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
@@ -264,7 +264,7 @@ class DataStoreScanTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+            stopKey = null
         )) { scanResponse.dataFetchType }
 
         scanResponse.values[0].let {

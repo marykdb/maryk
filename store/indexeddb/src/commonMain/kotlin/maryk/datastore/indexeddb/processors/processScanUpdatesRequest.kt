@@ -536,9 +536,11 @@ private suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectHardDeleteS
             }
 
             rawHistoryRow = if (direction == ASC) {
+                // The maximum key has no following prefix; a null start would restart the scan.
+                val nextKey = keyPrefixUpperBound(keyBytes) ?: break
                 byteStore.scan(
                     storeName = "hdk:$modelId",
-                    startKey = keyPrefixUpperBound(keyBytes),
+                    startKey = nextKey,
                     endKey = rangeEnd,
                     includeEnd = false,
                     limit = 1u,

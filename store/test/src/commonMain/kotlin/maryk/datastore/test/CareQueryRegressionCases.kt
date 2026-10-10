@@ -184,9 +184,59 @@ class CareQueryRegressionCases(private val createStore: suspend (String) -> IsDa
         }
     }
 
+    suspend fun changesIncludeCreationAtExactLowerBound() = withContext(Dispatchers.Default) {
+        withStore("care-creation-change-boundary") { store ->
+            val added = assertIs<AddSuccess<BoundaryRecord>>(store.execute(BoundaryRecord.add(BoundaryRecord.create {
+                id with 1u.toUShort()
+                scope with 1u.toUByte()
+                ordinal with 1u.toUByte()
+            })).statuses.single())
+            for (select in listOf(null, BoundaryRecord.graph { emptyList() })) {
+                for (version in listOf(null, added.version)) {
+                    val direct = withTimeout(10.seconds) {
+                        store.execute(BoundaryRecord.getChanges(added.key, fromVersion = added.version, toVersion = version, select = select))
+                    }
+                    val scanned = withTimeout(10.seconds) {
+                        store.execute(BoundaryRecord.scanChanges(order = Order.ascending, fromVersion = added.version, toVersion = version, select = select))
+                    }
+                    for (response in listOf(direct, scanned)) {
+                        val creation = response.changes.single().changes.single()
+                        assertEquals(added.version, creation.version)
+                        assertTrue(ObjectCreate in creation.changes, "Inclusive lower bound must retain the creation marker")
+                    }
+                    val excluded = store.execute(BoundaryRecord.getChanges(added.key, fromVersion = added.version + 1uL, toVersion = version, select = select))
+                    assertTrue(excluded.changes.isEmpty(), "Creation below the lower bound must stay excluded")
+                }
+            }
+        }
+    }
 
-
-
+    suspend fun updatesIncludeAdditionAtExactLowerBound() = withContext(Dispatchers.Default) {
+        withStore("care-creation-update-boundary") { store ->
+            val added = assertIs<AddSuccess<BoundaryRecord>>(store.execute(BoundaryRecord.add(BoundaryRecord.create {
+                id with 1u.toUShort()
+                scope with 1u.toUByte()
+                ordinal with 1u.toUByte()
+            })).statuses.single())
+            for (select in listOf(null, BoundaryRecord.graph { emptyList() })) {
+                for (version in listOf(null, added.version)) {
+                    val direct = withTimeout(10.seconds) {
+                        store.execute(BoundaryRecord.getUpdates(added.key, fromVersion = added.version, toVersion = version, select = select))
+                    }
+                    val scanned = withTimeout(10.seconds) {
+                        store.execute(BoundaryRecord.scanUpdates(order = Order.ascending, fromVersion = added.version, toVersion = version, select = select))
+                    }
+                    for (response in listOf(direct, scanned)) {
+                        val creation = assertIs<AdditionUpdate<BoundaryRecord>>(response.updates.filterNot { it is OrderedKeysUpdate }.single())
+                        assertEquals(added.key, creation.key)
+                        assertEquals(added.version, creation.version)
+                        assertEquals(added.version, creation.firstVersion)
+                        if (select != null) assertEquals(BoundaryRecord.emptyValues(), creation.values)
+                    }
+                }
+            }
+        }
+    }
 
     suspend fun ascendingContinuationAcrossByteCarryKeepsAdjacentRecords() {
         verifyByteBoundaryContinuation(scopeValue = 1u, ids = listOf(255u, 256u, 257u), descending = false)

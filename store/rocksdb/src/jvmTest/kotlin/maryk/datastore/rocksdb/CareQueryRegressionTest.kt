@@ -66,9 +66,15 @@ class CareQueryRegressionTest {
         withBoundaryCases { it.membershipContinuationTraversesDisjointRanges() }
     }
 
+    @Test
+    fun changesIncludeCreationAtExactLowerBound() = runTest {
+        withBoundaryCases { it.changesIncludeCreationAtExactLowerBound() }
+    }
 
-
-
+    @Test
+    fun updatesIncludeAdditionAtExactLowerBound() = runTest {
+        withBoundaryCases { it.updatesIncludeAdditionAtExactLowerBound() }
+    }
 
     @Test
     fun emptyCompositeMembershipReturnsNoRows() = runTest {

@@ -21,9 +21,15 @@ class CareQueryRegressionTest {
         cases.membershipContinuationTraversesDisjointRanges()
     }
 
+    @Test
+    fun changesIncludeCreationAtExactLowerBound() = runTest {
+        cases.changesIncludeCreationAtExactLowerBound()
+    }
 
-
-
+    @Test
+    fun updatesIncludeAdditionAtExactLowerBound() = runTest {
+        cases.updatesIncludeAdditionAtExactLowerBound()
+    }
 
     @Test
     fun compositeEqualityListenerAcceptsMatchingAddition() = runTest {

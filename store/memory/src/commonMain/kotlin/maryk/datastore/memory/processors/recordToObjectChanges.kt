@@ -33,7 +33,7 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
             } else false
         },
         select = select,
-        creationVersion = if(record.firstVersion.timestamp > fromVersion) record.firstVersion.timestamp else null,
+        creationVersion = if(record.firstVersion.timestamp >= fromVersion) record.firstVersion.timestamp else null,
         processValue = { _, _, valueWithVersionReader ->
             when (val node = record.values[valueIndex]) {
                 is DataRecordValue<*> -> {

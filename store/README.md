@@ -18,6 +18,25 @@ All engines share the same API surface, so you can start with Memory in tests, u
 
 Below is a practical overview of each engine, why it was chosen, and when to use it.
 
+## Atomic changes across models
+
+`executeAtomic(AtomicRequest)` is an explicit, optional capability for bounded
+changes across root models in one store. It protects validation and concurrency
+guards and commits the complete change-set or none of its member mutations.
+Existing requests retain their current semantics. Inspect `supportsAtomicRequests`
+before offering this operation; unsupported stores return an explicit response.
+
+| Engine | Atomic boundary |
+| --- | --- |
+| Memory | Private staging and publication in one store instance; volatile |
+| RocksDB | One native transaction across participating column families; dependent point reads participate in conflict checking |
+| FoundationDB | One retryable native transaction across participating model subspaces, including schema fences and update-log entries |
+| IndexedDB | One final native batch under the database's Maryk writer lock or fenced lease; concurrent browser contexts share that boundary |
+| Remote | One forwarded request to a supporting backend; every participating model and mutation is authorized first |
+
+See [Atomic requests](../core/docs/query.md#atomic) for construction, limits,
+retry receipts, supported operations, and read/update-stream boundaries.
+
 ## Inspecting data
 
 Use the Maryk CLI or the Maryk App to connect to a store, scan records, and edit values interactively while you evaluate or debug storage behavior.

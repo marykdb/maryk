@@ -59,6 +59,10 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.IsFlowRequest
+import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.AtomicStatus
+import maryk.datastore.shared.AtomicDataStore
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.requests.RequestType
@@ -86,6 +90,7 @@ import maryk.datastore.shared.runCatchingNonFatal
 private data class BatchRequestDescriptor(
     val responseModel: IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>,
     val dataModel: IsRootDataModel,
+    val models: List<IsRootDataModel> = listOf(dataModel),
 )
 
 private class SshTunnelReconnect(
@@ -122,7 +127,8 @@ class RemoteDataStore private constructor(
     override val supportsFuzzyQualifierFiltering: Boolean,
     override val supportsSubReferenceFiltering: Boolean,
     override val supportsSnapshotVersion: Boolean,
-) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider {
+    override val supportsAtomicRequests: Boolean,
+) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider, AtomicDataStore {
     private val definitionsMutex = Mutex()
     private val sshTunnelMutex = Mutex()
     private val lifecycleMutex = Mutex()
@@ -217,6 +223,7 @@ class RemoteDataStore private constructor(
                     supportsFuzzyQualifierFiltering = infoResult.info.supportsFuzzyQualifierFiltering,
                     supportsSubReferenceFiltering = infoResult.info.supportsSubReferenceFiltering,
                     supportsSnapshotVersion = infoResult.info.supportsSnapshotVersion,
+                    supportsAtomicRequests = infoResult.info.supportsAtomicRequests,
                 )
             } catch (error: Throwable) {
                 if (ownsClient) {
@@ -351,6 +358,16 @@ class RemoteDataStore private constructor(
         }
     }
 
+    override suspend fun executeAtomic(request: AtomicRequest): AtomicResponse {
+        if (!supportsAtomicRequests) return AtomicResponse(AtomicStatus.Unsupported)
+        return try {
+            execute(Requests(request)).single() as AtomicResponse
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            AtomicResponse(AtomicStatus.OutcomeUnknown, message = error.message)
+        }
+    }
+
     override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ,
     ): RP {
@@ -366,9 +383,9 @@ class RemoteDataStore private constructor(
         requireOpen()
         require(requests.requests.isNotEmpty()) { "Remote execute request list cannot be empty" }
         val descriptors = requests.requests.map(::batchRequestDescriptor)
-        registerLocalDataModels(descriptors.map { it.dataModel })
+        registerLocalDataModels(descriptors.flatMap { it.models })
 
-        val context = requestContext(descriptors.first().dataModel, descriptors.map { it.dataModel })
+        val context = requestContext(descriptors.first().dataModel, descriptors.flatMap { it.models })
         val payload = RemoteStoreCodec.encode(Requests.Serializer, requests, context, MAX_REQUEST_BODY_BYTES)
         return executeEncodedBatch(payload, descriptors)
     }
@@ -469,8 +486,8 @@ class RemoteDataStore private constructor(
         val descriptors = typedRequests.map { typed ->
             batchRequestDescriptor(typed.type, typed.value)
         }
-        registerLocalDataModels(descriptors.map { it.dataModel })
-        val context = requestContext(descriptors.first().dataModel, descriptors.map { it.dataModel })
+        registerLocalDataModels(descriptors.flatMap { it.models })
+        val context = requestContext(descriptors.first().dataModel, descriptors.flatMap { it.models })
         val payload = RemoteStoreCodec.encodeValues(
             Requests.Serializer,
             requests,
@@ -482,6 +499,11 @@ class RemoteDataStore private constructor(
 
     private fun batchRequestDescriptor(request: IsTransportableRequest<*>): BatchRequestDescriptor {
         val executableRequest = if (request is CollectRequest<*, *>) request.request else request
+        if (executableRequest is AtomicRequest) {
+            val models = (executableRequest.requests + executableRequest.guards).map { it.dataModel }
+            @Suppress("UNCHECKED_CAST")
+            return BatchRequestDescriptor(AtomicResponse as IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>, models.first(), models)
+        }
         val storeRequest = executableRequest as? IsStoreRequest<*, *>
             ?: throw IllegalArgumentException(
                 "Remote execute only accepts store requests or CollectRequest wrappers"
@@ -499,7 +521,7 @@ class RemoteDataStore private constructor(
         }
         val values = value as? ObjectValues<*, *>
             ?: throw IllegalArgumentException("Unsupported remote batch request value ${value::class.simpleName}")
-        if (type == RequestType.Collect) {
+        if (type == RequestType.Collect || type == RequestType.Atomic) {
             val collectRequest = values.toDataObject() as? IsTransportableRequest<*>
                 ?: throw IllegalArgumentException("Invalid CollectRequest in remote batch")
             return batchRequestDescriptor(collectRequest)
@@ -518,7 +540,7 @@ class RemoteDataStore private constructor(
             RequestType.Get, RequestType.Scan -> maryk.core.query.responses.ValuesResponse
             RequestType.GetChanges, RequestType.ScanChanges -> ChangesResponse
             RequestType.GetUpdates, RequestType.ScanUpdates, RequestType.ScanUpdateHistory, RequestType.GetUpdateHistory -> UpdatesResponse
-            RequestType.Collect -> error("CollectRequest handled above")
+            RequestType.Collect, RequestType.Atomic -> error("Composite request handled above")
         } as IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>
 
         return BatchRequestDescriptor(responseModel, dataModel)

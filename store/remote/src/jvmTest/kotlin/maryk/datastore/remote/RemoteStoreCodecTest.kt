@@ -41,6 +41,23 @@ class RemoteStoreCodecTest {
     }
 
     @Test
+    fun atomicCapabilityIsAdditiveAndDefaultsOff() {
+        val info = RemoteStoreInfo(
+            definitions = RemoteDataStore.collectDefinitions(listOf(SimpleMarykModel)),
+            modelIds = listOf(RemoteStoreModelId(1u, SimpleMarykModel.Meta.name)),
+            keepAllVersions = true, supportsFuzzyQualifierFiltering = false,
+            supportsSubReferenceFiltering = false, supportsSnapshotVersion = true,
+            supportsAtomicRequests = true,
+        )
+        val encoded = RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info, DefinitionsConversionContext())
+        assertTrue(RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded, DefinitionsConversionContext()).supportsAtomicRequests)
+        assertContentEquals(byteArrayOf(0x40, 1), encoded.takeLast(2).toByteArray())
+        val legacy = RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded.dropLast(2).toByteArray(), DefinitionsConversionContext())
+        assertFalse(legacy.supportsAtomicRequests)
+        assertTrue(legacy.supportsSnapshotVersion)
+    }
+
+    @Test
     fun lengthPrefixRejectsNegativeLength() {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteStoreCodec.lengthPrefix(-1)

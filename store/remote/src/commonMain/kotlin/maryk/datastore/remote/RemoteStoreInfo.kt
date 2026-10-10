@@ -1,5 +1,6 @@
 package maryk.datastore.remote
 
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.definitions.Definitions
 import maryk.core.models.DefinitionModel
 import maryk.core.models.IsObjectDataModel
@@ -35,6 +36,7 @@ internal data class RemoteStoreInfo(
     val supportsSubReferenceFiltering: Boolean,
     val keepUpdateHistoryIndex: Boolean = false,
     val supportsSnapshotVersion: Boolean = false,
+    val supportsAtomicRequests: Boolean = false,
 ) {
     companion object : DefinitionModel<RemoteStoreInfo>() {
         val definitions by embedObject(
@@ -67,6 +69,11 @@ internal data class RemoteStoreInfo(
             default = false,
         )
 
+        val supportsAtomicRequests by boolean(
+            8u, RemoteStoreInfo::supportsAtomicRequests, default = false,
+            toSerializable = { value: Boolean?, _: ContainsDefinitionsContext? -> value?.takeIf { it } },
+        )
+
         override fun invoke(values: ObjectValues<RemoteStoreInfo, IsObjectDataModel<RemoteStoreInfo>>) = RemoteStoreInfo(
             definitions = values(definitions.index),
             modelIds = values(modelIds.index),
@@ -75,6 +82,7 @@ internal data class RemoteStoreInfo(
             supportsSubReferenceFiltering = values(supportsSubReferenceFiltering.index),
             keepUpdateHistoryIndex = values(keepUpdateHistoryIndex.index),
             supportsSnapshotVersion = values(supportsSnapshotVersion.index),
+            supportsAtomicRequests = values(supportsAtomicRequests.index),
         )
     }
 }

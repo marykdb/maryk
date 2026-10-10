@@ -50,6 +50,14 @@ Instead:
 
 This gives good browser behavior without pretending IndexedDB transactions are long-lived coroutine scopes.
 
+Atomic requests reuse the writer lock or fenced lease for the complete planning
+phase. A coroutine-local byte-store overlay provides read-your-own-writes without
+exposing staged data to background readers. Record writes, index/history changes,
+commit-journal rows, the clock, and the retry receipt are sent to one native
+`writeBatch`. Failed validation discards the overlay and its notifications.
+The browser adapters explicitly implement `AtomicIndexedDbByteStore`; the generic
+byte-store interface's sequential batch fallback does not establish this guarantee.
+
 ## Versioning
 
 `open` creates or upgrades all required object stores for the configured models and options. Existing connections close on `versionchange`, and blocked opens fail clearly instead of hanging.

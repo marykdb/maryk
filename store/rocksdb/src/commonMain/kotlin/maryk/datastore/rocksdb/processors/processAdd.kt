@@ -127,10 +127,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                                 .map { uniqueValue -> reference + uniqueValue }
                             val uniqueReference = uniqueReferences.first()
 
-                            checksBeforeWrite.add {
+                            val checkUnique = {
                                 for (candidateReference in uniqueReferences) {
                                     val uniqueCount =
-                                        db.get(columnFamilies.unique, candidateReference, recyclableByteArray)
+                                        if (transaction.atomicOwner) transaction.get(columnFamilies.unique, defaultReadOptions, candidateReference, recyclableByteArray)
+                                        else db.get(columnFamilies.unique, candidateReference, recyclableByteArray)
                                     if (uniqueCount == VERSION_BYTE_SIZE + key.size) {
                                         throw UniqueException(
                                             reference,
@@ -145,9 +146,12 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                                 }
                             }
 
+                            // Atomic reads include staged writes, so check before staging this claim.
+                            if (transaction.atomicOwner) checkUnique() else checksBeforeWrite.add(checkUnique)
+
                             // Creates index reference on the table if it not exists so delete can find
                             // what values to delete from the unique indexes.
-                            createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
+                            createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference, transaction)
                             setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                         }
 

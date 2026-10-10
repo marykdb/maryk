@@ -170,6 +170,15 @@ val responses = remote.execute(
 unresolved `Inject` values. Responses preserve request order. Execution is fail-fast
 and is not transactionally atomic.
 
+An explicit `AtomicRequest` is transported as one batch member. The `/info`
+response advertises the backend's `supportsAtomicRequests` capability (absent
+means false for older servers). All participating models and semantic mutation
+permissions are checked before execution, including guards and soft-delete
+changes. The atomic request is forwarded once; Remote never decomposes it into
+ordinary requests. An outer `Requests` batch still has its existing sequential
+semantics. Retain the original atomic request and its ID when retrying an uncertain
+network outcome.
+
 ## SSH tunneling
 
 Remote store supports SSH port forwarding via the system `ssh` binary.

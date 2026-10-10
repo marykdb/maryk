@@ -342,7 +342,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 byteArrayOf(if (change.isDeleted) TRUE else 0)
                             )
 
-                            getUniqueIndices(dataModelId, tableDirs.uniquePrefix).forEach { reference ->
+                            getUniqueIndices(dataModelId, tableDirs.uniquePrefix, tr).forEach { reference ->
                                 if (change.isDeleted) {
                                     deleteCurrentUniqueIndexEntryForKey(
                                         tr = tr,

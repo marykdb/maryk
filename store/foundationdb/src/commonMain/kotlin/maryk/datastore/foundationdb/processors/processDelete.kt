@@ -221,7 +221,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
             }
 
             if (hardDelete) {
-                for (reference in getUniqueIndices(dbIndex, tableDirs.uniquePrefix)) {
+                for (reference in getUniqueIndices(dbIndex, tableDirs.uniquePrefix, tr)) {
                     deleteCurrentUniqueIndexEntryForKey(
                         tr,
                         tableDirs,
@@ -233,7 +233,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
 
                 if (tableDirs is HistoricTableDirectories) {
                     val historicUniqueReferences = mutableListOf<ByteArray>()
-                    for (reference in getUniqueIndices(dbIndex, tableDirs.uniquePrefix)) {
+                    for (reference in getUniqueIndices(dbIndex, tableDirs.uniquePrefix, tr)) {
                         collectHistoricUniqueReferencesForHistoricalValues(
                             tr,
                             tableDirs,

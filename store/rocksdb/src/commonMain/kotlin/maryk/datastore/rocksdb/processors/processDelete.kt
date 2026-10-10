@@ -95,7 +95,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                 val versionBytes = HLC.toStorageBytes(version)
 
                 for (reference in getUniqueIndices(
-                    dbIndex, columnFamilies.unique
+                    dbIndex, columnFamilies.unique, transaction
                 )) {
                     val referenceAndKey = key.bytes + reference
                     val valueLength = transaction.get(

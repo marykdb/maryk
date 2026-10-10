@@ -82,7 +82,7 @@ internal fun FoundationDBDataStore.createValueWriter(
                             versionBytes = versionBytes
                         )
 
-                        createUniqueIndexIfNotExists(dataModelId, tableDirs.uniquePrefix, reference)
+                        createUniqueIndexIfNotExists(dataModelId, tableDirs.uniquePrefix, reference, tr)
 
                         // Write new unique entry
                         setUniqueIndexValue(tr, tableDirs, uniqueRef, versionBytes, key.bytes)

@@ -85,7 +85,7 @@ private class BrowserIndexedDbByteStore(
     private val database: dynamic,
     private val databaseName: String,
     private val lockName: String,
-) : IndexedDbByteStore, IndexedDbLifecycleAware {
+) : AtomicIndexedDbByteStore, IndexedDbLifecycleAware {
     // Startup handlers can call the datastore actor, which runs in a separate coroutine.
     // The store is not exposed to general callers until this startup-only owner is cleared.
     private var startupLeaseOwnerId: String? = null

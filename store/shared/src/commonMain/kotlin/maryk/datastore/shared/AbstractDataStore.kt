@@ -27,6 +27,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
+import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.AtomicStatus
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.createScanRange
@@ -66,7 +69,7 @@ abstract class AbstractDataStore(
     coroutineContext: CoroutineContext,
     protected val maxConcurrentReads: Int = 1,
     readWorkerCoroutineContext: CoroutineContext = coroutineContext,
-): IsDataStore, CoroutineScope {
+): IsDataStore, CoroutineScope, AtomicDataStore {
     init {
         require(maxConcurrentReads > 0) { "maxConcurrentReads must be greater than zero" }
     }
@@ -139,6 +142,17 @@ abstract class AbstractDataStore(
             throw StorageException("DataStore is closed")
         }
     }
+
+    override val supportsAtomicRequests: Boolean get() = false
+
+    override suspend fun executeAtomic(request: AtomicRequest): AtomicResponse {
+        if (!supportsAtomicRequests) return AtomicResponse(AtomicStatus.Unsupported)
+        (request.requests + request.guards).forEach { assertRequestModelReady(getDataModelId(it.dataModel)) }
+        return execute(AtomicStoreRequest(request))
+    }
+
+    protected open suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
+        AtomicResponse(AtomicStatus.Unsupported)
 
     override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
@@ -463,7 +477,21 @@ abstract class AbstractDataStore(
                     drainReads()
                 }
                 mutationBarrier.withLock {
-                    processAction(action, null)
+                    val atomic = action.request as? AtomicStoreRequest
+                    if (atomic == null) {
+                        processAction(action, null)
+                    } else {
+                        @Suppress("UNCHECKED_CAST")
+                        val response = action.response as CompletableDeferred<AtomicResponse>
+                        try {
+                            response.complete(processAtomicRequest(atomic.atomic, nextMutationClock(HLC())))
+                        } catch (abort: AtomicAbort) {
+                            response.complete(abort.response)
+                        } catch (error: Throwable) {
+                            response.complete(AtomicResponse(AtomicStatus.OutcomeUnknown, message = error.message))
+                            error.rethrowIfFatal()
+                        }
+                    }
                 }
             }
         }

@@ -36,6 +36,7 @@ kotlin {
                 implementation(projects.sql.conformance)
                 implementation(projects.testmodels)
                 implementation(projects.store.memory)
+                implementation(projects.store.test)
                 implementation(projects.file)
             }
         }

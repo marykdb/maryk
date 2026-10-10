@@ -15,6 +15,16 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.IsDataModelResponse
+import maryk.core.query.responses.IsResponse
+import maryk.datastore.shared.AtomicAbort
+import maryk.datastore.shared.AtomicReceiptCodec
+import maryk.datastore.shared.AtomicMutationContext
+import maryk.datastore.shared.currentAtomicContext
+import maryk.datastore.shared.applyAtomicMembers
+import maryk.datastore.shared.StoreAction
 import maryk.core.clock.HLC
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.DefNotFoundException
@@ -1205,6 +1215,29 @@ class RocksDBDataStore private constructor(
                 uniqueIndicesByDataModelIndex.value.plus(dbIndex to existingDbUniques)
         }
 
+    internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle, transaction: Transaction): List<ByteArray> =
+        if (transaction.atomicOwner) mergeUniqueReferences(
+            declaredUniqueReferencesByModelId[dbIndex].orEmpty(),
+            buildList {
+                transaction.getIterator(defaultReadOptions, uniqueHandle).use { iterator ->
+                    iterator.seekToFirst()
+                    while (iterator.isValid()) {
+                        val key = iterator.key()
+                        if (key.isEmpty() || key[0] != 0.toByte()) break
+                        add(key.copyOfRange(1, key.size))
+                        iterator.next()
+                    }
+                }
+            },
+        ) else getUniqueIndices(dbIndex, uniqueHandle)
+
+    internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle, uniqueName: ByteArray, transaction: Transaction) {
+        if (!transaction.atomicOwner) createUniqueIndexIfNotExists(dbIndex, uniqueHandle, uniqueName)
+        else if (getUniqueIndices(dbIndex, uniqueHandle, transaction).none { it.contentEquals(uniqueName) }) {
+            transaction.put(uniqueHandle, byteArrayOf(0, *uniqueName), EMPTY_ARRAY)
+        }
+    }
+
     /**
      * Checks if a unique index exists and creates it if not otherwise.
      * This is needed so delete knows which indexes to scan for values to delete.
@@ -1241,13 +1274,56 @@ class RocksDBDataStore private constructor(
         }
     }
 
+    override val supportsAtomicRequests: Boolean = true
+
+    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse {
+        val codec = AtomicReceiptCodec(dataModelsById)
+        val fingerprint = codec.fingerprint(request)
+        val receiptKey = "maryk.atomic/".encodeToByteArray() + request.changeSetId.encodeToByteArray()
+        val transaction = Transaction(this).apply { atomicOwner = true }
+        val atomic = AtomicMutationContext(this, transaction)
+        try {
+            transaction.get(retainedColumnFamilyHandles.first(), defaultReadOptions, receiptKey)?.let {
+                return codec.replay(it, fingerprint)
+            }
+            val result = withContext(atomic) {
+                applyAtomicMembers(request) { member ->
+                    val response = CompletableDeferred<IsResponse>()
+                    val action = StoreAction(member, response)
+                    @Suppress("UNCHECKED_CAST")
+                    when (member) {
+                        is AddRequest<*> -> processAddRequest(version, action as AnyAddStoreAction)
+                        is ChangeRequest<*> -> processChangeRequest(version, action as AnyChangeStoreAction)
+                        is DeleteRequest<*> -> processDeleteRequest(version, action as AnyDeleteStoreAction, Cache())
+                        else -> error("Invalid atomic member")
+                    }
+                    response.await() as IsDataModelResponse<*>
+                }
+            }
+            transaction.put(retainedColumnFamilyHandles.first(), receiptKey, codec.receipt(fingerprint, result))
+            transaction.atomicOwner = false
+            transaction.commit()
+            val affectedIds = request.requests.map { getDataModelId(it.dataModel) }.toSet()
+            uniqueIndicesByDataModelIndex.update { it - affectedIds }
+            observeCommittedVersion(version.timestamp)
+            atomic.updates.forEach { emitFlowUpdate(it) }
+            return result
+        } catch (abort: AtomicAbort) {
+            return abort.response
+        } finally {
+            transaction.close()
+        }
+    }
+
     internal suspend fun emitUpdate(updateToEmit: Update<*>?) {
         if (updateToEmit != null) {
+            currentAtomicContext(this)?.let { it.updates += updateToEmit; return }
             emitFlowUpdate(updateToEmit)
         }
     }
 
     internal suspend fun emitUpdates(updatesToEmit: List<Update<*>>) {
+        currentAtomicContext(this)?.let { it.updates += updatesToEmit; return }
         updatesToEmit.forEach { emitFlowUpdate(it) }
     }
 

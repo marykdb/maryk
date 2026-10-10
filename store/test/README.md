@@ -14,6 +14,9 @@ scan behavior, and versioning consistency.
 - Shared request semantics across Memory, IndexedDB, RocksDB and FoundationDB.
 - Key, index and unique handling.
 - Current and historic reads.
+- Atomic change-sets across models, late validation and unique-conflict rollback,
+  version and value guards, competing writes, retry receipts, and suppression of
+  notifications for aborted changes.
 - Change and update responses.
 - Cursor-paged update history, tied versions, complete selected revisions,
   and creation/deletion events after key reuse.

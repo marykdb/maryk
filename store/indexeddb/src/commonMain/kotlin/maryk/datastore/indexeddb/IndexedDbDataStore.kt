@@ -70,6 +70,18 @@ import maryk.datastore.indexeddb.processors.readInvertedVersion
 import maryk.datastore.indexeddb.processors.readTrailingVersion
 import maryk.datastore.indexeddb.processors.readTrailingInvertedVersion
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
+import kotlinx.coroutines.CompletableDeferred
+import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.AtomicStatus
+import maryk.core.query.responses.IsDataModelResponse
+import maryk.core.query.responses.IsResponse
+import maryk.datastore.shared.AtomicAbort
+import maryk.datastore.shared.AtomicReceiptCodec
+import maryk.datastore.shared.AtomicMutationContext
+import maryk.datastore.shared.currentAtomicContext
+import maryk.datastore.shared.applyAtomicMembers
+import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
 import maryk.datastore.shared.RequestExecutionKind
@@ -86,14 +98,61 @@ internal var hardDeleteTombstoneMigrationBeforeWrite: (suspend (UInt, ByteArray,
 internal var replicationTombstoneCompactionAfterScan: (suspend (UInt) -> Unit)? = null
 
 class IndexedDbDataStore private constructor(
-    internal val byteStore: IndexedDbByteStore,
+    byteStore: IndexedDbByteStore,
     override val keepAllVersions: Boolean = false,
     override val keepUpdateHistoryIndex: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
     internal val sensitiveFields: IndexedDbSensitiveFieldSupport,
 ) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider, ReplicationTombstoneCompactor {
+    private val nativeByteStore = byteStore
+    internal val byteStore: IndexedDbByteStore = AtomicAwareIndexedDbByteStore(byteStore, this)
+    override val supportsAtomicRequests: Boolean get() = nativeByteStore is AtomicIndexedDbByteStore
+
+    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
+        nativeByteStore.transaction(setOf("meta", CommitJournalStoreName), IndexedDbTransactionMode.READWRITE) {
+            journalCursorMutex.withLock {
+                val codec = AtomicReceiptCodec(dataModelsById)
+                val fingerprint = codec.fingerprint(request)
+                val receiptKey = "maryk.atomic/".encodeToByteArray() + request.changeSetId.encodeToByteArray()
+                nativeByteStore.get("meta", receiptKey)?.let { return@withLock codec.replay(it, fingerprint) }
+                drainExternalCommitsLocked()
+                validateJournalConsumersLocked()
+                val persistedClock = nativeByteStore.get("meta", CommitClockMetadataKey)?.readBigEndianULong() ?: 0uL
+                val atomicVersion = nextMutationClock(version, persistedClock)
+                mutationClock = atomicVersion
+                journalSequence = 0u
+                val staged = StagedIndexedDbByteStore(nativeByteStore)
+                val atomic = AtomicMutationContext(this@IndexedDbDataStore, staged)
+                try {
+                    val result = withContext(atomic) {
+                        applyAtomicMembers(request) { member ->
+                            val response = CompletableDeferred<IsResponse>()
+                            val action = StoreAction(member, response)
+                            @Suppress("UNCHECKED_CAST")
+                            when (member) {
+                                is AddRequest<*> -> processAddRequest(atomicVersion, action as AddStoreAction<IsRootDataModel>)
+                                is ChangeRequest<*> -> processChangeRequest(atomicVersion, action as ChangeStoreAction<IsRootDataModel>)
+                                is DeleteRequest<*> -> processDeleteRequest(atomicVersion, action as DeleteStoreAction<IsRootDataModel>)
+                                else -> error("Invalid atomic member")
+                            }
+                            response.await() as IsDataModelResponse<*>
+                        }
+                    }
+                    staged.put("meta", receiptKey, codec.receipt(fingerprint, result))
+                    nativeByteStore.writeBatch(staged.operations)
+                    staged.journalKey?.let { lastJournalKey = it }
+                    observeCommittedVersion(atomicVersion.timestamp)
+                    atomic.updates.forEach { emitFlowUpdate(it) }
+                    nativeByteStore.signalCommittedUpdate()
+                    result
+                } catch (abort: AtomicAbort) {
+                    abort.response
+                }
+            }
+        }
+
     init {
-        (byteStore as? IndexedDbLifecycleAware)?.setCloseListener {
+        (nativeByteStore as? IndexedDbLifecycleAware)?.setCloseListener {
             CoroutineScope(DISPATCHER + SupervisorJob()).launch { closeInvalidatedByteStore() }
         }
     }
@@ -119,24 +178,39 @@ class IndexedDbDataStore private constructor(
         operations: MutableList<IndexedDbWriteOperation>,
         update: Update<out IsRootDataModel>,
         journalPayload: ByteArray? = null,
-    ) = journalCursorMutex.withLock {
-        drainExternalCommitsLocked()
-        validateJournalConsumersLocked()
-        val persistedVersion = maxOf(mutationClock.timestamp, update.version)
-        val journalKey = createCommitJournalKey(persistedVersion, journalSequence++)
-        operations += IndexedDbWriteOperation.Put("meta", CommitClockMetadataKey, persistedVersion.toBigEndianBytes())
-        operations += IndexedDbWriteOperation.Put(
-            CommitJournalStoreName,
-            journalKey,
-            encodeCommitJournalEntry(getDataModelId(update.dataModel), update, journalPayload),
-        )
-        operations += journalConsumerOperation(journalKey)
-        byteStore.writeBatch(operations)
-        lastJournalKey = journalKey
-        observeCommittedVersion(persistedVersion)
-        emitFlowUpdate(update)
-        collectCommittedJournalEntriesLocked()
-        byteStore.signalCommittedUpdate()
+    ) {
+        currentAtomicContext(this)?.let { atomic ->
+            val staged = atomic.transaction as StagedIndexedDbByteStore
+            val persistedVersion = maxOf(mutationClock.timestamp, update.version)
+            val journalKey = createCommitJournalKey(persistedVersion, journalSequence++)
+            operations += IndexedDbWriteOperation.Put("meta", CommitClockMetadataKey, persistedVersion.toBigEndianBytes())
+            operations += IndexedDbWriteOperation.Put(CommitJournalStoreName, journalKey,
+                encodeCommitJournalEntry(getDataModelId(update.dataModel), update, journalPayload))
+            operations += journalConsumerOperation(journalKey)
+            staged.writeBatch(operations)
+            staged.journalKey = journalKey
+            atomic.updates += update
+            return
+        }
+        journalCursorMutex.withLock {
+            drainExternalCommitsLocked()
+            validateJournalConsumersLocked()
+            val persistedVersion = maxOf(mutationClock.timestamp, update.version)
+            val journalKey = createCommitJournalKey(persistedVersion, journalSequence++)
+            operations += IndexedDbWriteOperation.Put("meta", CommitClockMetadataKey, persistedVersion.toBigEndianBytes())
+            operations += IndexedDbWriteOperation.Put(
+                CommitJournalStoreName,
+                journalKey,
+                encodeCommitJournalEntry(getDataModelId(update.dataModel), update, journalPayload),
+            )
+            operations += journalConsumerOperation(journalKey)
+            byteStore.writeBatch(operations)
+            lastJournalKey = journalKey
+            observeCommittedVersion(persistedVersion)
+            emitFlowUpdate(update)
+            collectCommittedJournalEntriesLocked()
+            byteStore.signalCommittedUpdate()
+        }
     }
 
     private suspend fun drainExternalCommits() = journalCursorMutex.withLock {

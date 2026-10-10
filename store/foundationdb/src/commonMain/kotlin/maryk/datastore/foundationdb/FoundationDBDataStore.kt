@@ -15,6 +15,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.AtomicStatus
+import maryk.core.query.responses.IsResponse
+import maryk.datastore.shared.StoreAction
+import maryk.core.query.responses.IsDataModelResponse
+import maryk.datastore.shared.AtomicAbort
+import maryk.datastore.shared.AtomicReceiptCodec
+import maryk.datastore.shared.AtomicMutationContext
+import maryk.datastore.shared.currentAtomicContext
+import maryk.datastore.shared.applyAtomicMembers
 import maryk.core.clock.HLC
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.DefNotFoundException
@@ -217,6 +228,8 @@ class FoundationDBDataStore private constructor(
 
     private lateinit var rootDirectory: DirectorySubspace
     private lateinit var metadataDirectory: DirectorySubspace
+    private val atomicTransactions = atomic<Set<Transaction>>(emptySet())
+    private lateinit var atomicReceiptsPrefix: ByteArray
     private lateinit var metadataPrefix: ByteArray
     internal val directoriesByDataModelIndex = mutableMapOf<UInt, IsTableDirectories>()
     private val expectedSchemaEpochs = atomic<Map<UInt, ByteArray?>>(emptyMap())
@@ -271,6 +284,11 @@ class FoundationDBDataStore private constructor(
     ): T {
         if (isClosing.value) throw CancellationException("Datastore closing")
         val migrationRequest = currentCoroutineContext()[FoundationDBMigrationRequestContext]
+        currentAtomicContext(this)?.let { atomic ->
+            val tr = atomic.transaction as Transaction
+            dataModelId?.let { requireModelSchemaReady(tr, it, migrationRequest?.transactionGuard) }
+            return block(tr)
+        }
         return tc.run { tr ->
             dataModelId?.let { requireModelSchemaReady(tr, it, migrationRequest?.transactionGuard) }
             block(tr)
@@ -344,6 +362,9 @@ class FoundationDBDataStore private constructor(
             rootDirectory.createOrOpen(tr, storeMetadataModelsByIdDirectoryPath).awaitResult()
         }
         metadataPrefix = metadataDirectory.pack()
+        atomicReceiptsPrefix = runTransaction { tr ->
+            rootDirectory.createOrOpen(tr, listOf("__meta__", "atomic_receipts")).awaitResult().pack()
+        }
 
         for ((index, dataModel) in dataModelsById) {
             directoriesByDataModelIndex[index] = openTableDirs(index, dataModel.Meta.name, historic = keepAllVersions)
@@ -1361,6 +1382,74 @@ class FoundationDBDataStore private constructor(
     internal fun readStoredModelNamesById(): Map<UInt, String> =
         readStoredModelNames(tc, metadataPrefix)
 
+    override val supportsAtomicRequests: Boolean = true
+
+    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse = withContext(Dispatchers.IO) {
+        val codec = AtomicReceiptCodec(dataModelsById)
+        val fingerprint = codec.fingerprint(request)
+        val receiptKey = atomicReceiptsPrefix + request.changeSetId.encodeToByteArray()
+        val parentJob = requireNotNull(currentCoroutineContext()[Job])
+        var updates: List<Update<*>> = emptyList()
+        try {
+            val result = tc.run { transaction ->
+                transaction.options().setTimeout(10_000)
+                transaction.options().setRetryLimit(10)
+                transaction.options().setSizeLimit(4_194_304)
+                updates = emptyList()
+                transaction.get(receiptKey).awaitResult()?.let { return@run codec.replay(it, fingerprint) }
+                var observedVersion = 0uL
+                for (member in request.requests + request.guards) {
+                    val id = getDataModelId(member.dataModel)
+                    requireModelSchemaReady(transaction, id)
+                    val dirs = getTableDirs(id)
+                    val key = when (member) {
+                        is AddRequest<*> -> member.keysForObjects!!.single()
+                        is ChangeRequest<*> -> member.objects.single().key
+                        is DeleteRequest<*> -> member.keys.single()
+                        else -> error("Invalid atomic member")
+                    }
+                    val current = transaction.get(packKey(dirs.tablePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
+                    val tombstone = transaction.get(packKey(dirs.replicationTombstonePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
+                    observedVersion = maxOf(observedVersion, current, tombstone)
+                }
+                val atomicVersion = nextMutationClock(version, observedVersion)
+                val atomic = AtomicMutationContext(this@FoundationDBDataStore, transaction)
+                atomicTransactions.update { it + transaction }
+                // The binding's retry runner owns commit. Its synchronous body uses the same
+                // transaction for all suspend processors and retains datastore cancellation.
+                val result = try {
+                    runBlocking(parentJob + atomic) {
+                        applyAtomicMembers(request) { member ->
+                            val response = CompletableDeferred<IsResponse>()
+                            val action = StoreAction(member, response)
+                            @Suppress("UNCHECKED_CAST")
+                            when (member) {
+                                is AddRequest<*> -> processAddRequest(atomicVersion, action as AnyAddStoreAction)
+                                is ChangeRequest<*> -> processChangeRequest(atomicVersion, action as AnyChangeStoreAction)
+                                is DeleteRequest<*> -> processDeleteRequest(atomicVersion, action as AnyDeleteStoreAction, Cache())
+                                else -> error("Invalid atomic member")
+                            }
+                            response.await() as IsDataModelResponse<*>
+                        }
+                    }
+                } finally {
+                    atomicTransactions.update { it - transaction }
+                }
+                transaction.set(receiptKey, codec.receipt(fingerprint, result))
+                updates = atomic.updates.toList()
+                result
+            }
+            val affectedIds = request.requests.map { getDataModelId(it.dataModel) }.toSet()
+            uniqueIndicesByDataModelIndex.update { it - affectedIds }
+            updates.forEach { emitUpdate(it) }
+            result
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            val cause = error.unwrapFdb()
+            if (cause is AtomicAbort) cause.response else throw cause
+        }
+    }
+
     internal var clusterUpdateLog: ClusterUpdateLog? = null
 
     internal val afterDeleteUpdatePrepared = atomic<((Transaction) -> Unit)?>(null)
@@ -1368,6 +1457,7 @@ class FoundationDBDataStore private constructor(
 
     internal suspend fun emitUpdate(update: Update<*>?) {
         if (update == null) return
+        currentAtomicContext(this)?.let { it.updates += update; return }
         durableVersionFloor.update { maxOf(it, update.version) }
         observeCommittedVersion(update.version)
         val flowUpdate = prepareFlowUpdate(update)
@@ -1729,6 +1819,20 @@ class FoundationDBDataStore private constructor(
                 uniqueIndicesByDataModelIndex.value.plus(dbIndex to existingDbUniques)
         }
 
+    /** Atomic mutations read descriptor state from their own transaction, including earlier staged additions. */
+    internal fun getUniqueIndices(dbIndex: UInt, uniquePrefix: ByteArray, transaction: Transaction): List<ByteArray> =
+        if (transaction in atomicTransactions.value) mergeUniqueReferences(
+            declaredUniqueReferencesByModelId[dbIndex].orEmpty(), searchExistingUniqueIndices(uniquePrefix, transaction),
+        ) else getUniqueIndices(dbIndex, uniquePrefix)
+
+    internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniquePrefix: ByteArray, uniqueName: ByteArray, transaction: Transaction) {
+        if (transaction !in atomicTransactions.value) {
+            createUniqueIndexIfNotExists(dbIndex, uniquePrefix, uniqueName)
+        } else if (getUniqueIndices(dbIndex, uniquePrefix, transaction).none { it.contentEquals(uniqueName) }) {
+            transaction.set(packKey(uniquePrefix, byteArrayOf(0) + uniqueName), EMPTY_BYTEARRAY)
+        }
+    }
+
     internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniquePrefix: ByteArray, uniqueName: ByteArray) {
         val existingDbUniques = getUniqueIndices(dbIndex, uniquePrefix)
         val existingValue = existingDbUniques.find { it.contentEquals(uniqueName) }
@@ -1740,6 +1844,15 @@ class FoundationDBDataStore private constructor(
 
             uniqueIndicesByDataModelIndex.value =
                 uniqueIndicesByDataModelIndex.value.plus(dbIndex to existingDbUniques.plus(uniqueName))
+        }
+    }
+
+    private fun searchExistingUniqueIndices(uniquePrefix: ByteArray, transaction: Transaction) = buildList {
+        val iterator = transaction.getRange(Range.startsWith(uniquePrefix)).iterator()
+        while (iterator.hasNext()) {
+            val kv = iterator.nextBlocking()
+            if (kv.key.size <= uniquePrefix.size || kv.key[uniquePrefix.size] != 0.toByte()) break
+            add(kv.key.copyOfRange(uniquePrefix.size + 1, kv.key.size))
         }
     }
 

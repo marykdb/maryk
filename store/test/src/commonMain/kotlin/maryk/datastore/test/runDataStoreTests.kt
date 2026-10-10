@@ -25,6 +25,7 @@ internal typealias DataStoreTestConstructor = (IsDataStore) -> IsDataStoreTest
 
 private val allTestClasses: Array<Pair<String, DataStoreTestConstructor>> = arrayOf(
     "DataStoreAddTest" to ::DataStoreAddTest,
+    "DataStoreAtomicTest" to ::DataStoreAtomicTest,
     "DataStoreChangeComplexTest" to ::DataStoreChangeComplexTest,
     "DataStoreChangeTest" to ::DataStoreChangeTest,
     "DataStoreChangeValidationTest" to ::DataStoreChangeValidationTest,

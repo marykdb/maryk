@@ -310,7 +310,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                         DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions).use { valuesGetter ->
                             valuesGetter.moveToKey(key.bytes, transaction)
 
-                            uniqueLoop@ for (reference in getUniqueIndices(dbIndex, columnFamilies.unique)) {
+                            uniqueLoop@ for (reference in getUniqueIndices(dbIndex, columnFamilies.unique, transaction)) {
                                 if (change.isDeleted) {
                                     deleteCurrentUniqueIndexEntryForKey(
                                         dataModel = dataModel,
@@ -1199,7 +1199,7 @@ private fun RocksDBDataStore.createValueWriter(
 
                         // Creates index reference on the table if it not exists so delete can find
                         // what values to delete from the unique indexes.
-                        createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
+                        createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference, transaction)
                         setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                     } catch (e: UniqueException) {
                         // Only throw if key is not equal otherwise ignore as it is the same as existing key

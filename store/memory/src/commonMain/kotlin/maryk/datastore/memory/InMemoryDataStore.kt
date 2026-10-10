@@ -55,6 +55,14 @@ import maryk.datastore.memory.processors.processScanRequest
 import maryk.datastore.memory.processors.processScanUpdateHistoryRequest
 import maryk.datastore.memory.processors.processScanUpdatesRequest
 import maryk.datastore.memory.records.DataStore
+import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.AtomicStatus
+import maryk.core.query.responses.IsDataModelResponse
+import maryk.datastore.shared.AtomicAbort
+import maryk.datastore.shared.AtomicReceiptCodec
+import maryk.datastore.shared.applyAtomicMembers
+import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
 import maryk.datastore.shared.RequestExecutionKind
@@ -86,6 +94,49 @@ class InMemoryDataStore private constructor(
     override val keepUpdateHistoryIndex: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
 ) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider, ReplicationTombstoneCompactor {
+    override val supportsAtomicRequests: Boolean = true
+    private val atomicDataStores = mutableMapOf<UInt, DataStore<*>>()
+    private val atomicReceipts = mutableMapOf<String, ByteArray>()
+
+    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse {
+        val codec = AtomicReceiptCodec(dataModelsById)
+        val fingerprint = codec.fingerprint(request)
+        atomicReceipts[request.changeSetId]?.let { return codec.replay(it, fingerprint) }
+        val staged = mutableMapOf<UInt, DataStore<IsRootDataModel>>()
+        val updates = mutableListOf<Update<*>>()
+        val fetcher: (IsRootDataModel) -> DataStore<IsRootDataModel> = { model ->
+            val id = getDataModelId(model)
+            staged.getOrPut(id) {
+                @Suppress("UNCHECKED_CAST")
+                (atomicDataStores[id] as? DataStore<IsRootDataModel>)?.copyForAtomic()
+                    ?: DataStore(keepAllVersions, keepUpdateHistoryIndex)
+            }
+        }
+        return try {
+            val result = applyAtomicMembers(request) { member ->
+                val response = CompletableDeferred<IsResponse>()
+                val action = StoreAction(member, response)
+                @Suppress("UNCHECKED_CAST")
+                when (member) {
+                    is AddRequest<*> -> processAddRequest(version, action as AnyAddStoreAction, fetcher) { updates += it }
+                    is ChangeRequest<*> -> processChangeRequest(version, action as AnyChangeStoreAction, fetcher) { updates += it }
+                    is DeleteRequest<*> -> processDeleteRequest(version, action as AnyDeleteStoreAction, fetcher) { updates += it }
+                    else -> error("Invalid atomic member")
+                }
+                response.await() as IsDataModelResponse<*>
+            }
+            val receipt = codec.receipt(fingerprint, result)
+            // No suspension between publishing models and recording the receipt.
+            atomicDataStores.putAll(staged)
+            atomicReceipts[request.changeSetId] = receipt
+            observeCommittedVersion(version.timestamp)
+            updates.forEach { emitFlowUpdate(it) }
+            result
+        } catch (abort: AtomicAbort) {
+            abort.response
+        }
+    }
+
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
@@ -100,7 +151,7 @@ class InMemoryDataStore private constructor(
         super.startFlows()
 
         this.launch {
-            val dataStores = mutableMapOf<UInt, DataStore<*>>()
+            val dataStores = atomicDataStores
 
             var clock = HLC()
 

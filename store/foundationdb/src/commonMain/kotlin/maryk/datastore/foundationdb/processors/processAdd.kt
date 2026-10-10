@@ -116,7 +116,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                             val uniqueRefs = mapUniqueValueByteCandidates(dataModelId, reference, valueBytes)
                                 .map { uniqueValue -> reference + uniqueValue }
                             val uniqueRef = uniqueRefs.first()
-                            createUniqueIndexIfNotExists(dataModelId, tableDirs.uniquePrefix, reference)
+                            createUniqueIndexIfNotExists(dataModelId, tableDirs.uniquePrefix, reference, tr)
                             checks += {
                                 for (candidateRef in uniqueRefs) {
                                     val uniqueKey = packKey(tableDirs.uniquePrefix, candidateRef)

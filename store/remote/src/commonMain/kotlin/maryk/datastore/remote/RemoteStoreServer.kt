@@ -69,6 +69,11 @@ import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.AtomicStatus
+import maryk.datastore.shared.executeAtomic
+import maryk.datastore.shared.supportsAtomicRequests
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.requests.Requests
@@ -328,13 +333,15 @@ internal fun Application.remoteStoreModule(
                     val storeRequest = preparedRequest.storeRequest
                     val response = if (preparedRequest.authorized) {
                         try {
-                            dataStore.execute(storeRequest)
+                            if (executableRequest is AtomicRequest) dataStore.executeAtomic(executableRequest)
+                            else dataStore.execute(requireNotNull(storeRequest))
                         } catch (error: RequestException) {
                             if (index == 0) throw error
                             throw PartialBatchRequestException(index, error)
                         }
                     } else {
-                        authorizationFailure(storeRequest)
+                        if (executableRequest is AtomicRequest) AtomicResponse(AtomicStatus.Rejected, message = "Atomic operation is not authorized")
+                        else authorizationFailure(requireNotNull(storeRequest))
                             ?: throw RequestValidationException(
                                 HttpStatusCode.Forbidden,
                                 "Remote execute operation is not authorized"
@@ -349,7 +356,7 @@ internal fun Application.remoteStoreModule(
                             responseModel.asValues(response, requestContext),
                         )
                     }
-                    val dataModel = storeRequest.dataModel
+                    val dataModel = storeRequest?.dataModel
                     val responseContext = RequestContext(requestContext.definitionsContext, dataModel = dataModel)
                     @Suppress("UNCHECKED_CAST")
                     val responseBytes = try {
@@ -693,7 +700,7 @@ private suspend fun ApplicationCall.resolvePrincipal(
 private data class PreparedExecuteRequest(
     val request: IsTransportableRequest<*>,
     val executableRequest: IsTransportableRequest<*>,
-    val storeRequest: IsStoreRequest<IsRootDataModel, IsResponse>,
+    val storeRequest: IsStoreRequest<IsRootDataModel, IsResponse>?,
     val authorized: Boolean,
 )
 
@@ -705,6 +712,13 @@ private suspend fun ApplicationCall.prepareExecuteRequest(
     val request = resolveRequest(rawRequest, operation = "execute")
     val executableRequest = if (request is CollectRequest<*, *>) request.request else request
     validateRequestWork(executableRequest)
+    if (executableRequest is AtomicRequest) {
+        val authorized = (executableRequest.requests + executableRequest.guards).all { member ->
+            validateRequestWork(member)
+            authorizeRequestModels(config, principal, RemoteStoreOperation.Execute, member, member.dataModel.Meta.name)
+        }
+        return PreparedExecuteRequest(request, executableRequest, null, authorized)
+    }
     @Suppress("UNCHECKED_CAST")
     val storeRequest = executableRequest as? IsStoreRequest<IsRootDataModel, IsResponse>
         ?: throw RequestValidationException(
@@ -726,7 +740,7 @@ private suspend fun ApplicationCall.prepareExecuteRequest(
 }
 
 private fun RequestType?.isMutationRequestType(): Boolean = when (this) {
-    RequestType.Add, RequestType.Change, RequestType.Delete -> true
+    RequestType.Add, RequestType.Change, RequestType.Delete, RequestType.Atomic -> true
     else -> false
 }
 
@@ -1026,6 +1040,7 @@ private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
         supportsFuzzyQualifierFiltering = dataStore.supportsFuzzyQualifierFiltering,
         supportsSubReferenceFiltering = dataStore.supportsSubReferenceFiltering,
         supportsSnapshotVersion = dataStore.supportsSnapshotVersion,
+        supportsAtomicRequests = dataStore.supportsAtomicRequests,
     )
 }
 

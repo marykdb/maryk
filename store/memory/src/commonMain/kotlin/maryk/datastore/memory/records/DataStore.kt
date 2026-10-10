@@ -1,5 +1,10 @@
 package maryk.datastore.memory.records
 
+import maryk.datastore.shared.rejectAtomic
+import maryk.datastore.memory.records.index.AbstractIndexValues
+import maryk.datastore.memory.records.index.HistoricalIndexValue
+import maryk.datastore.memory.records.index.IndexValue
+import maryk.datastore.memory.records.index.RecordAtVersion
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Bytes
@@ -33,6 +38,47 @@ internal class DataStore<DM : IsRootDataModel>(
     val updateHistory = mutableListOf<UpdateHistoryRecord>()
     private val indexes: MutableList<IndexValues<DM>> = mutableListOf()
     private val uniqueIndices: MutableList<UniqueIndexValues<DM, Comparable<Any>>> = mutableListOf()
+
+    /** Private staging state, including mutable histories and index ownership. */
+    fun copyForAtomic(): DataStore<DM> {
+        val copy = DataStore<DM>(keepAllVersions, keepUpdateHistoryIndex)
+        val copies = mutableMapOf<DataRecord<DM>, DataRecord<DM>>()
+        var nodes = records.size + hardDeletedRecords.size + updateHistory.size + hardDeleteTombstones.size
+        fun budget(count: Int) {
+            nodes += count
+            if (nodes > 100_000) rejectAtomic("Memory atomic staging exceeds 100000 nodes")
+        }
+        fun record(original: DataRecord<DM>): DataRecord<DM> = copies.getOrPut(original) {
+            budget(original.values.size)
+            original.copy(values = original.values.map { node ->
+                if (node is DataRecordHistoricValues<*>) {
+                    budget(node.history.size)
+                    node.copyForChange()
+                } else node
+            })
+        }
+        budget(0)
+        copy.records.addAll(records.map(::record))
+        copy.hardDeletedRecords.addAll(hardDeletedRecords.map { HardDeletedRecord(record(it.record), it.deletedAtVersion) })
+        copy.hardDeleteTombstones.putAll(hardDeleteTombstones)
+        copy.updateHistory.addAll(updateHistory)
+        fun <T : Any> index(from: AbstractIndexValues<DM, T>, to: AbstractIndexValues<DM, T>) {
+            budget(from.indexValues.size)
+            to.indexValues.addAll(from.indexValues.map { item ->
+                if (item is HistoricalIndexValue<DM, T>) {
+                    budget(item.records.size)
+                    HistoricalIndexValue(item.value, item.records.map { RecordAtVersion(it.record?.let(::record), it.version) }.toMutableList())
+                } else IndexValue(item.value, item.record?.let(::record), item.version)
+            })
+        }
+        indexes.forEach { from ->
+            IndexValues<DM>(from.indexReference).also { index(from, it); copy.indexes.add(it) }
+        }
+        uniqueIndices.forEach { from ->
+            UniqueIndexValues<DM, Comparable<Any>>(from.indexReference).also { index(from, it); copy.uniqueIndices.add(it) }
+        }
+        return copy
+    }
 
     internal fun addToUpdateHistory(version: HLC, keyBytes: ByteArray, isHardDelete: Boolean = false) {
         if (keepUpdateHistoryIndex) {

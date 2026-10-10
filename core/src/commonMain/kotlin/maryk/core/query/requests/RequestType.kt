@@ -33,7 +33,8 @@ enum class RequestType(
     ScanUpdates(9u),
     Collect(10u),
     ScanUpdateHistory(11u),
-    GetUpdateHistory(12u);
+    GetUpdateHistory(12u),
+    Atomic(13u);
 
     companion object : IndexedEnumDefinition<RequestType>(
         RequestType::class, { entries }
@@ -52,5 +53,6 @@ val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
     ScanUpdates to EmbeddedObjectDefinition(dataModel = { ScanUpdatesRequest }),
     Collect to EmbeddedObjectDefinition(dataModel = { CollectRequest }),
     ScanUpdateHistory to EmbeddedObjectDefinition(dataModel = { ScanUpdateHistoryRequest }),
-    GetUpdateHistory to EmbeddedObjectDefinition(dataModel = { GetUpdateHistoryRequest })
+    GetUpdateHistory to EmbeddedObjectDefinition(dataModel = { GetUpdateHistoryRequest }),
+    RequestType.Atomic to EmbeddedObjectDefinition(dataModel = { AtomicRequest })
 )

@@ -24,10 +24,9 @@ JSON is widely supported and easy to integrate with external services, tools, an
 ```json
 {
   "name": "User",
-  "key": [["Ref", "username"]],
   "properties": [
-    { "index": 0, "name": "username", "definition": ["String", { "required": true, "final": true, "unique": true }] },
-    { "index": 1, "name": "email",    "definition": ["String", { "required": true, "unique": true }] }
+    { "index": 1, "name": "username", "definition": ["String", { "required": true, "final": true, "unique": true }] },
+    { "index": 2, "name": "email",    "definition": ["String", { "required": true, "unique": true }] }
   ]
 }
 ```
@@ -40,14 +39,14 @@ JSON is widely supported and easy to integrate with external services, tools, an
 ## Serialize Values to JSON (Pretty)
 ```kotlin
 val out = StringBuilder()
-User.writeJson(userValues, JsonWriter(pretty = true) { out.append(it) })
+User.Serializer.writeJson(userValues, JsonWriter(pretty = true) { out.append(it) })
 ```
 
 ## Deserialize Values from JSON
 ```kotlin
 val it = jsonString.iterator()
 val reader = JsonReader { if (it.hasNext()) it.nextChar() else null }
-val values = User.readJson(reader)
+val values = User.Serializer.readJson(reader)
 ```
 
 ## Interoperability
@@ -66,9 +65,9 @@ JSON can also carry store requests and responses. Wrap operations in `Requests` 
 
 ### Example: Serialize a Scan request
 ```kotlin
-// Build a scan that selects only name and filters soft deletes
+// Build a scan that selects only username and filters soft deletes
 val req = Requests(
-    User.scan(select = User.graph { listOf(name) }, filterSoftDeleted = true)
+    User.scan(select = User.graph { listOf(username) }, filterSoftDeleted = true)
 )
 
 // Context with known models
@@ -79,7 +78,7 @@ val ctx = RequestContext(defs)
 
 // Write JSON (pretty)
 val out = StringBuilder()
-Requests.writeJson(req, JsonWriter(pretty = true) { out.append(it) }, ctx)
+Requests.Serializer.writeObjectAsJson(req, JsonWriter(pretty = true) { out.append(it) }, ctx)
 ```
 
 ### Example: Read a ValuesResponse from JSON
@@ -89,9 +88,10 @@ val reader = JsonReader { if (it.hasNext()) it.nextChar() else null }
 val ctx = RequestContext(DefinitionsContext(mutableMapOf("User" to DataModelReference(User))))
 
 // Parse a typed response
-val response = ValuesResponse.readJson(reader, ctx)
+val response = ValuesResponse.Serializer.readJson(reader, ctx).toDataObject()
 ```
 
 Notes
+- Batched requests run in order and stop at the first failure; they are not atomic. Use an explicit [write boundary](../query.md#choosing-a-write-boundary) when all writes must commit together.
 - Use a `RequestContext` for requests/responses to resolve model names and references.
 - Combine multiple operations (Get/Scan/Add/Change/Delete/Collect) inside one `Requests` payload.

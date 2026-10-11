@@ -12,6 +12,16 @@ Maryk transports three things: your data models, the data itself, and the reques
 - Data (YAML/JSON/ProtoBuf): Serialize model values in all three formats. ProtoBuf is typically preferred in production for its size and speed.
 - Requests/Responses (YAML/JSON/ProtoBuf): Serialize batch [Requests](https://github.com/marykdb/maryk/blob/main/core/src/commonMain/kotlin/maryk/core/query/requests/Requests.kt) and typed responses (e.g., [ValuesResponse](https://github.com/marykdb/maryk/blob/main/core/src/commonMain/kotlin/maryk/core/query/responses/ValuesResponse.kt)). Requests use a stable multi‑type envelope so multiple operations (Get/Scan/Add/Change/Delete/…) can be combined in one payload.
 
+## Serializer entry points
+
+Use `Model.Serializer` for values. JSON and YAML share `writeJson` / `readJson`: pass
+`JsonWriter` / `JsonReader` for JSON or `YamlWriter` / `MarykYamlReader` for YAML.
+For Kotlin request/response objects, use `writeObjectAsJson`,
+`calculateObjectProtoBufLength` and `writeObjectProtoBuf`; reading returns
+`ObjectValues`, which you convert with `toDataObject()`. A `RequestContext` registers
+models needed to resolve request and response types. See the format guides below
+for concrete examples.
+
 ## Choosing a Format
 
 - Internal hot paths or store transport: ProtoBuf.

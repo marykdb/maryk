@@ -23,11 +23,9 @@ YAML is a human‑readable format suited for model definitions and example data.
 ## Model Definition Example
 ```yaml
 name: User
-key:
-- !Ref username
-? 0: username
+? 1: username
 : !String { required: true, final: true, unique: true }
-? 1: email
+? 2: email
 : !String { required: true, unique: true }
 ```
 
@@ -37,17 +35,21 @@ username: john.smith
 email: john.smith@gmail.com
 ```
 
+Maryk serializers use the JSON-like reader/writer interface for both JSON and YAML.
+Pass `YamlWriter` or `MarykYamlReader` to `Serializer.writeJson` / `readJson`;
+there are no separate `writeYaml` / `readYaml` model methods.
+
 ## Serialize Values to YAML
 ```kotlin
 val out = StringBuilder()
-User.writeYaml(userValues, YamlWriter { out.append(it) })
+User.Serializer.writeJson(userValues, YamlWriter { out.append(it) })
 ```
 
 ## Deserialize Values from YAML
 ```kotlin
 val it = yamlString.iterator()
 val reader = MarykYamlReader { if (it.hasNext()) it.nextChar() else null }
-val values = User.readYaml(reader)
+val values = User.Serializer.readJson(reader)
 ```
 
 ## Interoperability
@@ -65,11 +67,11 @@ YAML can also carry store requests and responses. Use the `Requests` envelope to
 
 ### Example: Serialize a Get request
 ```kotlin
-// Build a request: get one user by key and only select name
+// Build a request: get one user by key and only select username
 val req = Requests(
     User.get(
-        keys = listOf(userKey),
-        select = User.graph { listOf(name) }
+        userKey,
+        select = User.graph { listOf(username) }
     )
 )
 
@@ -81,7 +83,7 @@ val ctx = RequestContext(defs)
 
 // Write YAML
 val out = StringBuilder()
-Requests.writeYaml(req, YamlWriter { out.append(it) }, ctx)
+Requests.Serializer.writeObjectAsJson(req, YamlWriter { out.append(it) }, ctx)
 ```
 
 ### Example: Read a ValuesResponse from YAML
@@ -91,9 +93,10 @@ val reader = MarykYamlReader { if (it.hasNext()) it.nextChar() else null }
 val ctx = RequestContext(DefinitionsContext(mutableMapOf("User" to DataModelReference(User))))
 
 // Parse a typed response
-val response = ValuesResponse.readYaml(reader, ctx)
+val response = ValuesResponse.Serializer.readJson(reader, ctx).toDataObject()
 ```
 
 Notes
+- Batched requests run in order and stop at the first failure; they are not atomic. Use an explicit [write boundary](../query.md#choosing-a-write-boundary) when all writes must commit together.
 - For requests/responses, always pass a `RequestContext` so model and reference names resolve during parsing.
 - You can combine multiple operations (Get/Scan/Add/Change/Delete/Collect) in a single `Requests` payload.

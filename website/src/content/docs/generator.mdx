@@ -17,8 +17,6 @@ Example with YAML:
 ```kotlin
 val yaml = """
 name: Person
-key:
-- !Ref username
 ? 1: username
 : !String { required: true, final: true, unique: true }
 """.trimIndent()

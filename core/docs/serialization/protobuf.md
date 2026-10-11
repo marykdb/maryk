@@ -5,7 +5,7 @@ Maryk uses the [ProtoBuf v3](https://developers.google.com/protocol-buffers/) en
 ## What You Can Serialize
 - Data: values for any RootDataModel.
 - Requests & Responses: compactly encode `Requests` envelopes and typed responses for store interactions.
-- Models: Maryk does not generate `.proto` schema files; use YAML/JSON to exchange model definitions instead. See [Serialization Overview](README.md).
+- Models: use YAML/JSON to exchange model definitions. The [generator](../../../generator/README.md) can export Proto3 schemas for interoperability; Maryk-to-Maryk encoding does not require generated `.proto` files. See [Serialization Overview](README.md).
 
 ## When to Use
 - Service‑to‑service or store transport where both ends are Maryk‑aware.
@@ -66,8 +66,8 @@ Requests and responses are first‑class ProtoBuf citizens. Use the `Requests` e
 ### Example: Serialize a batched Requests payload
 ```kotlin
 val req = Requests(
-    User.get(keys = listOf(userKey), select = User.graph { listOf(name) }),
-    User.scan(select = User.graph { listOf(name) })
+    User.get(userKey, select = User.graph { listOf(username) }),
+    User.scan(select = User.graph { listOf(username) })
 )
 
 // Context with known models
@@ -75,15 +75,16 @@ val defs = DefinitionsContext().apply { dataModels["User"] = DataModelReference(
 val ctx = RequestContext(defs)
 
 val cache = WriteCache()
-val byteLength = Requests.Serializer.calculateProtoBufLength(req, cache, ctx)
-Requests.Serializer.writeProtoBuf(req, cache, byteSink::write, ctx)
+val byteLength = Requests.Serializer.calculateObjectProtoBufLength(req, cache, ctx)
+Requests.Serializer.writeObjectProtoBuf(req, cache, byteSink::write, ctx)
 ```
 
 ### Example: Deserialize a ValuesResponse
 ```kotlin
 val ctx = RequestContext(DefinitionsContext(mutableMapOf("User" to DataModelReference(User))))
-val resp = ValuesResponse.readProtoBuf(byteLength, byteSource::read, ctx)
+val resp = ValuesResponse.Serializer.readProtoBuf(byteLength, byteSource::read, ctx).toDataObject()
 ```
 
 Notes
+- Batched requests run in order and stop at the first failure; they are not atomic. Use an explicit [write boundary](../query.md#choosing-a-write-boundary) when all writes must commit together.
 - For batched requests, ProtoBuf encodes “injectables” at the envelope level; `RequestContext` ensures they are computed and written.

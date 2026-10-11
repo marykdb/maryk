@@ -19,6 +19,8 @@ test('shared write contracts resolve from module and architecture pages', () => 
     }
     assert.equal(rewriteLinks('[App](../app/docs/README.md#sql-queries-and-writes)', prefix),
       `[App](${prefix}app/#sql-queries-and-writes)`);
+    assert.equal(rewriteLinks('[Generator](../../../generator/README.md#generate-proto3-schema)', prefix),
+      `[Generator](${prefix}generator/#generate-proto3-schema)`);
   }
 });
 

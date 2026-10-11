@@ -87,9 +87,18 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
      */
     abstract suspend fun changeOrder(
         change: Change<DM>,
-        currentValues: Values<DM>? = null,
         changedHandler: suspend (Int?, Boolean) -> Unit
     )
+
+    /**
+     * Resolve order using current values when available. Existing listener implementations
+     * retain their original contract; listeners needing these values can override this overload.
+     */
+    open suspend fun changeOrder(
+        change: Change<DM>,
+        currentValues: Values<DM>?,
+        changedHandler: suspend (Int?, Boolean) -> Unit
+    ) = changeOrder(change, changedHandler)
 
     /** Get flow with update responses */
     fun getFlow() = channelFlow {

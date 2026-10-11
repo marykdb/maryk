@@ -46,7 +46,6 @@ class UpdateListenerForGet<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
 
     override suspend fun changeOrder(
         change: Change<DM>,
-        currentValues: Values<DM>?,
         changedHandler: suspend (Int?, Boolean) -> Unit
     ) {
         val keyIndex = matchingKeys.value.indexOfFirst { it compareTo change.key == 0 }

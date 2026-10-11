@@ -246,6 +246,11 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
 
     override suspend fun changeOrder(
         change: Change<DM>,
+        changedHandler: suspend (Int?, Boolean) -> Unit
+    ) = changeOrder(change, null, changedHandler)
+
+    override suspend fun changeOrder(
+        change: Change<DM>,
         currentValues: Values<DM>?,
         changedHandler: suspend (Int?, Boolean) -> Unit
     ) {

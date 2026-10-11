@@ -217,7 +217,7 @@ Each mutation addresses one record, and a record can appear in the mutation
 list only once. At most 1,000 mutations and 1,000 guards are accepted. The encoded
 request and successful response are each limited to 1 MiB; receipts add a
 32-byte request digest. FoundationDB bounds affected transaction data to 4 MiB,
-with a 4-second native timeout setting and a retry limit of 10; each native attempt remains
+with a 4.5-second native timeout setting and a retry limit of 10; each native attempt remains
 subject to FoundationDB's transaction lifetime and key/value limits. Receipts
 use a manifest and chunks of at most 80,000 bytes in the same transaction.
 The same receipt format is used for every request size.

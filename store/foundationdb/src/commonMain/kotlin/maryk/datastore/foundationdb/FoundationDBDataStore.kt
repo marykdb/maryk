@@ -1405,7 +1405,7 @@ class FoundationDBDataStore private constructor(
     internal fun readStoredModelNamesById(): Map<UInt, String> =
         readStoredModelNames(tc, metadataPrefix)
 
-    override val atomicCapabilities: AtomicCapabilities = AtomicCapabilities(maxTransactionBytes = 4_194_304u, commitTimeoutMillis = 4_000u, maxRetries = 10u,
+    override val atomicCapabilities: AtomicCapabilities = AtomicCapabilities(maxTransactionBytes = 4_194_304u, commitTimeoutMillis = FOUNDATION_DB_TRANSACTION_TIMEOUT_MS.toUInt(), maxRetries = 10u,
         maxStorageKeyBytes = 10_000u, maxStorageValueBytes = 100_000u)
     override val supportsAtomicRequests: Boolean = true
 
@@ -1423,7 +1423,7 @@ class FoundationDBDataStore private constructor(
         var committed = false
         try {
             val result = tc.run { transaction ->
-                transaction.options().setTimeout(4_000)
+                transaction.options().setTimeout(FOUNDATION_DB_TRANSACTION_TIMEOUT_MS)
                 transaction.options().setRetryLimit(10)
                 transaction.options().setSizeLimit(4_194_304)
                 updates = emptyList()
@@ -1431,15 +1431,24 @@ class FoundationDBDataStore private constructor(
                 val revision = Bytes(transaction.get(transactionRevisionKey).awaitResult() ?: byteArrayOf(0))
                 var observedVersion = if (!request.commit && request.stagingVersion == null)
                     directoriesByDataModelIndex.values.maxOfOrNull { readMaximumStoredWatermark(transaction, it) } ?: 0uL else 0uL
-                for ((model, keys) in request.mutationKeys()) {
-                    val id = getDataModelId(model)
-                    requireModelSchemaReady(transaction, id)
-                    val dirs = getTableDirs(id)
-                    for (key in keys) {
-                        val current = transaction.get(packKey(dirs.tablePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
-                        val tombstone = transaction.get(packKey(dirs.replicationTombstonePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
-                        observedVersion = maxOf(observedVersion, current, tombstone)
+                // These reads all describe the initial state. Issue them before waiting so a
+                // large atomic request does not spend its transaction lifetime on serial round trips.
+                val versionReads = mutableListOf<FdbFuture<ByteArray?>>()
+                try {
+                    for ((model, keys) in request.mutationKeys()) {
+                        val id = getDataModelId(model)
+                        requireModelSchemaReady(transaction, id)
+                        val dirs = getTableDirs(id)
+                        for (key in keys) {
+                            versionReads += transaction.get(packKey(dirs.tablePrefix, key.bytes))
+                            versionReads += transaction.get(packKey(dirs.replicationTombstonePrefix, key.bytes))
+                        }
                     }
+                    for (read in versionReads) {
+                        observedVersion = maxOf(observedVersion, read.awaitResult()?.readHLCTimestampIfExact() ?: 0uL)
+                    }
+                } finally {
+                    versionReads.filterNot { it.isDone }.forEach { it.cancel() }
                 }
                 val executionVersion = if (request.commit) nextMutationClock(version, maxOf(observedVersion, request.stagingVersion ?: 0uL))
                     else HLC(request.stagingVersion ?: nextMutationClock(version, observedVersion).timestamp)
@@ -2237,6 +2246,8 @@ class FoundationDBDataStore private constructor(
 }
 
 private const val DEFAULT_MAX_CONCURRENT_READS = 4
+// Leave half a second before FoundationDB's usual five-second transaction lifetime.
+private const val FOUNDATION_DB_TRANSACTION_TIMEOUT_MS = 4_500L
 private const val FOUNDATION_DB_CLOSE_JOIN_TIMEOUT_MS = 5_000L
 
 internal data class ClusterUpdateLogStats(

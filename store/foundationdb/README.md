@@ -241,7 +241,7 @@ A hard delete permanently removes a record's current and historic values, includ
 
 ## Serializable transaction scopes
 
-FoundationDB uses one pinned native transaction per replay attempt, including reads, mutations, the revision fence and commit receipt. Preview aborts the native transaction. Application suspension retains no FoundationDB snapshot. Native attempts use a 4-second timeout, 4 MiB write budget and 10 retries; logical scopes use the shared 30-second default.
+FoundationDB uses one pinned native transaction per replay attempt, including reads, mutations, the revision fence and commit receipt. Preview aborts the native transaction. Application suspension retains no FoundationDB snapshot. Native attempts use a 4.5-second timeout, 4 MiB write budget and 10 retries; logical scopes use the shared 30-second default.
 
 The [shared contract](../../core/docs/query.md#serializable-transactions) describes
 read-your-own-writes, savepoints, conservative revision conflicts, deadlines and

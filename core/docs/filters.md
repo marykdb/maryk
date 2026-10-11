@@ -305,7 +305,9 @@ Or(
 
 ### Not
 
-`Not` inverts the result of the nested filters. If multiple filters are provided it behaves as `And` and negates the combined result.
+`Not` succeeds only when none of its nested filters matches. With several
+filters it means `NOT (A OR B)`, equivalently `(NOT A) AND (NOT B)`.
+Use `Not(And(A, B))` when you mean `NOT (A AND B)`.
 
 ```kotlin
 Not(

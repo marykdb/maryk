@@ -32,8 +32,8 @@ val johnSmith = Person.create {
     dateOfBirth with LocalDate(2017, 12, 5)
 }
 
-// Validate the object, which will throw a PropertyValidationUmbrellaException if it's invalid
-// Since there's no validation on the PropertyDefinitions, validation will succeed
+// Validate the object, which will throw a ValidationUmbrellaException if it's invalid
+// All required fields are supplied and satisfy their property definitions
 Person.validate(johnSmith)
 
 // Because no key definition was provided, this model will return a UUIDv4-based key
@@ -75,22 +75,22 @@ Below is an example:
 object PersonalDiaryItem : RootDataModel<PersonalDiaryItem>(
     keyDefinition = {
         Multiple(
-            user.ref(),
-            Reversed(dateOfPosting.ref()),
+            PersonalDiaryItem.user.ref(),
+            Reversed(PersonalDiaryItem.dateOfPosting.ref()),
         )
     },
     indexes = {
         listOf(
             Multiple(
-                user.ref(),
-                tags.any(),
+                PersonalDiaryItem.user.ref(),
+                PersonalDiaryItem.tags.any(),
             ),
         )
     },
 ) {
-    val user by reference(index = 1u, dataModel = { User })
-    val dateOfPosting by string(index = 2u)
-    val message by string(index = 3u, minSize = 3, maxSize = 5)
+    val user by reference(index = 1u, dataModel = { User }, final = true)
+    val dateOfPosting by dateTime(index = 2u, final = true)
+    val message by string(index = 3u, minSize = 3u, maxSize = 5u)
     val tags by set(index = 4u, valueDefinition = StringDefinition())
 }
 ```
@@ -130,10 +130,10 @@ enum class Role(override val index: UInt, override val alternativeNames: Set<Str
 }
 
 data class PersonRoleInPeriod(
-    val person: Person,
+    val person: Key<Person>,
     val role: Role,
-    val startDate: Date,
-    val endDate: Date
+    val startDate: LocalDate,
+    val endDate: LocalDate
 ) : ValueDataObject(toBytes(person, role, startDate, endDate)) {
     companion object : ValueDataModel<PersonRoleInPeriod, Companion>(PersonRoleInPeriod::class) {
         val person by reference(1u, dataModel = { Person }, getter = PersonRoleInPeriod::person)
@@ -167,7 +167,7 @@ facilitating quick querying based on type.
 object TimelineItem : RootDataModel<TimelineItem>(
     keyDefinition = {
         Multiple(
-            Reversed(dateOfPosting.ref()),
+            Reversed(TimelineItem.dateOfPosting.ref()),
             TimelineItem.ref { item.type }
         )
     }

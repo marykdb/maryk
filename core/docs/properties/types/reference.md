@@ -14,8 +14,8 @@ References another DataObject by key.
 - `required` - default true
 - `final` - default false
 - `unique` - default false
-- `minValue` - default false. Minimum value
-- `maxValue` - default false. Maximum value
+- `minValue` - default unset. Minimum value
+- `maxValue` - default unset. Maximum value
 
 ## Other options
 - `default` - the default value to be used if value was not set.

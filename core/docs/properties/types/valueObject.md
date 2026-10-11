@@ -5,8 +5,8 @@ Contains another DataModel as a fixed-size value. See
 ValueDataModel objects are stored and transported as fixed length byte objects.
 This makes them usable as map keys and list/set items.
 
-- Kotlin Definition: `ValueModelDefinition<T>` T is for the name of DataModel
-- Kotlin Value: `T` T stands for the data class which extends ValueDataModel 
+- Kotlin Definition: `ValueObjectDefinition<T>` T is for the name of DataModel
+- Kotlin Value: `T` T stands for the data class which extends `ValueDataObject`; its companion defines the `ValueDataModel`
 - Maryk Yaml Definition: `Value`
 
 ## Usage options
@@ -36,7 +36,7 @@ val arrivalTime by valueObject(
 
 **Example of a separate ValueObject property definition**
 ```kotlin
-val def = ValueModelDefinition(
+val def = ValueObjectDefinition(
     required = false,
     final = true,
     dataModel = PersonRoleInPeriod
@@ -44,7 +44,7 @@ val def = ValueModelDefinition(
 ```
 
 ## Storage/Transport Byte representation
-Each property of the value model is stored in its representative byte format. All 
+Each property of the value model is stored in its representative byte format. All
 values are combined into one array separated by a separator byte (0b0001) in the
 order of how the properties are defined.
 

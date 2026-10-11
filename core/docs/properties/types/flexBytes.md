@@ -2,7 +2,7 @@
 Represents a variable-length byte array.
 
 - Kotlin Definition: `FlexBytesDefinition`
-- Kotlin Value: `ByteArray`
+- Kotlin Value: `Bytes` (`maryk.core.properties.types.Bytes`)
 - Maryk Yaml Definition: `FlexBytes`
 
 ## Usage options
@@ -16,8 +16,8 @@ Represents a variable-length byte array.
 - `unique` - default false
 - `minSize` - minimum length of the byte array. Default unset.
 - `maxSize` - maximum length of the byte array. Default unset.
-- `minValue` - default false. Minimum value (Sort start value)
-- `maxValue` - default false. Maximum value (Sort end value)
+- `minValue` - default unset. Minimum value (Sort start value)
+- `maxValue` - default unset. Maximum value (Sort end value)
 
 ## Other options
 - `default` - the default value to be used if value was not set.
@@ -31,8 +31,8 @@ val value by flexBytes(
     required = false,
     final = true,
     unique = true,
-    minSize = 2,
-    maxSize = 5,
+    minSize = 2u,
+    maxSize = 5u,
     default = Bytes.ofHex("1111"),
     minValue = Bytes.ofHex("0000"),
     maxValue = Bytes.ofHex("FFFFFFFFFF")
@@ -45,8 +45,8 @@ val def = FlexBytesDefinition(
     required = false,
     final = true,
     unique = true,
-    minSize = 2,
-    maxSize = 5,
+    minSize = 2u,
+    maxSize = 5u,
     default = Bytes.ofHex("1111"),
     minValue = Bytes.ofHex("0000"),
     maxValue = Bytes.ofHex("FFFFFFFFFF")

@@ -26,12 +26,16 @@ The table below lists the available property types and where they can be used.
 | [Map](types/map.md)                 |    ❌    |    🔑     |    ❌     |   ❌    |    ✅     |     ✅     |
 | [IncMap](types/incrementingMap.md)  |    ❌    |    🔑     |    ❌     |   ❌    |    ✅     |     ✅     |
 | [Embed](types/embeddedValues.md)    |    ❌    |    ⤵️     |    ❌     |   ❌    |    ✅     |     ✅     |
-| [ValueObject](types/valueObject.md) |    ❌    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
+| [ValueObject](types/valueObject.md) |    ✅    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
 
 🔢 All numeric properties such as Int8/16/32/64, UInt8/16/32/64, Float, Double  
 🆔 Only the type ID of multi types can be used in the key  
 🔑 Only the map key can be indexed  
 ⤵️ Only nested values inside the embedded object can be indexed
+
+Complex collections and embedded records can be stored as map values, but are
+not valid list/set elements in the public collection definitions. Use a keyed
+map of embedded records or separate root records when elements have structure.
 
 ## Choosing Number or Decimal
 

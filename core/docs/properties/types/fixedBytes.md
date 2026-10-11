@@ -2,7 +2,7 @@
 Represents a fixed-length byte array.
 
 - Kotlin Definition: `FixedBytesDefinition`
-- Kotlin Value: `ByteArray`
+- Kotlin Value: `Bytes` (`maryk.core.properties.types.Bytes`)
 - Maryk Yaml Definition: `FixedBytes`
 
 ## Usage options
@@ -14,8 +14,8 @@ Represents a fixed-length byte array.
 - `required` - default true
 - `final` - default false
 - `unique` - default false
-- `minValue` - default false. Minimum value
-- `maxValue` - default false. Maximum value
+- `minValue` - default unset. Minimum value
+- `maxValue` - default unset. Maximum value
 
 ## Other options
 - `default` - the default value to be used if value was not set.
@@ -31,9 +31,9 @@ val value by fixedBytes(
     required = false,
     final = true,
     unique = true,
-    default = byteArrayOf(0, 1, 1, 0),
-    minValue = byteArrayOf(0, 0, 0, 0),
-    maxValue = byteArrayOf(1, 1, 0, 0)
+    default = Bytes.ofHex("00010100"),
+    minValue = Bytes.ofHex("00000000"),
+    maxValue = Bytes.ofHex("01010000")
 )
 ```
 
@@ -44,9 +44,9 @@ val def = FixedBytesDefinition(
     final = true,
     unique = true,
     byteSize = 4,
-    default = byteArrayOf(0, 1, 1, 0),
-    minValue = byteArrayOf(0, 0, 0, 0),
-    maxValue = byteArrayOf(1, 1, 0, 0)
+    default = Bytes.ofHex("00010100"),
+    minValue = Bytes.ofHex("00000000"),
+    maxValue = Bytes.ofHex("01010000")
 )
 ```
 

@@ -46,7 +46,7 @@ sealed class MultiType<T: Any>(
 
     companion object : MultiTypeEnumDefinition<MultiType<out Any>>(
         MultiType::class,
-        values = { arrayOf(S1, S2, S3) },
+        values = { listOf(S1, S2, S3) },
         unknownCreator = ::UnknownMultiType
     )
 }
@@ -63,7 +63,7 @@ val category by multiType(
 )
 ```
 
-**Example of a separate Enum property definition**
+**Example of a separate MultiType property definition**
 ```kotlin
 val def = MultiTypeDefinition(
     required = false,

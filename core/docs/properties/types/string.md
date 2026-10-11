@@ -17,8 +17,8 @@ Represents textual values.
 - `regEx` - regular expression to match complete value against
 - `minSize` - minimum length of the string. Default unset.
 - `maxSize` - maximum length of the string. Default unset.
-- `minValue` - default false. Minimum value (Sort start value)
-- `maxValue` - default false. Maximum value (Sort end value)
+- `minValue` - default unset. Minimum value (Sort start value)
+- `maxValue` - default unset. Maximum value (Sort end value)
 
 ## Other options
 - `default` - the default value to be used if value was not set.
@@ -32,8 +32,8 @@ val codeName by string(
     required = true,
     final = true,
     unique = true,
-    minSize = 3,
-    maxSize = 6,
+    minSize = 3u,
+    maxSize = 6u,
     default = "baa",
     minValue = "aab",
     maxValue = "ddda",
@@ -47,8 +47,8 @@ val def = StringDefinition(
     required = true,
     final = true,
     unique = true,
-    minSize = 3,
-    maxSize = 6,
+    minSize = 3u,
+    maxSize = 6u,
     default = "baa",
     minValue = "aab",
     maxValue = "ddda",

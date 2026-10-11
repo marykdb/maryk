@@ -1,6 +1,6 @@
 # Keys in DataObjects
 
-Every DataObject is stored under a unique key that acts as its identifier. If new data is written with an existing key the previous object is replaced.
+Every DataObject is stored under a unique key that acts as its identifier. Adding data with an occupied key returns `AlreadyExists`; it does not replace the stored record. Use a change request to update it, or explicitly undelete a soft-deleted record.
 
 ## Default UUID Keys
 
@@ -40,7 +40,7 @@ If data is often requested newest‑first, store a reversed timestamp in the key
 - **Type identification:** If the data has a primary multi-type property, include the type ID in the key to enable quick
   retrieval of data objects of a specific type. Ensure that any time information follows the type ID to maintain
   chronological order.
-- **Date precision:** If date precision in nanoseconds is insufficient for your application's needs, consider appending
+- **Date precision:** If timestamp precision is insufficient for your application's needs, consider appending
   a random number to the key for additional uniqueness.
 - **Use indexing:** If you find that your key structure is not optimized for your primary use case, utilize indexing to
   improve performance. This is especially beneficial when dealing with large datasets.

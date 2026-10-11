@@ -45,7 +45,7 @@ val def = SetDefinition(
 ## Operations
 Set can be applied with Set operations through `SetPropertyChange` to check
 or change the contents. It can be defined with a set with `addValues` or a set with 
-`deleteValues`. The current value can be compared against `valueToCompare`
+`deleteValues`. Use a separate `Check` when the current value must be compared before the change.
 
 Kotlin example on a model with a set containing strings.
 ```kotlin

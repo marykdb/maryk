@@ -60,7 +60,7 @@ val graph = User.graph {
 }
 ```
 
-To select a key without additional fields, simply reference the key:
+To retrieve a whole map entry without selecting its fields, reference that entry:
 
 ```kotlin
 val graph = User.graph {

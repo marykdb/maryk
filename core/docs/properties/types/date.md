@@ -1,5 +1,5 @@
 # Date
-Represents a calendar date. The year is unsigned so negative years are supported.
+Represents a calendar date using `kotlinx.datetime.LocalDate`, including negative years.
 
 - Kotlin Definition: `DateDefinition`
 - Kotlin Value: `LocalDate`
@@ -51,7 +51,7 @@ val def = DateDefinition(
 The date is represented by a 4 byte Int counting the amount of days from January 1st 1970
 
 ## Transport Byte representation
-The date is represented by a VarInt with the days since January 1st 1970
+The date is represented by a zigzag-encoded VarInt with the signed days since January 1st 1970
 
 ## String representation
 ISO8601 String: `YYYY-MM-DD`

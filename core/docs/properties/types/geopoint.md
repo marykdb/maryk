@@ -31,7 +31,7 @@ val location by geoPoint(
 )
 ```
 
-**Example of a separate Enum property definition**
+**Example of a separate GeoPoint property definition**
 ```kotlin
 val def = GeoPointDefinition(
     required = true,

@@ -2,8 +2,8 @@
 A property that contains values from a selected DataModel. See
 [DataModels](../../datamodel.md) for more details on how to define DataModels.
 
-- Kotlin Definition: `EmbeddedValuesDefinition<DM, P>` DM is DataModel and P the properties
-- Kotlin Value: `Values<DM, P>` DM is DataModel and P the properties 
+- Kotlin Definition: `EmbeddedValuesDefinition<DM>` where DM is the embedded DataModel
+- Kotlin Value: `Values<DM>` where DM is the embedded DataModel
 - Maryk Yaml Definition: `Embed`
 
 ## Usage options

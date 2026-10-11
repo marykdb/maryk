@@ -120,10 +120,10 @@ object PhoneContact : DataModel<PhoneContact>() {
 
 // Define a MultiType enum for contact variants
 sealed class ContactMT<T: Any>(index: UInt, override val definition: IsUsableInMultiType<T, IsPropertyContext>?) : IndexedEnumImpl<ContactMT<*>>(index), MultiTypeEnum<T> {
-    object Email: ContactMT<Values<EmailContact>>(1u, EmbeddedObjectDefinition(dataModel = { EmailContact }))
-    object Phone: ContactMT<Values<PhoneContact>>(2u, EmbeddedObjectDefinition(dataModel = { PhoneContact }))
+    object Email: ContactMT<Values<EmailContact>>(1u, EmbeddedValuesDefinition(dataModel = { EmailContact }))
+    object Phone: ContactMT<Values<PhoneContact>>(2u, EmbeddedValuesDefinition(dataModel = { PhoneContact }))
 
-    companion object : MultiTypeEnumDefinition<ContactMT<out Any>>(ContactMT::class, values = { arrayOf(Email, Phone) })
+    companion object : MultiTypeEnumDefinition<ContactMT<out Any>>(ContactMT::class, values = { listOf(Email, Phone) })
 }
 
 object User : RootDataModel<User>() {
@@ -143,7 +143,7 @@ Polymorphic collections with MultiType:
 ```kotlin
 object ImageAttachment : DataModel<ImageAttachment>() {
     val url by string(index = 1u)
-    val width by number(index = 2u, type = Int32)
+    val width by number(index = 2u, type = SInt32)
 }
 
 object FileAttachment : DataModel<FileAttachment>() {
@@ -153,33 +153,35 @@ object FileAttachment : DataModel<FileAttachment>() {
 
 // MultiType enum for attachments
 sealed class AttachmentMT<T: Any>(index: UInt, override val definition: IsUsableInMultiType<T, IsPropertyContext>?) : IndexedEnumImpl<AttachmentMT<*>>(index), MultiTypeEnum<T> {
-    object Image: AttachmentMT<Values<ImageAttachment>>(1u, EmbeddedObjectDefinition(dataModel = { ImageAttachment }))
-    object File: AttachmentMT<Values<FileAttachment>>(2u, EmbeddedObjectDefinition(dataModel = { FileAttachment }))
+    object Image: AttachmentMT<Values<ImageAttachment>>(1u, EmbeddedValuesDefinition(dataModel = { ImageAttachment }))
+    object File: AttachmentMT<Values<FileAttachment>>(2u, EmbeddedValuesDefinition(dataModel = { FileAttachment }))
 
-    companion object : MultiTypeEnumDefinition<AttachmentMT<out Any>>(AttachmentMT::class, values = { arrayOf(Image, File) })
+    companion object : MultiTypeEnumDefinition<AttachmentMT<out Any>>(AttachmentMT::class, values = { listOf(Image, File) })
 }
 
 object Message : RootDataModel<Message>() {
     val text by string(index = 1u)
-    val attachments by list(
+    val attachments by map(
         index = 2u,
-        valueDefinition = MultiTypeDefinition(typeEnum = AttachmentMT)
+        keyDefinition = NumberDefinition(type = UInt32),
+        valueDefinition = MultiTypeDefinition(typeEnum = AttachmentMT),
     )
 }
 
-// Select only image URLs from attachments
-val g = Message.graph {
-    listOf(graph(attachments) { withTypeGraph(AttachmentMT.Image) { listOf(url) } })
-}
+// Fetch the bounded attachment map; its keys identify individual attachments.
+val g = Message.graph { listOf(text, attachments) }
 ```
+
+Use a keyed map for structured or multi-type collection entries; public list/set
+elements must have a collection-compatible scalar or fixed-value definition.
 
 MultiType with keys: cluster by variant for fast scans using `Model.ref { property.type }` in the key. This keeps same‑type values together on disk.
 ```kotlin
 object Activity : RootDataModel<Activity>(
-    keyDefinition = { Multiple(user.ref(), Reversed(timestamp.ref()), Activity.ref { item.type }) }
+    keyDefinition = { Multiple(Activity.user.ref(), Reversed(Activity.timestamp.ref()), Activity.ref { item.type }) }
 ) {
-    val user by reference(index = 1u, dataModel = { User })
-    val timestamp by dateTime(index = 2u)
+    val user by reference(index = 1u, dataModel = { User }, final = true)
+    val timestamp by dateTime(index = 2u, final = true)
     val item by multiType(index = 3u, typeEnum = ContactMT)
 }
 ```
@@ -188,7 +190,8 @@ See the full [MultiType](properties/types/multiType.md) reference for API detail
 
 ## 6) ValueDataModel vs embedded objects
 
-Use `ValueDataModel` when the composite can be represented in fixed bytes and you need it as a compact value, map key, or index component. Use `embeddedObject` for richer, variable‑sized structures.
+Use `ValueDataModel` when the composite can be represented in fixed bytes and you need it as a compact value, map key, or index component. Use `embed` / `EmbeddedValuesDefinition` for richer stored sub-records.
+`EmbeddedObjectDefinition` is for Kotlin object models and request/response serialization.
 
 - ValueDataModel: great for ranges, periods, coordinates, composite keys.
 - Embedded object: great for readable sub‑records and larger nested data.
@@ -198,20 +201,28 @@ Use `ValueDataModel` when the composite can be represented in fixed bytes and yo
 
 When collections grow or the child needs independence, split into a root model and relate via a `reference`.
 
-Start embedded; split when needed — Orders and OrderLines:
+Start with a bounded map of embedded lines, keyed by line number. Embedded
+records are valid map values, not list/set elements. Choose the split alternative
+when lines need an independent lifecycle. The following definitions are alternatives,
+so do not declare both `Order` and `OrderLine` pairs in the same file:
 ```kotlin
 object OrderLine : DataModel<OrderLine>() {
     val sku by string(index = 1u)
-    val quantity by number(index = 2u, type = Int32)
-    val priceCents by number(index = 3u, type = Int32)
+    val quantity by number(index = 2u, type = SInt32)
+    val priceCents by number(index = 3u, type = SInt32)
 }
 
 object Order : RootDataModel<Order>() {
     val orderId by string(index = 1u)
     val customerId by string(index = 2u)
-    val lines by list(index = 3u, valueDefinition = EmbeddedObjectDefinition(dataModel = { OrderLine }))
+    val lines by map(
+        index = 3u,
+        keyDefinition = NumberDefinition(type = UInt32),
+        valueDefinition = EmbeddedValuesDefinition(dataModel = { OrderLine }),
+    )
 }
 
+// Choose this alternative when lines have an independent lifecycle.
 // Split version
 object Order : RootDataModel<Order>(keyDefinition = { UUIDv7Key }) {
     val orderId by string(index = 1u)
@@ -219,14 +230,14 @@ object Order : RootDataModel<Order>(keyDefinition = { UUIDv7Key }) {
 }
 
 object OrderLine : RootDataModel<OrderLine>(
-    keyDefinition = { Multiple(order.ref(), lineNo.ref()) },
-    indexes = { listOf(Multiple(sku.ref())) }
+    keyDefinition = { Multiple(OrderLine.order.ref(), OrderLine.lineNo.ref()) },
+    indexes = { listOf(Multiple(OrderLine.sku.ref())) }
 ) {
-    val order by reference(index = 1u, dataModel = { Order })
-    val lineNo by number(index = 2u, type = Int32)
+    val order by reference(index = 1u, dataModel = { Order }, final = true)
+    val lineNo by number(index = 2u, type = SInt32, final = true)
     val sku by string(index = 3u)
-    val quantity by number(index = 4u, type = Int32)
-    val priceCents by number(index = 5u, type = Int32)
+    val quantity by number(index = 4u, type = SInt32)
+    val priceCents by number(index = 5u, type = SInt32)
 }
 ```
 
@@ -246,20 +257,20 @@ Common patterns
 Feed example:
 ```kotlin
 object FeedItem : RootDataModel<FeedItem>(
-    keyDefinition = { Multiple(user.ref(), Reversed(postedAt.ref()), FeedItem.ref { content.type }) }
+    keyDefinition = { Multiple(FeedItem.user.ref(), Reversed(FeedItem.postedAt.ref()), FeedItem.ref { content.type }) }
 ) {
-    val user by reference(index = 1u, dataModel = { User })
-    val postedAt by dateTime(index = 2u)
+    val user by reference(index = 1u, dataModel = { User }, final = true)
+    val postedAt by dateTime(index = 2u, final = true)
     // MultiType enum for feed content
     val content by multiType(index = 3u, typeEnum = FeedContentMT)
 }
 
 // Define the MultiType enum used in FeedItem
 sealed class FeedContentMT<T: Any>(index: UInt, override val definition: IsUsableInMultiType<T, IsPropertyContext>?) : IndexedEnumImpl<FeedContentMT<*>>(index), MultiTypeEnum<T> {
-    object PostType: FeedContentMT<Values<Post>>(1u, EmbeddedObjectDefinition(dataModel = { Post }))
-    object EventType: FeedContentMT<Values<Event>>(2u, EmbeddedObjectDefinition(dataModel = { Event }))
+    object PostType: FeedContentMT<Values<Post>>(1u, EmbeddedValuesDefinition(dataModel = { Post }))
+    object EventType: FeedContentMT<Values<Event>>(2u, EmbeddedValuesDefinition(dataModel = { Event }))
 
-    companion object : MultiTypeEnumDefinition<FeedContentMT<out Any>>(FeedContentMT::class, values = { arrayOf(PostType, EventType) })
+    companion object : MultiTypeEnumDefinition<FeedContentMT<out Any>>(FeedContentMT::class, values = { listOf(PostType, EventType) })
 }
 ```
 
@@ -271,13 +282,13 @@ Keep an authoritative source and copy a few stable, display‑oriented fields to
 object Product : RootDataModel<Product>() {
     val id by string(index = 1u)
     val name by string(index = 2u)
-    val priceCents by number(index = 3u, type = Int32)
+    val priceCents by number(index = 3u, type = SInt32)
 }
 
 object OrderLine : RootDataModel<OrderLine>() {
     val product by reference(index = 1u, dataModel = { Product })
     val productName by string(index = 2u) // snapshot for display
-    val productPriceCents by number(index = 3u, type = Int32)
+    val productPriceCents by number(index = 3u, type = SInt32)
 }
 ```
 

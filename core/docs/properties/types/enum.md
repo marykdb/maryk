@@ -14,8 +14,8 @@ Represents a value chosen from a predefined enum.
 - `required` - default true
 - `final` - default false
 - `unique` - default false
-- `minValue` - default false. Minimum value
-- `maxValue` - default false. Maximum value
+- `minValue` - default unset. Minimum value
+- `maxValue` - default unset. Maximum value
 
 ## Other options
 - `default` - the default value to be used if value was not set.
@@ -43,7 +43,7 @@ sealed class Role(index: UInt): IndexedEnumImpl<Role>(index) {
     object Moderator: Role(2u)
     object User: Role(3u)
     
-    companion object: IndexedEnumDefinition<Role>(Role::class, { arrayOf(Admin, Moderator, User) })
+    companion object: IndexedEnumDefinition<Role>(Role::class, { listOf(Admin, Moderator, User) })
 }
 ```
 

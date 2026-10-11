@@ -243,6 +243,10 @@ class BrowserState(
     private val aggregationConfigByModel = mutableStateMapOf<UInt, AggregationConfig>()
 
     fun connect(definition: StoreDefinition) {
+        if (sqlConsole.pendingCommit != null || sqlConsole.writeInFlight) {
+            lastActionMessage = "Finish or cancel SQL writes and resolve any pending commit before changing stores."
+            return
+        }
         connectJob?.cancel()
         isWorking = true
         lastActionMessage = null
@@ -269,6 +273,11 @@ class BrowserState(
                     isWorking = false
                 }
                 is ConnectResult.Success -> {
+                    if (sqlConsole.pendingCommit != null || sqlConsole.writeInFlight) {
+                        lastActionMessage = "Finish SQL writes and resolve any pending commit before changing stores."
+                        isWorking = false
+                        return@launch
+                    }
                     sqlConsole.detach()
                     val closeFailure = runCatchingNonFatal { activeConnection?.close() }.exceptionOrNull()
                     activeConnection = result.connection
@@ -308,6 +317,10 @@ class BrowserState(
     }
 
     fun disconnect() {
+        if (sqlConsole.pendingCommit != null || sqlConsole.writeInFlight) {
+            lastActionMessage = "Finish or cancel SQL writes and resolve any pending commit before disconnecting."
+            return
+        }
         sqlConsole.detach()
         connectJob?.cancel()
         connectJob = null

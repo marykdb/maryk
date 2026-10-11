@@ -233,7 +233,7 @@ fun SqlConsole(browser: BrowserState, modifier: Modifier = Modifier) {
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SelectionContainer(Modifier.weight(1f).heightIn(max = 100.dp).verticalScroll(rememberScrollState())) { Text(state.message, style = MaterialTheme.typography.bodySmall) }
+            SelectionContainer(Modifier.weight(1f).heightIn(max = 100.dp).verticalScroll(rememberScrollState())) { Text((if (state.transactionActive) "Transaction active. " else "") + state.message, style = MaterialTheme.typography.bodySmall) }
             TextButton(onClick = { copyToClipboard(sqlResultsTsv(state.columns.map { it.name }, state.rows)) }, enabled = state.columns.isNotEmpty()) { Text("Copy TSV") }
         }
         state.summary?.let { summary ->

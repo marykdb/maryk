@@ -2,6 +2,7 @@ package io.maryk.app.ui.sql
 
 import maryk.sql.SqlCatalog
 import maryk.sql.SqlTable
+import maryk.sql.SqlColumn
 import maryk.sql.SqlType
 
 internal enum class SqlTokenStyle { WORD, KEYWORD, FUNCTION, STRING, IDENTIFIER, NUMBER, COMMENT, PARAMETER, SYMBOL }
@@ -14,9 +15,9 @@ private val keywords = setOf(
     "NULLS FIRST", "NULLS LAST", "INNER JOIN", "LEFT JOIN", "CROSS JOIN", "ON", "IN", "IS", "BETWEEN",
     "LIKE", "ESCAPE", "CASE", "WHEN", "THEN", "ELSE", "END", "WITH", "UNION", "INTERSECT", "EXCEPT",
     "EXISTS", "CAST", "EXPLAIN", "ANALYZE", "INSERT INTO", "VALUES", "UPDATE", "SET", "DELETE FROM",
-    "UNDELETE FROM", "DELETE HARD FROM", "FILTER", "DATE", "TIME", "TIMESTAMP",
+    "UNDELETE FROM", "DELETE HARD FROM", "BEGIN", "COMMIT", "ROLLBACK", "SAVEPOINT", "RELEASE", "READ ONLY", "READ WRITE", "ON CONFLICT", "DO NOTHING", "DO UPDATE", "RETURNING", "OVER", "WINDOW", "ROWS", "RANGE", "PRECEDING", "FOLLOWING", "USING", "PARTITION BY", "UNBOUNDED PRECEDING", "CURRENT ROW", "UNBOUNDED FOLLOWING", "WITH ORDINALITY", "FILTER", "DATE", "TIME", "TIMESTAMP",
 )
-private val functions = listOf("COUNT", "SUM", "AVG", "MIN", "MAX", "COALESCE", "NULLIF", "ABS", "ROUND", "FLOOR", "CEIL", "CEILING", "LOWER", "UPPER", "LENGTH", "CHAR_LENGTH", "TRIM", "LTRIM", "RTRIM", "CONCAT", "SUBSTRING", "SUBSTR", "DATE_PART")
+private val functions = listOf("COUNT", "SUM", "AVG", "MIN", "MAX", "COALESCE", "NULLIF", "ABS", "ROUND", "FLOOR", "CEIL", "CEILING", "LOWER", "UPPER", "LENGTH", "CHAR_LENGTH", "TRIM", "LTRIM", "RTRIM", "CONCAT", "SUBSTRING", "SUBSTR", "DATE_PART", "ROW_NUMBER", "RANK", "DENSE_RANK", "LAG", "LEAD", "NTILE", "FIRST_VALUE", "LAST_VALUE", "NTH_VALUE", "UNNEST")
 private val keywordWords = keywords.flatMap { it.split(' ') }.toSet()
 
 /** Tolerant editor lexer: incomplete strings/comments remain highlightable while typing. */
@@ -89,7 +90,7 @@ internal fun sqlCompletions(text: String, caret: Int, catalog: SqlCatalog?, expl
     val aliases = mutableMapOf<String, SqlTable>()
     val sources = mutableListOf<Pair<SqlTable, String>>()
     for (index in tokens.indices) {
-        if (tokens[index].style != SqlTokenStyle.KEYWORD || tokens[index].text.uppercase() !in setOf("FROM", "JOIN", "UPDATE", "INTO")) continue
+        if (tokens[index].style != SqlTokenStyle.KEYWORD || tokens[index].text.uppercase() !in setOf("FROM", "JOIN", "UPDATE", "INTO", "USING")) continue
         val name = tokens.getOrNull(index + 1) ?: continue
         var after = index + 2
         val schema = if (tokens.getOrNull(after)?.text == ".") name.name() else null
@@ -102,12 +103,32 @@ internal fun sqlCompletions(text: String, caret: Int, catalog: SqlCatalog?, expl
         aliases[qualifier.lowercase()] = table
         sources += table to qualifier
     }
+    val collectionAliases = mutableMapOf<String, List<SqlColumn>>()
+    for (index in tokens.indices) {
+        if (!tokens[index].text.equals("UNNEST", true) || tokens.getOrNull(index + 1)?.text != "(") continue
+        var cursor = index + 2
+        val path = mutableListOf<String>()
+        while (cursor < tokens.size && tokens[cursor].text != ")") {
+            if (tokens[cursor].text != ".") path += tokens[cursor].name()
+            cursor++
+        }
+        if (tokens.getOrNull(cursor)?.text != ")") continue
+        val table = aliases[path.firstOrNull()?.lowercase()] ?: continue
+        val columns = table.collectionColumns(path.drop(1).joinToString(".")) ?: continue
+        cursor++
+        val ordinal = tokens.getOrNull(cursor)?.text.equals("WITH", true) && tokens.getOrNull(cursor + 1)?.text.equals("ORDINALITY", true)
+        if (ordinal) cursor += 2
+        if (tokens.getOrNull(cursor)?.text.equals("AS", true)) cursor++
+        val alias = tokens.getOrNull(cursor)?.takeIf { it.style in setOf(SqlTokenStyle.WORD, SqlTokenStyle.IDENTIFIER) }?.name() ?: "unnest"
+        collectionAliases[alias.lowercase()] = columns + if (ordinal) listOf(SqlColumn("ordinality", SqlType.INT64, false)) else emptyList()
+    }
     val result = mutableListOf<SqlCompletion>()
     fun add(label: String, insertion: String, detail: String) {
         if (label.startsWith(prefix, ignoreCase = true)) result += SqlCompletion(label, insertion, detail, start, end)
     }
     fun columns(table: SqlTable, qualifier: String? = null) {
-        table.columns.filter { it.type != SqlType.ANY }.forEach { column ->
+        val inCollection = before.indexOfLast { it.text.equals("UNNEST", true) } > before.indexOfLast { it.text == ")" }
+        table.columns.filter { it.type != SqlType.ANY || inCollection && it.name in table.collectionNames }.forEach { column ->
             val path = column.name.split('.').joinToString(".", transform = ::sqlIdentifier)
             val insertion = if (qualifier != null) "${sqlIdentifier(qualifier)}.$path" else path
             val source = qualifier?.let { "$it · ${table.name}" } ?: table.name
@@ -115,11 +136,28 @@ internal fun sqlCompletions(text: String, caret: Int, catalog: SqlCatalog?, expl
         }
     }
     if (before.lastOrNull()?.text == ".") {
-        val qualifier = before.getOrNull(before.lastIndex - 1)?.name().orEmpty()
+        val path = mutableListOf<String>()
+        var cursor = before.lastIndex - 1
+        while (cursor >= 0) {
+            val token = before[cursor]
+            if (token.style !in setOf(SqlTokenStyle.WORD, SqlTokenStyle.IDENTIFIER)) break
+            path.add(0, token.name())
+            if (before.getOrNull(cursor - 1)?.text != ".") break
+            cursor -= 2
+        }
+        val qualifier = path.firstOrNull().orEmpty()
+        val collection = collectionAliases[qualifier.lowercase()]
         val table = aliases[qualifier.lowercase()] ?: tables.singleOrNull { it.name.equals(qualifier, true) }
-        if (table != null) columns(table)
+        if (collection != null) {
+            val fieldPrefix = path.drop(1).joinToString(".").let { if (it.isEmpty()) "" else "$it." }
+            collection.filter { it.name.startsWith(fieldPrefix) }.forEach { column ->
+                val name = column.name.removePrefix(fieldPrefix)
+                add(name, name.split('.').joinToString(".", transform = ::sqlIdentifier), "$qualifier · ${column.type}${if (column.nullable) " · nullable" else ""}")
+            }
+        } else if (table != null) columns(table)
+        else if (qualifier.equals("information_schema", true)) listOf("tables", "columns", "indexes").forEach { add(it, it, "Catalog metadata") }
         else tables.filter { it.schema.equals(qualifier, true) }.forEach { add(it.name, sqlIdentifier(it.name), "Table · ${it.schema}") }
-    } else if (before.lastOrNull()?.text?.uppercase() in setOf("FROM", "JOIN", "INTO", "UPDATE")) {
+    } else if (before.lastOrNull()?.text?.uppercase() in setOf("FROM", "JOIN", "INTO", "UPDATE", "USING")) {
         tables.forEach { add(it.name, sqlTableName(it), "Table · ${it.schema}") }
     } else {
         if (sources.isEmpty()) tables.forEach { columns(it) }

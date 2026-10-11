@@ -3,6 +3,7 @@ package io.maryk.app.state
 import androidx.compose.ui.text.input.TextFieldValue
 import io.maryk.app.config.StoreConnector
 import io.maryk.app.ui.sql.sqlResultsTsv
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -78,6 +79,69 @@ class SqlConsoleStateTest {
             state.selectError()
             assertEquals(state.errorPosition, state.editor.selection.start)
         } finally { state.detach(); store.close() }
+    }
+
+    @Test fun richerWindowsAndJoinedWritesUseTheConsoleSession() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to ConsoleItem))
+        val state = SqlConsoleState(this)
+        suspend fun run(text: String, write: Boolean = false) {
+            state.editor = TextFieldValue(text); state.writeMode = write
+            state.run(0); state.finished()
+            assertEquals(null, state.error)
+        }
+        try {
+            state.attach(store)
+            run("INSERT INTO ConsoleItem (id, name) VALUES (1, 'before')", true)
+            run("UPDATE ConsoleItem AS s SET name = v.column2 FROM (VALUES (1, 'after')) v WHERE s.id = v.column1 RETURNING s.name", true)
+            assertEquals(SqlValue.Text("after"), state.rows.single()[0])
+            run("SELECT COUNT(*) OVER w, LAST_VALUE(column1) OVER w FROM (VALUES (1), (2)) v WINDOW w AS (ORDER BY column1 ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) ORDER BY column1")
+            assertEquals(listOf(SqlValue.Int64(1), SqlValue.Int64(2)), state.rows.map { it[0] })
+            run("DELETE FROM ConsoleItem AS s USING (VALUES (1)) v WHERE s.id = v.column1 RETURNING s.id", true)
+            assertEquals(SqlValue.UInt64(1uL), state.rows.single()[0])
+        } finally { state.detach(); store.close() }
+    }
+
+    @Test fun mutationsInferTypedParametersBeforeExecution() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to ConsoleItem))
+        val state = SqlConsoleState(this)
+        try {
+            state.attach(store)
+            state.editor = TextFieldValue("INSERT INTO ConsoleItem (id, name) VALUES (?, ?)")
+            state.initializeParameters(2)
+            assertEquals(SqlParameterKind.UNSIGNED, state.parameters[0].kind)
+            assertEquals(SqlParameterKind.TEXT, state.parameters[1].kind)
+        } finally { state.detach(); store.close() }
+    }
+
+    @Test fun timeTravelCannotRemoveTheConnectionGuardDuringAWrite() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to ConsoleItem))
+        val submitted = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val transport = object : IsDataStore by store, TransactionalDataStore by store {
+            override suspend fun executeTransaction(request: TransactionRequest) = run {
+                if (request.commit) { submitted.complete(Unit); release.await() }
+                store.executeTransaction(request)
+            }
+        }
+        val browser = BrowserState(StoreConnector(), this)
+        val state = browser.sqlConsole
+        try {
+            state.attach(transport)
+            state.writeMode = true
+            state.editor = TextFieldValue("INSERT INTO ConsoleItem (id) VALUES (1)")
+            state.run(0)
+            withTimeout(5000) { submitted.await() }
+            browser.updateTimeTravelEnabled(true)
+            assertFalse(state.writeMode)
+            browser.disconnect()
+            assertTrue(state.running)
+            assertNotNull(state.catalog)
+            assertTrue(state.writeInFlight)
+            release.complete(Unit)
+            state.finished()
+            assertEquals(null, state.error)
+            assertFalse(state.writeInFlight)
+        } finally { release.complete(Unit); state.detach(); store.close() }
     }
 
     @Test fun aggregateArithmeticInitializesFloatingParameters() = runBlocking {
@@ -165,6 +229,27 @@ class SqlConsoleStateTest {
             state.run(0)
             state.finished()
             assertEquals(listOf(SqlValue.UInt64(1u)), state.rows.map { it[0] })
+        } finally { state.detach(); store.close() }
+    }
+
+    @Test
+    fun consoleRetainsExplicitTransactionsAndRollsBackAtDetach() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to ConsoleItem))
+        val state = SqlConsoleState(this)
+        suspend fun run(text: String, write: Boolean) {
+            state.editor = TextFieldValue(text); state.writeMode = write; state.run(0); state.finished()
+            assertEquals(null, state.error, state.message)
+        }
+        try {
+            state.attach(store)
+            run("BEGIN", true); assertTrue(state.transactionActive)
+            run("INSERT INTO ConsoleItem (id, name) VALUES (1, 'Ada')", true)
+            run("SELECT name FROM ConsoleItem", false); assertEquals(SqlValue.Text("Ada"), state.rows.single()[0])
+            run("COMMIT", true); assertFalse(state.transactionActive)
+            run("BEGIN", true)
+            run("UPDATE ConsoleItem SET name = 'staged' WHERE id = 1", true)
+            state.detach(); state.attach(store)
+            run("SELECT name FROM ConsoleItem", false); assertEquals(SqlValue.Text("Ada"), state.rows.single()[0])
         } finally { state.detach(); store.close() }
     }
 

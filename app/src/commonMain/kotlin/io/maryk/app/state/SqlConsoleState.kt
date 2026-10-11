@@ -22,7 +22,15 @@ import maryk.core.query.responses.TransactionStatus
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.Transaction
 import maryk.datastore.shared.TransactionCancellationException
+import maryk.datastore.shared.TransactionState
 import maryk.datastore.shared.rethrowIfFatal
+import kotlinx.coroutines.NonCancellable
+import maryk.sql.SqlSession
+import maryk.sql.SqlSessionResult
+import maryk.sql.SqlStatementKind
+import maryk.sql.prepareMutation
+import maryk.sql.sqlStatementKind
+import maryk.sql.session
 import maryk.sql.MarykSql
 import maryk.sql.SqlCatalog
 import maryk.sql.SqlColumn
@@ -68,6 +76,8 @@ class SqlConsoleState(private val scope: CoroutineScope) {
         private set
     var running by mutableStateOf(false)
         private set
+    var writeInFlight by mutableStateOf(false)
+        private set
     var columns by mutableStateOf<List<SqlColumn>>(emptyList())
         private set
     var rows by mutableStateOf<List<SqlRow>>(emptyList())
@@ -84,6 +94,9 @@ class SqlConsoleState(private val scope: CoroutineScope) {
         private set
     var supportsSnapshot by mutableStateOf(false)
         private set
+    var transactionActive by mutableStateOf(false)
+        private set
+    private var session: SqlSession? = null
     private var sql: MarykSql? = null
     private var job: Job? = null
     private var generation = 0
@@ -95,6 +108,7 @@ class SqlConsoleState(private val scope: CoroutineScope) {
                 allowTableScan = true, maxResultRows = 10_000, maxBufferedBytes = RESULT_BYTES,
             ))
             sql = facade
+            session = facade.session()
             catalog = facade.catalog
             supportsSnapshot = facade.capabilities.historicalReads
             message = "Ready. Results are limited to 10,000 rows and 4 MiB."
@@ -107,10 +121,23 @@ class SqlConsoleState(private val scope: CoroutineScope) {
     fun detach() {
         generation++
         job?.cancel()
+        val oldSession = session
+        session = null
+        transactionActive = false
+        if (oldSession?.activeTransaction != null) scope.launch {
+            withContext(NonCancellable) {
+                try { oldSession.close() }
+                catch (failure: IllegalStateException) {
+                    val oldTransaction = oldSession.activeTransaction?.transaction
+                    if (oldTransaction?.state == TransactionState.OutcomeUnknown) pendingCommit = oldTransaction else throw failure
+                }
+            }
+        }
         job = null
         sql = null
         catalog = null
         running = false
+        writeInFlight = false
         columns = emptyList()
         rows = emptyList()
         summary = null
@@ -136,7 +163,10 @@ class SqlConsoleState(private val scope: CoroutineScope) {
     }
 
     internal fun initializeParameters(count: Int) {
-        val inferred = try { sql?.prepare(editor.text)?.parameters.orEmpty() } catch (_: IllegalArgumentException) { emptyList() }
+        val inferred = try {
+            if (sqlStatementKind(editor.text) == SqlStatementKind.MUTATION) sql?.prepareMutation(editor.text)?.parameters.orEmpty()
+            else sql?.prepare(editor.text)?.parameters.orEmpty()
+        } catch (_: IllegalArgumentException) { emptyList() }
         parameters = List(count) { index -> parameters.getOrNull(index) ?: SqlParameterInput(when (inferred.getOrNull(index)?.type) {
             SqlType.BOOLEAN -> SqlParameterKind.BOOLEAN
             SqlType.INT64 -> SqlParameterKind.INTEGER
@@ -165,11 +195,12 @@ class SqlConsoleState(private val scope: CoroutineScope) {
         running = true
         job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
-                val result = withContext(Dispatchers.Default) { transaction.resolveCommit() }
+                val result = withContext(Dispatchers.Default) { session?.takeIf { it.activeTransaction?.transaction === transaction }?.resolveCommit() ?: transaction.resolveCommit() }
                 if (generation == ticket) {
                     message = if (result.status == TransactionStatus.Committed) "Commit confirmed." else "Commit ${result.status.name}."
                     error = if (result.status == TransactionStatus.Committed) null else result.message ?: result.failure?.toString()
                     if (result.status != TransactionStatus.OutcomeUnknown) pendingCommit = null
+                    transactionActive = session?.activeTransaction != null
                 }
             } finally {
                 if (generation == ticket) { running = false; job = null }
@@ -200,6 +231,7 @@ class SqlConsoleState(private val scope: CoroutineScope) {
         )
         val ticket = ++generation
         running = true
+        writeInFlight = writing
         error = null
         errorPosition = null
         rows = emptyList()
@@ -215,19 +247,25 @@ class SqlConsoleState(private val scope: CoroutineScope) {
             var position: Int? = null
             try {
                 withContext(Dispatchers.Default) {
-                    if (writing) {
-                        val result = facade.execute(statement, values)
+                    if (writing && sqlStatementKind(statement) == SqlStatementKind.CONTROL) {
+                        val control = session!!.execute(statement, values) as SqlSessionResult.Control
+                        resultMessage = control.command + (control.commit?.let { ": ${it.status}" } ?: "")
+                        if (control.commit?.status == TransactionStatus.OutcomeUnknown) pendingCommit = session?.activeTransaction?.transaction
+                        control.commit?.let { commit -> if (commit.status != TransactionStatus.Committed) resultError = commit.message ?: resultMessage }
+                    } else if (writing) {
+                        val result = session?.activeTransaction?.execute(statement, values) ?: facade.execute(statement, values)
                         if (result.response.status == AtomicStatus.OutcomeUnknown) pendingCommit = result.transaction
                         resultMessage = if (result.response.status == AtomicStatus.Committed) "Affected rows: ${result.affectedRows}"
+                            else if (result.response.status == AtomicStatus.Staged) "Staged: ${result.affectedRows} affected rows"
                             else result.response.status.name
-                        resultError = if (result.response.status == AtomicStatus.Committed) null
+                        resultError = if (result.response.status in setOf(AtomicStatus.Committed, AtomicStatus.Staged)) null
                             else "${result.response.status}: ${result.response.message ?: result.response.failure ?: "Write was not confirmed"}"
                         result.returning.singleOrNull()?.let { returned ->
                             resultColumns = returned.columns
                             collected.addAll(returned.rows)
                         }
                     } else {
-                        val prepared = facade.prepare(statement)
+                        val prepared = session?.activeTransaction?.prepare(statement) ?: facade.prepare(statement)
                         if (explain) {
                             resultMessage = prepared.explain()
                         } else {
@@ -260,6 +298,7 @@ class SqlConsoleState(private val scope: CoroutineScope) {
                 resultMessage = "Failed. ${collected.size} partial rows."
             } finally {
                 if (generation == ticket) {
+                    transactionActive = session?.activeTransaction != null
                     rows = collected.toList()
                     columns = resultColumns
                     summary = resultSummary
@@ -267,6 +306,7 @@ class SqlConsoleState(private val scope: CoroutineScope) {
                     error = resultError
                     errorPosition = position
                     running = false
+                    writeInFlight = false
                     job = null
                 }
             }
@@ -289,5 +329,6 @@ internal fun sqlCellText(value: SqlValue): String = when (value) {
     is SqlValue.Time -> value.value.toString()
     is SqlValue.Timestamp -> value.value.toString()
     is SqlValue.Key -> value.value.toString()
+    is SqlValue.Collection -> value.toString()
     is SqlValue.Enum -> value.name
 }

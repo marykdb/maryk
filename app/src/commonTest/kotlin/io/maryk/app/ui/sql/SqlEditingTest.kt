@@ -1,6 +1,10 @@
 package io.maryk.app.ui.sql
 
 import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.models.DataModel
 import maryk.core.properties.definitions.string
 import maryk.sql.SqlCatalog
 import maryk.sql.SqlTable
@@ -8,9 +12,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+private object SqlEditorDetail : DataModel<SqlEditorDetail>() {
+    val label by string(1u, required = false)
+}
+
 private object SqlEditorPerson : RootDataModel<SqlEditorPerson>() {
     val name by string(1u)
     val nickname by string(2u, required = false)
+    val details by map(3u, required = false, keyDefinition = StringDefinition(), valueDefinition = EmbeddedValuesDefinition(dataModel = { SqlEditorDetail }))
 }
 
 class SqlEditingTest {
@@ -22,6 +31,23 @@ class SqlEditingTest {
         assertEquals("1.5e-2", tokens.single { it.style == SqlTokenStyle.NUMBER }.text)
         assertEquals(SqlTokenStyle.STRING, tokens.last().style)
         assertEquals(2, tokens.count { it.style == SqlTokenStyle.COMMENT })
+    }
+
+    @Test fun expandedSqlSyntaxHasCompletions() {
+        for ((prefix, expected) in listOf("WIN" to "WINDOW", "RAN" to "RANGE", "NTH" to "NTH_VALUE", "NTI" to "NTILE")) {
+            val text = "SELECT $prefix"
+            assertTrue(sqlCompletions(text, text.length, catalog).any { it.label == expected })
+        }
+        val text = "DELETE FROM Person p USING Pe"
+        assertTrue(sqlCompletions(text, text.length, catalog).any { it.label == "Person" })
+    }
+
+    @Test fun embeddedCollectionAliasesCompleteTheirTypedFields() {
+        val text = "SELECT e.value.la FROM Person p CROSS JOIN UNNEST(p.details) e"
+        val completion = sqlCompletions(text, text.indexOf(" FROM"), catalog).single()
+        assertEquals("label", completion.label)
+        assertEquals("\"label\"", completion.insertion)
+        assertTrue(completion.detail.contains("TEXT"))
     }
 
     @Test fun tableSuggestionsQuoteSchemaAndEscapedNames() {

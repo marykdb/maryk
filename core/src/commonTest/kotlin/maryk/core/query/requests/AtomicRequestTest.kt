@@ -11,6 +11,8 @@ import maryk.core.query.changes.Check
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.values.ObjectValues
+import maryk.core.query.responses.AtomicFailure
+import maryk.core.query.responses.AtomicFailureCode
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
 import maryk.test.models.Person
@@ -35,6 +37,25 @@ class AtomicRequestTest {
         assertEquals(original.requests, converted.requests)
         assertEquals(original.guards, converted.guards)
     }
+    @Test
+    fun structuredFailureRoundTripsAndOldResponsesDefaultToNull() {
+        val response = AtomicResponse(AtomicStatus.Rejected, failure = AtomicFailure(AtomicFailureCode.LimitExceeded, "requestBytes", 1_048_576uL, 1_048_577uL))
+        checkProtoBufConversion(response, AtomicResponse, ::context)
+        checkJsonConversion(response, AtomicResponse, ::context)
+        checkProtoBufConversion(AtomicResponse(AtomicStatus.Committed), AtomicResponse, ::context)
+    }
+
+    @Test
+    fun capabilitiesRoundTripAndRecordBoundaryIsStructured() {
+        val capabilities = AtomicCapabilities(maxWorkBytes = 4_194_304u, maxStorageKeyBytes = 10_000u, maxStorageValueBytes = 100_000u)
+        checkProtoBufConversion(capabilities, AtomicCapabilities, ::context)
+        checkJsonConversion(capabilities, AtomicCapabilities, ::context)
+        val failure = assertFailsWith<AtomicRequestLimitException> { AtomicRequest("limit", List(1001) { request.requests.first() }) }
+        assertEquals("mutations", failure.limit)
+        assertEquals(1000u, failure.maximum)
+        assertEquals(1001u, failure.actual)
+    }
+
     @Test
     fun json() { checkJsonConversion(request, AtomicRequest, ::context, ::compare) }
     @Test

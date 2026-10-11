@@ -170,6 +170,12 @@ val responses = remote.execute(
 unresolved `Inject` values. Responses preserve request order. Execution is fail-fast
 and is not transactionally atomic.
 
+The `/info` response advertises atomic limit metadata whenever atomic requests
+are supported. Remote exposes it through `atomicCapabilities` and rejects count
+limits before sending the request. Advertising atomic support without its limits
+is invalid and prevents connection. Structured backend limit failures survive
+transport.
+
 An explicit `AtomicRequest` is transported as one batch member. The `/info`
 response advertises the backend's `supportsAtomicRequests` capability (absent
 means false for older servers). All participating models and semantic mutation

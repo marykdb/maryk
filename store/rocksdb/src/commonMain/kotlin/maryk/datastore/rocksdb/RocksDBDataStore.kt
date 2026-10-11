@@ -15,11 +15,14 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.IsDataModelResponse
 import maryk.core.query.responses.IsResponse
 import maryk.datastore.shared.AtomicAbort
+import maryk.datastore.shared.MAX_ATOMIC_WORK_BYTES
 import maryk.datastore.shared.AtomicReceiptCodec
 import maryk.datastore.shared.AtomicMutationContext
 import maryk.datastore.shared.currentAtomicContext
@@ -1274,6 +1277,7 @@ class RocksDBDataStore private constructor(
         }
     }
 
+    override val atomicCapabilities: AtomicCapabilities = AtomicCapabilities(maxWorkBytes = MAX_ATOMIC_WORK_BYTES.toUInt())
     override val supportsAtomicRequests: Boolean = true
 
     override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse {
@@ -1282,6 +1286,7 @@ class RocksDBDataStore private constructor(
         val receiptKey = "maryk.atomic/".encodeToByteArray() + request.changeSetId.encodeToByteArray()
         val transaction = Transaction(this).apply { atomicOwner = true }
         val atomic = AtomicMutationContext(this, transaction)
+        var committed = false
         try {
             transaction.get(retainedColumnFamilyHandles.first(), defaultReadOptions, receiptKey)?.let {
                 return codec.replay(it, fingerprint)
@@ -1303,13 +1308,14 @@ class RocksDBDataStore private constructor(
             transaction.put(retainedColumnFamilyHandles.first(), receiptKey, codec.receipt(fingerprint, result))
             transaction.atomicOwner = false
             transaction.commit()
+            committed = true
             val affectedIds = request.requests.map { getDataModelId(it.dataModel) }.toSet()
             uniqueIndicesByDataModelIndex.update { it - affectedIds }
             observeCommittedVersion(version.timestamp)
             atomic.updates.forEach { emitFlowUpdate(it) }
             return result
         } catch (abort: AtomicAbort) {
-            return abort.response
+            return if (committed) AtomicResponse(AtomicStatus.OutcomeUnknown, message = abort.message) else abort.response
         } finally {
             transaction.close()
         }

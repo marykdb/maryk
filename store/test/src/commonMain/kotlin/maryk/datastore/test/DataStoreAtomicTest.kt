@@ -9,6 +9,9 @@ import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.statuses.ChangeSuccess
 import kotlinx.coroutines.coroutineScope
 import maryk.core.models.key
+import maryk.core.query.responses.AtomicFailureCode
+import maryk.datastore.shared.atomicCapabilities
+import kotlin.time.TimeSource
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -59,6 +62,7 @@ class DataStoreAtomicTest(private val dataStore: IsDataStore) : IsDataStoreTest 
         "atomicFailureDoesNotPublishUpdates" to ::atomicFailureDoesNotPublishUpdates,
         "atomicChecksUseInitialState" to ::atomicChecksUseInitialState,
         "atomicPayloadLimit" to ::atomicPayloadLimit,
+        "atomicThousandRecordBoundary" to ::atomicThousandRecordBoundary,
     ) else mapOf("atomicUnsupported" to ::atomicUnsupported)
 
     override suspend fun initData() {
@@ -252,8 +256,40 @@ class DataStoreAtomicTest(private val dataStore: IsDataStore) : IsDataStoreTest 
     suspend fun atomicPayloadLimit() {
         val request = AtomicRequest(id("payload-limit"),
             SimpleMarykModel.add(SimpleMarykModel.create { value with ("ha" + "x".repeat(1_048_576)) }))
-        assertEquals(AtomicStatus.Rejected, dataStore.executeAtomic(request).status)
+        val result = dataStore.executeAtomic(request)
+        assertEquals(AtomicStatus.Rejected, result.status)
+        assertEquals(AtomicFailureCode.LimitExceeded, result.failure?.code)
+        assertEquals("requestBytes", result.failure?.limit)
+        assertEquals(1_048_576uL, result.failure?.maximum)
+        assertTrue(result.failure!!.actual!! > result.failure!!.maximum!!)
         assertUnchanged()
+    }
+
+    suspend fun atomicThousandRecordBoundary() {
+        assertEquals(1000u, dataStore.atomicCapabilities?.maxMutations)
+        val members = List(1000) { SimpleMarykModel.add(SimpleMarykModel.create { value with "haha-boundary-$it" }) }
+        val request = AtomicRequest(id("thousand"), members)
+        val keys = request.requests.map { @Suppress("UNCHECKED_CAST") (it as AddRequest<SimpleMarykModel>).keysForObjects!!.single() }
+        addedKeys.addAll(keys)
+        val start = TimeSource.Monotonic.markNow()
+        val committed = dataStore.executeAtomic(request)
+        val elapsed = start.elapsedNow()
+        assertEquals(AtomicStatus.Committed, committed.status)
+        assertEquals(1000, committed.responses.size)
+        assertEquals(committed, dataStore.executeAtomic(request))
+        assertEquals(1000, dataStore.execute(SimpleMarykModel.get(*keys.toTypedArray())).values.size)
+        val candidate = AtomicRequest(id("thousand-rollback"), List(999) {
+            SimpleMarykModel.add(SimpleMarykModel.create { value with "haha-rollback-$it" })
+        } + SimpleMarykModel.add(simpleKey to SimpleMarykModel.create { value with "haha-duplicate" }))
+        val candidateKeys = candidate.requests.dropLast(1).map { @Suppress("UNCHECKED_CAST") (it as AddRequest<SimpleMarykModel>).keysForObjects!!.single() }
+        addedKeys.addAll(candidateKeys)
+        val rollbackStart = TimeSource.Monotonic.markNow()
+        val rejected = dataStore.executeAtomic(candidate)
+        val rollbackElapsed = rollbackStart.elapsedNow()
+        assertEquals(AtomicStatus.Rejected, rejected.status)
+        assertEquals(999u, rejected.failedRequestIndex)
+        assertTrue(dataStore.execute(SimpleMarykModel.get(*candidateKeys.toTypedArray())).values.isEmpty())
+        println("Atomic 1000 records ${dataStore::class.simpleName}: commit=$elapsed rollback=$rollbackElapsed")
     }
 
     suspend fun atomicUnsupported() {

@@ -18,7 +18,10 @@ import maryk.core.query.changes.Check
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.values.SimpleObjectValues
 
-const val MAX_ATOMIC_OPERATIONS = 100u
+const val MAX_ATOMIC_OPERATIONS = 1_000u
+
+class AtomicRequestLimitException(val limit: String, val maximum: UInt, val actual: UInt) :
+    RequestException("Atomic $limit exceeds limit: $actual > $maximum")
 
 /**
  * A bounded, all-or-nothing mutation across models in one datastore.
@@ -47,9 +50,9 @@ class AtomicRequest(
         if (changeSetId.isBlank() || changeSetId.length > 128) {
             throw RequestException("Atomic changeSetId must contain 1 to 128 characters")
         }
-        if (requests.isEmpty() || requests.size.toUInt() > MAX_ATOMIC_OPERATIONS || guards.size.toUInt() > MAX_ATOMIC_OPERATIONS) {
-            throw RequestException("Atomic requests require 1 to $MAX_ATOMIC_OPERATIONS mutations and at most $MAX_ATOMIC_OPERATIONS guards")
-        }
+        if (requests.isEmpty()) throw RequestException("Atomic requests require at least one mutation")
+        if (requests.size.toUInt() > MAX_ATOMIC_OPERATIONS) throw AtomicRequestLimitException("mutations", MAX_ATOMIC_OPERATIONS, requests.size.toUInt())
+        if (guards.size.toUInt() > MAX_ATOMIC_OPERATIONS) throw AtomicRequestLimitException("guards", MAX_ATOMIC_OPERATIONS, guards.size.toUInt())
         this.guards.forEach {
             if (it.objects.size != 1 || it.objects.single().changes.any { change -> change !is Check }) {
                 throw RequestException("Atomic guards must be single-record, check-only Change requests")

@@ -4,6 +4,7 @@ import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
@@ -29,6 +30,7 @@ data class AtomicResponse(
     val failedRequestIndex: UInt? = null,
     val failedGuard: Boolean = false,
     val message: String? = null,
+    val failure: AtomicFailure? = null,
 ) : IsResponse {
     companion object : SimpleQueryModel<AtomicResponse>() {
         val status by enum(1u, AtomicResponse::status, enum = AtomicStatus)
@@ -56,12 +58,14 @@ data class AtomicResponse(
         val failedRequestIndex by number(3u, AtomicResponse::failedRequestIndex, UInt32, required = false)
         val failedGuard by boolean(4u, AtomicResponse::failedGuard, default = false)
         val message by string(5u, AtomicResponse::message, required = false)
+        val failure by embedObject(6u, AtomicResponse::failure, dataModel = { AtomicFailure }, required = false)
         override fun invoke(values: SimpleObjectValues<AtomicResponse>) = AtomicResponse(
             status = values(status.index),
             responses = values<List<TypedValue<RequestType, Any>>>(responses.index).map { it.value as IsDataModelResponse<*> },
             failedRequestIndex = values(failedRequestIndex.index),
             failedGuard = values(failedGuard.index),
             message = values(message.index),
+            failure = values(failure.index),
         )
     }
 }

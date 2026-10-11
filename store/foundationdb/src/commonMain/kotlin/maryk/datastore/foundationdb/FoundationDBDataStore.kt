@@ -15,7 +15,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.responses.AtomicFailure
+import maryk.core.query.responses.AtomicFailureCode
+import maryk.foundationdb.FDBException
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.IsResponse
@@ -1382,21 +1386,23 @@ class FoundationDBDataStore private constructor(
     internal fun readStoredModelNamesById(): Map<UInt, String> =
         readStoredModelNames(tc, metadataPrefix)
 
+    override val atomicCapabilities: AtomicCapabilities = AtomicCapabilities(maxTransactionBytes = 4_194_304u, commitTimeoutMillis = 10_000u, maxRetries = 10u,
+        maxStorageKeyBytes = 10_000u, maxStorageValueBytes = 100_000u)
     override val supportsAtomicRequests: Boolean = true
 
     override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse = withContext(Dispatchers.IO) {
         val codec = AtomicReceiptCodec(dataModelsById)
         val fingerprint = codec.fingerprint(request)
-        val receiptKey = atomicReceiptsPrefix + request.changeSetId.encodeToByteArray()
         val parentJob = requireNotNull(currentCoroutineContext()[Job])
         var updates: List<Update<*>> = emptyList()
+        var committed = false
         try {
             val result = tc.run { transaction ->
                 transaction.options().setTimeout(10_000)
                 transaction.options().setRetryLimit(10)
                 transaction.options().setSizeLimit(4_194_304)
                 updates = emptyList()
-                transaction.get(receiptKey).awaitResult()?.let { return@run codec.replay(it, fingerprint) }
+                readAtomicReceipt(transaction, atomicReceiptsPrefix, request.changeSetId)?.let { return@run codec.replay(it, fingerprint) }
                 var observedVersion = 0uL
                 for (member in request.requests + request.guards) {
                     val id = getDataModelId(member.dataModel)
@@ -1435,10 +1441,11 @@ class FoundationDBDataStore private constructor(
                 } finally {
                     atomicTransactions.update { it - transaction }
                 }
-                transaction.set(receiptKey, codec.receipt(fingerprint, result))
+                writeAtomicReceipt(transaction, atomicReceiptsPrefix, request.changeSetId, codec.receipt(fingerprint, result))
                 updates = atomic.updates.toList()
                 result
             }
+            committed = true
             val affectedIds = request.requests.map { getDataModelId(it.dataModel) }.toSet()
             uniqueIndicesByDataModelIndex.update { it - affectedIds }
             updates.forEach { emitUpdate(it) }
@@ -1446,7 +1453,19 @@ class FoundationDBDataStore private constructor(
         } catch (error: Throwable) {
             error.rethrowIfFatal()
             val cause = error.unwrapFdb()
-            if (cause is AtomicAbort) cause.response else throw cause
+            if (cause is AtomicAbort) {
+                if (committed) AtomicResponse(AtomicStatus.OutcomeUnknown, message = cause.message) else cause.response
+            } else {
+                val limit = if (!committed && cause is FDBException) when (cause.getCode()) {
+                    2101 -> "transactionBytes" to atomicCapabilities.maxTransactionBytes!!
+                    2102 -> "storageKeyBytes" to atomicCapabilities.maxStorageKeyBytes!!
+                    2103 -> "storageValueBytes" to atomicCapabilities.maxStorageValueBytes!!
+                    else -> null
+                } else null
+                if (limit == null) throw cause
+                AtomicResponse(AtomicStatus.Rejected, message = cause.message,
+                    failure = AtomicFailure(AtomicFailureCode.LimitExceeded, limit.first, limit.second.toULong()))
+            }
         }
     }
 

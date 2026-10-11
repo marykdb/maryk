@@ -62,6 +62,9 @@ import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
+import maryk.core.query.requests.AtomicCapabilities
+import maryk.datastore.shared.AtomicAbort
+import maryk.datastore.shared.validateAtomicCounts
 import maryk.datastore.shared.AtomicDataStore
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsTransportableRequest
@@ -128,6 +131,7 @@ class RemoteDataStore private constructor(
     override val supportsSubReferenceFiltering: Boolean,
     override val supportsSnapshotVersion: Boolean,
     override val supportsAtomicRequests: Boolean,
+    override val atomicCapabilities: AtomicCapabilities?,
 ) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider, AtomicDataStore {
     private val definitionsMutex = Mutex()
     private val sshTunnelMutex = Mutex()
@@ -224,6 +228,8 @@ class RemoteDataStore private constructor(
                     supportsSubReferenceFiltering = infoResult.info.supportsSubReferenceFiltering,
                     supportsSnapshotVersion = infoResult.info.supportsSnapshotVersion,
                     supportsAtomicRequests = infoResult.info.supportsAtomicRequests,
+                    atomicCapabilities = if (infoResult.info.supportsAtomicRequests)
+                        requireNotNull(infoResult.info.atomicCapabilities) else null,
                 )
             } catch (error: Throwable) {
                 if (ownsClient) {
@@ -360,6 +366,7 @@ class RemoteDataStore private constructor(
 
     override suspend fun executeAtomic(request: AtomicRequest): AtomicResponse {
         if (!supportsAtomicRequests) return AtomicResponse(AtomicStatus.Unsupported)
+        try { validateAtomicCounts(request, requireNotNull(atomicCapabilities)) } catch (abort: AtomicAbort) { return abort.response }
         return try {
             execute(Requests(request)).single() as AtomicResponse
         } catch (error: Throwable) {

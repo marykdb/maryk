@@ -55,11 +55,15 @@ import maryk.datastore.memory.processors.processScanRequest
 import maryk.datastore.memory.processors.processScanUpdateHistoryRequest
 import maryk.datastore.memory.processors.processScanUpdatesRequest
 import maryk.datastore.memory.records.DataStore
+import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.IsDataModelResponse
+import maryk.core.properties.types.Bytes
+import maryk.datastore.shared.rejectAtomicLimit
 import maryk.datastore.shared.AtomicAbort
+import maryk.datastore.shared.MAX_ATOMIC_STAGED_NODES
 import maryk.datastore.shared.AtomicReceiptCodec
 import maryk.datastore.shared.applyAtomicMembers
 import maryk.datastore.shared.updates.Update
@@ -94,6 +98,8 @@ class InMemoryDataStore private constructor(
     override val keepUpdateHistoryIndex: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
 ) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider, ReplicationTombstoneCompactor {
+
+    override val atomicCapabilities: AtomicCapabilities = AtomicCapabilities(maxStagedNodes = MAX_ATOMIC_STAGED_NODES.toUInt())
     override val supportsAtomicRequests: Boolean = true
     private val atomicDataStores = mutableMapOf<UInt, DataStore<*>>()
     private val atomicReceipts = mutableMapOf<String, ByteArray>()
@@ -103,12 +109,28 @@ class InMemoryDataStore private constructor(
         val fingerprint = codec.fingerprint(request)
         atomicReceipts[request.changeSetId]?.let { return codec.replay(it, fingerprint) }
         val staged = mutableMapOf<UInt, DataStore<IsRootDataModel>>()
+        val targetKeys = request.requests.groupBy { getDataModelId(it.dataModel) }.mapValues { (_, members) ->
+            members.map { member ->
+                Bytes(when (member) {
+                    is AddRequest<*> -> member.keysForObjects!!.single().bytes
+                    is ChangeRequest<*> -> member.objects.single().key.bytes
+                    is DeleteRequest<*> -> member.keys.single().bytes
+                    else -> error("Invalid atomic member")
+                })
+            }.toSet()
+        }
+        var committed = false
+        var stagedNodes = 0L
+        val budget: (Int) -> Unit = { count ->
+            stagedNodes += count
+            if (stagedNodes > MAX_ATOMIC_STAGED_NODES) rejectAtomicLimit("stagedNodes", MAX_ATOMIC_STAGED_NODES.toULong(), stagedNodes.toULong())
+        }
         val updates = mutableListOf<Update<*>>()
         val fetcher: (IsRootDataModel) -> DataStore<IsRootDataModel> = { model ->
             val id = getDataModelId(model)
             staged.getOrPut(id) {
                 @Suppress("UNCHECKED_CAST")
-                (atomicDataStores[id] as? DataStore<IsRootDataModel>)?.copyForAtomic()
+                (atomicDataStores[id] as? DataStore<IsRootDataModel>)?.copyForAtomic(targetKeys[id].orEmpty(), budget)
                     ?: DataStore(keepAllVersions, keepUpdateHistoryIndex)
             }
         }
@@ -127,13 +149,15 @@ class InMemoryDataStore private constructor(
             }
             val receipt = codec.receipt(fingerprint, result)
             // No suspension between publishing models and recording the receipt.
+            staged.values.forEach { it.finishAtomicCopy() }
             atomicDataStores.putAll(staged)
             atomicReceipts[request.changeSetId] = receipt
+            committed = true
             observeCommittedVersion(version.timestamp)
             updates.forEach { emitFlowUpdate(it) }
             result
         } catch (abort: AtomicAbort) {
-            abort.response
+            if (committed) AtomicResponse(AtomicStatus.OutcomeUnknown, message = abort.message) else abort.response
         }
     }
 

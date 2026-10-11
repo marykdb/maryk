@@ -25,6 +25,8 @@ changes across root models in one store. It protects validation and concurrency
 guards and commits the complete change-set or none of its member mutations.
 Existing requests retain their current semantics. Inspect `supportsAtomicRequests`
 before offering this operation; unsupported stores return an explicit response.
+`atomicCapabilities` reports fixed operation and backend resource ceilings. Limit
+rejections expose machine-readable details through `AtomicResponse.failure`.
 
 | Engine | Atomic boundary |
 | --- | --- |

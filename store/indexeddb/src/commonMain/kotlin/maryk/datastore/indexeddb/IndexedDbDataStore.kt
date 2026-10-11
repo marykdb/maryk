@@ -71,12 +71,15 @@ import maryk.datastore.indexeddb.processors.readTrailingVersion
 import maryk.datastore.indexeddb.processors.readTrailingInvertedVersion
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import kotlinx.coroutines.CompletableDeferred
+import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.IsDataModelResponse
 import maryk.core.query.responses.IsResponse
 import maryk.datastore.shared.AtomicAbort
+import maryk.datastore.shared.MAX_ATOMIC_WORK_BYTES
+import maryk.datastore.shared.MAX_ATOMIC_SCAN_ROWS
 import maryk.datastore.shared.AtomicReceiptCodec
 import maryk.datastore.shared.AtomicMutationContext
 import maryk.datastore.shared.currentAtomicContext
@@ -104,8 +107,11 @@ class IndexedDbDataStore private constructor(
     dataModelsById: Map<UInt, IsRootDataModel>,
     internal val sensitiveFields: IndexedDbSensitiveFieldSupport,
 ) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider, ReplicationTombstoneCompactor {
+
     private val nativeByteStore = byteStore
     internal val byteStore: IndexedDbByteStore = AtomicAwareIndexedDbByteStore(byteStore, this)
+    override val atomicCapabilities: AtomicCapabilities? = if (nativeByteStore is AtomicIndexedDbByteStore)
+        AtomicCapabilities(maxWorkBytes = MAX_ATOMIC_WORK_BYTES.toUInt(), maxScanRows = MAX_ATOMIC_SCAN_ROWS.toUInt()) else null
     override val supportsAtomicRequests: Boolean get() = nativeByteStore is AtomicIndexedDbByteStore
 
     override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
@@ -123,6 +129,7 @@ class IndexedDbDataStore private constructor(
                 journalSequence = 0u
                 val staged = StagedIndexedDbByteStore(nativeByteStore)
                 val atomic = AtomicMutationContext(this@IndexedDbDataStore, staged)
+                var committed = false
                 try {
                     val result = withContext(atomic) {
                         applyAtomicMembers(request) { member ->
@@ -140,13 +147,14 @@ class IndexedDbDataStore private constructor(
                     }
                     staged.put("meta", receiptKey, codec.receipt(fingerprint, result))
                     nativeByteStore.writeBatch(staged.operations)
+                    committed = true
                     staged.journalKey?.let { lastJournalKey = it }
                     observeCommittedVersion(atomicVersion.timestamp)
                     atomic.updates.forEach { emitFlowUpdate(it) }
                     nativeByteStore.signalCommittedUpdate()
                     result
                 } catch (abort: AtomicAbort) {
-                    abort.response
+                    if (committed) AtomicResponse(AtomicStatus.OutcomeUnknown, message = abort.message) else abort.response
                 }
             }
         }

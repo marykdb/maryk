@@ -8,6 +8,8 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.AtomicStatus
 import maryk.datastore.memory.InMemoryDataStore
 import maryk.datastore.shared.executeAtomic
+import maryk.datastore.shared.IsDataStore
+import kotlin.test.assertNull
 import maryk.datastore.shared.supportsAtomicRequests
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runAtomicDataStoreTests
@@ -28,6 +30,21 @@ class AtomicRequestTest {
             try {
                 assertTrue(remote.supportsAtomicRequests)
                 runAtomicDataStoreTests(remote)
+            } finally { remote.close() }
+        } finally { server.stop(0, 1000); store.close() }
+    }
+
+    @Test
+    fun unsupportedBackendHasNoAtomicLimitReport() = runBoundedIntegrationTest {
+        val store = InMemoryDataStore.open(dataModelsById = dataModelsForTests)
+        val legacy = object : IsDataStore by store { }
+        val port = ServerSocket(0).use { it.localPort }
+        val server = RemoteStoreServer(legacy).start("127.0.0.1", port, wait = false)
+        try {
+            val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+            try {
+                assertEquals(false, remote.supportsAtomicRequests)
+                assertNull(remote.atomicCapabilities)
             } finally { remote.close() }
         } finally { server.stop(0, 1000); store.close() }
     }

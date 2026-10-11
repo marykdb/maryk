@@ -1,5 +1,6 @@
 package maryk.datastore.remote
 
+import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.definitions.Definitions
 import maryk.core.models.DefinitionModel
@@ -37,7 +38,12 @@ internal data class RemoteStoreInfo(
     val keepUpdateHistoryIndex: Boolean = false,
     val supportsSnapshotVersion: Boolean = false,
     val supportsAtomicRequests: Boolean = false,
+    val atomicCapabilities: AtomicCapabilities? = null,
 ) {
+    init {
+        require(!supportsAtomicRequests || atomicCapabilities != null) { "Atomic support requires capability metadata" }
+    }
+
     companion object : DefinitionModel<RemoteStoreInfo>() {
         val definitions by embedObject(
             index = 1u,
@@ -74,6 +80,8 @@ internal data class RemoteStoreInfo(
             toSerializable = { value: Boolean?, _: ContainsDefinitionsContext? -> value?.takeIf { it } },
         )
 
+        val atomicCapabilities by embedObject(9u, RemoteStoreInfo::atomicCapabilities, dataModel = { AtomicCapabilities }, required = false)
+
         override fun invoke(values: ObjectValues<RemoteStoreInfo, IsObjectDataModel<RemoteStoreInfo>>) = RemoteStoreInfo(
             definitions = values(definitions.index),
             modelIds = values(modelIds.index),
@@ -83,6 +91,7 @@ internal data class RemoteStoreInfo(
             keepUpdateHistoryIndex = values(keepUpdateHistoryIndex.index),
             supportsSnapshotVersion = values(supportsSnapshotVersion.index),
             supportsAtomicRequests = values(supportsAtomicRequests.index),
+            atomicCapabilities = values(atomicCapabilities.index),
         )
     }
 }

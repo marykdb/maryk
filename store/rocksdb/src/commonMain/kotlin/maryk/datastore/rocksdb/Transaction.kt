@@ -1,7 +1,7 @@
 package maryk.datastore.rocksdb
 
-import maryk.datastore.shared.rejectAtomic
-import maryk.datastore.shared.MAX_ATOMIC_BYTES
+import maryk.datastore.shared.MAX_ATOMIC_WORK_BYTES
+import maryk.datastore.shared.rejectAtomicLimit
 import maryk.datastore.shared.currentAtomicContext
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchesRangePart
@@ -23,7 +23,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
     private fun budget(bytes: Int) {
         if (!atomicOwner) return
         atomicWorkBytes += bytes
-        if (atomicWorkBytes > 4L * MAX_ATOMIC_BYTES) rejectAtomic("RocksDB atomic work exceeds 4 MiB")
+        if (atomicWorkBytes > MAX_ATOMIC_WORK_BYTES) rejectAtomicLimit("workBytes", MAX_ATOMIC_WORK_BYTES.toULong(), atomicWorkBytes.toULong())
     }
     private var nativeTransaction: RocksDBTransaction? = null
 

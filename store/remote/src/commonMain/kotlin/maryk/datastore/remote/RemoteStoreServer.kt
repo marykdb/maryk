@@ -73,6 +73,7 @@ import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
 import maryk.datastore.shared.executeAtomic
+import maryk.datastore.shared.atomicCapabilities
 import maryk.datastore.shared.supportsAtomicRequests
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsTransportableRequest
@@ -1041,6 +1042,7 @@ private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
         supportsSubReferenceFiltering = dataStore.supportsSubReferenceFiltering,
         supportsSnapshotVersion = dataStore.supportsSnapshotVersion,
         supportsAtomicRequests = dataStore.supportsAtomicRequests,
+        atomicCapabilities = dataStore.atomicCapabilities,
     )
 }
 

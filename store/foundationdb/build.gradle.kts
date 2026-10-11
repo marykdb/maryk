@@ -66,6 +66,12 @@ kotlin {
                 api(libs.maryk.foundationdb.multiplatform)
             }
         }
+        getByName("jvmMain") {
+            dependencies {
+                // The MPP exception is a Java typealias; its runtime dependency is needed to compile catch clauses.
+                compileOnly("org.foundationdb:fdb-java:${libs.versions.marykFoundationdb.get()}")
+            }
+        }
         getByName("commonTest") {
             dependencies {
                 implementation(kotlin("test"))

@@ -14,11 +14,14 @@ import maryk.core.query.changes.Check
 import maryk.core.query.changes.change
 import maryk.core.query.requests.change
 import maryk.core.query.requests.AddRequest
+import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.AddResponse
+import maryk.core.query.responses.AtomicFailure
+import maryk.core.query.responses.AtomicFailureCode
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.ChangeResponse
@@ -32,18 +35,29 @@ import maryk.datastore.shared.updates.Update
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
-/** Optional capability; existing datastore implementations need not change. */
+/** Atomic execution and its resource ceilings; unsupported stores report null capabilities. */
 interface AtomicDataStore {
     val supportsAtomicRequests: Boolean
+    val atomicCapabilities: AtomicCapabilities?
     suspend fun executeAtomic(request: AtomicRequest): AtomicResponse
 }
+
+/** Atomic implementations must report their limits when advertising support. */
+val IsDataStore.atomicCapabilities: AtomicCapabilities?
+    get() = if (!supportsAtomicRequests) null else
+        requireNotNull((this as AtomicDataStore).atomicCapabilities) { "Atomic support requires capability metadata" }
 
 val IsDataStore.supportsAtomicRequests: Boolean
     get() = (this as? AtomicDataStore)?.supportsAtomicRequests == true
 
-suspend fun IsDataStore.executeAtomic(request: AtomicRequest): AtomicResponse =
-    (this as? AtomicDataStore)?.takeIf { it.supportsAtomicRequests }?.executeAtomic(request)
-        ?: AtomicResponse(AtomicStatus.Unsupported, message = "This datastore does not support atomic requests")
+suspend fun IsDataStore.executeAtomic(request: AtomicRequest): AtomicResponse {
+    val store = (this as? AtomicDataStore)?.takeIf { it.supportsAtomicRequests }
+        ?: return AtomicResponse(AtomicStatus.Unsupported, message = "This datastore does not support atomic requests")
+    return try {
+        validateAtomicCounts(request, requireNotNull(atomicCapabilities))
+        store.executeAtomic(request)
+    } catch (abort: AtomicAbort) { abort.response }
+}
 
 /** Internal routing adapter. The anchor is not the atomic request's public model or its validation scope. */
 internal class AtomicStoreRequest(val atomic: AtomicRequest) : IsStoreRequest<IsRootDataModel, AtomicResponse> {
@@ -63,6 +77,21 @@ class AtomicAbort(val response: AtomicResponse) : RuntimeException(response.mess
 
 /** A deterministic pre-commit rejection, including storage-work limits. */
 fun rejectAtomic(message: String): Nothing = throw AtomicAbort(AtomicResponse(AtomicStatus.Rejected, message = message))
+
+/** Limits reject the complete change set before publication. */
+fun rejectAtomicLimit(limit: String, maximum: ULong, actual: ULong): Nothing = throw AtomicAbort(
+    AtomicResponse(AtomicStatus.Rejected, message = "Atomic $limit exceeds limit: $actual > $maximum",
+        failure = AtomicFailure(AtomicFailureCode.LimitExceeded, limit, maximum, actual)),
+)
+
+fun validateAtomicCounts(request: AtomicRequest, capabilities: AtomicCapabilities) {
+    if (request.requests.size.toUInt() > capabilities.maxMutations) {
+        rejectAtomicLimit("mutations", capabilities.maxMutations.toULong(), request.requests.size.toULong())
+    }
+    if (request.guards.size.toUInt() > capabilities.maxGuards) {
+        rejectAtomicLimit("guards", capabilities.maxGuards.toULong(), request.guards.size.toULong())
+    }
+}
 
 /** Retains structured validation failures, but never returns staged success statuses after rollback. */
 suspend fun applyAtomicMembers(
@@ -128,11 +157,11 @@ class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
         dataModels = models.values.associate { it.Meta.name to DataModelReference(it) }.toMutableMap(),
     ))
 
-    private fun <T : Any> encode(model: IsTypedObjectDataModel<T, *, RequestContext, RequestContext>, value: T): ByteArray {
+    private fun <T : Any> encode(model: IsTypedObjectDataModel<T, *, RequestContext, RequestContext>, value: T, limit: String): ByteArray {
         val cache = WriteCache()
         val context = context()
         val length = model.Serializer.calculateObjectProtoBufLength(value, cache, context)
-        if (length > MAX_ATOMIC_BYTES) rejectAtomic("Atomic payload exceeds $MAX_ATOMIC_BYTES bytes")
+        if (length > MAX_ATOMIC_BYTES) rejectAtomicLimit(limit, MAX_ATOMIC_BYTES.toULong(), length.toULong())
         val result = ByteArray(length)
         var offset = 0
         model.Serializer.writeObjectProtoBuf(value, cache, { result[offset++] = it }, context)
@@ -140,13 +169,14 @@ class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
     }
 
     suspend fun fingerprint(request: AtomicRequest): ByteArray =
-        CryptographyProvider.Default.get(SHA256).hasher().hash(encode(AtomicRequest, request))
+        CryptographyProvider.Default.get(SHA256).hasher().hash(encode(AtomicRequest, request, "requestBytes"))
 
-    fun receipt(fingerprint: ByteArray, response: AtomicResponse): ByteArray = fingerprint + encode(AtomicResponse, response)
+    fun receipt(fingerprint: ByteArray, response: AtomicResponse): ByteArray = fingerprint + encode(AtomicResponse, response, "responseBytes")
 
     fun replay(receipt: ByteArray, fingerprint: ByteArray): AtomicResponse {
         if (receipt.size < fingerprint.size || !receipt.copyOfRange(0, fingerprint.size).contentEquals(fingerprint)) {
-            return AtomicResponse(AtomicStatus.Rejected, message = "changeSetId was already committed with different contents")
+            return AtomicResponse(AtomicStatus.Rejected, message = "changeSetId was already committed with different contents",
+                failure = AtomicFailure(AtomicFailureCode.ChangeSetMismatch))
         }
         var offset = fingerprint.size
         return AtomicResponse.Serializer.readProtoBuf(receipt.size - offset, { receipt[offset++] }, context()).toDataObject()
@@ -154,3 +184,7 @@ class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
 }
 
 const val MAX_ATOMIC_BYTES = 1_048_576
+
+const val MAX_ATOMIC_WORK_BYTES = 4_194_304
+const val MAX_ATOMIC_STAGED_NODES = 100_000
+const val MAX_ATOMIC_SCAN_ROWS = 100_000

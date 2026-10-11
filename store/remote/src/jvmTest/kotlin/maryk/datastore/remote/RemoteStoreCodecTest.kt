@@ -1,5 +1,6 @@
 package maryk.datastore.remote
 
+import maryk.core.query.requests.AtomicCapabilities
 import kotlinx.coroutines.CancellationException
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.serializers.IsObjectDataModelSerializer
@@ -41,20 +42,36 @@ class RemoteStoreCodecTest {
     }
 
     @Test
-    fun atomicCapabilityIsAdditiveAndDefaultsOff() {
+    fun atomicSupportRequiresLimitMetadataAndDefaultsOff() {
         val info = RemoteStoreInfo(
             definitions = RemoteDataStore.collectDefinitions(listOf(SimpleMarykModel)),
             modelIds = listOf(RemoteStoreModelId(1u, SimpleMarykModel.Meta.name)),
             keepAllVersions = true, supportsFuzzyQualifierFiltering = false,
             supportsSubReferenceFiltering = false, supportsSnapshotVersion = true,
-            supportsAtomicRequests = true,
         )
         val encoded = RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info, DefinitionsConversionContext())
-        assertTrue(RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded, DefinitionsConversionContext()).supportsAtomicRequests)
-        assertContentEquals(byteArrayOf(0x40, 1), encoded.takeLast(2).toByteArray())
-        val legacy = RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded.dropLast(2).toByteArray(), DefinitionsConversionContext())
-        assertFalse(legacy.supportsAtomicRequests)
-        assertTrue(legacy.supportsSnapshotVersion)
+        val unsupported = RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded, DefinitionsConversionContext())
+        assertFalse(unsupported.supportsAtomicRequests)
+        assertNull(unsupported.atomicCapabilities)
+        assertTrue(unsupported.supportsSnapshotVersion)
+        // Advertising field 8 without field 9 is an invalid atomic capability report.
+        assertFailsWith<IllegalStateException> {
+            RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded + byteArrayOf(0x40, 1), DefinitionsConversionContext())
+        }
+    }
+
+    @Test
+    fun atomicLimitsRoundTrip() {
+        val limits = AtomicCapabilities(maxWorkBytes = 4_194_304u)
+        fun info(capabilities: AtomicCapabilities) = RemoteStoreInfo(
+            definitions = RemoteDataStore.collectDefinitions(listOf(SimpleMarykModel)),
+            modelIds = listOf(RemoteStoreModelId(1u, SimpleMarykModel.Meta.name)),
+            keepAllVersions = true, supportsFuzzyQualifierFiltering = false,
+            supportsSubReferenceFiltering = false, supportsAtomicRequests = true,
+            atomicCapabilities = capabilities,
+        )
+        val encoded = RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info(limits), DefinitionsConversionContext())
+        assertEquals(limits, RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded, DefinitionsConversionContext()).atomicCapabilities)
     }
 
     @Test

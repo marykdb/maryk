@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
+import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
@@ -144,6 +145,8 @@ abstract class AbstractDataStore(
     }
 
     override val supportsAtomicRequests: Boolean get() = false
+
+    override val atomicCapabilities: AtomicCapabilities? get() = null
 
     override suspend fun executeAtomic(request: AtomicRequest): AtomicResponse {
         if (!supportsAtomicRequests) return AtomicResponse(AtomicStatus.Unsupported)

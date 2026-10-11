@@ -10,6 +10,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withTimeoutOrNull
 
+enum class SqlAccessPath { GET, TABLE_SCAN, INDEX_SCAN, UNKNOWN_SCAN }
+
+data class SqlAccessSummary(val table: String, val path: SqlAccessPath, val index: String?, val requests: Int, val fetchedRows: Long)
+
 enum class SqlExecutionStatus { SUCCEEDED, CANCELLED, FAILED }
 
 data class SqlExecutionSummary(
@@ -23,6 +27,7 @@ data class SqlExecutionSummary(
     val snapshotVersion: ULong?,
     val errorCode: SqlErrorCode? = null,
     val errorMessage: String? = null,
+    val accesses: List<SqlAccessSummary> = emptyList(),
 )
 
 /** One cold, single-collector execution. Cancelling never closes the caller-owned data store. */
@@ -84,5 +89,6 @@ class SqlExecution internal constructor(
         snapshotVersion = budget.snapshotVersion,
         errorCode = (error as? SqlException)?.code,
         errorMessage = error?.message,
+        accesses = budget.accesses.values.toList(),
     )
 }

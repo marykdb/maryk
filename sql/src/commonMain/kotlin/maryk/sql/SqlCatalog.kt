@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.query.ValuesWithMetaData
@@ -27,6 +28,7 @@ import maryk.sql.syntax.SqlName
 class SqlTable(val name: String, val model: IsRootDataModel, val schema: String = "public", exposedColumns: Set<String>? = null) {
     internal val bindings: List<CatalogColumn>
     val columns: List<SqlColumn>
+    val collectionNames: Set<String>
 
     init {
         require(name.isNotEmpty() && schema.isNotEmpty()) { "Table and schema names cannot be empty" }
@@ -41,15 +43,23 @@ class SqlTable(val name: String, val model: IsRootDataModel, val schema: String 
         exposedColumns?.forEach { requested ->
             if (all.none { it.column.name == requested }) throw SqlException(SqlErrorCode.BINDING, "Unknown exposed column '$requested'")
         }
-        bindings = all.filter { it.isSystem || exposedColumns == null || it.column.name in exposedColumns }
+        bindings = all.filter { it.isSystem || exposedColumns == null || it.column.name in exposedColumns }.map {
+            it.copy(reference = if (it.isSystem) null else model.getPropertyReferenceByName(it.column.name))
+        }
         columns = bindings.map { it.column }
+        collectionNames = bindings.filter { collectionColumns(it.wrapper?.definition) != null }.mapTo(mutableSetOf()) { it.column.name }
     }
+    /** Columns produced by UNNEST for an exposed model collection, excluding optional ordinality. */
+    fun collectionColumns(name: String): List<SqlColumn>? = bindings.singleOrNull { it.column.name == name }
+        ?.let { collectionColumns(it.wrapper?.definition)?.map { binding -> binding.column } }
+
 }
 
 /** An immutable name mapping. This does not replace server-side authorization. */
 class SqlCatalog(tables: List<SqlTable>) {
     val tables = tables.toList()
     init {
+        if (tables.any { asciiLower(it.schema) == "information_schema" }) throw SqlException(SqlErrorCode.BINDING, "information_schema is reserved for catalog metadata")
         if (tables.groupBy { asciiLower(it.schema) to asciiLower(it.name) }.any { it.value.size > 1 }) {
             throw SqlException(SqlErrorCode.BINDING, "Ambiguous SQL table names")
         }
@@ -69,8 +79,10 @@ internal data class CatalogColumn(
     val keyModel: IsRootDataModel? = null,
     val identifier: SqlName? = null,
     val parameterOrigins: Set<Int> = emptySet(),
+    val reference: AnyPropertyReference? = null,
     val isKey: Boolean = false,
     val isVersion: Boolean = false,
+    val collectionElementColumns: List<CatalogColumn>? = null,
 ) {
     val isSystem: Boolean get() = isKey || isVersion
 
@@ -111,19 +123,20 @@ internal data class CatalogColumn(
             SqlType.FLOAT64 -> (value as? Number)?.let { SqlValue.Float64(it.toDouble()) } ?: SqlValue.of(value)
             SqlType.KEY -> SqlValue.Key(domain!!, value as Bytes)
             SqlType.ENUM -> (value as IndexedEnum).let { SqlValue.Enum(domain!!, it.index, it.name) }
-            SqlType.ANY -> throw SqlException(SqlErrorCode.UNSUPPORTED, "Column '${column.name}' is not scalar; select supported columns explicitly")
+            SqlType.ANY, SqlType.COLLECTION -> collectionValue(wrapper?.definition, value) ?: throw SqlException(SqlErrorCode.UNSUPPORTED, "Column '${column.name}' is not scalar; select supported columns explicitly")
             else -> SqlValue.of(value)
         }
     }
 }
 
-private fun collectColumns(
+internal fun collectColumns(
     model: IsValuesDataModel,
     parents: List<UInt>,
     prefix: String,
     parentNullable: Boolean,
     result: MutableList<CatalogColumn>,
     depth: Int,
+    ancestors: List<IsValuesDataModel> = emptyList(),
 ) {
     if (depth > 32) throw SqlException(SqlErrorCode.LIMIT, "Embedded model nesting exceeds 32 levels")
     for (wrapper in model) {
@@ -132,10 +145,22 @@ private fun collectColumns(
         val indices = parents + wrapper.index
         val nullable = parentNullable || !definition.required
         if (definition is IsEmbeddedValuesDefinition<*, *>) {
-            collectColumns(definition.dataModel, indices, "$name.", nullable, result, depth + 1)
+            if ((ancestors + listOf(model)).any { it === definition.dataModel }) {
+                result += CatalogColumn(SqlColumn(name, SqlType.ANY, nullable), indices, wrapper)
+            } else collectColumns(definition.dataModel, indices, "$name.", nullable, result, depth + 1, ancestors + listOf(model))
             continue
         }
-        val type = when (definition) {
+        val type = scalarSqlType(definition)
+        val domain = when (definition) {
+            is IsReferenceDefinition<*, *> -> definition.dataModel.Meta.name
+            is EnumDefinition<*> -> definition.enum.name
+            else -> null
+        }
+        result += CatalogColumn(SqlColumn(name, type, nullable), indices, wrapper, domain, keyModel = (definition as? IsReferenceDefinition<*, *>)?.dataModel)
+    }
+}
+
+internal fun scalarSqlType(definition: Any?): SqlType = when (definition) {
             is BooleanDefinition -> SqlType.BOOLEAN
             is StringDefinition -> SqlType.TEXT
             is DecimalDefinition -> SqlType.DECIMAL
@@ -152,11 +177,3 @@ private fun collectColumns(
             is FixedBytesDefinition, is FlexBytesDefinition -> SqlType.BINARY
             else -> SqlType.ANY
         }
-        val domain = when (definition) {
-            is IsReferenceDefinition<*, *> -> definition.dataModel.Meta.name
-            is EnumDefinition<*> -> definition.enum.name
-            else -> null
-        }
-        result += CatalogColumn(SqlColumn(name, type, nullable), indices, wrapper, domain, keyModel = (definition as? IsReferenceDefinition<*, *>)?.dataModel)
-    }
-}

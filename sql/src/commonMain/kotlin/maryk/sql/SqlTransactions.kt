@@ -13,6 +13,7 @@ import maryk.datastore.shared.AtomicDataStore
 import maryk.datastore.shared.ConditionalSnapshotVersionProvider
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.Transaction
+import maryk.datastore.shared.TransactionException
 import maryk.datastore.shared.TransactionResult
 import maryk.datastore.shared.TransactionSavepoint
 import maryk.datastore.shared.TransactionalDataStore
@@ -21,6 +22,7 @@ import maryk.datastore.shared.captureSnapshotVersion
 import maryk.datastore.shared.supportsSnapshotVersion
 import maryk.datastore.shared.transaction
 import maryk.sql.syntax.DEFAULT_MAX_SQL_TOKENS
+import maryk.sql.syntax.SqlMutation
 import maryk.sql.syntax.SqlLexer
 import maryk.sql.syntax.SqlParseException
 import maryk.sql.syntax.SqlTokenKind
@@ -43,11 +45,17 @@ internal class SqlTransactionStore(private val delegate: IsDataStore, private va
 /** Queries and RETURNING observe the staged view. Commit reports the durable versions. */
 class SqlTransaction internal constructor(val transaction: Transaction, private val sql: MarykSql) {
     private val lock = Mutex()
+    private suspend fun active() {
+        try { transaction.ensureActive() }
+        catch (error: TransactionException) { throw SqlException(SqlErrorCode.EXECUTION_STATE, error.message ?: "Transaction is unavailable", cause = error) }
+    }
+    fun prepareMutation(statement: String): PreparedSqlMutation = sql.prepareMutation(statement).inScope(lock, ::active)
+    fun prepare(statement: String): PreparedSqlQuery = sql.prepare(statement).inScope(lock, ::active)
     suspend fun query(statement: String, parameters: List<SqlValue> = emptyList(), readOptions: SqlReadOptions = SqlReadOptions()): SqlResult =
-        lock.withLock { sql.query(statement, parameters, readOptions) }
-    internal suspend fun prepare(statement: String, parameters: List<SqlValue>) =
-        SqlAtomicWriter(sql).prepare(transaction.id, listOf(SqlWriteStatement(statement, parameters)), transactional = true)
-    suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlAtomicWriteResult = lock.withLock { prepare(statement, parameters).execute() }
+        lock.withLock { active(); sql.query(statement, parameters, readOptions) }
+    internal suspend fun prepare(statement: String, parameters: List<SqlValue>, parsed: SqlMutation? = null) =
+        SqlAtomicWriter(sql).prepare(transaction.id, listOf(SqlWriteStatement(statement, parameters)), transactional = true, syntax = parsed?.let { listOf(it) })
+    suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlAtomicWriteResult = lock.withLock { active(); prepare(statement, parameters).execute() }
     suspend fun savepoint(): TransactionSavepoint = lock.withLock { transaction.savepoint() }
     suspend fun rollbackTo(savepoint: TransactionSavepoint) = lock.withLock { transaction.rollbackTo(savepoint) }
     suspend fun release(savepoint: TransactionSavepoint) = lock.withLock { transaction.release(savepoint) }
@@ -77,11 +85,11 @@ class SqlSession internal constructor(private val sql: MarykSql) {
     private val savepoints = linkedMapOf<String, TransactionSavepoint>()
     val activeTransaction: SqlTransaction? get() = current
 
-    suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlSessionResult = lock.withLock {
-        executeLocked(statement, parameters)
+    suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList(), readOptions: SqlReadOptions = SqlReadOptions()): SqlSessionResult = lock.withLock {
+        executeLocked(statement, parameters, readOptions)
     }
 
-    private suspend fun executeLocked(statement: String, parameters: List<SqlValue>): SqlSessionResult {
+    private suspend fun executeLocked(statement: String, parameters: List<SqlValue>, readOptions: SqlReadOptions): SqlSessionResult {
         val tokens = try { SqlLexer(statement, DEFAULT_MAX_SQL_TOKENS).tokenize().dropLast(1).toMutableList() }
         catch (error: SqlParseException) { throw error.toSqlException() }
         if (tokens.lastOrNull()?.text == ";") tokens.removeAt(tokens.lastIndex)
@@ -91,7 +99,7 @@ class SqlSession internal constructor(private val sql: MarykSql) {
         fun name(index: Int): String {
             val token = tokens.getOrNull(index) ?: syntax()
             if (token.kind != SqlTokenKind.IDENTIFIER && token.kind != SqlTokenKind.QUOTED_IDENTIFIER) syntax()
-            return if (token.kind == SqlTokenKind.QUOTED_IDENTIFIER) token.text else token.text.lowercase()
+            return if (token.kind == SqlTokenKind.QUOTED_IDENTIFIER) token.text else asciiLower(token.text)
         }
         val control = listOf("BEGIN", "START", "COMMIT", "ROLLBACK", "SAVEPOINT", "RELEASE").any(first::isKeyword)
         if (control && parameters.isNotEmpty()) throw SqlException(SqlErrorCode.PARAMETER, "Transaction commands do not accept parameters")
@@ -152,7 +160,14 @@ class SqlSession internal constructor(private val sql: MarykSql) {
             val active = current
             return SqlSessionResult.Mutation(if (active != null) active.execute(statement, parameters) else sql.execute(statement, parameters))
         }
-        return SqlSessionResult.Query(current?.query(statement, parameters) ?: sql.query(statement, parameters))
+        return SqlSessionResult.Query(current?.query(statement, parameters, readOptions) ?: sql.query(statement, parameters, readOptions))
+    }
+
+    suspend fun resolveCommit(): TransactionResponse = lock.withLock {
+        val tx = current ?: throw SqlException(SqlErrorCode.EXECUTION_STATE, "No transaction is active")
+        val result = tx.transaction.resolveCommit()
+        if (result.status != TransactionStatus.OutcomeUnknown) { current = null; savepoints.clear() }
+        result
     }
 
     suspend fun close() = lock.withLock {
@@ -163,3 +178,17 @@ class SqlSession internal constructor(private val sql: MarykSql) {
 }
 
 fun MarykSql.session(): SqlSession = SqlSession(this)
+
+
+/** Classification uses the same lexer as execution, including leading comments. */
+enum class SqlStatementKind { QUERY, MUTATION, CONTROL }
+
+fun sqlStatementKind(statement: String): SqlStatementKind {
+    val first = try { SqlLexer(statement, DEFAULT_MAX_SQL_TOKENS).tokenize().first() }
+    catch (error: SqlParseException) { throw error.toSqlException() }
+    return when {
+        listOf("BEGIN", "START", "COMMIT", "ROLLBACK", "SAVEPOINT", "RELEASE").any(first::isKeyword) -> SqlStatementKind.CONTROL
+        listOf("INSERT", "UPDATE", "DELETE", "UNDELETE").any(first::isKeyword) -> SqlStatementKind.MUTATION
+        else -> SqlStatementKind.QUERY
+    }
+}

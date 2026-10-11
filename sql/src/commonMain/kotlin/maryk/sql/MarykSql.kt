@@ -1,11 +1,14 @@
 package maryk.sql
 
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.asAtomicResponse
 import maryk.datastore.shared.currentTransaction
 import maryk.datastore.shared.transactionCapabilities
 import maryk.datastore.shared.supportsSnapshotVersion
+import maryk.sql.syntax.SqlMutation
 import maryk.sql.syntax.SqlParseException
 import maryk.sql.syntax.SqlParser
 import maryk.sql.syntax.SqlQuery
@@ -45,11 +48,20 @@ data class SqlResult(val columns: List<SqlColumn>, val rows: List<SqlRow>)
 data class SqlCapabilities(
     /** Historical SQL requires both retained versions and a store-authoritative watermark provider. */
     val historicalReads: Boolean,
-    val correlatedSubqueries: Boolean = false,
+    val correlatedSubqueries: Boolean = true,
     val maxPlanNodes: Int = 256,
     val maxRelationDepth: Int = 64,
     val currentReadsAreWeaklyConsistent: Boolean = true,
     val serializableTransactions: Boolean = false,
+    val windowFunctions: Boolean = true,
+    val collectionExpansion: Boolean = true,
+    val catalogMetadata: Boolean = true,
+    val embeddedScalarWrites: Boolean = true,
+    val transactionalUpsert: Boolean = false,
+    val scalarReturningExpressions: Boolean = true,
+    val complexCollectionExpansion: Boolean = true,
+    val boundedWindowFrames: Boolean = true,
+    val joinedMutations: Boolean = false,
 )
 
 class MarykSql private constructor(
@@ -59,7 +71,11 @@ class MarykSql private constructor(
 ) {
     val capabilities = SqlCapabilities(dataStore.keepAllVersions && dataStore.supportsSnapshotVersion,
         currentReadsAreWeaklyConsistent = dataStore !is SqlTransactionStore,
-        serializableTransactions = dataStore.transactionCapabilities != null)
+        serializableTransactions = dataStore.transactionCapabilities != null,
+        transactionalUpsert = dataStore.transactionCapabilities != null,
+        joinedMutations = dataStore.transactionCapabilities != null,
+        embeddedScalarWrites = supportsAtomicWrites || dataStore.transactionCapabilities != null,
+        scalarReturningExpressions = supportsAtomicWrites || dataStore.transactionCapabilities != null)
 
     /** Parse and bind without reading records. A prepared query can be executed repeatedly. */
     fun prepare(statement: String): PreparedSqlQuery {
@@ -93,14 +109,17 @@ class MarykSql private constructor(
     }
 
     /** Execute a bounded single-table INSERT, UPDATE, DELETE, UNDELETE, or DELETE HARD statement. */
-    suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlAtomicWriteResult {
+    suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlAtomicWriteResult = executePrepared(statement, parameters, null)
+
+    internal suspend fun executePrepared(statement: String, parameters: List<SqlValue>, parsed: SqlMutation?): SqlAtomicWriteResult {
+        val syntax = parsed?.let { listOf(it) }
         if (dataStore.transactionCapabilities == null) throw SqlException(SqlErrorCode.UNSUPPORTED, "This datastore does not support transactional SQL writes")
         val ambient = currentTransaction(dataStore)
         if (ambient != null) return SqlAtomicWriter(MarykSql.create(SqlTransactionStore(dataStore, ambient), catalog, options))
-            .prepare(ambient.id, listOf(SqlWriteStatement(statement, parameters)), transactional = true).execute()
-        if (dataStore is SqlTransactionStore) return SqlAtomicWriter(this).prepare("sql", listOf(SqlWriteStatement(statement, parameters)), transactional = true).execute()
+            .prepare(ambient.id, listOf(SqlWriteStatement(statement, parameters)), transactional = true, syntax = syntax).execute()
+        if (dataStore is SqlTransactionStore) return SqlAtomicWriter(this).prepare("sql", listOf(SqlWriteStatement(statement, parameters)), transactional = true, syntax = syntax).execute()
         val outcome = transaction { tx ->
-            val prepared = tx.prepare(statement, parameters)
+            val prepared = tx.prepare(statement, parameters, parsed)
             prepared.execute()
             prepared
         }
@@ -128,9 +147,12 @@ class MarykSql private constructor(
     }
 }
 
-class PreparedSqlQuery internal constructor(private val sql: MarykSql, internal val plan: BoundQuery) {
+class PreparedSqlQuery internal constructor(private val sql: MarykSql, internal val plan: BoundQuery, private val scope: Mutex? = null, private val validateScope: (suspend () -> Unit)? = null) {
+    internal fun inScope(lock: Mutex, validate: suspend () -> Unit) = PreparedSqlQuery(sql, plan, lock, validate)
     val columns: List<SqlColumn> = if (plan.query.explain) listOf(SqlColumn("plan", SqlType.TEXT, false)) else plan.columns
     val parameters: List<SqlParameter> = List(plan.query.parameterCount) { SqlParameter(it, plan.bindingState.parameterTypes[it] ?: SqlType.ANY) }
+
+    fun explainPlan(): SqlQueryPlan = describeSqlPlan(plan, sql.capabilities.currentReadsAreWeaklyConsistent)
 
     fun explain(): String = buildString {
         val seen = mutableSetOf<BoundQuery>()
@@ -148,14 +170,16 @@ class PreparedSqlQuery internal constructor(private val sql: MarykSql, internal 
                         append(prefix).append(if (access.keyExpressions != null) "Get" else "Scan").append(" ${table.schema}.${table.name} AS ${source.qualifier.text}")
                         if (access.filters.isNotEmpty()) append("; exact scalar pushdown when values round-trip; store chooses indexed/key path")
                         append("; table scans ${if (sql.options.allowTableScan) "allowed" else "disabled"}; projected inputs=${query.inputs.filter { it.sourceId == source.id }.joinToString { it.column.name }}\n")
-                    } else append(prefix).append("Bounded materialized relation AS ${source.qualifier.text}\n")
+                    } else if (source.unnest != null) append(prefix).append("Bounded lateral UNNEST AS ${source.qualifier.text}\n")
+                    else append(prefix).append("Bounded materialized relation AS ${source.qualifier.text}\n")
                 }
             }
             query.joins.forEach { append(prefix).append("Local ${it.type} JOIN; bounded hash equijoin when fitting, otherwise nested loop; full ON residual\n") }
             if (query.query.where != null) append(prefix).append("SQL filter (three-valued logic)\n")
-            if (query.aggregate) append(prefix).append("Local aggregate; group keys=${query.query.groupBy.size}\n")
+            if (query.aggregate) append(prefix).append("Local aggregate; simple projections use incremental state; group keys=${query.query.groupBy.size}\n")
             if (query.query.distinct) append(prefix).append("Local DISTINCT\n")
-            if (query.query.orderBy.isNotEmpty()) append(prefix).append("Local sort; keys=${query.query.orderBy.size}\n")
+            if (nativeSqlOrder(query) != null) append(prefix).append("Native compatible key/index order\n")
+            else if (query.query.orderBy.isNotEmpty()) append(prefix).append("Local sort; finite LIMIT/OFFSET without DISTINCT uses bounded top-N; keys=${query.query.orderBy.size}\n")
             query.children.forEach { describe(it, depth + 1) }
         }
         describe(plan, 0)
@@ -185,6 +209,8 @@ class PreparedSqlQuery internal constructor(private val sql: MarykSql, internal 
 
     private fun execution(boundParameters: List<SqlValue>, options: SqlReadOptions): SqlExecution {
         return SqlExecution(columns, sql.options) { budget, emit ->
+            suspend fun perform() {
+            validateScope?.invoke()
             if (plan.query.explain && !plan.query.analyze) {
                 budget.returned()
                 emit(SqlRow(columns, listOf(SqlValue.Text(explain()))))
@@ -192,8 +218,10 @@ class PreparedSqlQuery internal constructor(private val sql: MarykSql, internal 
                 SqlRuntime(sql, boundParameters, options, budget).execute(plan) { values ->
                     if (!plan.query.explain) emit(SqlRow(columns, values))
                 }
-                if (plan.query.explain) emit(SqlRow(columns, listOf(SqlValue.Text(explain() + "\nActual: requests=${budget.requests}, fetched=${budget.fetched}, rows=${budget.returned}"))))
+                if (plan.query.explain) emit(SqlRow(columns, listOf(SqlValue.Text(explain() + "\nActual: requests=${budget.requests}, fetched=${budget.fetched}, rows=${budget.returned}; accesses=${budget.accesses.values}"))))
             }
+            }
+            if (scope == null) perform() else scope.withLock { perform() }
         }
     }
 }

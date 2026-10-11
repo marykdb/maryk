@@ -27,10 +27,11 @@ internal class SqlParser(
         }
         val table = mutableListOf(parseName("table name"))
         if (matchSymbol(".")) table += parseName("table name")
+        val alias = if (kind == SqlMutationKind.INSERT) null else parseOptionalAlias("mutation alias")
         val mutation = when (kind) {
             SqlMutationKind.INSERT -> {
                 expectSymbol("(")
-                val columns = parseCommaSeparated("column") { parseName("column") }
+                val columns = parseCommaSeparated("column") { parseMutationColumn() }
                 expectSymbol(")")
                 if (matchKeyword("VALUES")) {
                     SqlMutation(kind, table, columns = columns, rows = parseValues().values!!, parameterCount = parameterCount)
@@ -42,27 +43,47 @@ internal class SqlParser(
             SqlMutationKind.UPDATE -> {
                 expectKeyword("SET")
                 val assignments = parseCommaSeparated("assignment") {
-                    val column = parseName("column")
+                    val column = parseMutationColumn()
                     expectSymbol("=")
                     column to parseExpression().expression
                 }
+                val joinedSource = if (matchKeyword("FROM")) parseTableSource() else null
                 expectKeyword("WHERE")
                 val where = parseExpression().expression
-                SqlMutation(kind, table, assignments = assignments, where = where, parameterCount = parameterCount)
+                SqlMutation(kind, table, assignments = assignments, where = where, parameterCount = parameterCount, joinedSource = joinedSource)
             }
             else -> {
+                val joinedSource = if (matchKeyword("USING")) {
+                    if (kind != SqlMutationKind.DELETE && kind != SqlMutationKind.HARD_DELETE) fail("USING requires DELETE", previous.position)
+                    parseTableSource()
+                } else null
                 expectKeyword("WHERE")
                 val where = parseExpression().expression
-                SqlMutation(kind, table, where = where, parameterCount = parameterCount)
+                SqlMutation(kind, table, where = where, parameterCount = parameterCount, joinedSource = joinedSource)
             }
         }
+        val conflict = if (matchKeyword("ON")) {
+            if (kind != SqlMutationKind.INSERT) fail("ON CONFLICT requires INSERT", previous.position)
+            expectKeyword("CONFLICT")
+            expectSymbol("(")
+            val columns = parseCommaSeparated("conflict column") { parseMutationColumn() }
+            expectSymbol(")")
+            expectKeyword("DO")
+            if (matchKeyword("NOTHING")) SqlConflict(columns) else {
+                expectKeyword("UPDATE"); expectKeyword("SET")
+                SqlConflict(columns, parseCommaSeparated("assignment") {
+                    val column = parseMutationColumn(); expectSymbol("=")
+                    column to parseExpression().expression
+                })
+            }
+        } else null
         val returning = if (matchKeyword("RETURNING")) parseCommaSeparated("returning column") {
             SqlSelect(parseExpression().expression, parseOptionalAlias("returning alias"))
         } else emptyList()
         matchSymbol(";")
         if (current.kind != SqlTokenKind.EOF) fail("Unexpected token '${current.text}'", current.position)
-        return mutation.copy(parameterCount = parameterCount,
-            sourceQuery = mutation.sourceQuery?.copy(parameterCount = parameterCount), returning = returning)
+        return mutation.copy(parameterCount = parameterCount, alias = alias,
+            sourceQuery = mutation.sourceQuery?.copy(parameterCount = parameterCount), returning = returning, conflict = conflict)
     }
 
     fun parse(): SqlQuery {
@@ -176,6 +197,10 @@ internal class SqlParser(
             emptyList()
         }
         val having = if (matchKeyword("HAVING")) parseExpression().expression else null
+        val windows = if (matchKeyword("WINDOW")) parseCommaSeparated("window definition") {
+            val name = parseName("window name"); expectKeyword("AS")
+            name to parseWindowSpec()
+        } else emptyList()
 
         return SqlQuery(
             select = select,
@@ -183,6 +208,7 @@ internal class SqlParser(
             where = where,
             groupBy = groupBy,
             having = having,
+            windows = windows,
             orderBy = emptyList(),
             limit = null,
             offset = null,
@@ -284,6 +310,13 @@ internal class SqlParser(
     }
 
     private fun parseSingleTableSource(): SqlTableSource {
+        if (matchKeyword("UNNEST")) {
+            expectSymbol("(")
+            val expression = nested(previous.position) { val value = parseExpression().expression; expectSymbol(")"); value }
+            val ordinal = if (matchKeyword("WITH")) { expectKeyword("ORDINALITY"); true } else false
+            val alias = parseOptionalAlias("collection alias") ?: SqlName("unnest")
+            return SqlTableSource(emptyList(), alias, unnest = expression, withOrdinality = ordinal)
+        }
         if (matchSymbol("(")) {
             val derived = nested(previous.position) {
                 val query = parseQueryExpression()
@@ -579,7 +612,44 @@ internal class SqlParser(
             null
         }
         val depth = maxOf(arguments.maxOfOrNull { it.depth } ?: 0, filter?.depth ?: 0) + 1
-        node(SqlExpr.Call(name, arguments.map { it.expression }, distinct, filter?.expression, position), depth)
+        val call = SqlExpr.Call(name, arguments.map { it.expression }, distinct, filter?.expression, position)
+        if (!matchKeyword("OVER")) node(call, depth) else {
+            if (current.text != "(") {
+                node(SqlExpr.Window(call, emptyList(), emptyList(), position = position, windowName = parseName("window name")), depth + 1)
+            } else {
+                val spec = parseWindowSpec()
+                node(SqlExpr.Window(call, spec.partitionBy, spec.orderBy, spec.frame, position), depth + 1)
+            }
+        }
+    }
+
+    private fun parseWindowSpec(): SqlWindowSpec {
+        expectSymbol("(")
+        val partition = if (matchKeyword("PARTITION")) { expectKeyword("BY"); parseCommaSeparated("partition expression") { parseExpression().expression } } else emptyList()
+        val order = if (matchKeyword("ORDER")) { expectKeyword("BY"); parseCommaSeparated("window order") { parseOrder() } } else emptyList()
+        val unit = when { matchKeyword("ROWS") -> SqlFrameUnit.ROWS; matchKeyword("RANGE") -> SqlFrameUnit.RANGE; else -> null }
+        val frame = if (unit == null) SqlWindowFrame.DEFAULT else {
+            val between = matchKeyword("BETWEEN")
+            val start = parseWindowBound()
+            val end = if (between) { expectKeyword("AND"); parseWindowBound() } else SqlWindowBound(SqlBoundKind.CURRENT)
+            if (start.kind == SqlBoundKind.UNBOUNDED_FOLLOWING || end.kind == SqlBoundKind.UNBOUNDED_PRECEDING ||
+                start.kind.ordinal > end.kind.ordinal) fail("Invalid window frame boundary order", previous.position)
+            SqlWindowFrame(unit, start, end)
+        }
+        expectSymbol(")")
+        return SqlWindowSpec(partition, order, frame)
+    }
+
+    private fun parseWindowBound(): SqlWindowBound {
+        if (matchKeyword("UNBOUNDED")) return when {
+            matchKeyword("PRECEDING") -> SqlWindowBound(SqlBoundKind.UNBOUNDED_PRECEDING)
+            matchKeyword("FOLLOWING") -> SqlWindowBound(SqlBoundKind.UNBOUNDED_FOLLOWING)
+            else -> fail("Expected PRECEDING or FOLLOWING", current.position)
+        }
+        if (matchKeyword("CURRENT")) { expectKeyword("ROW"); return SqlWindowBound(SqlBoundKind.CURRENT) }
+        val offset = parseAdditive().expression
+        val kind = when { matchKeyword("PRECEDING") -> SqlBoundKind.PRECEDING; matchKeyword("FOLLOWING") -> SqlBoundKind.FOLLOWING; else -> fail("Expected PRECEDING or FOLLOWING", current.position) }
+        return SqlWindowBound(kind, offset)
     }
 
     private fun parseCast(): ExpressionNode {
@@ -645,6 +715,15 @@ internal class SqlParser(
         val token = expect(SqlTokenKind.NUMBER, description)
         if (token.text.any { !it.isDigit() }) fail("Expected integer $description", token.position)
         return token.text.toIntOrNull() ?: fail("$description is too large", token.position)
+    }
+
+    private fun parseMutationColumn(): SqlName {
+        val first = parseName("column")
+        val parts = mutableListOf(first)
+        while (matchSymbol(".")) parts += parseName("embedded column")
+        if (parts.size == 1) return first
+        if (parts.any { it.quoted }) fail("Quote the complete embedded path when preserving case", previous.position)
+        return SqlName(parts.joinToString(".") { it.text })
     }
 
     private fun parseName(description: String): SqlName = expectNameToken(description).toName()
@@ -768,8 +847,8 @@ internal class SqlParser(
             "DESC", "DISTINCT", "ELSE", "END", "ESCAPE", "EXCEPT", "EXPLAIN", "FALSE", "FETCH",
             "FILTER", "FIRST", "FROM", "FULL", "GROUP", "HAVING", "IN", "INNER", "INTERSECT", "IS",
             "JOIN", "LAST", "LEFT", "LIKE", "LIMIT", "NEXT", "NOT", "NULL", "NULLS", "OFFSET", "ON", "ONLY",
-            "OR", "ORDER", "OUTER", "OVER", "RETURNING", "RIGHT", "ROW", "ROWS", "SELECT", "THEN", "TIME",
-            "TIMESTAMP", "TRUE", "UNION", "UNKNOWN", "USING", "VALUES", "WHEN", "WHERE", "WITH",
+            "OR", "ORDER", "OUTER", "OVER", "RETURNING", "RIGHT", "ROW", "ROWS", "SELECT", "SET", "THEN", "TIME",
+            "TIMESTAMP", "TRUE", "UNION", "UNKNOWN", "USING", "VALUES", "WHEN", "WHERE", "WINDOW", "RANGE", "WITH",
         )
     }
 }

@@ -68,6 +68,7 @@ internal fun sqlCompare(left: SqlValue, right: SqlValue): Int? {
 
 /** Hashing for grouping, DISTINCT and joins must agree with SQL numeric equality. */
 internal fun sqlKey(value: SqlValue): Any = when (value) {
+    is SqlValue.Collection -> throw SqlException(SqlErrorCode.UNSUPPORTED, "Collections must be expanded before grouping or duplicate elimination")
     is SqlValue.Int64, is SqlValue.UInt64, is SqlValue.Exact -> SqlNumericKey(canonicalDecimal(value.decimal()))
     is SqlValue.Float64 -> if (value.value == 0.0) SqlValue.Float64(0.0) else value
     is SqlValue.Enum -> value.domain to value.index
@@ -128,6 +129,7 @@ internal fun SqlValue.display(): String = when (this) {
     is SqlValue.Timestamp -> value.toString()
     is SqlValue.Key -> value.toString()
     is SqlValue.Enum -> name
+    is SqlValue.Collection -> toString()
 }
 
 internal fun asciiLower(text: String): String = buildString(text.length) {

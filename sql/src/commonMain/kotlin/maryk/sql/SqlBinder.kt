@@ -3,6 +3,8 @@ package maryk.sql
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import maryk.sql.syntax.mapWindows
+import maryk.sql.syntax.SqlFrameUnit
 import maryk.sql.syntax.LiteralKind
 import maryk.sql.syntax.SqlExpr
 import maryk.sql.syntax.SqlName
@@ -14,7 +16,7 @@ import maryk.sql.syntax.SqlTableSource
 
 internal data class ExpressionInfo(val type: SqlType, val nullable: Boolean = true, val domain: CatalogColumn? = null)
 
-internal class BoundSource(val id: Int, val qualifier: SqlName, val table: SqlTable?, val relation: BoundQuery?, val columns: List<CatalogColumn>, val schemaQualified: Boolean = false)
+internal class BoundSource(val id: Int, val qualifier: SqlName, val table: SqlTable?, val relation: BoundQuery?, val columns: List<CatalogColumn>, val schemaQualified: Boolean = false, val unnest: SqlExpr? = null, val withOrdinality: Boolean = false)
 internal class BoundJoin(val source: BoundSource, val type: SqlJoinType, val condition: SqlExpr?)
 internal class BindingState {
     var nodes = 0
@@ -57,7 +59,7 @@ internal class SqlBinder(
     private val state: BindingState = BindingState(),
     private val inheritedCtes: Map<String, BoundQuery> = emptyMap(),
     private val forbiddenCtes: Set<String> = emptySet(),
-    private val outerSources: List<BoundSource> = emptyList(),
+    private val outerScopes: List<List<BoundSource>> = emptyList(),
 ) {
     private var table: SqlTable? = null
     private val sources = mutableListOf<BoundSource>()
@@ -70,13 +72,25 @@ internal class SqlBinder(
     private val types = mutableMapOf<SqlExpr, ExpressionInfo>()
     private val parameterTypes get() = state.parameterTypes
 
-    fun bind(parsed: SqlQuery): BoundQuery {
+    fun bind(input: SqlQuery): BoundQuery {
         state.node()
+        val definitions = input.windows.associate { it.first.normalized to it.second }
+        if (definitions.size != input.windows.size) fail("Duplicate window name")
+        fun resolve(expression: SqlExpr): SqlExpr = expression.mapWindows { window ->
+            val name = window.windowName
+            if (name == null) window else {
+                val spec = definitions[name.normalized] ?: fail("Unknown window '${name.text}'", window)
+                window.copy(partitionBy = spec.partitionBy, orderBy = spec.orderBy, frame = spec.frame, windowName = null)
+            }
+        }
+        val parsed = input.copy(select = input.select.map { it.copy(expression = resolve(it.expression)) },
+            orderBy = input.orderBy.map { it.copy(expression = resolve(it.expression)) },
+            where = input.where?.let(::resolve), having = input.having?.let(::resolve), groupBy = input.groupBy.map(::resolve))
         val localNames = parsed.ctes.map { it.name.normalized }
         if (localNames.toSet().size != localNames.size) fail("Duplicate CTE name")
         localNames.forEach { ctes.remove(it) }
         parsed.ctes.forEachIndexed { index, cte ->
-            var relation = SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes + localNames.drop(index), outerSources).bind(cte.query)
+            var relation = SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes + localNames.drop(index), outerScopes).bind(cte.query)
             if (cte.columns.isNotEmpty()) {
                 if (cte.columns.size != relation.columns.size) fail("CTE column list does not match query width")
                 relation = renamed(relation, cte.columns)
@@ -96,6 +110,7 @@ internal class SqlBinder(
             }
             table = sources.singleOrNull()?.table
         }
+        for (spec in definitions.values) bindExpr(SqlExpr.Window(SqlExpr.Call(SqlName("count"), listOf(SqlExpr.Star(null, 0)), false, null, 0), spec.partitionBy, spec.orderBy, spec.frame, 0), true)
         val selections = parsed.select.flatMap { selection ->
             val expression = selection.expression
             if (expression !is SqlExpr.Star) listOf(selection) else {
@@ -139,6 +154,8 @@ internal class SqlBinder(
         }
         val aggregate = groupBy.isNotEmpty() || selections.any { containsAggregate(it.expression) } ||
             query.having != null || orderBy.any { containsAggregate(it.expression) }
+        if (aggregate && (selections.any { containsWindow(it.expression) } || orderBy.any { containsWindow(it.expression) })) unsupported("Use a derived aggregate relation before applying window functions", selections.first().expression)
+        if (query.having?.let(::containsWindow) == true) fail("Window functions are unavailable in HAVING", query.having)
         if (aggregate) {
             val keys = groupBy.map(::boundKey).toSet()
             selections.forEach { checkGrouped(it.expression, keys) }
@@ -183,8 +200,29 @@ internal class SqlBinder(
         state.node()
         val qualifier = source.alias ?: source.name.lastOrNull() ?: fail("Derived table requires alias")
         if (sources.any { it.qualifier.normalized == qualifier.normalized }) fail("Duplicate source alias '${qualifier.text}'")
+        if (source.unnest != null) {
+            val expression = source.unnest
+            val prototype = when (expression) {
+                is SqlExpr.Column -> {
+                    val column = resolveColumn(expression)
+                    val columns = collectionColumns(column.wrapper?.definition) ?: column.collectionElementColumns
+                        ?: if (column.column.type == SqlType.ANY && sources.any { it.id == column.sourceId && it.unnest != null }) listOf(CatalogColumn(SqlColumn("value", SqlType.ANY), emptyList(), null), CatalogColumn(SqlColumn("entry_key", SqlType.ANY), emptyList(), null)) else null
+                    if (columns == null) unsupported("UNNEST requires a supported list, set or map", expression)
+                    references[expression] = column
+                    types[expression] = ExpressionInfo(SqlType.COLLECTION, column.column.nullable)
+                    columns
+                }
+                is SqlExpr.Parameter -> { bindExpr(expression, false, SqlType.COLLECTION); listOf(CatalogColumn(SqlColumn("value", SqlType.ANY), emptyList(), null), CatalogColumn(SqlColumn("entry_key", SqlType.ANY), emptyList(), null)) }
+                else -> unsupported("UNNEST accepts a model collection column or collection parameter", expression)
+            }
+            val id = state.sourceId++
+            val columns = (prototype + if (source.withOrdinality) listOf(CatalogColumn(SqlColumn("ordinality", SqlType.INT64, false), emptyList(), null)) else emptyList()).mapIndexed { index, column -> column.copy(sourceId = id, outputIndex = index, column = column.column.copy(nullable = nullable || column.column.nullable)) }
+            return BoundSource(id, qualifier, null, null, columns, unnest = expression, withOrdinality = source.withOrdinality)
+        }
+        val metadata = catalog.metadata(source)
         val relation = when {
-            source.derived != null -> SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, sources + outerSources).bind(source.derived)
+            metadata != null -> SqlBinder(catalog, options, state).bind(metadata)
+            source.derived != null -> SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, listOf(sources.toList()) + outerScopes).bind(source.derived)
             source.name.size == 1 && source.name.single().normalized in forbiddenCtes && source.name.single().normalized !in ctes -> fail("Forward or recursive CTE reference is not supported")
             source.name.size == 1 -> ctes[source.name.single().normalized]
             else -> null
@@ -196,17 +234,20 @@ internal class SqlBinder(
             catalog.tables.singleOrNull { matches(name, it.name) && if (schema != null) matches(schema, it.schema) else asciiLower(it.schema) == asciiLower(options.defaultSchema) }
                 ?: fail("Unknown table '${source.name.joinToString(".") { it.text }}'")
         }
-        if (relation != null) uniqueOutputs(relation)
+        if (relation != null) {
+            if (source.derived != null && relation.externalColumns().isNotEmpty()) fail("Correlated derived tables require a supported lateral source")
+            uniqueOutputs(relation)
+        }
         val id = state.sourceId++
         val columns = (relation?.outputBindings ?: table!!.bindings).map { it.copy(sourceId = id, column = it.column.copy(nullable = nullable || it.column.nullable)) }
         return BoundSource(id, qualifier, table, relation, columns, source.alias == null)
     }
 
     private fun bindCompound(parsed: SqlQuery): BoundQuery {
-        val body = parsed.body?.let { SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, outerSources).bind(it) }
+        val body = parsed.body?.let { SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, outerScopes).bind(it) }
         val operands = parsed.setOperation?.let {
-            SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, outerSources).bind(it.left) to
-                SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, outerSources).bind(it.right)
+            SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, outerScopes).bind(it.left) to
+                SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, outerScopes).bind(it.right)
         }
         val domains: List<CatalogColumn?>
         val columns: List<SqlColumn>
@@ -301,7 +342,7 @@ internal class SqlBinder(
             is SqlExpr.Star -> fail("Wildcard is only valid as SELECT * or COUNT(*)", expression)
             is SqlExpr.Subquery, is SqlExpr.Exists, is SqlExpr.InQuery -> {
                 val query = when (expression) { is SqlExpr.Subquery -> expression.query; is SqlExpr.Exists -> expression.query; is SqlExpr.InQuery -> expression.query }
-                val bound = subqueries.getOrPut(expression) { SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, sources + outerSources).bind(query) }
+                val bound = subqueries.getOrPut(expression) { SqlBinder(catalog, options, state, ctes.toMap(), forbiddenCtes, listOf(sources.toList()) + outerScopes).bind(query) }
                 if (expression !is SqlExpr.Exists && bound.columns.size != 1) fail("Scalar and IN subqueries require exactly one output column", expression)
                 when (expression) {
                     is SqlExpr.Exists -> ExpressionInfo(SqlType.BOOLEAN, false)
@@ -322,6 +363,54 @@ internal class SqlBinder(
                         ExpressionInfo(SqlType.BOOLEAN)
                     }
                     else -> ExpressionInfo(bound.columns.single().type, true, bound.outputBindings.single().takeIf { it.domain != null })
+                }
+            }
+            is SqlExpr.Window -> {
+                if (!allowAggregate) fail("Window functions are valid only in SELECT and ORDER BY", expression)
+                if (children(expression).any(::containsWindow)) fail("Window functions cannot be nested", expression)
+                expression.partitionBy.forEach { bindExpr(it, false) }
+                expression.orderBy.forEach { bindExpr(it.expression, false) }
+                val offsets = listOfNotNull(expression.frame.start.offset, expression.frame.end.offset)
+                for (offset in offsets) {
+                    if (containsColumn(offset) || containsSubquery(offset) || containsAggregate(offset) || containsWindow(offset)) fail("Window frame offset must be constant", offset)
+                    bindExpr(offset, false, SqlType.DECIMAL)
+                }
+                if (expression.frame.unit == SqlFrameUnit.RANGE && offsets.isNotEmpty()) {
+                    if (expression.orderBy.size != 1 || !types.getValue(expression.orderBy.single().expression).type.isNumeric) fail("Offset RANGE frames require one numeric ORDER BY expression", expression)
+                }
+                val call = expression.call
+                when (call.name.normalized) {
+                    "row_number", "rank", "dense_rank" -> {
+                        if (call.arguments.isNotEmpty() || call.distinct || call.filter != null) fail("Ranking functions take no arguments, DISTINCT or FILTER", expression)
+                        ExpressionInfo(SqlType.INT64, false)
+                    }
+                    "ntile" -> {
+                        if (call.arguments.size != 1 || call.distinct || call.filter != null) fail("NTILE takes one constant bucket count", expression)
+                        val argument = call.arguments.single()
+                        if (containsColumn(argument) || containsSubquery(argument)) fail("NTILE bucket count must be constant", argument)
+                        bindExpr(argument, false, SqlType.DECIMAL)
+                        ExpressionInfo(SqlType.INT64, false)
+                    }
+                    "first_value", "last_value", "nth_value" -> {
+                        if (call.arguments.size != (if (call.name.normalized == "nth_value") 2 else 1) || call.distinct || call.filter != null) fail("Invalid value window arguments", expression)
+                        val input = bindExpr(call.arguments.first(), false)
+                        call.arguments.getOrNull(1)?.let { if (containsColumn(it) || containsSubquery(it)) fail("NTH_VALUE index must be constant", it); bindExpr(it, false, SqlType.DECIMAL) }
+                        input.copy(nullable = true)
+                    }
+                    "lag", "lead" -> {
+                        if (call.arguments.size !in 1..3 || call.distinct || call.filter != null) fail("LAG/LEAD take one to three scalar arguments", expression)
+                        val input = bindExpr(call.arguments[0], false)
+                        call.arguments.getOrNull(1)?.let { if (containsColumn(it) || containsSubquery(it)) fail("Window offset must be constant", it); bindExpr(it, false, SqlType.DECIMAL) }
+                        val fallback = call.arguments.getOrNull(2)?.let {
+                            input.domain?.let { domain -> bindDomainOperand(it, domain) }
+                            bindExpr(it, false)
+                        }
+                        val output = fallback?.let { commonType(input.type, it.type, expression) } ?: input.type
+                        constrainUnknown(call.arguments[0], output)
+                        call.arguments.getOrNull(2)?.let { constrainUnknown(it, output) }
+                        ExpressionInfo(output, input.nullable || fallback?.nullable != false, input.domain ?: fallback?.domain)
+                    }
+                    else -> if (call.name.normalized in aggregateNames) bindCall(call, true) else unsupported("Unknown window function '${call.name.text}'", expression)
                 }
             }
             is SqlExpr.Unary -> {
@@ -593,12 +682,24 @@ internal class SqlBinder(
         val matches = candidates(sources)
         if (matches.size > 1) fail("Ambiguous column '${expression.path.joinToString(".") { it.text }}'", expression)
         if (matches.isNotEmpty()) return matches.single()
-        if (candidates(outerSources).isNotEmpty()) unsupported("Correlated subqueries and lateral derived tables are not supported", expression)
+        fun shadows(available: List<BoundSource>): Boolean = expression.path.size > 1 && available.any { source ->
+            expression.path.first().normalized == source.qualifier.normalized || source.schemaQualified && source.table?.let { table ->
+                expression.path.size > 2 && matches(expression.path[0], table.schema) && matches(expression.path[1], table.name)
+            } == true
+        }
+        if (shadows(sources)) fail("Unknown column in local source", expression)
+        for (scope in outerScopes) {
+            val outer = candidates(scope)
+            if (outer.size > 1) fail("Ambiguous outer column", expression)
+            if (outer.isNotEmpty()) return outer.single()
+            if (shadows(scope)) fail("Unknown column in nearest outer source", expression)
+        }
         fail("Unknown column '${expression.path.joinToString(".") { it.text }}'", expression)
     }
 
     private fun checkGrouped(expression: SqlExpr, keys: Set<String>) {
         if (boundKey(expression) in keys || expression is SqlExpr.Call && expression.name.normalized in aggregateNames) return
+        if (expression is SqlExpr.Column && references[expression]?.sourceId !in sources.map { it.id }) return
         if (expression is SqlExpr.Column) fail("Column must appear in GROUP BY or an aggregate", expression)
         children(expression).forEach { checkGrouped(it, keys) }
     }
@@ -665,6 +766,7 @@ internal fun children(expression: SqlExpr): List<SqlExpr> = when (expression) {
     is SqlExpr.In -> listOf(expression.operand) + expression.values
     is SqlExpr.Between -> listOf(expression.operand, expression.lower, expression.upper)
     is SqlExpr.Like -> listOfNotNull(expression.operand, expression.pattern, expression.escape)
+    is SqlExpr.Window -> expression.call.arguments + listOfNotNull(expression.call.filter) + expression.partitionBy + expression.orderBy.map { it.expression } + listOfNotNull(expression.frame.start.offset, expression.frame.end.offset)
     is SqlExpr.Call -> expression.arguments + listOfNotNull(expression.filter)
     is SqlExpr.Cast -> listOf(expression.operand)
     is SqlExpr.Case -> listOfNotNull(expression.operand, expression.otherwise) + expression.branches.flatMap { listOf(it.first, it.second) }
@@ -672,7 +774,8 @@ internal fun children(expression: SqlExpr): List<SqlExpr> = when (expression) {
     else -> emptyList()
 }
 
-internal fun containsAggregate(expression: SqlExpr): Boolean = expression is SqlExpr.Call && expression.name.normalized in aggregateNames || children(expression).any(::containsAggregate)
+internal fun containsAggregate(expression: SqlExpr): Boolean = if (expression is SqlExpr.Window) false else expression is SqlExpr.Call && expression.name.normalized in aggregateNames || children(expression).any(::containsAggregate)
+internal fun containsWindow(expression: SqlExpr): Boolean = expression is SqlExpr.Window || children(expression).any(::containsWindow)
 internal fun containsColumn(expression: SqlExpr): Boolean = expression is SqlExpr.Column || children(expression).any(::containsColumn)
 internal fun containsSubquery(expression: SqlExpr): Boolean = expression is SqlExpr.Subquery || expression is SqlExpr.Exists || expression is SqlExpr.InQuery || children(expression).any(::containsSubquery)
 
@@ -692,10 +795,26 @@ private fun expressionHead(expression: SqlExpr): String = when (expression) {
         is SqlExpr.In -> "in:${expression.negated}"
         is SqlExpr.Between -> "between:${expression.negated}"
         is SqlExpr.Like -> "like:${expression.negated}"
+        is SqlExpr.Window -> "window:${expression.call.name.normalized}:${expression.call.distinct}:${expression.call.arguments.size}:${expression.partitionBy.size}:${expression.frame}:${expression.orderBy.map { it.ascending to it.nullsFirst }}"
         is SqlExpr.Call -> "call:${expression.name.normalized}:${expression.distinct}"
         is SqlExpr.Cast -> "cast:${expression.type}"
         is SqlExpr.Case -> "case:${expression.operand != null}:${expression.otherwise != null}"
         is SqlExpr.Subquery -> "subquery:${expression.query}"
         is SqlExpr.Exists -> "exists:${expression.negated}:${expression.query}"
         is SqlExpr.InQuery -> "inquery:${expression.negated}:${expression.query}"
+}
+
+
+internal fun BoundQuery.externalColumns(): Set<CatalogColumn> {
+    val visited = mutableSetOf<BoundQuery>()
+    val columns = mutableSetOf<CatalogColumn>()
+    val ownSources = mutableSetOf<Int>()
+    fun visit(plan: BoundQuery) {
+        if (!visited.add(plan)) return
+        ownSources += plan.sources.map { it.id }
+        columns += plan.inputs
+        plan.children.forEach(::visit)
+    }
+    visit(this)
+    return columns.filterTo(mutableSetOf()) { it.sourceId !in ownSources }
 }

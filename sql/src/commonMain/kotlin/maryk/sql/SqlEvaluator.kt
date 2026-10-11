@@ -25,6 +25,12 @@ internal class SqlBudget(val options: SqlOptions) {
     var retainedBytes = 0L
     var peakBytes = 0L
     var snapshotVersion: ULong? = null
+    val accesses = linkedMapOf<Triple<String, SqlAccessPath, String?>, SqlAccessSummary>()
+    fun accessed(table: String, path: SqlAccessPath, index: String?, rows: Int) {
+        val key = Triple(table, path, index)
+        val previous = accesses[key]
+        accesses[key] = SqlAccessSummary(table, path, index, (previous?.requests ?: 0) + 1, (previous?.fetchedRows ?: 0) + rows)
+    }
     suspend fun step() {
         if (++steps > options.maxExpressionSteps) exceeded("expressionSteps", options.maxExpressionSteps, steps)
         if (steps % 1024L == 0L) yield()
@@ -50,7 +56,39 @@ internal class SqlBudget(val options: SqlOptions) {
     }
 }
 
-internal fun valueBytes(value: SqlValue): Long = 32L + when (value) {
+/** Iterative sizing also bounds shared nested graphs before they can expand exponentially. */
+internal fun valueBytes(value: SqlValue): Long {
+    if (value !is SqlValue.Collection) return 32L + scalarBytes(value)
+    val pending = mutableListOf<Pair<SqlValue, Int>>(value to 0)
+    var bytes = 0L
+    var visited = 0L
+    while (pending.isNotEmpty()) {
+        val (current, depth) = pending.removeAt(pending.lastIndex)
+        if (depth > 32) throw SqlLimitException("collectionDepth", 32uL, depth.toULong())
+        if (++visited > 100_000) throw SqlLimitException("collectionValues", 100_000uL, visited.toULong())
+        bytes += 32L
+        when (current) {
+            is SqlValue.Collection -> {
+                // Count queued cells too, so a huge collection cannot first allocate an unbounded work queue.
+                val cells = current.entries.sumOf { 2L + it.fields.size }
+                if (cells + pending.size + visited > 100_000) throw SqlLimitException("collectionValues", 100_000uL, (cells + pending.size + visited).toULong())
+                for (entry in current.entries) {
+                    bytes += 64L
+                    pending += entry.key to depth + 1
+                    pending += entry.value to depth + 1
+                    for ((name, field) in entry.fields) {
+                        bytes += 32L + name.length * 2L
+                        pending += field to depth + 1
+                    }
+                }
+            }
+            else -> bytes += scalarBytes(current)
+        }
+    }
+    return bytes
+}
+
+private fun scalarBytes(value: SqlValue): Long = when (value) {
     is SqlValue.Text -> value.value.length.toLong() * 2
     is SqlValue.Binary -> value.value.size.toLong()
     is SqlValue.Key -> value.value.size.toLong() + value.model.length * 2L
@@ -63,16 +101,20 @@ internal class SqlEvaluator(
     private val plan: BoundQuery,
     private val parameters: List<SqlValue>,
     val budget: SqlBudget,
-    private val subquery: suspend (BoundQuery) -> List<List<SqlValue>> = { throw SqlException(SqlErrorCode.UNSUPPORTED, "Subqueries require a query runtime") },
-    private val exists: suspend (BoundQuery) -> Boolean = { subquery(it).isNotEmpty() },
+    private val subquery: suspend (BoundQuery, InputRow) -> SqlSubqueryRows = { _, _ -> throw SqlException(SqlErrorCode.UNSUPPORTED, "Subqueries require a query runtime") },
+    private val exists: suspend (BoundQuery, InputRow) -> Boolean = { plan, row -> val result = subquery(plan, row); try { result.values.isNotEmpty() } finally { result.close() } },
+    val outerRow: InputRow = emptyMap(),
 ) {
+    var windowResults: Map<SqlExpr.Window, SqlValue> = emptyMap()
+    var aggregateResults: Map<SqlExpr.Call, SqlValue>? = null
+
     suspend fun eval(expression: SqlExpr, row: InputRow = emptyMap(), group: List<InputRow>? = null): SqlValue {
         budget.step()
         val result = try {
             when (expression) {
                 is SqlExpr.Literal -> plan.literals[expression] ?: literalValue(expression)
                 is SqlExpr.Parameter -> parameters[expression.index]
-                is SqlExpr.Column -> row[plan.references.getValue(expression)] ?: SqlValue.Null
+                is SqlExpr.Column -> row[plan.references.getValue(expression)] ?: outerRow[plan.references.getValue(expression)] ?: SqlValue.Null
                 is SqlExpr.Star -> throw SqlException(SqlErrorCode.BINDING, "Unexpected wildcard", expression.position)
                 is SqlExpr.Unary -> {
                     val value = eval(expression.operand, row, group)
@@ -119,7 +161,8 @@ internal class SqlEvaluator(
                         SqlValue.Bool(matched != expression.negated)
                     }
                 }
-                is SqlExpr.Call -> if (expression.name.normalized in aggregateNames) aggregate(expression, group ?: error("Missing aggregate group")) else function(expression, row, group)
+                is SqlExpr.Call -> if (expression.name.normalized in aggregateNames) aggregateResults?.get(expression) ?: aggregate(expression, group ?: error("Missing aggregate group")) else function(expression, row, group)
+                is SqlExpr.Window -> windowResults[expression] ?: throw SqlException(SqlErrorCode.EXECUTION_STATE, "Missing window result", expression.position)
                 is SqlExpr.Cast -> cast(eval(expression.operand, row, group), expression)
                 is SqlExpr.Case -> {
                     val operand = expression.operand?.let { eval(it, row, group) }
@@ -134,21 +177,25 @@ internal class SqlEvaluator(
                     selected?.let { eval(it, row, group) } ?: SqlValue.Null
                 }
                 is SqlExpr.Subquery -> {
-                    val values = subquery(plan.subqueries.getValue(expression))
-                    if (values.size > 1) throw SqlException(SqlErrorCode.TYPE, "Scalar subquery returned more than one row", expression.position)
-                    values.singleOrNull()?.single() ?: SqlValue.Null
+                    val result = subquery(plan.subqueries.getValue(expression), outerRow + row)
+                    try {
+                        if (result.values.size > 1) throw SqlException(SqlErrorCode.TYPE, "Scalar subquery returned more than one row", expression.position)
+                        result.values.singleOrNull()?.single() ?: SqlValue.Null
+                    } finally { result.close() }
                 }
-                is SqlExpr.Exists -> SqlValue.Bool(exists(plan.subqueries.getValue(expression)) != expression.negated)
+                is SqlExpr.Exists -> SqlValue.Bool(exists(plan.subqueries.getValue(expression), outerRow + row) != expression.negated)
                 is SqlExpr.InQuery -> {
                     val value = eval(expression.operand, row, group)
                     var result: Boolean? = false
-                    for (candidate in subquery(plan.subqueries.getValue(expression))) {
+                    val rows = subquery(plan.subqueries.getValue(expression), outerRow + row)
+                    try { for (candidate in rows.values) {
                         budget.step()
                         val comparison = sqlCompare(value, candidate.single())
                         if (comparison == 0) { result = true; break }
                         if (comparison == null) result = null
                     }
                     truthValue(result?.let { it != expression.negated })
+                    } finally { rows.close() }
                 }
             }
         } catch (error: ArithmeticException) {
@@ -157,6 +204,7 @@ internal class SqlEvaluator(
             if (error is SqlException) throw error
             throw SqlException(SqlErrorCode.TYPE, error.message ?: "Invalid SQL value", expression.position, error)
         }
+        if (result is SqlValue.Collection && plan.expressionTypes[expression]?.type != SqlType.COLLECTION) throw SqlException(SqlErrorCode.UNSUPPORTED, "Collections must be expanded with UNNEST", expression.position)
         return budget.checkValue(coerceSqlValue(result, plan.expressionTypes[expression]?.type ?: result.type))
     }
 
@@ -183,7 +231,7 @@ internal class SqlEvaluator(
         }
     }
 
-    private fun arithmetic(operator: String, left: SqlValue, right: SqlValue): SqlValue {
+    internal fun arithmetic(operator: String, left: SqlValue, right: SqlValue): SqlValue {
         if (left == SqlValue.Null || right == SqlValue.Null) return SqlValue.Null
         if (left is SqlValue.Float64 && right is SqlValue.Float64) {
             if (right.value == 0.0 && operator in setOf("/", "%")) throw ArithmeticException("Division by zero")
@@ -432,4 +480,9 @@ private suspend fun like(text: String, pattern: String, escape: String?, budget:
     while (token < tokens.size && tokens[token] == ("%" to false)) { budget.step(); token++ }
     return token == tokens.size
     } finally { memory.close() }
+}
+
+
+internal class SqlSubqueryRows(val values: List<List<SqlValue>>, private val release: () -> Unit = {}) {
+    fun close() = release()
 }

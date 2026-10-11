@@ -216,7 +216,7 @@ class SqlAtomicWriteTest {
     @Test
     fun returningExpressionsAndBadParametersFailBeforeCommit() = sqlTest {
         withSql { sql, _ ->
-            assertEquals(SqlErrorCode.UNSUPPORTED, assertFailsWith<SqlException> { sql.prepareAtomic("return-expression", "INSERT INTO items (id) VALUES (1) RETURNING id + 1") }.code)
+            assertEquals(SqlErrorCode.ARITHMETIC, assertFailsWith<SqlException> { sql.prepareAtomic("return-expression", "INSERT INTO items (id) VALUES (1) RETURNING id / 0") }.code)
             assertEquals(SqlErrorCode.PARAMETER, assertFailsWith<SqlException> { sql.prepareAtomic("parameter", "INSERT INTO items (id) VALUES (?)") }.code)
             assertTrue(sql.query("SELECT * FROM items").rows.isEmpty())
         }

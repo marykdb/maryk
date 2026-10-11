@@ -90,9 +90,7 @@ class SqlRelationalTest {
             "SELECT (VALUES (1, 2))"
         )) assertEquals(SqlErrorCode.BINDING, assertFailsWith<SqlException>(query) { sql.prepare(query) }.code)
         assertEquals(SqlErrorCode.SYNTAX, assertFailsWith<SqlException> { sql.prepare("VALUES (1), (1, 2)") }.code)
-        val correlated = assertFailsWith<SqlException> { sql.prepare("SELECT a.id FROM items a WHERE EXISTS (SELECT 1 FROM items b WHERE b.id = a.id)") }
-        assertEquals(SqlErrorCode.UNSUPPORTED, correlated.code)
-        assertTrue(correlated.message!!.contains("correlat", ignoreCase = true))
+        sql.prepare("SELECT a.id FROM items a WHERE EXISTS (SELECT 1 FROM items b WHERE b.id = a.id)")
     } }
 
     @Test fun coercionAndGroupingUseBoundTypesAndSourceIdentity() = sqlTest { withSql { sql ->

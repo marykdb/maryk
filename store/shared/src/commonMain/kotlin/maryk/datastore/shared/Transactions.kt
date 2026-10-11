@@ -97,6 +97,9 @@ class Transaction internal constructor(
         throw TransactionException(abort.response.asTransactionResponse())
     }
 
+    /** Check scope state and lifetime without reading or changing its journal. */
+    suspend fun ensureActive() = lock.withLock { active() }
+
     private fun active() {
         if (state != TransactionState.Active) throw TransactionException(TransactionResponse(TransactionStatus.Aborted,
             message = "Transaction is $state", failure = AtomicFailure(AtomicFailureCode.InvalidState)))

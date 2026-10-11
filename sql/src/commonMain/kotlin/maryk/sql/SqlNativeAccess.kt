@@ -79,9 +79,10 @@ internal fun isSafeToReorder(expression: SqlExpr): Boolean = when (expression) {
 internal fun nativeAccess(plan: BoundQuery, source: BoundSource): NativeAccess {
     var keys: List<SqlExpr>? = null
     val filters = mutableListOf<NativePredicate>()
+    fun containsLocalColumn(expression: SqlExpr): Boolean = expression is SqlExpr.Column && plan.references[expression]?.sourceId in plan.sources.map { it.id } || children(expression).any(::containsLocalColumn)
     fun constant(expression: SqlExpr, conditional: Boolean) =
-        !containsColumn(expression) && !containsSubquery(expression) && !containsAggregate(expression) &&
-            (!conditional || expression is SqlExpr.Literal || expression is SqlExpr.Parameter)
+        !containsLocalColumn(expression) && !containsSubquery(expression) && !containsAggregate(expression) &&
+            (!conditional || expression is SqlExpr.Literal || expression is SqlExpr.Parameter || expression is SqlExpr.Column)
     fun visit(expression: SqlExpr, conditional: Boolean = false) {
         if (expression is SqlExpr.Binary && expression.operator == "AND") {
             visit(expression.left, conditional)

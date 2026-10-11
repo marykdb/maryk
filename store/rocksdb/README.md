@@ -164,3 +164,10 @@ The [shared contract](../../core/docs/query.md#serializable-transactions) descri
 read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
 commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
 contracts outside an explicit transaction.
+
+
+SQL reporting, metadata, embedded scalar writes, transactional upsert, bounded
+windows, joined mutations, correlated queries and complex map/collection expansion
+use the common SQL engine over this store's public requests. See the [SQL guide](../../sql/README.md) for supported
+syntax, execution strategies, transaction tooling and resource limits. The shared
+SQL conformance contract verifies these features through this adapter.

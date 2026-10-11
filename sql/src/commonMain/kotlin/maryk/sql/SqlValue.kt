@@ -7,7 +7,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Decimal
 
 /** Portable result/parameter types. Exact integers never pass through Double. */
-enum class SqlType { NULL, BOOLEAN, INT64, UINT64, DECIMAL, FLOAT64, TEXT, BINARY, DATE, TIME, TIMESTAMP, KEY, ENUM, ANY }
+enum class SqlType { NULL, BOOLEAN, INT64, UINT64, DECIMAL, FLOAT64, TEXT, BINARY, DATE, TIME, TIMESTAMP, KEY, ENUM, ANY, COLLECTION }
 
 sealed interface SqlValue {
     val type: SqlType
@@ -27,6 +27,16 @@ sealed interface SqlValue {
     data class Timestamp(val value: LocalDateTime) : SqlValue { override val type = SqlType.TIMESTAMP }
     data class Key(val model: String, val value: Bytes) : SqlValue { override val type = SqlType.KEY }
     data class Enum(val domain: String, val index: UInt, val name: String) : SqlValue { override val type = SqlType.ENUM }
+
+    class Collection(val kind: SqlCollectionKind, entries: List<SqlCollectionEntry>) : SqlValue {
+        override val type = SqlType.COLLECTION
+        val entries = entries.map { it.copy(fields = it.fields.toMap()) }
+        init {
+            require(this.entries.all { it.key !is Collection }) { "Collection keys must be scalar" }
+            require(this.entries.all { if (kind == SqlCollectionKind.MAP) it.key != Null else it.key == Null }) { "Only map entries carry non-NULL keys" }
+        }
+        override fun toString() = "${kind.name}[${entries.joinToString { it.toString() }}]"
+    }
 
     companion object {
         // Static overloads preserve the caller's numeric type even on JavaScript.
@@ -97,3 +107,6 @@ class SqlRow internal constructor(val columns: List<SqlColumn>, values: List<Sql
     }
     override fun toString(): String = values.toString()
 }
+
+enum class SqlCollectionKind { LIST, SET, MAP }
+data class SqlCollectionEntry(val key: SqlValue = SqlValue.Null, val value: SqlValue, val fields: Map<String, SqlValue> = emptyMap())

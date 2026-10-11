@@ -13,7 +13,7 @@ import maryk.core.values.ObjectValues
 
 enum class AtomicFailureCode(override val index: UInt, override val alternativeNames: Set<String>? = null) :
     IndexedEnumComparable<AtomicFailureCode>, IsCoreEnum {
-    LimitExceeded(1u), ChangeSetMismatch(2u);
+    LimitExceeded(1u), ChangeSetMismatch(2u), Conflict(3u), Expired(4u), ValidationFailed(5u), InvalidState(6u);
     companion object : IndexedEnumDefinition<AtomicFailureCode>(AtomicFailureCode::class, { entries })
 }
 

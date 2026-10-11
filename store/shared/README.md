@@ -6,8 +6,11 @@ Not intended as a standalone store.
 ## What it contains
 
 - Unified datastore contracts and request orchestration used by all engines.
-- Optional `AtomicDataStore` capability, bounded cross-model `AtomicRequest`
-  orchestration, initial-state guards, and successful retry receipts.
+- Optional `TransactionalDataStore` capability and common serializable transaction
+  scopes, read-your-own-writes, repeated mutations, savepoints, rollback, explicit
+  conflict retries and successful commit receipts. `AtomicRequest` uses the same
+  backend transaction engine for one-shot initial-state-checked write sets.
+  See the [transaction contract](../../core/docs/query.md#serializable-transactions).
 - Replication creation changes retain their final soft-delete state in both single
   updates and initial history replay. Deleted creations remain excluded from normal
   reads and active indexes until an explicit later undelete.

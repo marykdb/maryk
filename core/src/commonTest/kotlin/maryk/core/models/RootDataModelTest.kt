@@ -1,5 +1,10 @@
 package maryk.core.models
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+import kotlin.test.expect
 import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -25,6 +30,7 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.invoke
 import maryk.core.properties.types.numeric.SInt32
@@ -39,10 +45,6 @@ import maryk.test.models.Option.V3
 import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.expect
 
 private class DefaultValidationChild : RootDataModel<DefaultValidationChild>() {
     val value by string(index = 1u, regEx = "ha.*")
@@ -161,13 +163,18 @@ internal class RootDataModelTest {
         }
     }
 
+    private fun compareDefinitionReferences(converted: RootDataModel<*>, original: RootDataModel<*>) {
+        compareDataModels(converted, original)
+        assertIs<IncMapReference<*, *, *>>(converted.getPropertyReferenceByName("incMap"))
+    }
+
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             TestMarykModel,
             RootDataModel.Model,
             { DefinitionsConversionContext() },
-            ::compareDataModels
+            ::compareDefinitionReferences
         )
     }
 
@@ -430,7 +437,7 @@ internal class RootDataModelTest {
                 TestMarykModel,
                 RootDataModel.Model,
                 { DefinitionsConversionContext() },
-                ::compareDataModels
+                ::compareDefinitionReferences
             )
         }
     }
@@ -629,7 +636,7 @@ internal class RootDataModelTest {
                 TestMarykModel,
                 RootDataModel.Model,
                 { DefinitionsConversionContext() },
-                ::compareDataModels
+                ::compareDefinitionReferences
             )
         }
     }

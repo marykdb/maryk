@@ -2,6 +2,9 @@ package maryk.sql
 
 import kotlinx.coroutines.flow.collect
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.asAtomicResponse
+import maryk.datastore.shared.currentTransaction
+import maryk.datastore.shared.transactionCapabilities
 import maryk.datastore.shared.supportsSnapshotVersion
 import maryk.sql.syntax.SqlParseException
 import maryk.sql.syntax.SqlParser
@@ -46,6 +49,7 @@ data class SqlCapabilities(
     val maxPlanNodes: Int = 256,
     val maxRelationDepth: Int = 64,
     val currentReadsAreWeaklyConsistent: Boolean = true,
+    val serializableTransactions: Boolean = false,
 )
 
 class MarykSql private constructor(
@@ -53,7 +57,9 @@ class MarykSql private constructor(
     val catalog: SqlCatalog,
     val options: SqlOptions,
 ) {
-    val capabilities = SqlCapabilities(dataStore.keepAllVersions && dataStore.supportsSnapshotVersion)
+    val capabilities = SqlCapabilities(dataStore.keepAllVersions && dataStore.supportsSnapshotVersion,
+        currentReadsAreWeaklyConsistent = dataStore !is SqlTransactionStore,
+        serializableTransactions = dataStore.transactionCapabilities != null)
 
     /** Parse and bind without reading records. A prepared query can be executed repeatedly. */
     fun prepare(statement: String): PreparedSqlQuery {
@@ -87,8 +93,20 @@ class MarykSql private constructor(
     }
 
     /** Execute a bounded single-table INSERT, UPDATE, DELETE, UNDELETE, or DELETE HARD statement. */
-    suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlWriteResult =
-        SqlWriter(this).execute(statement, parameters)
+    suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlAtomicWriteResult {
+        if (dataStore.transactionCapabilities == null) throw SqlException(SqlErrorCode.UNSUPPORTED, "This datastore does not support transactional SQL writes")
+        val ambient = currentTransaction(dataStore)
+        if (ambient != null) return SqlAtomicWriter(MarykSql.create(SqlTransactionStore(dataStore, ambient), catalog, options))
+            .prepare(ambient.id, listOf(SqlWriteStatement(statement, parameters)), transactional = true).execute()
+        if (dataStore is SqlTransactionStore) return SqlAtomicWriter(this).prepare("sql", listOf(SqlWriteStatement(statement, parameters)), transactional = true).execute()
+        val outcome = transaction { tx ->
+            val prepared = tx.prepare(statement, parameters)
+            prepared.execute()
+            prepared
+        }
+        return (outcome.value?.result(outcome.commit.asAtomicResponse()) ?: SqlAtomicWriteResult(outcome.commit.asAtomicResponse(), 0, emptyList()))
+            .copy(transaction = outcome.transaction)
+    }
 
     /** Prepare one bounded change set. Retain it for retries; planning may read current records. */
     suspend fun prepareAtomic(changeSetId: String, statements: List<SqlWriteStatement>): PreparedSqlAtomicWrite =
@@ -141,7 +159,8 @@ class PreparedSqlQuery internal constructor(private val sql: MarykSql, internal 
             query.children.forEach { describe(it, depth + 1) }
         }
         describe(plan, 0)
-        append("Offset/limit after SQL operators; shared bounded execution; Current reads are weakly consistent")
+        append("Offset/limit after SQL operators; shared bounded execution; ")
+        append(if (sql.capabilities.currentReadsAreWeaklyConsistent) "Current reads are weakly consistent" else "Serializable transaction view")
     }
 
     /** Values are checked before any store call. SQL NULL is valid even for required model fields. */

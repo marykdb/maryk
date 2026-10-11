@@ -5,6 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapDefinitionWrapper
@@ -127,7 +128,7 @@ internal val mapOfPropertyDefWrappers = mapOf<PropertyDefinitionType, SensitiveW
     PropertyDefinitionType.GeoPoint to createFixedBytesWrapperWithSensitivity,
     PropertyDefinitionType.IncMap to { index, name, altNames, _, definition ->
         @Suppress("UNCHECKED_CAST")
-        MapDefinitionWrapper(
+        IncMapDefinitionWrapper<Comparable<Any>, Any, Map<Comparable<Any>, Any>, IsPropertyContext, Any>(
             index,
             name,
             definition as IncrementingMapDefinition<Comparable<Any>, Any, IsPropertyContext>,

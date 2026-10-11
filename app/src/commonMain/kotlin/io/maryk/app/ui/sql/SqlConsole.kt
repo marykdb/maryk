@@ -148,12 +148,16 @@ fun SqlConsole(browser: BrowserState, modifier: Modifier = Modifier) {
         }
     }
     val canRun = !state.running && state.catalog != null && editor.text.isNotBlank() &&
+        (!state.writeMode || state.pendingCommit == null) &&
         (!browser.timeTravelEnabled || browser.timeTravelInputError == null)
     Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
             Button(onClick = { browser.runSql(parameterCount) }, enabled = canRun) { Text(if (state.writeMode) "Run write" else "Run query") }
             OutlinedButton(onClick = state::cancel, enabled = state.running) { Text("Cancel") }
+            if (state.pendingCommit != null) {
+                OutlinedButton(onClick = state::resolveCommit, enabled = !state.running) { Text("Resolve commit") }
+            }
             OutlinedButton(onClick = { browser.runSql(parameterCount, explain = true) }, enabled = canRun && !state.writeMode) { Text("Explain") }
             TextButton(onClick = { if (!showParameters) state.initializeParameters(parameterCount); showParameters = !showParameters }) { Text("Parameters ($parameterCount)") }
             val selectedTable = state.catalog?.tables?.firstOrNull { it.model === browser.activeConnection?.dataStore?.dataModelsById?.get(browser.selectedModelId) }
@@ -174,7 +178,7 @@ fun SqlConsole(browser: BrowserState, modifier: Modifier = Modifier) {
             Text("Include deleted")
             Text("  Ctrl/⌘+Enter: run · Ctrl+Space: complete", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
         }
-        if (state.writeMode) Text("Writes change the connected store. Multi-row inserts can partly succeed.", color = colors.error, style = MaterialTheme.typography.bodySmall)
+        if (state.writeMode) Text("Each write commits all affected rows together. Resolve an uncertain commit before retrying.", color = colors.error, style = MaterialTheme.typography.bodySmall)
         if (showParameters && parameterCount > 0) {
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 160.dp)) {
                 items(parameterCount) { index -> ParameterEditor(state, index) }

@@ -146,21 +146,37 @@ SELECT name FROM Person
 WHERE __key IN (SELECT customer FROM Invoice WHERE amount > 100);
 ```
 
-The write surface supports single-table `INSERT INTO … (columns) VALUES (…)`, including parameterized multi-row inserts; `UPDATE … SET … WHERE __key = ?`, `DELETE FROM … WHERE __key = ?`, `UNDELETE FROM … WHERE __key = ?`, and `DELETE HARD FROM … WHERE __key = ?` through `MarykSql.execute(...)`. Writes use the same lexer and expression parser as reads, including SQL comments and escaped identifiers and strings.
+`MarykSql.execute(...)` supports bounded single-table INSERT VALUES and INSERT
+SELECT, UPDATE, soft DELETE, UNDELETE and DELETE HARD. Each statement is planned,
+staged and committed as one serializable autocommit transaction. Predicates may
+use the supported SQL expressions and subqueries; WHERE remains mandatory for
+updates and deletes. Selected records carry version guards, and the transaction
+also protects predicate reads against other writers. Hard deletion includes
+soft-deleted records. Remote authorization still sees a DeleteRequest.
 
-Row mutations require exactly one key equality, optionally combined with `AND __version = ?` for caller-supplied optimistic locking. Parenthesized predicates and reversed equalities are accepted. The key and version operands must be constant scalar expressions; `OR`, row-dependent targets, and subqueries are rejected. Pass a typed `SqlValue.Key` or the model's encoded key text. Even without an explicit version predicate, the selected row's version guards the subsequent write. Updates and undeletes use Maryk `ChangeRequest`s; soft and hard deletes use a guarded single-key `DeleteRequest`, preserving remote delete authorization. Hard deletes can also find soft-deleted records.
-
-Writes support direct scalar properties. `UPDATE SET field = NULL` removes an optional stored property; `INSERT … VALUES (NULL)` leaves it absent. Required fields reject `NULL`. Omitted insert fields remain absent rather than applying model defaults. Duplicate assignment targets and non-scalar properties are rejected. Values must match the SQL column type, with lossless conversion between exact numeric types; use `CAST` explicitly to change types or round to the stored precision.
+Writes support direct scalar properties. UPDATE SET field = NULL removes an
+optional stored property; INSERT VALUES(NULL) leaves it absent. Required fields
+reject NULL. Omitted insert fields remain absent rather than applying model
+defaults. Duplicate assignments and non-scalar properties are rejected. Values
+must match the SQL column type with lossless exact numeric conversion; use CAST
+explicitly to change types or round to stored precision.
 
 ```kotlin
+import maryk.core.query.responses.AtomicStatus
+
 val changed = sql.execute(
-    "UPDATE Person SET nickname = NULL WHERE __key = ? AND __version = ?",
+    "UPDATE Person SET nickname = NULL WHERE __key = ? AND __version = ? RETURNING __key",
     listOf(personKey, personVersion),
 )
-check(changed.failures.isEmpty())
+check(changed.response.status == AtomicStatus.Committed)
 ```
 
-`SqlWriteResult.affectedRows` counts successful Maryk statuses; `failures` describes unsuccessful statuses. A missing key or a version predicate that no longer matches yields zero affected rows. A concurrent change after selection is rejected by the store's version guard. Multi-row inserts follow the store's per-record behavior and can partly succeed; inspect both result fields. `RETURNING` and `INSERT … SELECT` are available through the separate atomic API below. Ordinary `execute()` does not support them. `UPSERT`, SQL transactions, and table-wide or join writes remain unsupported through this method.
+`SqlAtomicWriteResult.affectedRows` counts confirmed mutation targets, and
+`response` supplies the structured outcome. A missing key or a version predicate
+that no longer matches yields zero rows. Multi-row inserts cannot partly succeed.
+RETURNING rows contain durable versions after autocommit. Interactive scopes,
+savepoints and the connection-style control statements are described below.
+UPSERT and join-target mutations remain unsupported.
 
 The layer does not provide DDL, JDBC, recursive CTEs, correlated subqueries, window functions, live SQL subscriptions, or vendor-specific dialect compatibility. Unsupported forms fail explicitly. Schema creation and migrations remain Maryk APIs.
 
@@ -248,7 +264,7 @@ sql --write UPDATE Person SET nickname = NULL WHERE __key = '<encoded-key>'
 
 The CLI preserves SQL quotes and comments. For inline SQL beginning with a line comment, place `--` before the SQL text; files may start with comments directly. Files are bounded to 64 KiB. Output has a tab-separated header and data rows, quotes strings, distinguishes `NULL`, and escapes control characters. It enables table scans with limits of 10,000 result rows and 8 MiB of buffers; use `--no-table-scan` to require a selective native access path. Choose at most one of `--snapshot` and `--to-version`.
 
-The CLI runs queries by default. `--write` enables the bounded mutation surface and prints affected rows plus any store failures. It cannot be combined with `--snapshot`, `--to-version`, or `--include-deleted`; use a SQL `__version` predicate to guard a write. Schema changes remain Maryk operations.
+The CLI runs queries by default. `--write` enables the bounded mutation surface and prints the commit status, confirmed affected rows and RETURNING rows. It cannot be combined with `--snapshot`, `--to-version`, or `--include-deleted`; use a SQL `__version` predicate to guard a write. Schema changes remain Maryk operations.
 
 ## Development and conformance
 
@@ -262,9 +278,67 @@ The CLI runs queries by default. `--write` enables the bounded mutation surface 
 
 The existing CI matrix picks up SQL through its aggregate JVM, Native, JS, and WasmJS tasks. A configured target or CI task is not proof that it was executed locally; check test reports for the platform being deployed.
 
+## SQL transactions
+
+`sql.transaction { tx -> ... }` combines reads and writes in a serializable scope.
+Queries and subsequent writes see earlier staged results, including INSERT SELECT,
+predicate UPDATE/DELETE, UNDELETE and DELETE HARD. `WHERE` remains mandatory on
+updates and deletes. RETURNING supports the same scalar columns and aliases as
+prepared writes. Its staged versions are provisional until commit.
+
+```kotlin
+import maryk.sql.transaction
+import maryk.core.query.responses.TransactionStatus
+
+val result = sql.transaction { tx ->
+    tx.execute("INSERT INTO Person (name) VALUES ('Ada')")
+    val point = tx.savepoint()
+    tx.execute("UPDATE Person SET name = 'Lin' WHERE name = 'Ada'")
+    tx.rollbackTo(point)
+    tx.query("SELECT name FROM Person WHERE name = 'Ada'")
+}
+if (result.commit.status == TransactionStatus.Committed) {
+    println(result.value)
+}
+```
+
+`sql.beginTransaction()` exposes manual commit, rollback and savepoint ownership.
+Both entry points accept `readOnly = true`. `tx.query(..., readOptions = ...)`
+also retains historical and include-deleted options when the backend supports them. `sql.capabilities.serializableTransactions`
+reports support. Query consistency inside the transaction follows the shared
+revision fence; outside a transaction, Current query consistency is unchanged.
+
+`sql.session()` supplies sequential connection-style execution. It accepts BEGIN,
+BEGIN TRANSACTION, START TRANSACTION, COMMIT, ROLLBACK, SAVEPOINT name,
+ROLLBACK TO [SAVEPOINT] name and RELEASE [SAVEPOINT] name. BEGIN/START also accept
+READ ONLY or READ WRITE. Queries and mutations join the active session; writes
+outside a session transaction use autocommit. Closing a session rolls back work
+that has not submitted commit. An uncertain submitted commit remains available
+through `session.activeTransaction`; repeat COMMIT or resolve that transaction.
+Control statements use the same bounded lexer, including comments and quoted names.
+Queries, statements and control operations serialize through the same scope lock.
+Read-only scopes reject every mutation statement, including predicates matching
+zero rows. FoundationDB currently reports no authoritative SQL history watermark;
+its current transaction view remains serializable, while SQL snapshot and AtVersion
+reads fail explicitly.
+
+Ordinary `sql.execute` plans and stages one statement before committing it. It
+returns confirmed affected rows and RETURNING values with durable versions after
+commit. A duplicate, validation failure or conflict publishes no partial statement.
+For OutcomeUnknown, `result.transaction` retains the exact commit for
+`resolveCommit()`. Cancellation after submission exposes the handle through
+`TransactionCancellationException`. Never rerun a fresh statement to resolve an
+uncertain commit. The shared 30-second lifetime, 2,000 journal requests, 1,000
+mutations, 64 savepoints, 100,000 read keys/rows and backend payload/work budgets apply alongside SQL's
+execution limits. There are no weaker isolation settings or silent batch splits.
+
+See the [datastore transaction contract](../core/docs/query.md#serializable-transactions)
+for provisional versions, explicit retries, receipt retention and conservative
+conflicts with unrelated writes.
+
 ## Atomic SQL change sets
 
-Use `prepareAtomic` to plan a bounded change set and `execute()` on the prepared object to commit it. The backend must support Maryk atomic requests; `sql.supportsAtomicWrites` exposes this capability. Ordinary `MarykSql.execute(...)` keeps its existing single-key write contract and per-record insert behavior.
+Use `prepareAtomic` to plan a bounded change set and `execute()` on the prepared object to commit it. The backend must support Maryk atomic requests; `sql.supportsAtomicWrites` exposes this capability. Ordinary `MarykSql.execute(...)` uses a serializable autocommit transaction, supports general bounded predicates and RETURNING, and returns `SqlAtomicWriteResult`. The unshipped per-record and single-key execution paths have been removed.
 
 ```kotlin
 import maryk.sql.SqlWriteStatement
@@ -315,4 +389,4 @@ a commit timeout or cancellation can leave an uncertain outcome.
 
 Preparation reads stored data before submitting the change set. Statements do not read each other's staged writes. Target version guards do not protect against newly inserted matching records or changes to other rows used by an insert query or subquery. This API provides all-or-nothing writes over the planned targets, not a general read/write transaction or serializable predicate protection. Empty selections produce a successful zero-row result, with `request == null` and no stored receipt.
 
-`UPSERT`, `ON CONFLICT`, interactive `BEGIN`/`COMMIT`, and repeated writes to the same record remain unsupported.
+`UPSERT` and `ON CONFLICT` remain unsupported. Interactive transaction scopes support repeated writes and hard deletion.

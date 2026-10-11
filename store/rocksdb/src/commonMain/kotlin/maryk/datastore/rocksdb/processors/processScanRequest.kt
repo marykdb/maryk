@@ -11,7 +11,6 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.createCursor
 import maryk.core.query.responses.ValuesResponse
-import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.RocksDBReadContext
@@ -44,7 +43,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
     var lastEmittedKey: Key<DM>? = null
     var lastEmittedOrderKey: ByteArray? = null
 
-    DBAccessor(this).use { transaction ->
+    readContext.withAccessor(this) { transaction ->
         val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table

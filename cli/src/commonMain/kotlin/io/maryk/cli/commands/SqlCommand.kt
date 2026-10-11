@@ -3,6 +3,9 @@ package io.maryk.cli.commands
 import kotlinx.coroutines.runBlocking
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.file.File
+import maryk.core.query.responses.AtomicStatus
+import maryk.core.query.responses.TransactionStatus
+import maryk.datastore.shared.TransactionCancellationException
 import maryk.sql.MarykSql
 import maryk.sql.SqlConsistency
 import maryk.sql.SqlException
@@ -14,6 +17,14 @@ class SqlCommand : Command {
     override val name = "sql"
     override val description = "Run SQL queries or explicit --write mutations on the connected store."
     override fun execute(context: CommandContext, arguments: List<String>): CommandResult {
+        if ("--resolve-commit" in arguments) {
+            if (arguments != listOf("--resolve-commit")) return error("--resolve-commit takes no SQL statement or other options")
+            val pending = context.state.pendingSqlCommit ?: return error("No SQL commit is awaiting resolution in this session")
+            val result = runBlocking { pending.resolveCommit() }
+            if (result.status != TransactionStatus.OutcomeUnknown) context.state.pendingSqlCommit = null
+            return CommandResult(listOf("${result.status}: transaction ${pending.id}") + listOfNotNull(result.message),
+                isError = result.status != TransactionStatus.Committed)
+        }
         val connection = context.state.currentConnection ?: return error("Not connected to any store. Use `connect` first.")
         var consistency: SqlConsistency = SqlConsistency.Current
         var consistencySelected = false
@@ -63,6 +74,7 @@ class SqlCommand : Command {
                 "       sql [options] --file <path>",
                 "       sql [options] -- <SQL> (for SQL beginning with a -- comment)",
                 "Options: --write, --snapshot, --to-version <n>, --include-deleted, --no-table-scan",
+                "Recovery: sql --resolve-commit resolves an uncertain write retained in this session.",
                 "Examples: sql SELECT * FROM Person LIMIT 20",
                 "          sql SELECT category, COUNT(*) FROM Item GROUP BY category",
                 "Queries by default; --write enables bounded INSERT/UPDATE/DELETE/UNDELETE.",
@@ -70,6 +82,7 @@ class SqlCommand : Command {
             ), isError = true,
         )
         if (write && (consistencySelected || includeDeleted)) return error("--write cannot be combined with snapshot, versioned-read, or include-deleted options")
+        if (write && context.state.pendingSqlCommit != null) return error("Resolve the previous write with sql --resolve-commit before running another write")
         return try {
             val sql = MarykSql.create(connection.dataStore, options = SqlOptions(
                 allowTableScan = allowTableScan,
@@ -78,9 +91,22 @@ class SqlCommand : Command {
             ))
             if (write) {
                 val result = runBlocking { sql.execute(sqlText) }
+                if (result.response.status == AtomicStatus.OutcomeUnknown) context.state.pendingSqlCommit = result.transaction
                 return CommandResult(
-                    listOf("Affected rows: ${result.affectedRows}") + result.failures.map { "Failed: ${escaped(it)}" },
-                    isError = result.failures.isNotEmpty(),
+                    buildList {
+                        add(if (result.response.status == AtomicStatus.OutcomeUnknown) "OutcomeUnknown: affected rows unconfirmed"
+                            else "${result.response.status}: ${result.affectedRows} affected rows")
+                        result.transaction?.takeIf { result.response.status == AtomicStatus.OutcomeUnknown }?.let {
+                            add("Transaction ${it.id}. Use sql --resolve-commit in this session; do not rerun the write.")
+                        }
+                        result.response.message?.let { add(escaped(it)) }
+                        result.response.failure?.let { add(escaped(it.toString())) }
+                        result.returning.forEach { returned ->
+                            if (returned.columns.isNotEmpty()) add(returned.columns.joinToString("\t") { escaped(it.name) })
+                            returned.rows.forEach { add(it.values.joinToString("\t", transform = ::formatCell)) }
+                        }
+                    },
+                    isError = result.response.status != AtomicStatus.Committed,
                 )
             }
             val result = runBlocking { sql.query(sqlText, readOptions = SqlReadOptions(consistency, !includeDeleted)) }
@@ -89,6 +115,7 @@ class SqlCommand : Command {
                 result.rows.forEach { add(it.values.joinToString("\t", transform = ::formatCell)) }
             })
         } catch (failure: Throwable) {
+            if (failure is TransactionCancellationException) context.state.pendingSqlCommit = failure.transaction
             failure.rethrowIfFatal()
             val location = (failure as? SqlException)?.position?.let { " at character ${it + 1}" }.orEmpty()
             error("SQL failed$location: ${failure.message ?: failure::class.simpleName}")

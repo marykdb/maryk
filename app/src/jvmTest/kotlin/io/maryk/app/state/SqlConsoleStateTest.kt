@@ -18,6 +18,8 @@ import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
 import maryk.datastore.memory.InMemoryDataStore
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.TransactionalDataStore
+import maryk.core.query.requests.TransactionRequest
 import maryk.sql.SqlExecutionStatus
 import maryk.sql.SqlValue
 import kotlin.test.Test
@@ -134,4 +136,36 @@ class SqlConsoleStateTest {
             assertTrue(state.error.orEmpty().contains("Parameter 1"))
         } finally { state.detach(); store.close() }
     }
+    @Test fun uncertainWritesMustResolveBeforeAnotherWrite() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to ConsoleItem))
+        var lose = true
+        val transport = object : IsDataStore by store, TransactionalDataStore by store {
+            override suspend fun executeTransaction(request: TransactionRequest) = store.executeTransaction(request).also {
+                if (request.commit && lose) { lose = false; error("Lost response") }
+            }
+        }
+        val state = SqlConsoleState(this)
+        try {
+            state.attach(transport)
+            state.writeMode = true
+            state.editor = TextFieldValue("INSERT INTO ConsoleItem (id) VALUES (1) RETURNING id")
+            state.run(0)
+            state.finished()
+            assertNotNull(state.pendingCommit)
+            state.editor = TextFieldValue("INSERT INTO ConsoleItem (id) VALUES (2)")
+            state.run(0)
+            assertFalse(state.running)
+            assertTrue(state.error.orEmpty().contains("Resolve"))
+            state.resolveCommit()
+            state.finished()
+            assertEquals(null, state.pendingCommit)
+            assertEquals("Commit confirmed.", state.message)
+            state.writeMode = false
+            state.editor = TextFieldValue("SELECT id FROM ConsoleItem")
+            state.run(0)
+            state.finished()
+            assertEquals(listOf(SqlValue.UInt64(1u)), state.rows.map { it[0] })
+        } finally { state.detach(); store.close() }
+    }
+
 }

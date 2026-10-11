@@ -20,6 +20,7 @@ import maryk.sql.SqlValue
 import maryk.sql.SqlWriteStatement
 import maryk.sql.conformance.SqlConformanceItem
 import maryk.sql.conformance.sqlConformanceModels
+import maryk.datastore.shared.TransactionException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -50,9 +51,7 @@ class SqlAuthorizationTest {
         withRemote(RequestType.Delete) { local, sql, remote, key ->
             val nativeKey = Key<SqlConformanceItem>(key.value.bytes)
             assertIs<AuthFail<*>>(remote.execute(SqlConformanceItem.delete(nativeKey)).statuses.single())
-            val result = sql.execute("DELETE FROM SqlConformanceItem WHERE __key = ?", listOf(key))
-            assertEquals(0, result.affectedRows)
-            assertTrue(result.failures.isNotEmpty())
+            assertFailsWith<TransactionException> { sql.execute("DELETE FROM SqlConformanceItem WHERE __key = ?", listOf(key)) }
             assertEquals(1, local.query("SELECT id FROM SqlConformanceItem").rows.size)
             assertEquals(1, sql.execute("UPDATE SqlConformanceItem SET category = 'allowed' WHERE __key = ?", listOf(key)).affectedRows)
             local.execute("DELETE FROM SqlConformanceItem WHERE __key = ?", listOf(key))

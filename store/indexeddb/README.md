@@ -84,3 +84,13 @@ field for search. Custom indexes without a dependency contract are rejected when
 sensitive properties are present. Existing plaintext key/index bytes from an unsafe
 older definition are not erased by startup validation; recover data into a fresh
 store with safe definitions and retire old database copies and backups.
+
+
+## Serializable transaction scopes
+
+IndexedDB previews replay against a private byte-store overlay while the existing Web Lock or fenced writer lease protects Maryk data writers. Commit publishes the final byte batch, revision and receipt in one native readwrite transaction. No browser transaction is held across application suspension. Custom byte-store adapters must implement the atomic writer-fencing contract before advertising support.
+
+The [shared contract](../../core/docs/query.md#serializable-transactions) describes
+read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
+commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
+contracts outside an explicit transaction.

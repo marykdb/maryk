@@ -100,3 +100,12 @@ Storage engines focus on the low‑level persistence (reads, writes, range itera
 ### Consistency and Tests
 
 The `store/test` module contains a generic test suite (`runDataStoreTests`) that validates correctness and versioning across engines. Each engine reuses these tests to ensure uniform behavior for adds, changes, deletes, gets, scans, uniques, and update flows.
+
+
+## Transactions
+
+All built-in engines expose the [shared serializable transaction contract](../core/docs/query.md#serializable-transactions).
+The scope combines queries and mutations across registered models, stages repeated
+writes, supports savepoints and rollback, and publishes one native/COW commit.
+Remote forwards the backend capability. Revision conflicts are conservative and
+explicit; unsupported custom adapters report no transaction capability.

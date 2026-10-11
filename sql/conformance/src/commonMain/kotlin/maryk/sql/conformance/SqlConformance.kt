@@ -1,5 +1,9 @@
 package maryk.sql.conformance
 
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.toList
 import maryk.core.models.RootDataModel
 import maryk.core.models.graph
@@ -8,32 +12,41 @@ import maryk.core.properties.definitions.decimal
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Decimal
-import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.Float64
+import maryk.core.properties.types.numeric.UInt64
+import maryk.core.query.requests.TransactionRequest
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
-import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.AtomicFailureCode
 import maryk.core.query.responses.AtomicStatus
+import maryk.core.query.responses.TransactionStatus
+import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.SnapshotVersionProvider
+import maryk.datastore.shared.TransactionException
+import maryk.datastore.shared.TransactionalDataStore
+import maryk.datastore.shared.executeTransaction
+import maryk.datastore.shared.supportsSnapshotVersion
+import maryk.datastore.shared.transactionCapabilities
 import maryk.sql.MarykSql
 import maryk.sql.SqlCatalog
 import maryk.sql.SqlConsistency
+import maryk.sql.SqlException
 import maryk.sql.SqlExecutionStatus
 import maryk.sql.SqlOptions
 import maryk.sql.SqlReadOptions
+import maryk.sql.SqlSessionResult
 import maryk.sql.SqlTable
 import maryk.sql.SqlValue
 import maryk.sql.SqlWriteStatement
+import maryk.sql.beginTransaction
+import maryk.sql.session
 import maryk.sql.supportsAtomicWrites
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 /** One fixture and contract shared by every storage adapter. Not a published module. */
 object SqlConformanceItem : RootDataModel<SqlConformanceItem>(
@@ -224,4 +237,79 @@ suspend fun assertSqlConformance(store: IsDataStore) {
         assertEquals(2, atomicSql.executeAtomic("sql-conformance-delete", "DELETE FROM items WHERE id IN (201, 202) RETURNING id").affectedRows)
         assertEquals(2, atomicSql.executeAtomic("sql-conformance-restore", "UNDELETE FROM items WHERE id IN (201, 202) RETURNING id").affectedRows)
     }
+    assertSqlTransactionConformance(store, sql)
+
+}
+
+/** Ordered SQL reads/writes, savepoints and commit recovery run through every backend. */
+private suspend fun assertSqlTransactionConformance(store: IsDataStore, sql: MarykSql) {
+    val tx = sql.beginTransaction()
+    val inserted = tx.execute("INSERT INTO items (id, category, amount) VALUES (301, 'first', 1.00), (302, 'first', 2.00) RETURNING id, __version")
+    assertEquals(AtomicStatus.Staged, inserted.response.status)
+    assertTrue(sql.query("SELECT id FROM items WHERE id >= 300").rows.isEmpty())
+    assertEquals(2, tx.query("SELECT id FROM items WHERE category = 'first'").rows.size)
+    val point = tx.savepoint()
+    assertEquals(2, tx.execute("UPDATE items SET category = 'discard' WHERE category = 'first'").affectedRows)
+    tx.rollbackTo(point)
+    assertEquals(2, tx.query("SELECT id FROM items WHERE category = 'first'").rows.size)
+    assertEquals(2, tx.execute("UPDATE items SET category = 'second', amount = amount + 10 WHERE category = 'first' RETURNING category, amount").affectedRows)
+    assertEquals(2, tx.execute("INSERT INTO items (id, category, amount) SELECT id + 10, category, amount FROM items WHERE category = 'second' RETURNING id").affectedRows)
+    assertEquals(2, tx.execute("DELETE FROM items WHERE id IN (301, 302) RETURNING id").affectedRows)
+    assertEquals(2, tx.execute("UNDELETE FROM items WHERE id IN (301, 302) RETURNING id").affectedRows)
+    assertEquals(2, tx.execute("DELETE HARD FROM items WHERE id IN (311, 312) RETURNING id").affectedRows)
+    assertEquals(TransactionStatus.Committed, tx.commit().status)
+    assertEquals(listOf(SqlValue.UInt64(301u), SqlValue.UInt64(302u)), sql.query("SELECT id FROM items WHERE id >= 300 ORDER BY id").rows.map { it[0] })
+    val committedVersion = (sql.query("SELECT __version FROM items WHERE id = 301").rows.single()[0] as SqlValue.UInt64).value
+    val historical = sql.beginTransaction()
+    historical.execute("UPDATE items SET category = 'staged-history' WHERE id = 301")
+    if (store.supportsSnapshotVersion) {
+        assertEquals(SqlValue.Text("second"), historical.query("SELECT category FROM items WHERE id = 301", readOptions = SqlReadOptions(SqlConsistency.AtVersion(committedVersion))).rows.single()[0])
+    } else {
+        assertFailsWith<SqlException> { historical.query("SELECT category FROM items WHERE id = 301", readOptions = SqlReadOptions(SqlConsistency.AtVersion(committedVersion))) }
+    }
+    assertEquals(SqlValue.Text("staged-history"), historical.query("SELECT category FROM items WHERE id = 301").rows.single()[0])
+    historical.rollback()
+
+    val session = sql.session()
+    session.execute("/* transactional */ BEGIN")
+    session.execute("SAVEPOINT recovery")
+    assertFailsWith<TransactionException> { session.execute("INSERT INTO items (id) VALUES (303), (301)") }
+    session.execute("ROLLBACK TO recovery")
+    session.execute("INSERT INTO items (id, category) VALUES (303, 'recovered')")
+    session.execute("RELEASE recovery")
+    val result = session.execute("COMMIT") as SqlSessionResult.Control
+    assertEquals(TransactionStatus.Committed, result.commit?.status)
+    session.execute("BEGIN READ ONLY")
+    assertFailsWith<SqlException> { session.execute("UPDATE items SET category = 'denied' WHERE id = 99999") }
+    assertFailsWith<SqlException> { session.execute("DELETE HARD FROM items WHERE id = 99999") }
+    assertEquals(1, (session.execute("SELECT id FROM items WHERE id = 303") as SqlSessionResult.Query).result.rows.size)
+    session.execute("ROLLBACK")
+    session.execute("BEGIN")
+    session.execute("DELETE HARD FROM items WHERE id = 303")
+    session.close()
+    assertEquals(1, sql.query("SELECT id FROM items WHERE id = 303").rows.size)
+
+    val conflict = sql.beginTransaction()
+    conflict.query("SELECT id FROM items WHERE id = 304")
+    sql.execute("INSERT INTO items (id, category) VALUES (304, 'concurrent')")
+    val rejected = conflict.commit()
+    assertEquals(TransactionStatus.Aborted, rejected.status)
+    assertEquals(AtomicFailureCode.Conflict, rejected.failure?.code)
+
+    var lose = true
+    val transport = object : IsDataStore by store, TransactionalDataStore {
+        override val transactionCapabilities get() = store.transactionCapabilities
+        override suspend fun executeTransaction(request: TransactionRequest) = store.executeTransaction(request).also {
+            if (request.commit && lose) { lose = false; error("Lost SQL commit response") }
+        }
+    }
+    val unreliableSql = MarykSql.create(transport, sql.catalog, sql.options)
+    val uncertain = unreliableSql.execute("INSERT INTO items (id, category) VALUES (305, 'recovered-commit') RETURNING id")
+    assertEquals(AtomicStatus.OutcomeUnknown, uncertain.response.status)
+    assertEquals(0, uncertain.affectedRows)
+    assertTrue(uncertain.returning.all { it.rows.isEmpty() })
+    assertEquals(TransactionStatus.Committed, requireNotNull(uncertain.transaction).resolveCommit().status)
+    assertEquals(1, sql.query("SELECT id FROM items WHERE id = 305").rows.size)
+    val durable = sql.execute("UPDATE items SET category = 'durable' WHERE id >= 300 RETURNING id, __version")
+    assertEquals(sql.query("SELECT id, __version FROM items WHERE id >= 300 ORDER BY id").rows.map { it.values }, durable.returning.single().rows.map { it.values })
 }

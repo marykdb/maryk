@@ -15,13 +15,24 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import maryk.core.properties.types.Bytes
+import maryk.core.query.requests.TransactionCapabilities
+import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.responses.TransactionResponse
+import maryk.core.query.responses.TransactionStatus
+import maryk.datastore.shared.TransactionAbort
+import maryk.datastore.shared.applyTransactionMembers
+import maryk.datastore.shared.asAtomicResponse
+import maryk.datastore.shared.asTransactionResponse
+import maryk.datastore.shared.mutationKeys
 import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicFailure
 import maryk.core.query.responses.AtomicFailureCode
 import maryk.foundationdb.FDBException
 import maryk.core.query.responses.AtomicResponse
-import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.IsResponse
 import maryk.datastore.shared.StoreAction
 import maryk.core.query.responses.IsDataModelResponse
@@ -29,7 +40,6 @@ import maryk.datastore.shared.AtomicAbort
 import maryk.datastore.shared.AtomicReceiptCodec
 import maryk.datastore.shared.AtomicMutationContext
 import maryk.datastore.shared.currentAtomicContext
-import maryk.datastore.shared.applyAtomicMembers
 import maryk.core.clock.HLC
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.DefNotFoundException
@@ -117,7 +127,6 @@ import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
 import maryk.datastore.foundationdb.processors.SOFT_DELETE_INDICATOR
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
-import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
@@ -162,7 +171,6 @@ import maryk.foundationdb.DatabaseOptions
 import maryk.foundationdb.FdbFuture
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
-import maryk.foundationdb.TransactionContext
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
 import maryk.foundationdb.tuple.Tuple
@@ -271,6 +279,13 @@ class FoundationDBDataStore private constructor(
     private val declaredUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
         dataModelsById.mapValues { (_, model) -> collectUniqueReferences(model) }
 
+    internal val transactionRevisionKey get() = packKey(metadataPrefix, "transaction/revision".encodeToByteArray())
+
+    @OptIn(ExperimentalUuidApi::class)
+    internal fun advanceTransactionRevision(transaction: Transaction) {
+        transaction.set(transactionRevisionKey, Uuid.random().toByteArray())
+    }
+
     internal inline fun <T> runTransaction(
         dataModelId: UInt? = null,
         crossinline block: (Transaction) -> T
@@ -278,7 +293,7 @@ class FoundationDBDataStore private constructor(
         if (isClosing.value) throw CancellationException("Datastore closing")
         return tc.run { tr ->
             dataModelId?.let { requireModelSchemaReady(tr, it) }
-            block(tr)
+            block(tr).also { if (dataModelId != null) advanceTransactionRevision(tr) }
         }
     }
 
@@ -295,7 +310,7 @@ class FoundationDBDataStore private constructor(
         }
         return tc.run { tr ->
             dataModelId?.let { requireModelSchemaReady(tr, it, migrationRequest?.transactionGuard) }
-            block(tr)
+            block(tr).also { advanceTransactionRevision(tr) }
         }
     }
 
@@ -329,6 +344,10 @@ class FoundationDBDataStore private constructor(
     ): T {
         if (isClosing.value) throw CancellationException("Datastore closing")
         readContext.requireUsable()
+        readContext.transaction?.let { tr ->
+            dataModelId?.let { requireModelSchemaReady(tr, it) }
+            return block(tr)
+        }
         // Check the current schema state before pinning an older read version. A
         // pinned context from before a rebuild may still safely see the complete
         // old index, but a context created during/after the transition must not
@@ -1386,54 +1405,60 @@ class FoundationDBDataStore private constructor(
     internal fun readStoredModelNamesById(): Map<UInt, String> =
         readStoredModelNames(tc, metadataPrefix)
 
-    override val atomicCapabilities: AtomicCapabilities = AtomicCapabilities(maxTransactionBytes = 4_194_304u, commitTimeoutMillis = 10_000u, maxRetries = 10u,
+    override val atomicCapabilities: AtomicCapabilities = AtomicCapabilities(maxTransactionBytes = 4_194_304u, commitTimeoutMillis = 4_000u, maxRetries = 10u,
         maxStorageKeyBytes = 10_000u, maxStorageValueBytes = 100_000u)
     override val supportsAtomicRequests: Boolean = true
 
-    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse = withContext(Dispatchers.IO) {
+    override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
+
+    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
+        processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,
+            initialGuards = request.guards, initialStateChecks = true), version).asAtomicResponse()
+
+    override suspend fun processTransactionRequest(request: TransactionRequest, version: HLC): TransactionResponse = withContext(Dispatchers.IO) {
         val codec = AtomicReceiptCodec(dataModelsById)
-        val fingerprint = codec.fingerprint(request)
+        val fingerprint = codec.transactionFingerprint(request)
         val parentJob = requireNotNull(currentCoroutineContext()[Job])
         var updates: List<Update<*>> = emptyList()
         var committed = false
         try {
             val result = tc.run { transaction ->
-                transaction.options().setTimeout(10_000)
+                transaction.options().setTimeout(4_000)
                 transaction.options().setRetryLimit(10)
                 transaction.options().setSizeLimit(4_194_304)
                 updates = emptyList()
-                readAtomicReceipt(transaction, atomicReceiptsPrefix, request.changeSetId)?.let { return@run codec.replay(it, fingerprint) }
-                var observedVersion = 0uL
-                for (member in request.requests + request.guards) {
-                    val id = getDataModelId(member.dataModel)
+                readAtomicReceipt(transaction, atomicReceiptsPrefix, request.transactionId)?.let { return@run codec.replayTransaction(it, fingerprint, request) }
+                val revision = Bytes(transaction.get(transactionRevisionKey).awaitResult() ?: byteArrayOf(0))
+                var observedVersion = if (!request.commit && request.stagingVersion == null)
+                    directoriesByDataModelIndex.values.maxOfOrNull { readMaximumStoredWatermark(transaction, it) } ?: 0uL else 0uL
+                for ((model, keys) in request.mutationKeys()) {
+                    val id = getDataModelId(model)
                     requireModelSchemaReady(transaction, id)
                     val dirs = getTableDirs(id)
-                    val key = when (member) {
-                        is AddRequest<*> -> member.keysForObjects!!.single()
-                        is ChangeRequest<*> -> member.objects.single().key
-                        is DeleteRequest<*> -> member.keys.single()
-                        else -> error("Invalid atomic member")
+                    for (key in keys) {
+                        val current = transaction.get(packKey(dirs.tablePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
+                        val tombstone = transaction.get(packKey(dirs.replicationTombstonePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
+                        observedVersion = maxOf(observedVersion, current, tombstone)
                     }
-                    val current = transaction.get(packKey(dirs.tablePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
-                    val tombstone = transaction.get(packKey(dirs.replicationTombstonePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
-                    observedVersion = maxOf(observedVersion, current, tombstone)
                 }
-                val atomicVersion = nextMutationClock(version, observedVersion)
+                val executionVersion = if (request.commit) nextMutationClock(version, maxOf(observedVersion, request.stagingVersion ?: 0uL))
+                    else HLC(request.stagingVersion ?: nextMutationClock(version, observedVersion).timestamp)
                 val atomic = AtomicMutationContext(this@FoundationDBDataStore, transaction)
+                val readContext = FoundationDBReadContext(transaction.getReadVersion().awaitResult(), transaction)
                 atomicTransactions.update { it + transaction }
-                // The binding's retry runner owns commit. Its synchronous body uses the same
-                // transaction for all suspend processors and retains datastore cancellation.
                 val result = try {
                     runBlocking(parentJob + atomic) {
-                        applyAtomicMembers(request) { member ->
+                        applyTransactionMembers(request, revision, executionVersion) { member, memberVersion ->
                             val response = CompletableDeferred<IsResponse>()
                             val action = StoreAction(member, response)
                             @Suppress("UNCHECKED_CAST")
                             when (member) {
-                                is AddRequest<*> -> processAddRequest(atomicVersion, action as AnyAddStoreAction)
-                                is ChangeRequest<*> -> processChangeRequest(atomicVersion, action as AnyChangeStoreAction)
-                                is DeleteRequest<*> -> processDeleteRequest(atomicVersion, action as AnyDeleteStoreAction, Cache())
-                                else -> error("Invalid atomic member")
+                                is AddRequest<*> -> processAddRequest(memberVersion, action as AnyAddStoreAction)
+                                is ChangeRequest<*> -> processChangeRequest(memberVersion, action as AnyChangeStoreAction)
+                                is DeleteRequest<*> -> processDeleteRequest(memberVersion, action as AnyDeleteStoreAction, Cache())
+                                is GetRequest<*> -> processGetRequest(action as AnyGetStoreAction, Cache(), readContext)
+                                is ScanRequest<*> -> processScanRequest(action as AnyScanStoreAction, Cache(), readContext)
+                                else -> error("Invalid transaction member")
                             }
                             response.await() as IsDataModelResponse<*>
                         }
@@ -1441,30 +1466,36 @@ class FoundationDBDataStore private constructor(
                 } finally {
                     atomicTransactions.update { it - transaction }
                 }
-                writeAtomicReceipt(transaction, atomicReceiptsPrefix, request.changeSetId, codec.receipt(fingerprint, result))
+                val receipt = codec.transactionReceipt(fingerprint, result)
+                if (!request.commit) throw TransactionPreview(result)
+                writeAtomicReceipt(transaction, atomicReceiptsPrefix, request.transactionId, receipt)
+                if (request.hasMutations) advanceTransactionRevision(transaction)
                 updates = atomic.updates.toList()
                 result
             }
             committed = true
             val affectedIds = request.requests.map { getDataModelId(it.dataModel) }.toSet()
             uniqueIndicesByDataModelIndex.update { it - affectedIds }
-            updates.forEach { emitUpdate(it) }
+            publishCommittedTransactionUpdates { updates.forEach { emitUpdate(it) } }
             result
         } catch (error: Throwable) {
             error.rethrowIfFatal()
             val cause = error.unwrapFdb()
-            if (cause is AtomicAbort) {
-                if (committed) AtomicResponse(AtomicStatus.OutcomeUnknown, message = cause.message) else cause.response
-            } else {
-                val limit = if (!committed && cause is FDBException) when (cause.getCode()) {
-                    2101 -> "transactionBytes" to atomicCapabilities.maxTransactionBytes!!
-                    2102 -> "storageKeyBytes" to atomicCapabilities.maxStorageKeyBytes!!
-                    2103 -> "storageValueBytes" to atomicCapabilities.maxStorageValueBytes!!
-                    else -> null
-                } else null
-                if (limit == null) throw cause
-                AtomicResponse(AtomicStatus.Rejected, message = cause.message,
-                    failure = AtomicFailure(AtomicFailureCode.LimitExceeded, limit.first, limit.second.toULong()))
+            when (cause) {
+                is TransactionPreview -> cause.response
+                is TransactionAbort -> if (committed) TransactionResponse(TransactionStatus.OutcomeUnknown, message = cause.message) else cause.response
+                is AtomicAbort -> if (committed) TransactionResponse(TransactionStatus.OutcomeUnknown, message = cause.message) else cause.response.asTransactionResponse()
+                else -> {
+                    val limit = if (!committed && cause is FDBException) when (cause.getCode()) {
+                        2101 -> "transactionBytes" to atomicCapabilities.maxTransactionBytes!!
+                        2102 -> "storageKeyBytes" to atomicCapabilities.maxStorageKeyBytes!!
+                        2103 -> "storageValueBytes" to atomicCapabilities.maxStorageValueBytes!!
+                        else -> null
+                    } else null
+                    if (limit == null) throw cause
+                    TransactionResponse(TransactionStatus.Aborted, message = cause.message,
+                        failure = AtomicFailure(AtomicFailureCode.LimitExceeded, limit.first, limit.second.toULong()))
+                }
             }
         }
     }
@@ -2230,3 +2261,5 @@ private data class SensitiveModelReferences(
     val sensitiveReferences: List<ByteArray>,
     val sensitiveUniqueReferences: List<ByteArray>,
 )
+
+private class TransactionPreview(val response: TransactionResponse) : RuntimeException()

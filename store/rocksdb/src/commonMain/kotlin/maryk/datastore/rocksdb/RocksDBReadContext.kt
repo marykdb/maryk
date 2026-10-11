@@ -9,7 +9,11 @@ internal class RocksDBReadContext private constructor(
     private val snapshot: Snapshot,
     val defaultReadOptions: ReadOptions,
     val sequentialReadOptions: ReadOptions,
+    private val accessor: DBAccessor?,
 ) : AutoCloseable {
+    inline fun <T> withAccessor(store: RocksDBDataStore, block: (DBAccessor) -> T): T =
+        accessor?.let(block) ?: DBAccessor(store).use(block)
+
     override fun close() {
         try {
             sequentialReadOptions.close()
@@ -23,7 +27,7 @@ internal class RocksDBReadContext private constructor(
     }
 
     companion object {
-        fun create(db: OptimisticTransactionDB): RocksDBReadContext {
+        fun create(db: OptimisticTransactionDB, accessor: DBAccessor? = null): RocksDBReadContext {
             val snapshot = requireNotNull(db.getSnapshot()) {
                 "RocksDB did not return a snapshot"
             }
@@ -40,6 +44,7 @@ internal class RocksDBReadContext private constructor(
                     snapshot,
                     defaultReadOptions,
                     sequentialReadOptions,
+                    accessor,
                 )
             } catch (throwable: Throwable) {
                 sequentialReadOptions?.close()

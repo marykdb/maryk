@@ -56,16 +56,25 @@ import maryk.datastore.memory.processors.processScanUpdateHistoryRequest
 import maryk.datastore.memory.processors.processScanUpdatesRequest
 import maryk.datastore.memory.records.DataStore
 import maryk.core.query.requests.AtomicCapabilities
+import maryk.core.query.requests.TransactionCapabilities
+import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.responses.TransactionResponse
+import maryk.core.query.responses.TransactionStatus
+import maryk.datastore.shared.applyTransactionMembers
+import maryk.datastore.shared.asAtomicResponse
+import maryk.datastore.shared.asTransactionResponse
+import maryk.datastore.shared.mutationKeys
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
-import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.IsDataModelResponse
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import maryk.core.properties.types.Bytes
 import maryk.datastore.shared.rejectAtomicLimit
+import maryk.datastore.shared.TransactionAbort
 import maryk.datastore.shared.AtomicAbort
 import maryk.datastore.shared.MAX_ATOMIC_STAGED_NODES
 import maryk.datastore.shared.AtomicReceiptCodec
-import maryk.datastore.shared.applyAtomicMembers
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
@@ -104,21 +113,21 @@ class InMemoryDataStore private constructor(
     private val atomicDataStores = mutableMapOf<UInt, DataStore<*>>()
     private val atomicReceipts = mutableMapOf<String, ByteArray>()
 
-    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse {
+    override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
+    private var transactionRevision = freshTransactionRevision()
+
+    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
+        processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,
+            initialGuards = request.guards, initialStateChecks = true), version).asAtomicResponse()
+
+    override suspend fun processTransactionRequest(request: TransactionRequest, version: HLC): TransactionResponse {
         val codec = AtomicReceiptCodec(dataModelsById)
-        val fingerprint = codec.fingerprint(request)
-        atomicReceipts[request.changeSetId]?.let { return codec.replay(it, fingerprint) }
+        val fingerprint = codec.transactionFingerprint(request)
+        atomicReceipts[request.transactionId]?.let { return codec.replayTransaction(it, fingerprint, request) }
+        val revision = transactionRevision
         val staged = mutableMapOf<UInt, DataStore<IsRootDataModel>>()
-        val targetKeys = request.requests.groupBy { getDataModelId(it.dataModel) }.mapValues { (_, members) ->
-            members.map { member ->
-                Bytes(when (member) {
-                    is AddRequest<*> -> member.keysForObjects!!.single().bytes
-                    is ChangeRequest<*> -> member.objects.single().key.bytes
-                    is DeleteRequest<*> -> member.keys.single().bytes
-                    else -> error("Invalid atomic member")
-                })
-            }.toSet()
-        }
+        val targetKeys = request.mutationKeys().mapKeys { getDataModelId(it.key) }
+        val executionVersion = if (request.commit) version else HLC(request.stagingVersion ?: version.timestamp)
         var committed = false
         var stagedNodes = 0L
         val budget: (Int) -> Unit = { count ->
@@ -128,36 +137,45 @@ class InMemoryDataStore private constructor(
         val updates = mutableListOf<Update<*>>()
         val fetcher: (IsRootDataModel) -> DataStore<IsRootDataModel> = { model ->
             val id = getDataModelId(model)
-            staged.getOrPut(id) {
-                @Suppress("UNCHECKED_CAST")
-                (atomicDataStores[id] as? DataStore<IsRootDataModel>)?.copyForAtomic(targetKeys[id].orEmpty(), budget)
+            @Suppress("UNCHECKED_CAST")
+            val original = atomicDataStores[id] as? DataStore<IsRootDataModel>
+            if (targetKeys[id].isNullOrEmpty()) original ?: DataStore(keepAllVersions, keepUpdateHistoryIndex)
+            else staged.getOrPut(id) {
+                original?.copyForAtomic(targetKeys[id].orEmpty(), budget)
                     ?: DataStore(keepAllVersions, keepUpdateHistoryIndex)
             }
         }
         return try {
-            val result = applyAtomicMembers(request) { member ->
+            val result = applyTransactionMembers(request, revision, executionVersion) { member, memberVersion ->
                 val response = CompletableDeferred<IsResponse>()
                 val action = StoreAction(member, response)
                 @Suppress("UNCHECKED_CAST")
                 when (member) {
-                    is AddRequest<*> -> processAddRequest(version, action as AnyAddStoreAction, fetcher) { updates += it }
-                    is ChangeRequest<*> -> processChangeRequest(version, action as AnyChangeStoreAction, fetcher) { updates += it }
-                    is DeleteRequest<*> -> processDeleteRequest(version, action as AnyDeleteStoreAction, fetcher) { updates += it }
-                    else -> error("Invalid atomic member")
+                    is AddRequest<*> -> processAddRequest(memberVersion, action as AnyAddStoreAction, fetcher) { updates += it }
+                    is ChangeRequest<*> -> processChangeRequest(memberVersion, action as AnyChangeStoreAction, fetcher) { updates += it }
+                    is DeleteRequest<*> -> processDeleteRequest(memberVersion, action as AnyDeleteStoreAction, fetcher) { updates += it }
+                    is GetRequest<*> -> processGetRequest(action as AnyGetStoreAction, fetcher)
+                    is ScanRequest<*> -> processScanRequest(action as AnyScanStoreAction, fetcher)
+                    else -> error("Invalid transaction operation")
                 }
                 response.await() as IsDataModelResponse<*>
             }
-            val receipt = codec.receipt(fingerprint, result)
-            // No suspension between publishing models and recording the receipt.
-            staged.values.forEach { it.finishAtomicCopy() }
-            atomicDataStores.putAll(staged)
-            atomicReceipts[request.changeSetId] = receipt
-            committed = true
-            observeCommittedVersion(version.timestamp)
-            updates.forEach { emitFlowUpdate(it) }
+            val receipt = codec.transactionReceipt(fingerprint, result)
+            if (request.commit) {
+                // No suspension between publishing models and recording the receipt.
+                staged.values.forEach { it.finishAtomicCopy() }
+                atomicDataStores.putAll(staged)
+                atomicReceipts[request.transactionId] = receipt
+                if (request.hasMutations) transactionRevision = freshTransactionRevision()
+                committed = true
+                observeCommittedVersion(requireNotNull(result.version))
+                publishCommittedTransactionUpdates { updates.forEach { emitFlowUpdate(it) } }
+            }
             result
+        } catch (abort: TransactionAbort) {
+            if (committed) TransactionResponse(TransactionStatus.OutcomeUnknown, message = abort.message) else abort.response
         } catch (abort: AtomicAbort) {
-            if (committed) AtomicResponse(AtomicStatus.OutcomeUnknown, message = abort.message) else abort.response
+            if (committed) TransactionResponse(TransactionStatus.OutcomeUnknown, message = abort.message) else abort.response.asTransactionResponse()
         }
     }
 
@@ -185,6 +203,7 @@ class InMemoryDataStore private constructor(
                 processStoreActions { storeAction ->
                     try {
                         if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
+                            transactionRevision = freshTransactionRevision()
                             clock = nextMutationClock(
                                 clock,
                                 (storeAction.request as? UpdateResponse<*>)?.update?.version,
@@ -276,3 +295,6 @@ class InMemoryDataStore private constructor(
         )
     }
 }
+
+@OptIn(ExperimentalUuidApi::class)
+private fun freshTransactionRevision() = Bytes(Uuid.random().toByteArray())

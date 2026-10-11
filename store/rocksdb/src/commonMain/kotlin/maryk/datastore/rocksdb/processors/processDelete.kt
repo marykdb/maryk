@@ -25,6 +25,7 @@ import maryk.datastore.rocksdb.processors.helpers.requireVersionedValueSize
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.rocksdb.withTransaction
+import maryk.datastore.shared.currentAtomicContext
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update.Deletion
@@ -46,20 +47,19 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
     lastVersion: ULong? = null,
     ignoreIfVersionNotNewer: Boolean = false,
 ): IsDeleteResponseStatus<DM> = try {
-    val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
+    val reader = currentAtomicContext(this)?.transaction as? Transaction ?: DBAccessor(this)
+    val mayExist = reader is Transaction || db.keyMayExist(columnFamilies.keys, key.bytes, null)
 
     val exists = if (mayExist) {
-        val valueLength = db.get(columnFamilies.keys, key.bytes, recyclableByteArray)
+        val valueLength = reader.get(columnFamilies.keys, defaultReadOptions, key.bytes, recyclableByteArray)
         recyclableByteArray.readVersionBytesIfExact(valueLength) != null
     } else false
 
     if (ignoreIfVersionNotNewer) {
         val currentVersion = if (exists) {
-            DBAccessor(this).use {
-                getLastVersion(it, columnFamilies, defaultReadOptions, key)
-            }
+            getLastVersion(reader, columnFamilies, defaultReadOptions, key)
         } else null
-        val tombstoneVersion = db.get(
+        val tombstoneVersion = reader.get(
             columnFamilies.replicationTombstones,
             defaultReadOptions,
             key.bytes,

@@ -47,6 +47,7 @@ import kotlinx.io.readByteArray
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsTypedObjectDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationRuntimeStatus
@@ -62,6 +63,14 @@ import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
+import maryk.core.query.requests.TransactionCapabilities
+import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.responses.TransactionResponse
+import maryk.core.query.responses.TransactionStatus
+import maryk.datastore.shared.currentTransaction
+import maryk.datastore.shared.restoreTransactionGeneratedValues
+import maryk.datastore.shared.restoreAtomicGeneratedValues
+import maryk.datastore.shared.TransactionalDataStore
 import maryk.core.query.requests.AtomicCapabilities
 import maryk.datastore.shared.AtomicAbort
 import maryk.datastore.shared.validateAtomicCounts
@@ -94,6 +103,8 @@ private data class BatchRequestDescriptor(
     val responseModel: IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>,
     val dataModel: IsRootDataModel,
     val models: List<IsRootDataModel> = listOf(dataModel),
+    val transactionRequest: TransactionRequest? = null,
+    val atomicRequest: AtomicRequest? = null,
 )
 
 private class SshTunnelReconnect(
@@ -132,7 +143,8 @@ class RemoteDataStore private constructor(
     override val supportsSnapshotVersion: Boolean,
     override val supportsAtomicRequests: Boolean,
     override val atomicCapabilities: AtomicCapabilities?,
-) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider, AtomicDataStore {
+    override val transactionCapabilities: TransactionCapabilities?,
+) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider, AtomicDataStore, TransactionalDataStore {
     private val definitionsMutex = Mutex()
     private val sshTunnelMutex = Mutex()
     private val lifecycleMutex = Mutex()
@@ -230,6 +242,7 @@ class RemoteDataStore private constructor(
                     supportsAtomicRequests = infoResult.info.supportsAtomicRequests,
                     atomicCapabilities = if (infoResult.info.supportsAtomicRequests)
                         requireNotNull(infoResult.info.atomicCapabilities) else null,
+                    transactionCapabilities = infoResult.info.transactionCapabilities,
                 )
             } catch (error: Throwable) {
                 if (ownsClient) {
@@ -364,7 +377,17 @@ class RemoteDataStore private constructor(
         }
     }
 
+    override suspend fun executeTransaction(request: TransactionRequest): TransactionResponse {
+        if (transactionCapabilities == null) return TransactionResponse(TransactionStatus.Unsupported)
+        return try { executeBatchDirect(Requests(request)).single() as TransactionResponse }
+        catch (error: Throwable) {
+            error.rethrowIfFatal()
+            TransactionResponse(if (request.commit) TransactionStatus.OutcomeUnknown else TransactionStatus.Aborted, message = error.message)
+        }
+    }
+
     override suspend fun executeAtomic(request: AtomicRequest): AtomicResponse {
+        currentTransaction(this)?.let { return it.executeAtomic(request) }
         if (!supportsAtomicRequests) return AtomicResponse(AtomicStatus.Unsupported)
         try { validateAtomicCounts(request, requireNotNull(atomicCapabilities)) } catch (abort: AtomicAbort) { return abort.response }
         return try {
@@ -378,6 +401,7 @@ class RemoteDataStore private constructor(
     override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ,
     ): RP {
+        currentTransaction(this)?.let { return it.execute(request).response }
         val transportable = request as? IsTransportableRequest<*>
             ?: throw IllegalArgumentException("Request ${request::class.simpleName} is not transportable")
         val responses = execute(Requests(transportable))
@@ -387,6 +411,17 @@ class RemoteDataStore private constructor(
 
     /** Execute an ordered request batch in one remote round trip. */
     suspend fun execute(requests: Requests): List<IsResponse> {
+        currentTransaction(this)?.let { transaction ->
+            val members = requests.requests.map { member ->
+                member as? IsStoreRequest<*, *>
+                    ?: throw IllegalArgumentException("This request cannot join a transaction")
+            }
+            return transaction.executeBatch(members).responses
+        }
+        return executeBatchDirect(requests)
+    }
+
+    private suspend fun executeBatchDirect(requests: Requests): List<IsResponse> {
         requireOpen()
         require(requests.requests.isNotEmpty()) { "Remote execute request list cannot be empty" }
         val descriptors = requests.requests.map(::batchRequestDescriptor)
@@ -479,11 +514,18 @@ class RemoteDataStore private constructor(
             descriptor.responseModel.Serializer,
             payload,
             responseContext,
-        ) as IsResponse
+        ).let { response ->
+            when {
+                response is TransactionResponse && descriptor.transactionRequest != null -> restoreTransactionGeneratedValues(response, descriptor.transactionRequest)
+                response is AtomicResponse && descriptor.atomicRequest != null -> restoreAtomicGeneratedValues(response, descriptor.atomicRequest)
+                else -> response as IsResponse
+            }
+        }
     }
 
     /** Execute an ordered request batch containing unresolved Inject values. */
     suspend fun execute(requests: ObjectValues<Requests, Requests.Companion>): List<IsResponse> {
+        check(currentTransaction(this) == null) { "Unresolved Inject batches are not transaction operations" }
         requireOpen()
         @Suppress("UNCHECKED_CAST")
         val typedRequests = requests.original(Requests.requests.index)
@@ -506,10 +548,16 @@ class RemoteDataStore private constructor(
 
     private fun batchRequestDescriptor(request: IsTransportableRequest<*>): BatchRequestDescriptor {
         val executableRequest = if (request is CollectRequest<*, *>) request.request else request
+        if (executableRequest is TransactionRequest) {
+            val models = (executableRequest.requests + executableRequest.initialGuards).map { it.dataModel }
+                .ifEmpty { dataModelsById.values.firstOrNull()?.let(::listOf) ?: listOf(EmptyRemoteTransactionAnchor) }
+            @Suppress("UNCHECKED_CAST")
+            return BatchRequestDescriptor(TransactionResponse as IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>, models.first(), models, transactionRequest = executableRequest)
+        }
         if (executableRequest is AtomicRequest) {
             val models = (executableRequest.requests + executableRequest.guards).map { it.dataModel }
             @Suppress("UNCHECKED_CAST")
-            return BatchRequestDescriptor(AtomicResponse as IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>, models.first(), models)
+            return BatchRequestDescriptor(AtomicResponse as IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>, models.first(), models, atomicRequest = executableRequest)
         }
         val storeRequest = executableRequest as? IsStoreRequest<*, *>
             ?: throw IllegalArgumentException(
@@ -528,7 +576,7 @@ class RemoteDataStore private constructor(
         }
         val values = value as? ObjectValues<*, *>
             ?: throw IllegalArgumentException("Unsupported remote batch request value ${value::class.simpleName}")
-        if (type == RequestType.Collect || type == RequestType.Atomic) {
+        if (type == RequestType.Collect || type == RequestType.Atomic || type == RequestType.Transaction) {
             val collectRequest = values.toDataObject() as? IsTransportableRequest<*>
                 ?: throw IllegalArgumentException("Invalid CollectRequest in remote batch")
             return batchRequestDescriptor(collectRequest)
@@ -556,6 +604,7 @@ class RemoteDataStore private constructor(
     override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
         request: RQ,
     ): Flow<IsUpdateResponse<DM>> {
+        check(currentTransaction(this) == null) { "Subscriptions are not transaction operations" }
         registerLocalDataModels(listOf(request.dataModel))
         val transportable = request as? IsTransportableRequest<*>
             ?: throw IllegalArgumentException("Request ${request::class.simpleName} is not transportable")
@@ -763,6 +812,7 @@ class RemoteDataStore private constructor(
     override suspend fun <DM : IsRootDataModel> processUpdate(
         updateResponse: UpdateResponse<DM>,
     ): ProcessResponse<DM> {
+        check(currentTransaction(this) == null) { "Replication is not a transaction operation" }
         requireOpen()
         registerLocalDataModels(listOf(updateResponse.dataModel))
         val context = requestContext(updateResponse.dataModel)
@@ -1155,3 +1205,5 @@ private suspend fun readFramePayload(
         throw RemoteFlowDisconnectedException("Stream ended while reading frame payload", it)
     }
 }
+
+private object EmptyRemoteTransactionAnchor : RootDataModel<EmptyRemoteTransactionAnchor>()

@@ -1,8 +1,8 @@
 package maryk.sql
 
 import kotlinx.coroutines.withTimeoutOrNull
-import maryk.core.models.IsRootDataModel
 import maryk.core.exceptions.RequestException
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
 import maryk.core.models.key
 import maryk.core.properties.types.Key
@@ -10,10 +10,11 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
+import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.requests.IsStoreRequest
-import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.MAX_ATOMIC_OPERATIONS
+import maryk.core.query.requests.TransactionRequest
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
@@ -26,8 +27,12 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.datastore.shared.executeAtomic
+import maryk.datastore.shared.Transaction
+import maryk.datastore.shared.asAtomicResponse
 import maryk.datastore.shared.atomicCapabilities
+import maryk.datastore.shared.currentTransaction
+import maryk.datastore.shared.executeAtomic
+import maryk.datastore.shared.executeTransaction
 import maryk.datastore.shared.supportsAtomicRequests
 import maryk.sql.syntax.LiteralKind
 import maryk.sql.syntax.SqlExpr
@@ -43,11 +48,12 @@ import maryk.sql.syntax.SqlTableSource
 /** One independently parameterized statement in a prepared atomic change set. */
 data class SqlWriteStatement(val statement: String, val parameters: List<SqlValue> = emptyList())
 
-/** Returning results correspond to input statements and contain rows only after commit. */
+/** Returning results correspond to input statements. Staged results contain provisional versions. */
 data class SqlAtomicWriteResult(
     val response: AtomicResponse,
     val affectedRows: Int,
     val returning: List<SqlResult>,
+    val transaction: Transaction? = null,
 )
 
 /** Whether the backend can commit a SQL change set without partial writes. */
@@ -68,11 +74,28 @@ class PreparedSqlAtomicWrite internal constructor(
     val request: AtomicRequest?,
     private val projections: List<AtomicReturning>,
     private val rows: List<AtomicReturningRow>,
+    private val transactionRequest: TransactionRequest? = null,
+    private val executionMillis: Long = 30_000,
 ) {
     suspend fun execute(): SqlAtomicWriteResult {
-        val response = if (request != null) store.executeAtomic(request)
+        val ambient = currentTransaction(store)
+        if (ambient?.readOnly == true || (store as? SqlTransactionStore)?.readOnly == true) {
+            throw SqlException(SqlErrorCode.EXECUTION_STATE, "Read-only transactions cannot execute SQL mutations")
+        }
+        val response = if (transactionRequest != null) {
+            val staged = withTimeoutOrNull(executionMillis) { store.executeTransaction(transactionRequest) }
+                ?: throw SqlLimitException("executionMillis", executionMillis.toULong())
+            staged.asAtomicResponse()
+        }
+        else if (request != null) store.executeAtomic(request)
+        else if (ambient != null) ambient.executeBatch(emptyList()).asAtomicResponse()
+        else if (store is SqlTransactionStore) store.executeTransaction(TransactionRequest("sql-noop")).asAtomicResponse()
         else AtomicResponse(if (store.supportsAtomicRequests) AtomicStatus.Committed else AtomicStatus.Unsupported)
-        val committed = response.status == AtomicStatus.Committed
+        return result(response)
+    }
+
+    internal fun result(response: AtomicResponse): SqlAtomicWriteResult {
+        val committed = response.status == AtomicStatus.Committed || response.status == AtomicStatus.Staged
         val resultRows = List(projections.size) { mutableListOf<SqlRow>() }
         if (committed) rows.forEachIndexed { index, row ->
             val projection = projections[row.statement]
@@ -103,7 +126,10 @@ internal class SqlAtomicWriter(private val sql: MarykSql) {
     private val members = mutableListOf<IsStoreRequest<*, *>>()
     private val returningRows = mutableListOf<AtomicReturningRow>()
 
-    suspend fun prepare(changeSetId: String, statements: List<SqlWriteStatement>): PreparedSqlAtomicWrite {
+    suspend fun prepare(changeSetId: String, statements: List<SqlWriteStatement>, transactional: Boolean = false): PreparedSqlAtomicWrite {
+        if ((sql.dataStore as? SqlTransactionStore)?.readOnly == true || currentTransaction(sql.dataStore)?.readOnly == true) {
+            throw SqlException(SqlErrorCode.EXECUTION_STATE, "Read-only transactions cannot execute SQL mutations")
+        }
         if (!sql.supportsAtomicWrites) throw SqlException(SqlErrorCode.UNSUPPORTED, "This datastore does not support atomic SQL writes")
         if (changeSetId.isBlank() || changeSetId.length > 128) throw SqlException(SqlErrorCode.PARAMETER, "changeSetId must contain 1 to 128 characters")
         if (statements.isEmpty()) throw SqlException(SqlErrorCode.PARAMETER, "Atomic SQL requires at least one statement")
@@ -112,7 +138,7 @@ internal class SqlAtomicWriter(private val sql: MarykSql) {
             val parsed = statements.map { statement ->
                 val mutation = try { SqlParser(statement.statement).parseMutation() }
                 catch (error: SqlParseException) { throw error.toSqlException() }
-                if (mutation.kind == SqlMutationKind.HARD_DELETE) throw SqlException(SqlErrorCode.UNSUPPORTED, "Atomic SQL does not support hard deletion")
+                if (!transactional && mutation.kind == SqlMutationKind.HARD_DELETE) throw SqlException(SqlErrorCode.UNSUPPORTED, "Atomic SQL does not support hard deletion")
                 mutation
             }
             val projections = parsed.mapIndexed { index, mutation ->
@@ -126,9 +152,10 @@ internal class SqlAtomicWriter(private val sql: MarykSql) {
             budget.checkpoint()
             // Account for the eventual commit in the same request budget as planning reads.
             if (members.isNotEmpty()) budget.request()
-            val request = try { if (members.isEmpty()) null else AtomicRequest(changeSetId, members) }
+            val request = try { if (transactional || members.isEmpty()) null else AtomicRequest(changeSetId, members) }
             catch (error: RequestException) { throw SqlException(SqlErrorCode.UNSUPPORTED, error.message ?: "Invalid atomic change set", cause = error) }
-            PreparedSqlAtomicWrite(sql.dataStore, request, projections, returningRows.toList())
+            PreparedSqlAtomicWrite(sql.dataStore, request, projections, returningRows.toList(),
+                if (transactional) TransactionRequest(changeSetId, members.toList(), commit = true) else null, sql.options.maxExecutionMillis)
         } ?: budget.exceeded("planningMillis", sql.options.maxExecutionMillis)
     }
 
@@ -181,14 +208,14 @@ internal class SqlAtomicWriter(private val sql: MarykSql) {
         val selection = listOf(system("__key"), system("__version")) + mutation.assignments.map { SqlSelect(it.second, null) } + projection.selections
         val query = query(selection, mutation.parameterCount).copy(from = source(table), where = mutation.where,
             limit = SqlExpr.Literal((remainingMutations() + 1).toString(), LiteralKind.NUMBER, 0))
-        val rows = writer.evaluate(query, parameters, SqlReadOptions(filterSoftDeleted = mutation.kind != SqlMutationKind.UNDELETE))
+        val rows = writer.evaluate(query, parameters, SqlReadOptions(filterSoftDeleted = mutation.kind != SqlMutationKind.UNDELETE && mutation.kind != SqlMutationKind.HARD_DELETE))
         ensureCount(rows.size)
         for (row in rows) {
             budget.step()
             val key = Key<IsRootDataModel>((row[0] as SqlValue.Key).value.bytes)
             val version = (row[1] as SqlValue.UInt64).value
             val pairs = assignments.mapIndexed { column, definition -> writer.pair(definition, row[column + 2]) }
-            val member = if (mutation.kind == SqlMutationKind.DELETE) table.model.delete(key, lastVersion = version)
+            val member = if (mutation.kind == SqlMutationKind.DELETE || mutation.kind == SqlMutationKind.HARD_DELETE) table.model.delete(key, hardDelete = mutation.kind == SqlMutationKind.HARD_DELETE, lastVersion = version)
             else table.model.change(key.change(
                 if (mutation.kind == SqlMutationKind.UNDELETE) ObjectSoftDeleteChange(false) else Change(*pairs.toTypedArray()),
                 lastVersion = version,

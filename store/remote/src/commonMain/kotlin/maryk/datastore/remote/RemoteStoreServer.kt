@@ -69,6 +69,11 @@ import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.responses.TransactionResponse
+import maryk.core.query.responses.TransactionStatus
+import maryk.datastore.shared.executeTransaction
+import maryk.datastore.shared.transactionCapabilities
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicStatus
@@ -334,14 +339,16 @@ internal fun Application.remoteStoreModule(
                     val storeRequest = preparedRequest.storeRequest
                     val response = if (preparedRequest.authorized) {
                         try {
-                            if (executableRequest is AtomicRequest) dataStore.executeAtomic(executableRequest)
+                            if (executableRequest is TransactionRequest) dataStore.executeTransaction(executableRequest)
+                            else if (executableRequest is AtomicRequest) dataStore.executeAtomic(executableRequest)
                             else dataStore.execute(requireNotNull(storeRequest))
                         } catch (error: RequestException) {
                             if (index == 0) throw error
                             throw PartialBatchRequestException(index, error)
                         }
                     } else {
-                        if (executableRequest is AtomicRequest) AtomicResponse(AtomicStatus.Rejected, message = "Atomic operation is not authorized")
+                        if (executableRequest is TransactionRequest) TransactionResponse(if (executableRequest.commit) TransactionStatus.OutcomeUnknown else TransactionStatus.Aborted, message = "Transaction is not authorized")
+                        else if (executableRequest is AtomicRequest) AtomicResponse(AtomicStatus.Rejected, message = "Atomic operation is not authorized")
                         else authorizationFailure(requireNotNull(storeRequest))
                             ?: throw RequestValidationException(
                                 HttpStatusCode.Forbidden,
@@ -713,6 +720,13 @@ private suspend fun ApplicationCall.prepareExecuteRequest(
     val request = resolveRequest(rawRequest, operation = "execute")
     val executableRequest = if (request is CollectRequest<*, *>) request.request else request
     validateRequestWork(executableRequest)
+    if (executableRequest is TransactionRequest) {
+        val authorized = (executableRequest.requests + executableRequest.initialGuards).all { member ->
+            validateRequestWork(member)
+            authorizeRequestModels(config, principal, RemoteStoreOperation.Execute, member, member.dataModel.Meta.name)
+        }
+        return PreparedExecuteRequest(request, executableRequest, null, authorized)
+    }
     if (executableRequest is AtomicRequest) {
         val authorized = (executableRequest.requests + executableRequest.guards).all { member ->
             validateRequestWork(member)
@@ -741,7 +755,7 @@ private suspend fun ApplicationCall.prepareExecuteRequest(
 }
 
 private fun RequestType?.isMutationRequestType(): Boolean = when (this) {
-    RequestType.Add, RequestType.Change, RequestType.Delete, RequestType.Atomic -> true
+    RequestType.Add, RequestType.Change, RequestType.Delete, RequestType.Atomic, RequestType.Transaction -> true
     else -> false
 }
 
@@ -1043,6 +1057,7 @@ private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
         supportsSnapshotVersion = dataStore.supportsSnapshotVersion,
         supportsAtomicRequests = dataStore.supportsAtomicRequests,
         atomicCapabilities = dataStore.atomicCapabilities,
+        transactionCapabilities = dataStore.transactionCapabilities,
     )
 }
 

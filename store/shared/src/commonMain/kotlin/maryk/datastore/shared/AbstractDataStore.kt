@@ -29,7 +29,11 @@ import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.requests.TransactionCapabilities
 import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.TransactionResponse
+import maryk.core.query.responses.TransactionStatus
 import maryk.core.query.responses.AtomicStatus
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
@@ -70,7 +74,7 @@ abstract class AbstractDataStore(
     coroutineContext: CoroutineContext,
     protected val maxConcurrentReads: Int = 1,
     readWorkerCoroutineContext: CoroutineContext = coroutineContext,
-): IsDataStore, CoroutineScope, AtomicDataStore {
+): IsDataStore, CoroutineScope, AtomicDataStore, TransactionalDataStore {
     init {
         require(maxConcurrentReads > 0) { "maxConcurrentReads must be greater than zero" }
     }
@@ -148,7 +152,19 @@ abstract class AbstractDataStore(
 
     override val atomicCapabilities: AtomicCapabilities? get() = null
 
+    override val transactionCapabilities: TransactionCapabilities? get() = null
+
+    override suspend fun executeTransaction(request: TransactionRequest): TransactionResponse {
+        if (transactionCapabilities == null) return TransactionResponse(TransactionStatus.Unsupported)
+        (request.requests + request.initialGuards).forEach { assertRequestModelReady(getDataModelId(it.dataModel)) }
+        return execute(TransactionStoreRequest(request, dataModelsById.values.firstOrNull() ?: EmptyTransactionAnchor))
+    }
+
+    protected open suspend fun processTransactionRequest(request: TransactionRequest, version: HLC): TransactionResponse =
+        TransactionResponse(TransactionStatus.Unsupported)
+
     override suspend fun executeAtomic(request: AtomicRequest): AtomicResponse {
+        currentTransaction(this)?.let { return it.executeAtomic(request) }
         if (!supportsAtomicRequests) return AtomicResponse(AtomicStatus.Unsupported)
         (request.requests + request.guards).forEach { assertRequestModelReady(getDataModelId(it.dataModel)) }
         return execute(AtomicStoreRequest(request))
@@ -160,8 +176,9 @@ abstract class AbstractDataStore(
     override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
+        if (request !is TransactionStoreRequest) currentTransaction(this)?.let { return it.execute(request).response }
         waitForInit()
-        assertRequestModelReady(getDataModelId(request.dataModel))
+        if (request !is TransactionStoreRequest) assertRequestModelReady(getDataModelId(request.dataModel))
 
         val response = CompletableDeferred<RP>()
 
@@ -182,6 +199,7 @@ abstract class AbstractDataStore(
     override suspend fun <DM : IsRootDataModel> processUpdate(
         updateResponse: UpdateResponse<DM>
     ): ProcessResponse<DM> {
+        check(currentTransaction(this) == null) { "Replication is not a transaction operation" }
         waitForInit()
         assertRequestModelReady(getDataModelId(updateResponse.dataModel))
         requireSafeUpdateVersion(updateResponse.update)
@@ -205,6 +223,7 @@ abstract class AbstractDataStore(
     override suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, RP>, RP: IsDataResponse<DM>> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM>> {
+        check(currentTransaction(this) == null) { "Subscriptions are not transaction operations" }
         if (request.toVersion != null) {
             throw RequestException("Cannot use toVersion on an executeFlow request")
         }
@@ -349,6 +368,18 @@ abstract class AbstractDataStore(
         mutableUpdateSharedFlow.emit(update)
     }
 
+    /** A committed write must never leave a live subscription silently missing its updates. */
+    protected suspend fun publishCommittedTransactionUpdates(block: suspend () -> Unit) {
+        try { block() }
+        catch (error: Throwable) {
+            withContext(NonCancellable) {
+                try { failAllListeners(StorageException("Committed transaction notifications were interrupted", error)) }
+                catch (notificationError: Throwable) { error.addSuppressed(notificationError) }
+            }
+            throw error
+        }
+    }
+
     protected fun createFlowSnapshotBoundary(foundationDbReadVersion: Long? = null) =
         FlowSnapshotBoundary(
             localEmissionSequence = localEmissionSequence.value,
@@ -480,8 +511,19 @@ abstract class AbstractDataStore(
                     drainReads()
                 }
                 mutationBarrier.withLock {
+                    val transaction = action.request as? TransactionStoreRequest
                     val atomic = action.request as? AtomicStoreRequest
-                    if (atomic == null) {
+                    if (transaction != null) {
+                        @Suppress("UNCHECKED_CAST")
+                        val response = action.response as CompletableDeferred<TransactionResponse>
+                        try { response.complete(processTransactionRequest(transaction.transaction, nextMutationClock(HLC()))) }
+                        catch (abort: TransactionAbort) { response.complete(abort.response) }
+                        catch (abort: AtomicAbort) { response.complete(abort.response.asTransactionResponse()) }
+                        catch (error: Throwable) {
+                            response.complete(TransactionResponse(if (transaction.transaction.commit) TransactionStatus.OutcomeUnknown else TransactionStatus.Aborted, message = error.message))
+                            error.rethrowIfFatal()
+                        }
+                    } else if (atomic == null) {
                         processAction(action, null)
                     } else {
                         @Suppress("UNCHECKED_CAST")

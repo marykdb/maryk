@@ -116,7 +116,6 @@ import maryk.core.extensions.bytes.invert
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.rocksDBNotFound
 
 internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
     dataModel: DM,
@@ -137,7 +136,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
             key.bytes,
         )?.readVersionBytesIfExact()
     } else null
-    val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
+    val mayExist = transaction.atomicOwner || db.keyMayExist(columnFamilies.keys, key.bytes, null)
     return if (mayExist) {
         val valueLength =
             transaction.get(
@@ -238,15 +237,8 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
         val requestedChangedReferences = collectRequestedChangedReferences(changes)
         val initialIndexValues = mutableMapOf<IsIndexable, List<ByteArray>>()
         dataModel.Meta.indexes?.let { indexes ->
-            val storeGetter = StoreValuesGetter(
-                key.bytes,
-                db,
-                columnFamilies,
-                defaultReadOptions,
-                decryptValue = { recordKey, reference, value, offset, length ->
-                    decryptValueIfNeeded(dbIndex, recordKey, reference, value, offset, length)
-                }
-            )
+            val storeGetter = DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions)
+            storeGetter.moveToKey(key.bytes, transaction)
             indexes.forEach { index ->
                 initialIndexValues[index] = try {
                     index.toStorageByteArraysForIndex(storeGetter, key.bytes)

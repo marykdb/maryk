@@ -13,9 +13,9 @@ import maryk.core.query.RequestContext
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.change
 import maryk.core.query.requests.change
-import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
+import maryk.core.query.requests.TransactionRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.IsStoreRequest
@@ -23,6 +23,8 @@ import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.AtomicFailure
 import maryk.core.query.responses.AtomicFailureCode
 import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.TransactionResponse
+import maryk.core.query.responses.TransactionStatus
 import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.DeleteResponse
@@ -168,19 +170,30 @@ class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
         return result
     }
 
-    suspend fun fingerprint(request: AtomicRequest): ByteArray =
-        CryptographyProvider.Default.get(SHA256).hasher().hash(encode(AtomicRequest, request, "requestBytes"))
+    suspend fun transactionFingerprint(request: TransactionRequest): ByteArray =
+        CryptographyProvider.Default.get(SHA256).hasher().hash(encode(TransactionRequest, request, "requestBytes"))
 
-    fun receipt(fingerprint: ByteArray, response: AtomicResponse): ByteArray = fingerprint + encode(AtomicResponse, response, "responseBytes")
+    /** Own the submitted values, keys and predicates independently of caller-owned collections. */
+    internal fun snapshotTransactionRequest(request: TransactionRequest): TransactionRequest {
+        val bytes = encode(TransactionRequest, request, "requestBytes")
+        var offset = 0
+        return TransactionRequest.Serializer.readProtoBuf(bytes.size, { bytes[offset++] }, context()).toDataObject()
+    }
 
-    fun replay(receipt: ByteArray, fingerprint: ByteArray): AtomicResponse {
+    fun transactionReceipt(fingerprint: ByteArray, response: TransactionResponse): ByteArray =
+        fingerprint + encode(TransactionResponse, response, "responseBytes")
+
+    fun replayTransaction(receipt: ByteArray, fingerprint: ByteArray, request: TransactionRequest): TransactionResponse {
         if (receipt.size < fingerprint.size || !receipt.copyOfRange(0, fingerprint.size).contentEquals(fingerprint)) {
-            return AtomicResponse(AtomicStatus.Rejected, message = "changeSetId was already committed with different contents",
+            return TransactionResponse(TransactionStatus.Aborted, message = "Transaction ID was committed with different contents",
                 failure = AtomicFailure(AtomicFailureCode.ChangeSetMismatch))
         }
         var offset = fingerprint.size
-        return AtomicResponse.Serializer.readProtoBuf(receipt.size - offset, { receipt[offset++] }, context()).toDataObject()
+        val response = TransactionResponse.Serializer.readProtoBuf(receipt.size - offset, { receipt[offset++] }, context()).toDataObject()
+        return restoreTransactionGeneratedValues(response, request)
     }
+
+
 }
 
 const val MAX_ATOMIC_BYTES = 1_048_576

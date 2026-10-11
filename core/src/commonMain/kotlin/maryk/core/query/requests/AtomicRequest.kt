@@ -69,6 +69,7 @@ class AtomicRequest(
                 }
                 is ChangeRequest<*> -> {
                     if (request.objects.size != 1 || request.objects.single().changes.any { it is ObjectCreate }) throw RequestException("Atomic Change requires one existing object")
+                    request.requireSupportedMutationChanges()
                     request
                 }
                 is DeleteRequest<*> -> {

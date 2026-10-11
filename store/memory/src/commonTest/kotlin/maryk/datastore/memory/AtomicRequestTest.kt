@@ -11,6 +11,7 @@ import maryk.datastore.shared.executeAtomic
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.assertEquals
 import maryk.datastore.test.dataModelsForTests
+import maryk.datastore.test.runTransactionDataStoreTests
 import maryk.datastore.test.runAtomicDataStoreTests
 import maryk.datastore.shared.supportsAtomicRequests
 import kotlin.test.assertTrue
@@ -20,7 +21,7 @@ class AtomicRequestTest {
     @Test
     fun sharedAtomicContract() = runTest {
         val store = InMemoryDataStore.open(dataModelsById = dataModelsForTests, keepAllVersions = true, keepUpdateHistoryIndex = true)
-        try { assertTrue(store.supportsAtomicRequests); runAtomicDataStoreTests(store) } finally { store.close() }
+        try { assertTrue(store.supportsAtomicRequests); runAtomicDataStoreTests(store); runTransactionDataStoreTests(store) } finally { store.close() }
     }
     @Test
     fun olderImplementationsRejectWithoutFallback() = runTest {
@@ -33,4 +34,10 @@ class AtomicRequestTest {
             assertTrue(store.execute(SimpleMarykModel.scan(allowTableScan = true)).values.isEmpty())
         } finally { store.close() }
     }
+    @Test
+    fun transactionContractWithoutHistory() = runTest {
+        val store = InMemoryDataStore.open(dataModelsById = dataModelsForTests)
+        try { runTransactionDataStoreTests(store) } finally { store.close() }
+    }
+
 }

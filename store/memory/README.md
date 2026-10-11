@@ -55,3 +55,13 @@ The limit counts record-version entries; change entries contain selected deltas.
 Memory retains archived hard-deleted records and can evaluate deletion filters
 against their pre-delete state. Persistent engines cannot evaluate such filters
 after those values are erased. See [history paging](../../core/docs/query.md#getscan-update-history).
+
+
+## Serializable transaction scopes
+
+Memory replays into private copies and publishes the copies and receipt together. A fresh revision token also detects a restarted Memory backend. Receipts survive only for the lifetime of the store.
+
+The [shared contract](../../core/docs/query.md#serializable-transactions) describes
+read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
+commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
+contracts outside an explicit transaction.

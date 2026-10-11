@@ -7,6 +7,9 @@ import maryk.core.properties.types.Decimal
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
 import maryk.datastore.memory.InMemoryDataStore
+import maryk.datastore.shared.TransactionalDataStore
+import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.responses.TransactionResponse
 import maryk.datastore.shared.IsDataStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,12 +36,10 @@ class SqlReviewRegressionTest {
         assertEquals(SqlErrorCode.LIMIT, assertFailsWith<SqlException> { sql.prepare("SELECT '" + "a".repeat(65536) + "'") }.code)
     } }
 
-    @Test fun mutationPredicatesCannotBypassKeyGuards() = sqlTest { withSql { sql ->
+    @Test fun malformedMutationsCannotCommit() = sqlTest { withSql { sql ->
         sql.execute("INSERT INTO items (id, category) VALUES (1, 'original')")
         val key = sql.query("SELECT __key FROM items").rows.single()[0]
         for (statement in listOf(
-            "DELETE HARD FROM items WHERE __key = ? OR TRUE",
-            "UPDATE items SET category = 'wrong' WHERE __key = __key",
             "UPDATE items SET category = 'first', category = 'second' WHERE __key = ?",
             "INSERT INTO items (id) ignored VALUES (2)",
             "INSERT INTO items (id) VALUES (2),",
@@ -50,7 +51,7 @@ class SqlReviewRegressionTest {
 
     @Test fun nullableMutationsPreserveStoredAbsenceAndGuarding() = sqlTest { withSql { sql ->
         val inserted = sql.execute("INSERT INTO items (id, category, note) VALUES (1, NULL, NULL); -- done")
-        assertEquals(1, inserted.affectedRows, inserted.failures.joinToString())
+        assertEquals(1, inserted.affectedRows, inserted.response.toString())
         val key = sql.query("SELECT __key FROM items").rows.single()[0]
         assertEquals(listOf(SqlValue.Null, SqlValue.Null), sql.query("SELECT category, note FROM items").rows.single().values)
         sql.execute("UPDATE items SET note = 'stored' WHERE (__key = ?)", listOf(key))
@@ -124,7 +125,11 @@ class SqlReviewRegressionTest {
     @Test fun deadlinesFailAsLimitsAndKeepTheCallerStoreOpen() = sqlTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SqlTestModel))
         try {
-            val slow = object : IsDataStore by store {
+            val slow = object : IsDataStore by store, TransactionalDataStore by store {
+                override suspend fun executeTransaction(request: TransactionRequest): TransactionResponse {
+                    if (request.requests.isNotEmpty()) delay(1000)
+                    return store.executeTransaction(request)
+                }
                 override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(request: RQ): RP {
                     delay(1000)
                     return store.execute(request)

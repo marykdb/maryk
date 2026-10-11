@@ -1,11 +1,15 @@
 package maryk.datastore.indexeddb
 
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import maryk.core.properties.types.Bytes
 import maryk.datastore.shared.rejectAtomicLimit
 import maryk.datastore.shared.MAX_ATOMIC_WORK_BYTES
 import maryk.datastore.shared.MAX_ATOMIC_SCAN_ROWS
 import maryk.datastore.shared.currentAtomicContext
 import maryk.lib.extensions.compare.compareTo
+
+internal val TransactionRevisionKey = "transaction/revision".encodeToByteArray()
 
 /** Explicit opt-in: writeBatch must use one native transaction and transaction must fence all Maryk writers. */
 interface AtomicIndexedDbByteStore : IndexedDbByteStore
@@ -19,9 +23,17 @@ internal class AtomicAwareIndexedDbByteStore(
     override suspend fun <T> transaction(storeNames: Set<String>, mode: IndexedDbTransactionMode, block: suspend (IndexedDbByteStore) -> T): T =
         if (active() !== delegate) block(this) else delegate.transaction(storeNames, mode) { block(this) }
     override suspend fun get(storeName: String, key: ByteArray) = active().get(storeName, key)
-    override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) = active().put(storeName, key, value)
-    override suspend fun delete(storeName: String, key: ByteArray) = active().delete(storeName, key)
-    override suspend fun writeBatch(operations: List<IndexedDbWriteOperation>) = active().writeBatch(operations)
+    override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) =
+        writeBatch(listOf(IndexedDbWriteOperation.Put(storeName, key, value)))
+    override suspend fun delete(storeName: String, key: ByteArray) =
+        writeBatch(listOf(IndexedDbWriteOperation.Delete(storeName, key)))
+    @OptIn(ExperimentalUuidApi::class)
+    override suspend fun writeBatch(operations: List<IndexedDbWriteOperation>) {
+        val target = active()
+        val changesData = operations.any { it.storeName != "meta" && it.storeName != CommitJournalStoreName && it.storeName != CommitConsumerStoreName }
+        target.writeBatch(if (target === delegate && changesData) operations +
+            IndexedDbWriteOperation.Put("meta", TransactionRevisionKey, Uuid.random().toByteArray()) else operations)
+    }
     override suspend fun scan(storeName: String, startKey: ByteArray?, includeStart: Boolean, endKey: ByteArray?, includeEnd: Boolean, reverse: Boolean, limit: UInt) =
         active().scan(storeName, startKey, includeStart, endKey, includeEnd, reverse, limit)
 }

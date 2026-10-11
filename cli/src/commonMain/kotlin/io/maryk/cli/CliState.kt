@@ -2,6 +2,7 @@ package io.maryk.cli
 
 import kotlinx.coroutines.runBlocking
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.Transaction
 import maryk.datastore.shared.runCatchingNonFatal
 
 /**
@@ -13,6 +14,7 @@ class CliState {
     private var activeConnection: StoreConnection? = null
     private var activeInteraction: ActiveInteraction? = null
     var isOneShotMode: Boolean = false
+    var pendingSqlCommit: Transaction? = null
 
     val currentConnection: StoreConnection?
         get() = activeConnection

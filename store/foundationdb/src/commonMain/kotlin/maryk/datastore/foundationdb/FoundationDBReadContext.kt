@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb
 
+import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeMark
@@ -15,6 +16,7 @@ class FoundationDBSnapshotExpiredException : RequestException(
 
 internal data class FoundationDBReadContext(
     val readVersion: Long,
+    val transaction: Transaction? = null,
     private val startedAt: TimeMark = TimeSource.Monotonic.markNow(),
 ) {
     fun requireUsable() {

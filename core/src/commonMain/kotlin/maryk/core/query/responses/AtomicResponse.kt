@@ -19,7 +19,7 @@ import maryk.core.values.SimpleObjectValues
 
 enum class AtomicStatus(override val index: UInt, override val alternativeNames: Set<String>? = null) :
     IndexedEnumComparable<AtomicStatus>, IsCoreEnum {
-    Committed(1u), Rejected(2u), Unsupported(3u), OutcomeUnknown(4u);
+    Committed(1u), Rejected(2u), Unsupported(3u), OutcomeUnknown(4u), Staged(5u);
     companion object : IndexedEnumDefinition<AtomicStatus>(AtomicStatus::class, { entries })
 }
 

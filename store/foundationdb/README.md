@@ -208,7 +208,7 @@ Observability:
 
 ## Operational Tips
 
-- Transactions: each add, change, or delete object is handled in its own FDB transaction; a multi-object request can therefore partially succeed. FDB retries conflicts, while Maryk returns validation errors (uniques, parent presence, etc.) as per-object statuses.
+- Ordinary requests: each add, change, or delete object is handled in its own FDB transaction; a multi-object request can therefore partially succeed. FDB retries conflicts, while Maryk returns validation errors (uniques, parent presence, etc.) as per-object statuses.
 - Close: active transactions and futures are canceled before the native handle closes. Because the JVM FoundationDB binding does not guarantee that an in-flight native commit responds to `Transaction.close()`, scope shutdown is bounded to five seconds. A timeout is reported as `StorageException`; native work may still be in flight and must not be assumed rolled back.
 - Scans: index scans are recommended for large filtered queries. Primary key scans are inexpensive for full‑range iteration. A request keeps one coherent FoundationDB snapshot; after four seconds the store throws `FoundationDBSnapshotExpiredException` before FoundationDB can reject the old version. Retry with a smaller page and use the scan cursor to resume completed pages.
 - Historic queries: `toVersion` is supported for data, unique, and index reads. Historic index scanning is implemented and used when `toVersion` is provided.
@@ -237,3 +237,13 @@ Maryk is licensed under the Apache 2.0 License. See the repository's LICENSE fil
 ### Hard deletion and history
 
 A hard delete permanently removes a record's current and historic values, including when `keepAllVersions` is enabled. An earlier `toVersion` query cannot recover erased values. Use soft deletion when historical recovery is required.
+
+
+## Serializable transaction scopes
+
+FoundationDB uses one pinned native transaction per replay attempt, including reads, mutations, the revision fence and commit receipt. Preview aborts the native transaction. Application suspension retains no FoundationDB snapshot. Native attempts use a 4-second timeout, 4 MiB write budget and 10 retries; logical scopes use the shared 30-second default.
+
+The [shared contract](../../core/docs/query.md#serializable-transactions) describes
+read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
+commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
+contracts outside an explicit transaction.

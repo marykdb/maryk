@@ -71,19 +71,28 @@ import maryk.datastore.indexeddb.processors.readTrailingVersion
 import maryk.datastore.indexeddb.processors.readTrailingInvertedVersion
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import kotlinx.coroutines.CompletableDeferred
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import maryk.core.properties.types.Bytes
+import maryk.core.query.requests.TransactionCapabilities
+import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.responses.TransactionResponse
+import maryk.core.query.responses.TransactionStatus
+import maryk.datastore.shared.applyTransactionMembers
+import maryk.datastore.shared.asAtomicResponse
+import maryk.datastore.shared.asTransactionResponse
 import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
-import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.IsDataModelResponse
 import maryk.core.query.responses.IsResponse
+import maryk.datastore.shared.TransactionAbort
 import maryk.datastore.shared.AtomicAbort
 import maryk.datastore.shared.MAX_ATOMIC_WORK_BYTES
 import maryk.datastore.shared.MAX_ATOMIC_SCAN_ROWS
 import maryk.datastore.shared.AtomicReceiptCodec
 import maryk.datastore.shared.AtomicMutationContext
 import maryk.datastore.shared.currentAtomicContext
-import maryk.datastore.shared.applyAtomicMembers
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
@@ -114,17 +123,25 @@ class IndexedDbDataStore private constructor(
         AtomicCapabilities(maxWorkBytes = MAX_ATOMIC_WORK_BYTES.toUInt(), maxScanRows = MAX_ATOMIC_SCAN_ROWS.toUInt()) else null
     override val supportsAtomicRequests: Boolean get() = nativeByteStore is AtomicIndexedDbByteStore
 
+    override val transactionCapabilities = atomicCapabilities?.let { TransactionCapabilities(it) }
+
     override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
+        processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,
+            initialGuards = request.guards, initialStateChecks = true), version).asAtomicResponse()
+
+    @OptIn(ExperimentalUuidApi::class)
+    override suspend fun processTransactionRequest(request: TransactionRequest, version: HLC): TransactionResponse =
         nativeByteStore.transaction(setOf("meta", CommitJournalStoreName), IndexedDbTransactionMode.READWRITE) {
             journalCursorMutex.withLock {
                 val codec = AtomicReceiptCodec(dataModelsById)
-                val fingerprint = codec.fingerprint(request)
-                val receiptKey = "maryk.atomic/".encodeToByteArray() + request.changeSetId.encodeToByteArray()
-                nativeByteStore.get("meta", receiptKey)?.let { return@withLock codec.replay(it, fingerprint) }
+                val fingerprint = codec.transactionFingerprint(request)
+                val receiptKey = "maryk.transaction/".encodeToByteArray() + request.transactionId.encodeToByteArray()
+                nativeByteStore.get("meta", receiptKey)?.let { return@withLock codec.replayTransaction(it, fingerprint, request) }
                 drainExternalCommitsLocked()
                 validateJournalConsumersLocked()
                 val persistedClock = nativeByteStore.get("meta", CommitClockMetadataKey)?.readBigEndianULong() ?: 0uL
-                val atomicVersion = nextMutationClock(version, persistedClock)
+                val revision = Bytes(nativeByteStore.get("meta", TransactionRevisionKey) ?: byteArrayOf(0))
+                val atomicVersion = if (request.commit) nextMutationClock(version, persistedClock) else HLC(request.stagingVersion ?: nextMutationClock(version, persistedClock).timestamp)
                 mutationClock = atomicVersion
                 journalSequence = 0u
                 val staged = StagedIndexedDbByteStore(nativeByteStore)
@@ -132,29 +149,36 @@ class IndexedDbDataStore private constructor(
                 var committed = false
                 try {
                     val result = withContext(atomic) {
-                        applyAtomicMembers(request) { member ->
+                        applyTransactionMembers(request, revision, atomicVersion) { member, memberVersion ->
                             val response = CompletableDeferred<IsResponse>()
                             val action = StoreAction(member, response)
                             @Suppress("UNCHECKED_CAST")
                             when (member) {
-                                is AddRequest<*> -> processAddRequest(atomicVersion, action as AddStoreAction<IsRootDataModel>)
-                                is ChangeRequest<*> -> processChangeRequest(atomicVersion, action as ChangeStoreAction<IsRootDataModel>)
-                                is DeleteRequest<*> -> processDeleteRequest(atomicVersion, action as DeleteStoreAction<IsRootDataModel>)
-                                else -> error("Invalid atomic member")
+                                is AddRequest<*> -> processAddRequest(memberVersion, action as AddStoreAction<IsRootDataModel>)
+                                is ChangeRequest<*> -> processChangeRequest(memberVersion, action as ChangeStoreAction<IsRootDataModel>)
+                                is DeleteRequest<*> -> processDeleteRequest(memberVersion, action as DeleteStoreAction<IsRootDataModel>)
+                                is GetRequest<*> -> processGetRequest(action as GetStoreAction<IsRootDataModel>)
+                                is ScanRequest<*> -> processScanRequest(action as ScanStoreAction<IsRootDataModel>)
+                                else -> error("Invalid transaction member")
                             }
                             response.await() as IsDataModelResponse<*>
                         }
                     }
-                    staged.put("meta", receiptKey, codec.receipt(fingerprint, result))
+                    val receipt = codec.transactionReceipt(fingerprint, result)
+                    if (!request.commit) return@withLock result
+                    staged.put("meta", receiptKey, receipt)
+                    if (request.hasMutations) staged.put("meta", TransactionRevisionKey, Uuid.random().toByteArray())
                     nativeByteStore.writeBatch(staged.operations)
                     committed = true
                     staged.journalKey?.let { lastJournalKey = it }
-                    observeCommittedVersion(atomicVersion.timestamp)
-                    atomic.updates.forEach { emitFlowUpdate(it) }
+                    observeCommittedVersion(requireNotNull(result.version))
+                    publishCommittedTransactionUpdates { atomic.updates.forEach { emitFlowUpdate(it) } }
                     nativeByteStore.signalCommittedUpdate()
                     result
+                } catch (abort: TransactionAbort) {
+                    if (committed) TransactionResponse(TransactionStatus.OutcomeUnknown, message = abort.message) else abort.response
                 } catch (abort: AtomicAbort) {
-                    if (committed) AtomicResponse(AtomicStatus.OutcomeUnknown, message = abort.message) else abort.response
+                    if (committed) TransactionResponse(TransactionStatus.OutcomeUnknown, message = abort.message) else abort.response.asTransactionResponse()
                 }
             }
         }

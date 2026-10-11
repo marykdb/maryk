@@ -154,3 +154,13 @@ Notes:
 ### Hard deletion and history
 
 A hard delete permanently removes a record's current and historic values, including when `keepAllVersions` is enabled. An earlier `toVersion` query cannot recover erased values. Use soft deletion when historical recovery is required.
+
+
+## Serializable transaction scopes
+
+RocksDB replays through a native optimistic transaction. Point reads and iterators include its pending writes; a revision key participates in conflict detection and changes in each normal write commit. Preview closes without commit, and durable receipts survive reopen.
+
+The [shared contract](../../core/docs/query.md#serializable-transactions) describes
+read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
+commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
+contracts outside an explicit transaction.

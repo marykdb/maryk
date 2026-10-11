@@ -1,5 +1,7 @@
 package maryk.datastore.rocksdb
 
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import maryk.datastore.shared.MAX_ATOMIC_WORK_BYTES
 import maryk.datastore.shared.rejectAtomicLimit
 import maryk.datastore.shared.currentAtomicContext
@@ -15,6 +17,7 @@ import maryk.rocksdb.getRequiredSize
 import maryk.rocksdb.getStatus
 import maryk.rocksdb.rocksDBNotFound
 
+internal val TransactionRevisionKey = "maryk.transaction/revision".encodeToByteArray()
 private const val DELETE_RANGE_BATCH_SIZE = 1024
 
 class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDataStore) {
@@ -26,14 +29,17 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         if (atomicWorkBytes > MAX_ATOMIC_WORK_BYTES) rejectAtomicLimit("workBytes", MAX_ATOMIC_WORK_BYTES.toULong(), atomicWorkBytes.toULong())
     }
     private var nativeTransaction: RocksDBTransaction? = null
+    private var hasWrites = false
 
     fun put(columnFamilyHandle: ColumnFamilyHandle, key: ByteArray, value: ByteArray) {
         budget(key.size + value.size)
+        if (columnFamilyHandle !== rocksDBDataStore.transactionMetadataHandle) hasWrites = true
         currentTransaction().put(columnFamilyHandle, key, value)
     }
 
     fun delete(columnFamilyHandle: ColumnFamilyHandle, key: ByteArray) {
         budget(key.size)
+        if (columnFamilyHandle !== rocksDBDataStore.transactionMetadataHandle) hasWrites = true
         currentTransaction().delete(columnFamilyHandle, key)
     }
 
@@ -55,6 +61,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
 
             for (key in keysToDelete) {
                 budget(key.size)
+                if (columnFamilyHandle !== rocksDBDataStore.transactionMetadataHandle) hasWrites = true
                 transaction.delete(columnFamilyHandle, key)
             }
         } while (keysToDelete.size == DELETE_RANGE_BATCH_SIZE)
@@ -78,6 +85,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
 
             for (key in keysToDelete) {
                 budget(key.size)
+                if (columnFamilyHandle !== rocksDBDataStore.transactionMetadataHandle) hasWrites = true
                 transaction.delete(columnFamilyHandle, key)
             }
         } while (keysToDelete.size == DELETE_RANGE_BATCH_SIZE)
@@ -119,12 +127,15 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         key: ByteArray
     ) = currentTransaction().getForUpdate(readOptions, columnFamilyHandle, key, true).also { budget(key.size + (it?.size ?: 0)) }
 
+    @OptIn(ExperimentalUuidApi::class)
     fun commit() {
         if (atomicOwner) return
         val transaction = nativeTransaction ?: return
         nativeTransaction = null
         try {
+            if (hasWrites) transaction.put(rocksDBDataStore.transactionMetadataHandle, TransactionRevisionKey, Uuid.random().toByteArray())
             transaction.commit()
+            hasWrites = false
         } finally {
             transaction.close()
         }

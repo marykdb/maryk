@@ -15,18 +15,25 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import maryk.core.properties.types.Bytes
+import maryk.core.query.requests.TransactionCapabilities
+import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.responses.TransactionResponse
+import maryk.core.query.responses.TransactionStatus
+import maryk.datastore.shared.applyTransactionMembers
+import maryk.datastore.shared.asAtomicResponse
+import maryk.datastore.shared.asTransactionResponse
 import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
-import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.IsDataModelResponse
 import maryk.core.query.responses.IsResponse
+import maryk.datastore.shared.TransactionAbort
 import maryk.datastore.shared.AtomicAbort
 import maryk.datastore.shared.MAX_ATOMIC_WORK_BYTES
 import maryk.datastore.shared.AtomicReceiptCodec
 import maryk.datastore.shared.AtomicMutationContext
 import maryk.datastore.shared.currentAtomicContext
-import maryk.datastore.shared.applyAtomicMembers
 import maryk.datastore.shared.StoreAction
 import maryk.core.clock.HLC
 import maryk.core.definitions.MarykPrimitive
@@ -197,6 +204,7 @@ class RocksDBDataStore private constructor(
     readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
 ), MigrationAdmin, SnapshotVersionProvider, ReplicationTombstoneCompactor {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
+    internal val transactionMetadataHandle get() = retainedColumnFamilyHandles.first()
     private var retainedColumnFamilyHandles: List<ColumnFamilyHandle> = emptyList()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
@@ -1280,42 +1288,59 @@ class RocksDBDataStore private constructor(
     override val atomicCapabilities: AtomicCapabilities = AtomicCapabilities(maxWorkBytes = MAX_ATOMIC_WORK_BYTES.toUInt())
     override val supportsAtomicRequests: Boolean = true
 
-    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse {
+    override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
+
+    override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
+        processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,
+            initialGuards = request.guards, initialStateChecks = true), version).asAtomicResponse()
+
+    override suspend fun processTransactionRequest(request: TransactionRequest, version: HLC): TransactionResponse {
         val codec = AtomicReceiptCodec(dataModelsById)
-        val fingerprint = codec.fingerprint(request)
-        val receiptKey = "maryk.atomic/".encodeToByteArray() + request.changeSetId.encodeToByteArray()
+        val fingerprint = codec.transactionFingerprint(request)
+        val receiptKey = "maryk.transaction/".encodeToByteArray() + request.transactionId.encodeToByteArray()
         val transaction = Transaction(this).apply { atomicOwner = true }
         val atomic = AtomicMutationContext(this, transaction)
         var committed = false
         try {
-            transaction.get(retainedColumnFamilyHandles.first(), defaultReadOptions, receiptKey)?.let {
-                return codec.replay(it, fingerprint)
+            transaction.get(transactionMetadataHandle, defaultReadOptions, receiptKey)?.let {
+                return codec.replayTransaction(it, fingerprint, request)
             }
-            val result = withContext(atomic) {
-                applyAtomicMembers(request) { member ->
-                    val response = CompletableDeferred<IsResponse>()
-                    val action = StoreAction(member, response)
-                    @Suppress("UNCHECKED_CAST")
-                    when (member) {
-                        is AddRequest<*> -> processAddRequest(version, action as AnyAddStoreAction)
-                        is ChangeRequest<*> -> processChangeRequest(version, action as AnyChangeStoreAction)
-                        is DeleteRequest<*> -> processDeleteRequest(version, action as AnyDeleteStoreAction, Cache())
-                        else -> error("Invalid atomic member")
+            val revision = Bytes(transaction.get(transactionMetadataHandle, defaultReadOptions, TransactionRevisionKey) ?: byteArrayOf(0))
+            val executionVersion = if (request.commit) version else HLC(request.stagingVersion ?: version.timestamp)
+            val result = RocksDBReadContext.create(db, transaction).use { readContext ->
+                withContext(atomic) {
+                    applyTransactionMembers(request, revision, executionVersion) { member, memberVersion ->
+                        val response = CompletableDeferred<IsResponse>()
+                        val action = StoreAction(member, response)
+                        @Suppress("UNCHECKED_CAST")
+                        when (member) {
+                            is AddRequest<*> -> processAddRequest(memberVersion, action as AnyAddStoreAction)
+                            is ChangeRequest<*> -> processChangeRequest(memberVersion, action as AnyChangeStoreAction)
+                            is DeleteRequest<*> -> processDeleteRequest(memberVersion, action as AnyDeleteStoreAction, Cache())
+                            is GetRequest<*> -> processGetRequest(action as AnyGetStoreAction, Cache(), readContext)
+                            is ScanRequest<*> -> processScanRequest(action as AnyScanStoreAction, Cache(), readContext)
+                            else -> error("Invalid transaction member")
+                        }
+                        response.await() as IsDataModelResponse<*>
                     }
-                    response.await() as IsDataModelResponse<*>
                 }
             }
-            transaction.put(retainedColumnFamilyHandles.first(), receiptKey, codec.receipt(fingerprint, result))
-            transaction.atomicOwner = false
-            transaction.commit()
-            committed = true
-            val affectedIds = request.requests.map { getDataModelId(it.dataModel) }.toSet()
-            uniqueIndicesByDataModelIndex.update { it - affectedIds }
-            observeCommittedVersion(version.timestamp)
-            atomic.updates.forEach { emitFlowUpdate(it) }
+            val receipt = codec.transactionReceipt(fingerprint, result)
+            if (request.commit) {
+                transaction.put(transactionMetadataHandle, receiptKey, receipt)
+                transaction.atomicOwner = false
+                transaction.commit()
+                committed = true
+                val affectedIds = request.requests.map { getDataModelId(it.dataModel) }.toSet()
+                uniqueIndicesByDataModelIndex.update { it - affectedIds }
+                observeCommittedVersion(requireNotNull(result.version))
+                publishCommittedTransactionUpdates { atomic.updates.forEach { emitFlowUpdate(it) } }
+            }
             return result
+        } catch (abort: TransactionAbort) {
+            return if (committed) TransactionResponse(TransactionStatus.OutcomeUnknown, message = abort.message) else abort.response
         } catch (abort: AtomicAbort) {
-            return if (committed) AtomicResponse(AtomicStatus.OutcomeUnknown, message = abort.message) else abort.response
+            return if (committed) TransactionResponse(TransactionStatus.OutcomeUnknown, message = abort.message) else abort.response.asTransactionResponse()
         } finally {
             transaction.close()
         }

@@ -283,3 +283,13 @@ execution. The same check applies to nested filters, collected reads, flows, and
 mutation batches. This bounds backtracking in full-string matching; local trusted
 queries retain the complete regex API. Exact and prefix named search remain
 available through `Matches` and `MatchesPrefix`.
+
+
+## Serializable transaction scopes
+
+Remote carries normalized transaction journals through the same request protocol and reports the backend transaction capabilities through `/info`. The server authorizes every read and mutation in the journal before executing it. Unauthorized commit resolution reports an uncertain outcome because authorization failure cannot establish whether an earlier attempt committed. No server-side native transaction is held between RPC calls.
+
+The [shared contract](../../core/docs/query.md#serializable-transactions) describes
+read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
+commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
+contracts outside an explicit transaction.

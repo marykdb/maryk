@@ -4,6 +4,13 @@ import io.maryk.cli.BasicCliEnvironment
 import io.maryk.cli.CliState
 import io.maryk.cli.CommandLineParser
 import io.maryk.cli.RocksDbStoreConnection
+import maryk.core.query.requests.AtomicCapabilities
+import maryk.core.query.requests.TransactionCapabilities
+import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.responses.TransactionResponse
+import maryk.core.query.responses.TransactionStatus
+import maryk.core.properties.types.Bytes
+import maryk.datastore.shared.TransactionalDataStore
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.query.requests.AddRequest
@@ -21,16 +28,21 @@ import kotlin.test.assertTrue
 
 class SqlCommandTest {
     @Test
-    fun explicitWritesPreserveSqlAndReportPartialFailures() {
+    fun explicitWritesPreserveSqlAndReportTransactionOutcomes() {
         var calls = 0
-        val store = object : FakeDataStore(mapOf(1u to SimpleMarykModel)) {
-            @Suppress("UNCHECKED_CAST")
-            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(request: RQ): RP {
-                val add = assertIs<AddRequest<*>>(request)
+        val store = object : FakeDataStore(mapOf(1u to SimpleMarykModel)), TransactionalDataStore {
+            override val transactionCapabilities = TransactionCapabilities(AtomicCapabilities())
+            override suspend fun executeTransaction(request: TransactionRequest): TransactionResponse {
+                if (request.requests.isEmpty()) return TransactionResponse(TransactionStatus.Staged, revision = Bytes(byteArrayOf(0)), version = 1uL)
+                val add = assertIs<AddRequest<*>>(request.requests.single())
                 assertEquals("ha'quoted", add.objects.first().original(1u))
-                val key = SimpleMarykModel.key(ByteArray(SimpleMarykModel.Meta.keyByteSize))
+                val key = SimpleMarykModel.key(add.keysForObjects!!.single().bytes)
+                if (!request.commit) return TransactionResponse(TransactionStatus.Staged,
+                    listOf(AddResponse(SimpleMarykModel, listOf(AddSuccess(key, 1uL, emptyList())))), version = 1uL)
                 calls++
-                return AddResponse(SimpleMarykModel, if (calls == 1) listOf(AddSuccess(key, 1u, emptyList())) else listOf(AlreadyExists(key))) as RP
+                return if (calls == 1) TransactionResponse(TransactionStatus.Committed,
+                    listOf(AddResponse(SimpleMarykModel, listOf(AddSuccess(key, 1uL, emptyList())))), version = 1uL)
+                else TransactionResponse(TransactionStatus.Aborted, message = "Already exists")
             }
         }
         val state = CliState().apply { replaceConnection(RocksDbStoreConnection("/test", store)) }
@@ -41,11 +53,11 @@ class SqlCommandTest {
         val parsed = assertIs<CommandLineParser.ParseResult.Success>(CommandLineParser.parse("sql --write -- /* import */ $statement"))
         val success = SqlCommand().execute(context, parsed.tokens.drop(1))
         assertFalse(success.isError, success.lines.joinToString())
-        assertEquals(listOf("Affected rows: 1"), success.lines)
+        assertEquals(listOf("Committed: 1 affected rows"), success.lines)
         val failure = SqlCommand().execute(context, listOf("--write", statement))
         assertTrue(failure.isError)
-        assertEquals("Affected rows: 0", failure.lines.first())
-        assertTrue(failure.lines.last().startsWith("Failed:"))
+        assertEquals("Rejected: 0 affected rows", failure.lines.first())
+        assertTrue(failure.lines.last().contains("Already exists"))
         for (option in listOf("--snapshot", "--include-deleted")) {
             assertTrue(SqlCommand().execute(context, listOf("--write", option, statement)).isError)
         }
@@ -99,4 +111,37 @@ class SqlCommandTest {
         assertTrue(error.isError)
         assertTrue(error.lines.first().contains("SQL"))
     }
+    @Test
+    fun retainsUncertainCommitAndBlocksFreshWritesUntilResolution() {
+        var submitted = 0
+        val store = object : FakeDataStore(mapOf(1u to SimpleMarykModel)), TransactionalDataStore {
+            override val transactionCapabilities = TransactionCapabilities(AtomicCapabilities())
+            override suspend fun executeTransaction(request: TransactionRequest): TransactionResponse {
+                if (request.requests.isEmpty()) return TransactionResponse(TransactionStatus.Staged, revision = Bytes(byteArrayOf(0)), version = 1uL)
+                val add = assertIs<AddRequest<*>>(request.requests.single())
+                val response = listOf(AddResponse(SimpleMarykModel, listOf(AddSuccess(SimpleMarykModel.key(add.keysForObjects!!.single().bytes), 2uL, emptyList()))))
+                if (!request.commit) return TransactionResponse(TransactionStatus.Staged, response, version = 2uL)
+                submitted++
+                if (submitted == 1) throw IllegalStateException("Lost response after commit")
+                return TransactionResponse(TransactionStatus.Committed, response, version = 2uL)
+            }
+        }
+        val state = CliState().apply { replaceConnection(RocksDbStoreConnection("/test", store)) }
+        val context = CommandContext(CommandRegistry(state, BasicCliEnvironment), state, BasicCliEnvironment)
+        val command = SqlCommand()
+        val statement = listOf("--write", "INSERT INTO SimpleMarykModel (value) VALUES ('haha-uncertain')")
+        val result = command.execute(context, statement)
+        assertTrue(result.isError)
+        assertEquals("OutcomeUnknown: affected rows unconfirmed", result.lines.first())
+        assertTrue(state.pendingSqlCommit != null)
+        assertTrue(command.execute(context, statement).isError)
+        assertEquals(1, submitted)
+        val parsed = assertIs<CommandLineParser.ParseResult.Success>(CommandLineParser.parse("sql --resolve-commit"))
+        val resolved = command.execute(context, parsed.tokens.drop(1))
+        assertFalse(resolved.isError)
+        assertTrue(resolved.lines.first().startsWith("Committed:"))
+        assertEquals(null, state.pendingSqlCommit)
+        assertEquals(2, submitted)
+    }
+
 }

@@ -172,3 +172,8 @@ Scan options:
 ## Docs
 
 See `cli/docs/README.md` and `cli/docs/commands.md` for detailed flows and options.
+
+If a SQL write reports an uncertain commit, the interactive session retains its
+transaction and blocks further SQL writes. Run `sql --resolve-commit` to resolve
+that exact transaction. A one-shot process cannot retain the handle after exit;
+its uncertain status must not be treated as proof that no rows changed.

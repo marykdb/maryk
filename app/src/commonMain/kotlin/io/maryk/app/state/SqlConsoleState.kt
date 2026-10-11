@@ -10,14 +10,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.properties.types.Decimal
+import maryk.core.query.responses.AtomicStatus
+import maryk.core.query.responses.TransactionStatus
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.Transaction
+import maryk.datastore.shared.TransactionCancellationException
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.sql.MarykSql
 import maryk.sql.SqlCatalog
@@ -60,6 +64,8 @@ class SqlConsoleState(private val scope: CoroutineScope) {
     var writeMode by mutableStateOf(false)
     var snapshot by mutableStateOf(false)
     var includeDeleted by mutableStateOf(false)
+    var pendingCommit by mutableStateOf<Transaction?>(null)
+        private set
     var running by mutableStateOf(false)
         private set
     var columns by mutableStateOf<List<SqlColumn>>(emptyList())
@@ -152,11 +158,34 @@ class SqlConsoleState(private val scope: CoroutineScope) {
 
     fun cancel() { job?.cancel() }
 
+    fun resolveCommit() {
+        if (running) return
+        val transaction = pendingCommit ?: return
+        val ticket = generation
+        running = true
+        job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            try {
+                val result = withContext(Dispatchers.Default) { transaction.resolveCommit() }
+                if (generation == ticket) {
+                    message = if (result.status == TransactionStatus.Committed) "Commit confirmed." else "Commit ${result.status.name}."
+                    error = if (result.status == TransactionStatus.Committed) null else result.message ?: result.failure?.toString()
+                    if (result.status != TransactionStatus.OutcomeUnknown) pendingCommit = null
+                }
+            } finally {
+                if (generation == ticket) { running = false; job = null }
+            }
+        }
+    }
+
     fun run(parameterCount: Int, explain: Boolean = false, atVersion: ULong? = null) {
         if (running) return
         val facade = sql ?: return
         val statement = editor.text
         val writing = writeMode
+        if (writing && pendingCommit != null) {
+            error = "Resolve the previous commit before running another write."
+            return
+        }
         if (writing && (explain || snapshot || includeDeleted || atVersion != null)) {
             error = "Turn off writes to use Explain, time travel, snapshots, or include deleted."
             return
@@ -188,8 +217,15 @@ class SqlConsoleState(private val scope: CoroutineScope) {
                 withContext(Dispatchers.Default) {
                     if (writing) {
                         val result = facade.execute(statement, values)
-                        resultMessage = "Affected rows: ${result.affectedRows}"
-                        resultError = result.failures.takeIf { it.isNotEmpty() }?.joinToString("\n")
+                        if (result.response.status == AtomicStatus.OutcomeUnknown) pendingCommit = result.transaction
+                        resultMessage = if (result.response.status == AtomicStatus.Committed) "Affected rows: ${result.affectedRows}"
+                            else result.response.status.name
+                        resultError = if (result.response.status == AtomicStatus.Committed) null
+                            else "${result.response.status}: ${result.response.message ?: result.response.failure ?: "Write was not confirmed"}"
+                        result.returning.singleOrNull()?.let { returned ->
+                            resultColumns = returned.columns
+                            collected.addAll(returned.rows)
+                        }
                     } else {
                         val prepared = facade.prepare(statement)
                         if (explain) {
@@ -212,7 +248,10 @@ class SqlConsoleState(private val scope: CoroutineScope) {
                 }
             } catch (cancelled: CancellationException) {
                 resultMessage = "Cancelled. ${collected.size} partial rows."
-                if (writing) resultMessage = "Write cancelled. Check the store before retrying; cancellation does not roll back writes."
+                if (cancelled is TransactionCancellationException) {
+                    pendingCommit = cancelled.transaction
+                    resultMessage = "Commit outcome unknown. Resolve the retained transaction before retrying."
+                } else if (writing) resultMessage = "Write cancelled before commit."
                 throw cancelled
             } catch (failure: Exception) {
                 failure.rethrowIfFatal()

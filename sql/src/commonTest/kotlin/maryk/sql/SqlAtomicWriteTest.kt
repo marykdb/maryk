@@ -173,7 +173,8 @@ class SqlAtomicWriteTest {
             val rows = (1..1001).joinToString { "($it)" }
             assertEquals(SqlErrorCode.LIMIT, assertFailsWith<SqlException> { sql.prepareAtomic("too-many", "INSERT INTO items (id) VALUES $rows") }.code)
             assertTrue(sql.query("SELECT * FROM items").rows.isEmpty())
-            sql.execute("INSERT INTO items (id) VALUES $rows")
+            sql.execute("INSERT INTO items (id) VALUES " + (1..1000).joinToString { "($it)" })
+            sql.execute("INSERT INTO items (id) VALUES (1001)")
             assertEquals(SqlErrorCode.LIMIT, assertFailsWith<SqlException> { sql.prepareAtomic("update-too-many", "UPDATE items SET category = 'no' WHERE TRUE") }.code)
             assertEquals(SqlValue.Int64(1001), sql.query("SELECT COUNT(*) FROM items WHERE category IS NULL").rows.single()[0])
         }
@@ -193,12 +194,12 @@ class SqlAtomicWriteTest {
     }
 
     @Test
-    fun oldExecuteKeepsItsGuardedWriteContract() = sqlTest {
+    fun executeSupportsTransactionalPredicatesReturningAndInsertQueries() = sqlTest {
         withSql { sql, _ ->
-            assertEquals(SqlErrorCode.UNSUPPORTED, assertFailsWith<SqlException> { sql.execute("UPDATE items SET category = 'a' WHERE TRUE") }.code)
-            assertEquals(SqlErrorCode.UNSUPPORTED, assertFailsWith<SqlException> { sql.execute("INSERT INTO items (id) VALUES (1) RETURNING id") }.code)
-            assertEquals(SqlErrorCode.UNSUPPORTED, assertFailsWith<SqlException> { sql.execute("INSERT INTO items (id) SELECT 1") }.code)
-            assertTrue(sql.query("SELECT * FROM items").rows.isEmpty())
+            assertEquals(0, sql.execute("UPDATE items SET category = 'a' WHERE TRUE").affectedRows)
+            assertEquals(1, sql.execute("INSERT INTO items (id) VALUES (1) RETURNING id").affectedRows)
+            assertEquals(1, sql.execute("INSERT INTO items (id) SELECT 2").affectedRows)
+            assertEquals(2, sql.query("SELECT * FROM items").rows.size)
         }
     }
 

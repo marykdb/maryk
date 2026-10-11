@@ -1,8 +1,5 @@
 package maryk.sql
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import maryk.core.properties.types.Decimal
 import maryk.datastore.memory.InMemoryDataStore
 import kotlin.test.Test
@@ -52,11 +49,11 @@ class SqlWriteTest {
     }
 
     @Test
-    fun writesRequireTheBoundedFirstVersionSurface() = sqlTest {
+    fun predicateWritesRemainBoundedAndRequireWhere() = sqlTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SqlTestModel))
         try {
             val sql = MarykSql.create(store, SqlCatalog(listOf(SqlTable("items", SqlTestModel))))
-            assertFailsWith<SqlException> { sql.execute("UPDATE items SET category = 'changed' WHERE id = 8") }
+            assertEquals(0, sql.execute("UPDATE items SET category = 'changed' WHERE id = 8").affectedRows)
             assertFailsWith<SqlException> { sql.execute("DELETE FROM items") }
         } finally { store.close() }
     }
@@ -70,7 +67,7 @@ class SqlWriteTest {
             val key = sql.query("SELECT __key FROM \"custom schema\".\"order items\" WHERE id = 10").rows.single()[0]
             assertEquals(1, sql.execute("UPDATE \"custom schema\".\"order items\" SET category = 'changed' WHERE __key = ?", listOf(key)).affectedRows)
             val deleted = sql.execute("DELETE FROM \"custom schema\".\"order items\" WHERE __key = ?", listOf(key))
-            assertEquals(1, deleted.affectedRows, deleted.failures.joinToString())
+            assertEquals(1, deleted.affectedRows, deleted.response.toString())
         } finally { store.close() }
     }
 

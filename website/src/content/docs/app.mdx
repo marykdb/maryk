@@ -67,10 +67,12 @@ truncating the query. Closing the modal cancels execution while preserving its d
 results for reopening. Disconnecting the store clears connection-specific results.
 
 Turn on **Enable writes** to run `INSERT`, `UPDATE`, `DELETE`, `UNDELETE`, or `DELETE HARD`.
-Updates and deletes require a single-key predicate and use version guards. Writes cannot
-run with time travel, snapshot, or include-deleted read options. Multi-row inserts can
-partly succeed; inspect the affected-row count and failures. Cancellation does not roll
-back writes. Close the SQL modal and reload the record browser to view changed data.
+Updates and deletes require WHERE and accept bounded SQL predicates. Each statement
+uses a serializable autocommit transaction with version guards. Writes cannot run with
+time travel, snapshot, or include-deleted read options. Multi-row statements publish
+all changes together; RETURNING rows appear in the result table. Cancellation before
+commit discards staging. A submitted commit may be uncertain; confirm its outcome
+before retrying. Close the SQL modal and reload the record browser to view changed data.
 
 See [SQL](../../sql/README/) for the supported language, types, and consistency guarantees.
 
@@ -203,3 +205,6 @@ The form editor provides:
 
 - Store configs: `~/.maryk/app/stores.conf`.
 - UI prefs (panel/pins): Java Preferences node `io.maryk.app.ui`.
+
+An uncertain SQL commit can be resolved with **Resolve commit**. The console blocks
+further writes until that retained commit has a confirmed outcome.

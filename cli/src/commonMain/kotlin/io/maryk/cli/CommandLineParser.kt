@@ -38,7 +38,7 @@ internal object CommandLineParser {
                 remaining = remaining.drop(version.length).trimStart()
             }
             if (option == "--") break
-            if (option !in setOf("--write", "--snapshot", "--include-deleted", "--no-table-scan", "--to-version")) break
+            if (option !in setOf("--write", "--resolve-commit", "--snapshot", "--include-deleted", "--no-table-scan", "--to-version")) break
         }
         if (remaining.isNotEmpty()) tokens += remaining
         return ParseResult.Success(tokens)

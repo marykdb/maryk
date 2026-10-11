@@ -66,7 +66,7 @@ sql --write UPDATE Person SET nickname = NULL WHERE __key = '<encoded-key>' AND 
 sql --write --file ./mutation.sql
 ```
 
-Writes require a key equality for each row mutation, with an optional version equality. Optional scalar properties can be set to `NULL`. The CLI prints affected rows and failures; a multi-row insert can partly succeed. `--write` cannot be combined with `--snapshot`, `--to-version`, or `--include-deleted`. Schema changes remain Maryk operations. See the [SQL module](../../sql/README.md) for types, guards, limits, and supported syntax.
+Each statement uses a serializable autocommit transaction, supports bounded predicates and RETURNING, and commits all affected rows together. Optional scalar properties can be set to `NULL`. The CLI prints confirmed affected rows and structured failures. An uncertain commit retains its transaction in the interactive session; use `sql --resolve-commit` before another write. A one-shot process cannot retain the handle after exit, so an uncertain status is not proof of rollback. `--write` cannot be combined with `--snapshot`, `--to-version`, or `--include-deleted`. Schema changes remain Maryk operations. See the [SQL module](../../sql/README.md) for types, guards, limits, and supported syntax.
 
 ## Connect
 

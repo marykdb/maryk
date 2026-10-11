@@ -1,5 +1,7 @@
 package io.maryk.cli.commands
 
+import kotlinx.coroutines.runBlocking
+import maryk.datastore.memory.InMemoryDataStore
 import io.maryk.cli.BasicCliEnvironment
 import io.maryk.cli.CliState
 import io.maryk.cli.CommandLineParser
@@ -142,6 +144,68 @@ class SqlCommandTest {
         assertTrue(resolved.lines.first().startsWith("Committed:"))
         assertEquals(null, state.pendingSqlCommit)
         assertEquals(2, submitted)
+    }
+
+    @Test
+    fun richerWindowsAndJoinedMutationsWorkThroughTheCommand() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val state = CliState().apply { replaceConnection(RocksDbStoreConnection("/test", store)) }
+        val context = CommandContext(CommandRegistry(state, BasicCliEnvironment), state, BasicCliEnvironment)
+        val command = SqlCommand()
+        fun run(text: String, write: Boolean = false) = command.execute(context, (if (write) listOf("--write") else emptyList()) + text)
+        try {
+            assertFalse(run("INSERT INTO SimpleMarykModel (value) VALUES ('haha-before')", true).isError)
+            val update = run("UPDATE SimpleMarykModel AS s SET value = v.column2 FROM (VALUES ('haha-before', 'haha-after')) v WHERE s.value = v.column1 RETURNING s.value", true)
+            assertFalse(update.isError, update.lines.joinToString())
+            assertEquals("\"haha-after\"", update.lines.last())
+            assertTrue(run("UPDATE SimpleMarykModel AS s SET value = v.column2 FROM (VALUES ('haha-after', 'haha-a'), ('haha-after', 'haha-b')) v WHERE s.value = v.column1", true).isError)
+            assertEquals("\"haha-after\"", run("SELECT value FROM SimpleMarykModel").lines.last())
+            val window = run("SELECT SUM(column1) OVER w AS total FROM (VALUES (1), (2), (3)) v WINDOW w AS (ORDER BY column1 ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) ORDER BY column1")
+            assertFalse(window.isError, window.lines.joinToString())
+            assertEquals(listOf("total", "1", "3", "5"), window.lines)
+            assertFalse(run("DELETE FROM SimpleMarykModel AS s USING (VALUES ('haha-after')) v WHERE s.value = v.column1", true).isError)
+            assertEquals("0", run("SELECT COUNT(*) FROM SimpleMarykModel").lines.last())
+        } finally { state.clearConnection(); store.close() }
+    }
+
+    @Test
+    fun activeTransactionsCannotBypassExplicitWriteMode() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val state = CliState().apply { replaceConnection(RocksDbStoreConnection("/test", store)) }
+        val context = CommandContext(CommandRegistry(state, BasicCliEnvironment), state, BasicCliEnvironment)
+        val command = SqlCommand()
+        try {
+            assertFalse(command.execute(context, listOf("--write", "BEGIN")).isError)
+            val blocked = command.execute(context, listOf("/* guarded */ INSERT INTO SimpleMarykModel (value) VALUES ('haha-blocked')"))
+            assertTrue(blocked.isError)
+            assertEquals("0", command.execute(context, listOf("SELECT COUNT(*) FROM SimpleMarykModel")).lines.last())
+            assertFalse(command.execute(context, listOf("--write", "COMMIT")).isError)
+            assertEquals("0", command.execute(context, listOf("SELECT COUNT(*) FROM SimpleMarykModel")).lines.last())
+        } finally { state.clearConnection(); store.close() }
+    }
+
+    @Test
+    fun interactiveSqlRetainsTransactionsAndRollsBackOnDisconnect() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val state = CliState().apply { replaceConnection(RocksDbStoreConnection("/test", store)) }
+        val context = CommandContext(CommandRegistry(state, BasicCliEnvironment), state, BasicCliEnvironment)
+        val command = SqlCommand()
+        fun write(text: String) = command.execute(context, listOf("--write", text)).also { assertFalse(it.isError, it.lines.joinToString()) }
+        try {
+            write("BEGIN")
+            write("INSERT INTO SimpleMarykModel (value) VALUES ('haha-session')")
+            assertEquals("1", command.execute(context, listOf("SELECT COUNT(*) FROM SimpleMarykModel")).lines.last())
+            write("SAVEPOINT keep")
+            write("UPDATE SimpleMarykModel SET value = 'haha-modified' WHERE TRUE")
+            write("ROLLBACK TO keep")
+            write("COMMIT")
+            assertEquals("\"haha-session\"", command.execute(context, listOf("SELECT value FROM SimpleMarykModel")).lines.last())
+            write("BEGIN")
+            write("DELETE FROM SimpleMarykModel WHERE TRUE")
+            state.clearConnection()
+            state.replaceConnection(RocksDbStoreConnection("/test", store))
+            assertEquals("1", command.execute(context, listOf("SELECT COUNT(*) FROM SimpleMarykModel")).lines.last())
+        } finally { state.clearConnection(); store.close() }
     }
 
 }

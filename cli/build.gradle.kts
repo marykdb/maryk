@@ -154,6 +154,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(projects.testmodels)
+                implementation(projects.store.memory)
             }
         }
     }

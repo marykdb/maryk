@@ -2,6 +2,8 @@ package io.maryk.cli
 
 import kotlinx.coroutines.runBlocking
 import maryk.datastore.shared.IsDataStore
+import maryk.sql.SqlOptions
+import maryk.sql.SqlSession
 import maryk.datastore.shared.Transaction
 import maryk.datastore.shared.runCatchingNonFatal
 
@@ -15,6 +17,8 @@ class CliState {
     private var activeInteraction: ActiveInteraction? = null
     var isOneShotMode: Boolean = false
     var pendingSqlCommit: Transaction? = null
+    var sqlSession: SqlSession? = null
+    var sqlSessionOptions: SqlOptions? = null
 
     val currentConnection: StoreConnection?
         get() = activeConnection
@@ -29,6 +33,7 @@ class CliState {
      */
     fun replaceConnection(newConnection: StoreConnection): StoreConnection? {
         val previous = this.activeConnection
+        closeSqlSession()
         this.activeConnection = newConnection
         return previous
     }
@@ -40,8 +45,16 @@ class CliState {
      */
     fun clearConnection(): StoreConnection? {
         val previous = this.activeConnection
+        closeSqlSession()
         this.activeConnection = null
         return previous
+    }
+
+    private fun closeSqlSession() {
+        check(pendingSqlCommit == null) { "Resolve the pending SQL commit before changing connections" }
+        runBlocking { sqlSession?.close() }
+        sqlSession = null
+        sqlSessionOptions = null
     }
 
     fun startInteraction(interaction: CliInteraction) {

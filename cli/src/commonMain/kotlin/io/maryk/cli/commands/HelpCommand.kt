@@ -142,6 +142,7 @@ class HelpCommand : Command {
                 "sql [options] -- <SQL> (for SQL beginning with a -- comment)",
                 "Run SQL on the connected store. Use --write for bounded mutations. SQL quotes and comments are preserved.",
                 "Options: --write, --snapshot, --to-version <n>, --include-deleted, --no-table-scan",
+                "Transactions: sql --write BEGIN; sql --write COMMIT/ROLLBACK; SAVEPOINT and RELEASE are supported interactively.",
                 "Recovery: sql --resolve-commit resolves an uncertain write in the interactive session.",
                 "Limits: 10,000 result rows, 8 MiB buffered data, 64 KiB query files.",
                 "Example: sql SELECT category, SUM(amount) FROM Invoice GROUP BY category",

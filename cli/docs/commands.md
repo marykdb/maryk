@@ -68,6 +68,29 @@ sql --write --file ./mutation.sql
 
 Each statement uses a serializable autocommit transaction, supports bounded predicates and RETURNING, and commits all affected rows together. Optional scalar properties can be set to `NULL`. The CLI prints confirmed affected rows and structured failures. An uncertain commit retains its transaction in the interactive session; use `sql --resolve-commit` before another write. A one-shot process cannot retain the handle after exit, so an uncertain status is not proof of rollback. `--write` cannot be combined with `--snapshot`, `--to-version`, or `--include-deleted`. Schema changes remain Maryk operations. See the [SQL module](../../sql/README.md) for types, guards, limits, and supported syntax.
 
+
+SQL transaction commands retain a session on the current interactive connection.
+Use `sql --write BEGIN`, followed by queries and `--write` mutations, then
+`sql --write COMMIT` or `sql --write ROLLBACK`. SAVEPOINT, ROLLBACK TO and RELEASE
+are supported. Querying staged data does not require --write. Mutations require --write even
+inside an active transaction and are rejected before execution otherwise. Disconnect rolls
+back staging; resolve uncertain commits before disconnecting or replacing the
+connection. BEGIN fixes the table-scan policy for that transaction. One-shot
+transaction commands are rejected because they cannot retain a session.
+
+SQL also supports catalog discovery through information_schema.tables/columns/indexes,
+embedded scalar writes, ON CONFLICT, scalar RETURNING expressions, windows,
+correlated subqueries and UNNEST over model collections. See the
+[SQL guide](../../sql/README.md) for exact supported forms and limits.
+
+SQL supports named windows, bounded `ROWS` and numeric-offset `RANGE` frames,
+`NTILE` and frame value functions. Use `UNNEST` for scalar collections, embedded
+record maps and nested collection paths. Joined writes use `sql --write UPDATE …
+FROM … WHERE …` or `sql --write DELETE FROM … USING … WHERE …`. They run in a
+serializable transaction and reject duplicate source matches for a target. RETURNING
+contains target values. Existing scan policy and execution budgets still apply.
+See the [SQL guide](../../sql/README.md) for syntax, supported collection shapes and limits.
+
 ## Connect
 
 ```text

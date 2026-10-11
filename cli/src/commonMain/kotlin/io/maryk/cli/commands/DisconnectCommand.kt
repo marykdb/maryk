@@ -19,6 +19,7 @@ class DisconnectCommand : Command {
                 isError = true,
             )
 
+        if (context.state.pendingSqlCommit != null) return CommandResult(listOf("Resolve the pending SQL commit before disconnecting."), isError = true)
         context.state.clearConnection()
 
         return recoverNonFatal(

@@ -6,6 +6,10 @@ import maryk.file.File
 import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.TransactionStatus
 import maryk.datastore.shared.TransactionCancellationException
+import maryk.sql.SqlSessionResult
+import maryk.sql.SqlStatementKind
+import maryk.sql.sqlStatementKind
+import maryk.sql.session
 import maryk.sql.MarykSql
 import maryk.sql.SqlConsistency
 import maryk.sql.SqlException
@@ -20,7 +24,7 @@ class SqlCommand : Command {
         if ("--resolve-commit" in arguments) {
             if (arguments != listOf("--resolve-commit")) return error("--resolve-commit takes no SQL statement or other options")
             val pending = context.state.pendingSqlCommit ?: return error("No SQL commit is awaiting resolution in this session")
-            val result = runBlocking { pending.resolveCommit() }
+            val result = runBlocking { context.state.sqlSession?.takeIf { it.activeTransaction?.transaction === pending }?.resolveCommit() ?: pending.resolveCommit() }
             if (result.status != TransactionStatus.OutcomeUnknown) context.state.pendingSqlCommit = null
             return CommandResult(listOf("${result.status}: transaction ${pending.id}") + listOfNotNull(result.message),
                 isError = result.status != TransactionStatus.Committed)
@@ -29,7 +33,7 @@ class SqlCommand : Command {
         var consistency: SqlConsistency = SqlConsistency.Current
         var consistencySelected = false
         var includeDeleted = false
-        var allowTableScan = true
+        var allowTableScan = context.state.sqlSessionOptions?.takeIf { context.state.sqlSession?.activeTransaction != null }?.allowTableScan ?: true
         var write = false
         var statement: String? = null
         var index = 0
@@ -89,8 +93,24 @@ class SqlCommand : Command {
                 maxResultRows = 10_000,
                 maxBufferedBytes = 8L * 1024 * 1024,
             ))
+            if (context.state.sqlSession?.activeTransaction != null && context.state.sqlSessionOptions?.allowTableScan != allowTableScan) return error("Table-scan policy cannot change within an active SQL transaction")
+            val kind = sqlStatementKind(sqlText)
+            if (kind == SqlStatementKind.MUTATION && !write) return error("Use --write to run SQL mutations")
+            if (kind == SqlStatementKind.QUERY && write) return error("Run SQL queries without --write")
+            if (kind == SqlStatementKind.CONTROL) {
+                if (!write) return error("Use --write to run SQL transaction commands")
+                if (context.state.isOneShotMode) return error("Transaction commands require an interactive CLI connection")
+                val session = context.state.sqlSession?.takeIf { it.activeTransaction != null } ?: sql.session().also { context.state.sqlSession = it; context.state.sqlSessionOptions = sql.options }
+                val control = runBlocking { session.execute(sqlText) } as SqlSessionResult.Control
+                val commit = control.commit
+                if (commit?.status == TransactionStatus.OutcomeUnknown) context.state.pendingSqlCommit = session.activeTransaction?.transaction
+                return CommandResult(listOf(control.command + (commit?.let { ": ${it.status}" } ?: "")),
+                    isError = commit != null && commit.status != TransactionStatus.Committed)
+            }
             if (write) {
-                val result = runBlocking { sql.execute(sqlText) }
+                val result = runBlocking { context.state.sqlSession?.takeIf { it.activeTransaction != null }?.let {
+                    (it.execute(sqlText) as SqlSessionResult.Mutation).result
+                } ?: sql.execute(sqlText) }
                 if (result.response.status == AtomicStatus.OutcomeUnknown) context.state.pendingSqlCommit = result.transaction
                 return CommandResult(
                     buildList {
@@ -106,10 +126,12 @@ class SqlCommand : Command {
                             returned.rows.forEach { add(it.values.joinToString("\t", transform = ::formatCell)) }
                         }
                     },
-                    isError = result.response.status != AtomicStatus.Committed,
+                    isError = result.response.status != AtomicStatus.Committed && result.response.status != AtomicStatus.Staged,
                 )
             }
-            val result = runBlocking { sql.query(sqlText, readOptions = SqlReadOptions(consistency, !includeDeleted)) }
+            val result = runBlocking { context.state.sqlSession?.takeIf { it.activeTransaction != null }?.let {
+                (it.execute(sqlText, readOptions = SqlReadOptions(consistency, !includeDeleted)) as SqlSessionResult.Query).result
+            } ?: sql.query(sqlText, readOptions = SqlReadOptions(consistency, !includeDeleted)) }
             CommandResult(buildList {
                 add(result.columns.joinToString("\t") { escaped(it.name) })
                 result.rows.forEach { add(it.values.joinToString("\t", transform = ::formatCell)) }
@@ -138,6 +160,7 @@ class SqlCommand : Command {
         is SqlValue.Timestamp -> value.value.toString()
         is SqlValue.Key -> value.value.toString()
         is SqlValue.Enum -> escaped(value.name)
+        is SqlValue.Collection -> escaped(value.toString())
     }
 
     private fun escaped(value: String): String = buildString {

@@ -7,6 +7,10 @@ Maryk runs on Kotlin Multiplatform and ships as modular artifacts. This guide sh
 
 ## Dependency
 
+These docs follow the current source branch. Use the same `<maryk-version>` for
+all Maryk modules and check the matching release documentation when using older
+artifacts; SQL and the explicit atomic/transaction APIs were added after 0.12.1.
+
 Add the core dependency to your target source set:
 
 ```kotlin
@@ -41,7 +45,7 @@ implementation("io.maryk:maryk-foundationdb:<maryk-version>")
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.date
 import maryk.core.properties.definitions.string
-import maryk.lib.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 object Person : RootDataModel<Person>() {
   val firstName by string(index = 1u)

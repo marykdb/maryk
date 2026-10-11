@@ -96,7 +96,7 @@ You can inject a custom `migrationLease` if needed.
 ## Configuration
 
 - `keepAllVersions`: Mirror latest writes into historic subspaces for time travel and change history.
-- `keepUpdateHistoryIndex`: Add a per-model `update_history` subspace keyed by change version + key. With this enabled, `scanUpdates(order = null)` reads newest-first from this engine index by default.
+- `keepUpdateHistoryIndex`: Add a per-model `update_history` subspace keyed by change version + key for historical paging. `ScanUpdates` may select records through this index, but its emitted synchronization events remain chronological.
 - `fdbClusterFilePath`: Optional path to an FDB cluster file; uses default environment if null.
 - `directoryPath`: Subspace root path under which model directories are created.
 - `databaseOptionsSetter`: Lambda executed once during startup on the underlying `DatabaseOptions`. Use this to enable tracing, tweak locality, or set transaction logging limits without forking Maryk.

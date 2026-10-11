@@ -7,7 +7,7 @@ Maryk assigns every stored value change a monotonically ordered version. Version
 - stream live additions, changes and removals,
 - synchronize another store or client by replaying update responses.
 
-Versioning is store-backed behavior. To retain historic values, open the store with `keepAllVersions = true`. To scan updates newest-first efficiently, also enable `keepUpdateHistoryIndex = true` where supported.
+Versioning is store-backed behavior. To retain historic values, open the store with `keepAllVersions = true`. For newest-first historical pages, also enable `keepUpdateHistoryIndex = true` where supported.
 
 ## Versions vs model versions
 

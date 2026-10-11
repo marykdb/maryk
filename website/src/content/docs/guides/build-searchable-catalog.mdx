@@ -16,12 +16,12 @@ Use ordered indexes for the first path. Use named search indexes for the second.
 object Product : RootDataModel<Product>(
     indexes = {
         listOf(
-            Multiple(Normalize(name.ref()), sku.ref()),
+            Multiple(Normalize(Product.name.ref()), Product.sku.ref()),
             AnyOf(
                 "catalog",
-                name.ref(),
-                sku.ref(),
-                brand.ref(),
+                Product.name.ref(),
+                Product.sku.ref(),
+                Product.brand.ref(),
             ).normalize().split(WordBoundary),
         )
     }
@@ -47,8 +47,8 @@ Use the ordered index for stable list order:
 val page = store.execute(
     Product.scan(
         order = Orders(
-            Product { name::ref }.ascending(),
-            Product { sku::ref }.ascending(),
+            Product.ref { name }.ascending(),
+            Product.ref { sku }.ascending(),
         ),
         select = Product.graph {
             listOf(name, sku, brand)
@@ -67,10 +67,10 @@ For “jump to names starting with …”, use a property filter with the same o
 ```kotlin
 val matchesPrefix = store.execute(
     Product.scan(
-        where = Prefix(Product { name::ref } with "gar"),
+        where = Prefix(Product.ref { name } with "gar"),
         order = Orders(
-            Product { name::ref }.ascending(),
-            Product { sku::ref }.ascending(),
+            Product.ref { name }.ascending(),
+            Product.ref { sku }.ascending(),
         ),
         select = Product.graph {
             listOf(name, sku, brand)
@@ -131,11 +131,11 @@ Then scan with a matching filter and order:
 
 ```kotlin
 Product.scan(
-    where = Equals(Product { brand::ref } with "acme"),
+    where = Equals(Product.ref { brand } with "acme"),
     order = Orders(
-        Product { brand::ref }.ascending(),
-        Product { name::ref }.ascending(),
-        Product { sku::ref }.ascending(),
+        Product.ref { brand }.ascending(),
+        Product.ref { name }.ascending(),
+        Product.ref { sku }.ascending(),
     ),
 )
 ```

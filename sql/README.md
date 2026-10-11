@@ -4,6 +4,18 @@ Maryk SQL is an optional Kotlin Multiplatform query and mutation layer over Mary
 
 The parser, binder, expressions, joins, aggregation, and execution live in `commonMain`. There is no embedded SQLite database, JDBC dependency, or duplicate copy of your data to maintain.
 
+## Reading path
+
+| Need | Start here |
+| --- | --- |
+| First query | [Set up](#set-up), then [query surface](#query-surface) |
+| Consistency and limits | [Storage engines](#consistency-and-storage-engines) and [resource limits](#resource-limits) |
+| Writes and recovery | [Choosing a write API](#choosing-a-sql-write-api) and [transactions](#sql-transactions) |
+| Reporting | [Windows](#window-functions-and-correlated-queries) and [collection expansion](#collection-expansion) |
+| Cross-model writes | [Joined mutations](#joined-mutations) |
+| CLI and app sessions | [Interactive transaction tools](#interactive-transaction-tools) |
+| Query planning | [Execution strategies and diagnostics](#execution-strategies-and-diagnostics) |
+
 ## Set up
 
 In this repository:
@@ -149,8 +161,8 @@ SELECT name FROM Person
 WHERE __key IN (SELECT customer FROM Invoice WHERE amount > 100);
 ```
 
-`MarykSql.execute(...)` supports bounded single-table INSERT VALUES and INSERT
-SELECT, UPDATE, soft DELETE, UNDELETE and DELETE HARD. Each statement is planned,
+`MarykSql.execute(...)` supports bounded INSERT VALUES and INSERT
+SELECT, UPDATE (including FROM), soft DELETE (including USING), UNDELETE and DELETE HARD. Each statement is planned,
 staged and committed as one serializable autocommit transaction. Predicates may
 use the supported SQL expressions and subqueries; WHERE remains mandatory for
 updates and deletes. Selected records carry version guards, and the transaction

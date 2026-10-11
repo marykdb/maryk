@@ -107,7 +107,7 @@ For a deeper dive into how data is laid out and how queries execute, check the [
 ## Options
 
 - `keepAllVersions`: Keep historic table/index/unique column families for time-travel and change-history reads.
-- `keepUpdateHistoryIndex`: Add an `UpdateHistory` column family keyed by change version + key. With this enabled, `scanUpdates(order = null)` reads newest-first from this engine index by default.
+- `keepUpdateHistoryIndex`: Add an `UpdateHistory` column family keyed by change version + key for historical paging. `ScanUpdates` may select records through this index, but its emitted synchronization events remain chronological.
 
 ## Update history
 

@@ -34,9 +34,10 @@ Every stored model extends `RootDataModel`. Property indexes are the field numbe
 
 ```kotlin
 import maryk.core.models.RootDataModel
+import maryk.core.models.key
 import maryk.core.properties.definitions.date
 import maryk.core.properties.definitions.string
-import maryk.lib.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 object Person : RootDataModel<Person>() {
     val firstName by string(index = 1u)
@@ -117,13 +118,14 @@ Use this for sync, audit views, debugging, and conflict-aware clients.
 ```kotlin
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.RootDataModel
+import maryk.core.models.key
 import maryk.core.properties.definitions.date
 import maryk.core.properties.definitions.string
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
 import maryk.datastore.memory.InMemoryDataStore
-import maryk.lib.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 object Person : RootDataModel<Person>() {
     val firstName by string(index = 1u)

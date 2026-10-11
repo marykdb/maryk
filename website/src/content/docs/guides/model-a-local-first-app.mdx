@@ -64,24 +64,28 @@ Split when a child collection can grow, has separate permissions, or changes ind
 
 ```kotlin
 object Task : RootDataModel<Task>(
+    minimumKeyScanByteRange = Project.Meta.keyByteSize.toUInt(),
     keyDefinition = {
         Multiple(
-            project.ref(),
-            Reversed(updatedAt.ref()),
+            Task.project.ref(),
+            Reversed(Task.createdAt.ref()),
             UUIDv7Key,
         )
     }
 ) {
     val project by reference(index = 1u, dataModel = { Project }, final = true)
-    val updatedAt by dateTime(index = 2u, final = true)
+    val createdAt by dateTime(index = 2u, final = true)
     val title by string(index = 3u)
     val done by boolean(index = 4u, default = false)
 }
 ```
 
-The key starts with the project reference, so scans for one project can stay near one key range. `Reversed(updatedAt.ref())` puts recent tasks first. The trailing `UUIDv7Key` keeps keys unique when multiple tasks share the same timestamp.
+The key starts with the project reference, so scans for one project can stay near one key range.
+`minimumKeyScanByteRange` allows that complete project-key prefix while rejecting
+unbounded key scans unless the caller explicitly enables table scans. `Reversed(createdAt.ref())` puts recently created tasks first. The trailing `UUIDv7Key` keeps keys unique when multiple tasks share the same timestamp.
 
-Key parts should be stable. If a property participates in a key, treat it as identity and mark it `final` where possible.
+Key properties must be required and final. Use an immutable creation time here;
+an editable “last updated” time belongs in a secondary index, not the key.
 
 ## Add only the indexes screens need
 
@@ -89,17 +93,18 @@ Add secondary indexes for access paths that are not covered by the key.
 
 ```kotlin
 object Task : RootDataModel<Task>(
+    minimumKeyScanByteRange = Project.Meta.keyByteSize.toUInt(),
     keyDefinition = {
-        Multiple(project.ref(), Reversed(updatedAt.ref()), UUIDv7Key)
+        Multiple(Task.project.ref(), Reversed(Task.createdAt.ref()), UUIDv7Key)
     },
     indexes = {
         listOf(
-            Multiple(project.ref(), done.ref(), Reversed(updatedAt.ref()))
+            Multiple(Task.project.ref(), Task.done.ref(), Reversed(Task.createdAt.ref()))
         )
     }
 ) {
     val project by reference(index = 1u, dataModel = { Project }, final = true)
-    val updatedAt by dateTime(index = 2u, final = true)
+    val createdAt by dateTime(index = 2u, final = true)
     val title by string(index = 3u)
     val done by boolean(index = 4u, default = false)
 }
@@ -111,9 +116,10 @@ Do not add indexes for every property. Persistent stores treat index additions a
 
 ## Test with Memory Store
 
-Memory Store runs the same request API without persistence:
+Memory Store runs the same request API without persistence. Run this inside a coroutine:
 
 ```kotlin
+import maryk.core.query.responses.statuses.AddSuccess
 InMemoryDataStore.open(
     keepAllVersions = true,
     keepUpdateHistoryIndex = true,
@@ -122,12 +128,14 @@ InMemoryDataStore.open(
         2u to Task,
     )
 ).use {
-    val add = execute(Project.add(Project.create { title with "Docs" }))
-    val projectKey = add.statuses.first().key
+    val added = execute(Project.add(Project.create { title with "Docs" }))
+    val status = added.statuses.single() as? AddSuccess<Project>
+        ?: error("Project creation failed: ${added.statuses.single()}")
+    val projectKey = status.key
 
     execute(
         Task.scan(
-            where = Equals(Task { project::ref } with projectKey),
+            where = Equals(Task.ref { project } with projectKey),
             limit = 50u,
         )
     )

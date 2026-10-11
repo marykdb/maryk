@@ -51,33 +51,53 @@ Old records do not have `displayName`, so the field starts optional. New code ca
 
 ## Backfill records
 
-Use a scan to find records that need the new value. Then write changes through normal Maryk requests.
+Read every page when backfilling; a scan's limit is a page size. Keep key order
+so changing `displayName` cannot move records between pages. Guard each write with
+the version you read and inspect its status before continuing.
 
 ```kotlin
-val scan = store.execute(
-    Customer.scan(
-        select = Customer.graph {
-            listOf(name, displayName)
-        }
+import maryk.core.models.graph
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
+import maryk.core.query.pairs.with
+import maryk.core.query.requests.ScanCursor
+import maryk.core.query.requests.change
+import maryk.core.query.requests.scan
+import maryk.core.query.responses.statuses.ChangeSuccess
+
+var cursor: ScanCursor? = null
+do {
+    val page = store.execute(
+        Customer.scan(
+            select = Customer.graph { listOf(name, displayName) },
+            limit = 256u,
+            allowTableScan = true,
+            cursor = cursor,
+        )
     )
-)
-
-scan.values
-    .filter { record -> record.values { displayName } == null }
-    .forEach { record ->
+    for (record in page.values) {
         val values = record.values
-
-        store.execute(
+        if (values { displayName } != null) continue
+        val changed = store.execute(
             Customer.change(
                 record.key.change(
-                    Change(Customer { displayName::ref } with values { name })
+                    Change(Customer.ref { displayName } with values { name }),
+                    lastVersion = record.lastVersion,
                 )
             )
         )
+        check(changed.statuses.single() is ChangeSuccess<*>) {
+            "Backfill did not commit for ${record.key}; inspect the status and retry from fresh data."
+        }
     }
+    cursor = page.nextCursor
+} while (cursor != null)
 ```
 
-This keeps the migration observable: every changed record goes through the same request/status path as app writes.
+This is a resumable sequence of guarded writes, not one transaction over the whole
+collection. Concurrent inserts may need another pass. Use a transaction when the
+selection and its writes must be protected together, subject to its resource limits.
+Every changed record follows the normal request/status path used by app writes.
 
 ## Add a secondary ordered index later
 
@@ -87,7 +107,7 @@ Do not add a query index just because a property exists. Add a secondary ordered
 object Customer : RootDataModel<Customer>(
     indexes = {
         listOf(
-            Multiple(displayName.ref())
+            Multiple(Customer.displayName.ref())
         )
     }
 ) {

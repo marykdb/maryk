@@ -44,10 +44,11 @@ When data belongs to another root, put that owner reference first.
 
 ```kotlin
 object DeviceEvent : RootDataModel<DeviceEvent>(
+    minimumKeyScanByteRange = Device.Meta.keyByteSize.toUInt(),
     keyDefinition = {
         Multiple(
-            device.ref(),
-            Reversed(recordedAt.ref()),
+            DeviceEvent.device.ref(),
+            Reversed(DeviceEvent.recordedAt.ref()),
             UUIDv7Key,
         )
     }
@@ -58,7 +59,9 @@ object DeviceEvent : RootDataModel<DeviceEvent>(
 }
 ```
 
-This makes “events for one device, newest first” the natural key scan. The trailing UUID keeps the key unique for equal timestamps.
+This makes “events for one device, newest first” the natural key scan.
+The minimum scan range permits a complete device-key prefix; it does not permit
+an unrestricted scan unless `allowTableScan` is explicitly enabled. The trailing UUID keeps the key unique for equal timestamps.
 
 ## Keep key parts fixed size
 
@@ -93,12 +96,13 @@ The primary key cannot serve every sync or screen path. Add indexes for secondar
 
 ```kotlin
 object DeviceEvent : RootDataModel<DeviceEvent>(
+    minimumKeyScanByteRange = Device.Meta.keyByteSize.toUInt(),
     keyDefinition = {
-        Multiple(device.ref(), Reversed(recordedAt.ref()), UUIDv7Key)
+        Multiple(DeviceEvent.device.ref(), Reversed(DeviceEvent.recordedAt.ref()), UUIDv7Key)
     },
     indexes = {
         listOf(
-            Multiple(severity.ref(), Reversed(recordedAt.ref()))
+            Multiple(DeviceEvent.severity.ref(), Reversed(DeviceEvent.recordedAt.ref()))
         )
     }
 ) {
@@ -113,7 +117,7 @@ Use the key for per-device sync. Use the index for severity views.
 
 ## Plan for update history
 
-For stores that need newest-first update scans, enable `keepUpdateHistoryIndex` when opening Memory, IndexedDB, RocksDB, or FoundationDB.
+For stores that need newest-first historical pages, enable `keepUpdateHistoryIndex` when opening Memory, IndexedDB, RocksDB, or FoundationDB.
 
 ```kotlin
 RocksDBDataStore.open(
@@ -124,7 +128,10 @@ RocksDBDataStore.open(
 )
 ```
 
-`keepAllVersions` preserves historic data for versioned reads and changes. `keepUpdateHistoryIndex` keeps an engine-level latest-update index so `scanUpdates(order = null)` can use newest-first update order efficiently.
+`keepAllVersions` preserves historic data for versioned reads and changes.
+`keepUpdateHistoryIndex` enables `getUpdateHistory` and `scanUpdateHistory` for
+newest-first record-version pages with cursor continuation. Use `getUpdates` or
+`scanUpdates` for chronological synchronization; those are a different contract.
 
 ## Avoid table scans by design
 

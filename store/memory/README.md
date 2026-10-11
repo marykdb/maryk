@@ -47,7 +47,7 @@ The `.use { ... }` scope closes the store automatically.
 ## Options
 
 - `keepAllVersions`: Keep historic values/indexes/uniques for `toVersion`, changes, and history queries.
-- `keepUpdateHistoryIndex`: Keep an engine-level update history index ordered by latest change. With this enabled, `scanUpdates(order = null)` uses newest-first change order by default.
+- `keepUpdateHistoryIndex`: Keep the update-history index used by newest-first historical pages. `ScanUpdates` may use this index to select records, but its emitted synchronization events remain chronological.
 
 `getUpdateHistory(key, ...)` and `scanUpdateHistory(...)` require both options
 and return finite, newest-first pages using `UpdatesResponse.nextCursor`.

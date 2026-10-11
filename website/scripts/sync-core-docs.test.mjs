@@ -4,7 +4,23 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { map, syncDocs } from './sync-core-docs.mjs';
+import { map, rewriteLinks, syncDocs } from './sync-core-docs.mjs';
+
+test('shared write contracts resolve from module and architecture pages', () => {
+  for (const prefix of ['../../', '../../../']) {
+    for (const source of ['query.md', '../core/docs/query.md', '../../core/docs/query.md', '../../../core/docs/query.md']) {
+      for (const anchor of ['', '#atomic', '#serializable-transactions', '#choosing-a-write-boundary']) {
+        assert.equal(rewriteLinks(`[contract](${source}${anchor})`, prefix),
+          `[contract](${prefix}querying/${anchor})`);
+      }
+    }
+    for (const source of ['../sql/README.md', '../../sql/README.md']) {
+      assert.equal(rewriteLinks(`[SQL](${source})`, prefix), `[SQL](${prefix}querying/sql/)`);
+    }
+    assert.equal(rewriteLinks('[App](../app/docs/README.md#sql-queries-and-writes)', prefix),
+      `[App](${prefix}app/#sql-queries-and-writes)`);
+  }
+});
 
 test('syncDocs maps the shared store test documentation', () => {
   assert.ok(map.some(([target, source]) =>

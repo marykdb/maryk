@@ -8,6 +8,7 @@ Part of this site is generated from repository docs before every build. Other pa
 
 - Source of truth:
   - `core/docs/**`
+  - `sql/README.md`
   - `store/**/README.md` and `store/**/docs/**`
   - `store/rocksdb/documentation/**`
   - `generator/README.md`

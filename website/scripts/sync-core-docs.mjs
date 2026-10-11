@@ -83,6 +83,13 @@ export function rewriteLinks(md, prefix) {
     let out = md;
     const withPrefix = (path) => `(${prefix}${path})`;
     const propertiesPrefix = `(${prefix}data-modeling/properties/`;
+    // Shared contracts are linked from both module READMEs and deeper docs.
+    out = out.replace(/\((?:(?:\.\.\/)*core\/docs\/|(?:\.\.\/)*)query\.md(#[^)]*)?\)/g,
+      (_match, anchor = '') => withPrefix(`querying/${anchor}`));
+    out = out.replace(/\((?:\.\.\/)+sql\/README\.md(#[^)]*)?\)/g,
+      (_match, anchor = '') => withPrefix(`querying/sql/${anchor}`));
+    out = out.replace(/\((?:\.\.\/)+app\/docs\/README\.md(#[^)]*)?\)/g,
+      (_match, anchor = '') => withPrefix(`app/${anchor}`));
     const pairs = [
     ['(datamodel.md)', withPrefix('data-modeling/datamodels/')],
     ['(properties/README.md)', withPrefix('data-modeling/properties/')],

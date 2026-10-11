@@ -90,6 +90,20 @@ class MarykSql private constructor(
     suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlWriteResult =
         SqlWriter(this).execute(statement, parameters)
 
+    /** Prepare one bounded change set. Retain it for retries; planning may read current records. */
+    suspend fun prepareAtomic(changeSetId: String, statements: List<SqlWriteStatement>): PreparedSqlAtomicWrite =
+        SqlAtomicWriter(this).prepare(changeSetId, statements)
+
+    suspend fun prepareAtomic(changeSetId: String, statement: String, parameters: List<SqlValue> = emptyList()): PreparedSqlAtomicWrite =
+        prepareAtomic(changeSetId, listOf(SqlWriteStatement(statement, parameters)))
+
+    /** Execute once. For an ambiguous outcome, retry the retained prepared operation instead. */
+    suspend fun executeAtomic(changeSetId: String, statements: List<SqlWriteStatement>): SqlAtomicWriteResult =
+        prepareAtomic(changeSetId, statements).execute()
+
+    suspend fun executeAtomic(changeSetId: String, statement: String, parameters: List<SqlValue> = emptyList()): SqlAtomicWriteResult =
+        prepareAtomic(changeSetId, statement, parameters).execute()
+
     companion object {
         fun create(dataStore: IsDataStore, catalog: SqlCatalog = SqlCatalog.from(dataStore), options: SqlOptions = SqlOptions()): MarykSql =
             MarykSql(dataStore, catalog, options)

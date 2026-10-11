@@ -32,8 +32,12 @@ internal class SqlParser(
                 expectSymbol("(")
                 val columns = parseCommaSeparated("column") { parseName("column") }
                 expectSymbol(")")
-                expectKeyword("VALUES")
-                SqlMutation(kind, table, columns = columns, rows = parseValues().values!!, parameterCount = parameterCount)
+                if (matchKeyword("VALUES")) {
+                    SqlMutation(kind, table, columns = columns, rows = parseValues().values!!, parameterCount = parameterCount)
+                } else {
+                    val source = parseQueryExpression()
+                    SqlMutation(kind, table, columns = columns, sourceQuery = source, parameterCount = parameterCount)
+                }
             }
             SqlMutationKind.UPDATE -> {
                 expectKeyword("SET")
@@ -52,9 +56,13 @@ internal class SqlParser(
                 SqlMutation(kind, table, where = where, parameterCount = parameterCount)
             }
         }
+        val returning = if (matchKeyword("RETURNING")) parseCommaSeparated("returning column") {
+            SqlSelect(parseExpression().expression, parseOptionalAlias("returning alias"))
+        } else emptyList()
         matchSymbol(";")
         if (current.kind != SqlTokenKind.EOF) fail("Unexpected token '${current.text}'", current.position)
-        return mutation
+        return mutation.copy(parameterCount = parameterCount,
+            sourceQuery = mutation.sourceQuery?.copy(parameterCount = parameterCount), returning = returning)
     }
 
     fun parse(): SqlQuery {
@@ -760,7 +768,7 @@ internal class SqlParser(
             "DESC", "DISTINCT", "ELSE", "END", "ESCAPE", "EXCEPT", "EXPLAIN", "FALSE", "FETCH",
             "FILTER", "FIRST", "FROM", "FULL", "GROUP", "HAVING", "IN", "INNER", "INTERSECT", "IS",
             "JOIN", "LAST", "LEFT", "LIKE", "LIMIT", "NEXT", "NOT", "NULL", "NULLS", "OFFSET", "ON", "ONLY",
-            "OR", "ORDER", "OUTER", "OVER", "RIGHT", "ROW", "ROWS", "SELECT", "THEN", "TIME",
+            "OR", "ORDER", "OUTER", "OVER", "RETURNING", "RIGHT", "ROW", "ROWS", "SELECT", "THEN", "TIME",
             "TIMESTAMP", "TRUE", "UNION", "UNKNOWN", "USING", "VALUES", "WHEN", "WHERE", "WITH",
         )
     }

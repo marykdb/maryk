@@ -240,7 +240,7 @@ internal class SqlRuntime(
                                 val values = query.groupBy.map { evaluator.eval(it, row) }
                                 val key = values.map(::sqlKey)
                                 val group = groups.getOrPut(key) {
-                                    if (groups.size >= sql.options.maxGroups) budget.exceeded("Group count")
+                                    if (groups.size >= sql.options.maxGroups) budget.exceeded("groups", sql.options.maxGroups.toLong(), groups.size.toLong() + 1)
                                     memory.retain(96L + values.sumOf(::valueBytes))
                                     mutableListOf()
                                 }

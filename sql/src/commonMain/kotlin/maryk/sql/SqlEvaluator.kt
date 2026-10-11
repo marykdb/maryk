@@ -26,25 +26,28 @@ internal class SqlBudget(val options: SqlOptions) {
     var peakBytes = 0L
     var snapshotVersion: ULong? = null
     suspend fun step() {
-        if (++steps > options.maxExpressionSteps) exceeded("Expression work")
+        if (++steps > options.maxExpressionSteps) exceeded("expressionSteps", options.maxExpressionSteps, steps)
         if (steps % 1024L == 0L) yield()
     }
     suspend fun checkpoint() = coroutineContext.ensureActive()
-    fun request() { if (++requests > options.maxRequests) exceeded("Store request count") }
-    fun fetched(count: Int) { fetched += count; if (fetched > options.maxFetchedRows) exceeded("Fetched row count") }
-    fun returned() { if (++returned > options.maxResultRows) exceeded("Result row count") }
+    fun request() { if (++requests > options.maxRequests) exceeded("requests", options.maxRequests.toLong(), requests.toLong()) }
+    fun fetched(count: Int) { fetched += count; if (fetched > options.maxFetchedRows) exceeded("fetchedRows", options.maxFetchedRows, fetched) }
+    fun returned() { if (++returned > options.maxResultRows) exceeded("resultRows", options.maxResultRows, returned) }
     fun retain(bytes: Long) {
-        if (bytes > options.maxBufferedBytes - retainedBytes) exceeded("Logical buffer size")
+        if (bytes > options.maxBufferedBytes - retainedBytes) exceeded("bufferedBytes", options.maxBufferedBytes, retainedBytes + bytes)
         retainedBytes += bytes
         peakBytes = maxOf(peakBytes, retainedBytes)
     }
     fun release(bytes: Long) { retainedBytes = maxOf(0, retainedBytes - bytes) }
     fun checkValue(value: SqlValue): SqlValue {
-        if (value is SqlValue.Exact && value.value.toString().count { it in '0'..'9' } > 1024) exceeded("Numeric precision")
-        if (valueBytes(value) > options.maxBufferedBytes) exceeded("Scalar value size")
+        if (value is SqlValue.Exact && value.value.toString().count { it in '0'..'9' } > 1024) exceeded("numericDigits", 1024, value.value.toString().count { it in '0'..'9' }.toLong())
+        if (valueBytes(value) > options.maxBufferedBytes) exceeded("scalarBytes", options.maxBufferedBytes, valueBytes(value))
         return value
     }
-    fun exceeded(subject: String): Nothing = throw SqlException(SqlErrorCode.LIMIT, "$subject exceeds configured SQL budget")
+    fun exceeded(subject: String, maximum: Long? = null, actual: Long? = null): Nothing {
+        if (maximum != null) throw SqlLimitException(subject, maximum.toULong(), actual?.toULong())
+        throw SqlException(SqlErrorCode.LIMIT, "$subject exceeds configured SQL budget")
+    }
 }
 
 internal fun valueBytes(value: SqlValue): Long = 32L + when (value) {
@@ -352,7 +355,7 @@ internal class SqlEvaluator(
     }
 
     private fun checkStringSize(characters: Long) {
-        if (characters > (budget.options.maxBufferedBytes - 32) / 2) budget.exceeded("String size")
+        if (characters > (budget.options.maxBufferedBytes - 32) / 2) budget.exceeded("stringCharacters", maxOf(0, (budget.options.maxBufferedBytes - 32) / 2), characters)
     }
 }
 

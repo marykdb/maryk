@@ -69,12 +69,19 @@ sealed interface SqlValue {
 /** Stable categories; source positions are zero-based UTF-16 offsets when available. */
 enum class SqlErrorCode { SYNTAX, BINDING, TYPE, UNSUPPORTED, PARAMETER, ARITHMETIC, LIMIT, EXECUTION_STATE, CONSISTENCY }
 
-class SqlException(
+open class SqlException(
     val code: SqlErrorCode,
     message: String,
     val position: Int? = null,
     cause: Throwable? = null,
 ) : IllegalArgumentException(message, cause)
+
+/** A budget failure that callers can inspect without parsing its message. */
+class SqlLimitException(
+    val limit: String,
+    val maximum: ULong,
+    val actual: ULong? = null,
+) : SqlException(SqlErrorCode.LIMIT, "$limit exceeds SQL budget: ${actual ?: "unknown"} > $maximum")
 
 data class SqlColumn(val name: String, val type: SqlType, val nullable: Boolean = true)
 data class SqlParameter(val index: Int, val type: SqlType, val nullable: Boolean = true)

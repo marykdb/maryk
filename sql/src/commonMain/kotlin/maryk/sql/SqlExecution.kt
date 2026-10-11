@@ -50,7 +50,7 @@ class SqlExecution internal constructor(
                     operation(budget) { emit(it) }
                     true
                 }
-                if (completed == null) budget.exceeded("Execution time")
+                if (completed == null) budget.exceeded("executionMillis", options.maxExecutionMillis)
             }
         } catch (error: Throwable) {
             failure = error

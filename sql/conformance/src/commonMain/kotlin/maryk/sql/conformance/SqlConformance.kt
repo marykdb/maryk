@@ -15,6 +15,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.ValidationFail
@@ -28,6 +29,8 @@ import maryk.sql.SqlOptions
 import maryk.sql.SqlReadOptions
 import maryk.sql.SqlTable
 import maryk.sql.SqlValue
+import maryk.sql.SqlWriteStatement
+import maryk.sql.supportsAtomicWrites
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
@@ -191,5 +194,34 @@ suspend fun assertSqlConformance(store: IsDataStore) {
     assertEquals(2, floatingSql.execute("INSERT INTO floating_rows (id, value) VALUES (1, -0.0e0), (2, 0.0e0)").affectedRows)
     for (predicate in listOf("value = 0.0e0", "value >= 0.0e0", "value <= -0.0e0")) {
         assertEquals(listOf(SqlValue.UInt64(1u), SqlValue.UInt64(2u)), floatingSql.query("SELECT id FROM floating_rows WHERE $predicate ORDER BY id").rows.map { it[0] })
+    }
+
+    if (sql.supportsAtomicWrites) {
+        val atomicSql = MarykSql.create(store, SqlCatalog(listOf(
+            SqlTable("items", store.dataModelsById.getValue(1u)), SqlTable("optional_rows", store.dataModelsById.getValue(2u)),
+        )), SqlOptions(allowTableScan = true, pageSize = 1))
+        val prepared = atomicSql.prepareAtomic("sql-conformance-insert", listOf(
+            SqlWriteStatement("INSERT INTO items (id, category) VALUES (101, 'atomic'), (102, 'atomic') RETURNING id, __version"),
+            SqlWriteStatement("INSERT INTO optional_rows (value) VALUES ('atomic') RETURNING __key, value"),
+        ))
+        val inserted = prepared.execute()
+        assertEquals(AtomicStatus.Committed, inserted.response.status)
+        assertEquals(3, inserted.affectedRows)
+        assertEquals(inserted.response, prepared.execute().response)
+        assertEquals(inserted.returning[0].rows.first()[1], inserted.returning[0].rows.last()[1])
+        val rejected = atomicSql.executeAtomic("sql-conformance-rollback", "INSERT INTO items (id) VALUES (103), (101) RETURNING id")
+        assertEquals(AtomicStatus.Rejected, rejected.response.status)
+        assertEquals(0, rejected.affectedRows)
+        assertTrue(rejected.returning.single().rows.isEmpty())
+        assertTrue(atomicSql.query("SELECT id FROM items WHERE id = 103").rows.isEmpty())
+        val guarded = atomicSql.prepareAtomic("sql-conformance-guard", "UPDATE items SET category = 'guarded' WHERE category = 'atomic' RETURNING id")
+        val updated = atomicSql.executeAtomic("sql-conformance-update", "UPDATE items SET category = 'updated' WHERE id IN (101, 102) RETURNING category")
+        assertEquals(2, updated.affectedRows)
+        assertEquals(listOf(SqlValue.Text("updated"), SqlValue.Text("updated")), updated.returning.single().rows.map { it[0] })
+        assertEquals(AtomicStatus.Rejected, guarded.execute().response.status)
+        val copied = atomicSql.executeAtomic("sql-conformance-copy", "INSERT INTO items (id, category) SELECT id + 100, category FROM items WHERE id IN (101, 102) RETURNING id")
+        assertEquals(2, copied.affectedRows)
+        assertEquals(2, atomicSql.executeAtomic("sql-conformance-delete", "DELETE FROM items WHERE id IN (201, 202) RETURNING id").affectedRows)
+        assertEquals(2, atomicSql.executeAtomic("sql-conformance-restore", "UNDELETE FROM items WHERE id IN (201, 202) RETURNING id").affectedRows)
     }
 }

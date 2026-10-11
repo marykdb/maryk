@@ -10,12 +10,14 @@ import maryk.core.query.requests.Requests
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.responses.ChangeResponse
+import maryk.core.query.responses.AtomicStatus
 import maryk.core.query.responses.statuses.AuthFail
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.memory.InMemoryDataStore
 import maryk.sql.MarykSql
 import maryk.sql.SqlOptions
 import maryk.sql.SqlValue
+import maryk.sql.SqlWriteStatement
 import maryk.sql.conformance.SqlConformanceItem
 import maryk.sql.conformance.sqlConformanceModels
 import kotlin.test.Test
@@ -86,6 +88,28 @@ class SqlAuthorizationTest {
     @Test fun permittedSqlDeleteDoesNotRequireChangePermission() = runBoundedIntegrationTest {
         withRemote(RequestType.Change) { local, sql, _, key ->
             assertEquals(1, sql.execute("DELETE FROM SqlConformanceItem WHERE __key = ?", listOf(key)).affectedRows)
+            assertTrue(local.query("SELECT id FROM SqlConformanceItem").rows.isEmpty())
+        }
+    }
+
+    @Test fun deniedAtomicSqlDeleteRejectsEarlierInsert() = runBoundedIntegrationTest {
+        withRemote(RequestType.Delete) { local, sql, _, key ->
+            val result = sql.executeAtomic("denied-sql-batch", listOf(
+                SqlWriteStatement("INSERT INTO SqlConformanceItem (id, category) VALUES (2, 'must roll back') RETURNING id"),
+                SqlWriteStatement("DELETE FROM SqlConformanceItem WHERE __key = ? RETURNING id", listOf(key)),
+            ))
+            assertEquals(AtomicStatus.Rejected, result.response.status)
+            assertEquals(0, result.affectedRows)
+            assertTrue(result.returning.all { it.rows.isEmpty() })
+            assertEquals(listOf(SqlValue.UInt64(1u)), local.query("SELECT id FROM SqlConformanceItem").rows.map { it[0] })
+        }
+    }
+
+    @Test fun permittedAtomicSqlDeleteDoesNotRequireChangePermission() = runBoundedIntegrationTest {
+        withRemote(RequestType.Change) { local, sql, _, key ->
+            val result = sql.executeAtomic("permitted-sql-delete", "DELETE FROM SqlConformanceItem WHERE __key = ? RETURNING id", listOf(key))
+            assertEquals(AtomicStatus.Committed, result.response.status)
+            assertEquals(SqlValue.UInt64(1u), result.returning.single().rows.single()[0])
             assertTrue(local.query("SELECT id FROM SqlConformanceItem").rows.isEmpty())
         }
     }

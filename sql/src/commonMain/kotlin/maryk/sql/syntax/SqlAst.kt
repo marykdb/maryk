@@ -37,6 +37,8 @@ internal data class SqlMutation(
     val assignments: List<Pair<SqlName, SqlExpr>> = emptyList(),
     val where: SqlExpr? = null,
     val parameterCount: Int,
+    val sourceQuery: SqlQuery? = null,
+    val returning: List<SqlSelect> = emptyList(),
 )
 
 internal data class SqlCte(

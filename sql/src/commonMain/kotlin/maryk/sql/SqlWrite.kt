@@ -38,23 +38,26 @@ data class SqlWriteResult(
 
 /** Bounded mutations share the query parser, evaluator, and one budget across reads and writes. */
 internal class SqlWriter(private val sql: MarykSql) {
-    private val budget = SqlBudget(sql.options)
+    internal val budget = SqlBudget(sql.options)
 
     suspend fun execute(statement: String, parameters: List<SqlValue>): SqlWriteResult {
         val mutation = try { SqlParser(statement).parseMutation() }
         catch (error: SqlParseException) { throw error.toSqlException() }
+        if (mutation.sourceQuery != null || mutation.returning.isNotEmpty()) {
+            throw SqlException(SqlErrorCode.UNSUPPORTED, "INSERT queries and RETURNING require prepareAtomic or executeAtomic")
+        }
         val table = table(mutation.table)
         return withTimeoutOrNull(sql.options.maxExecutionMillis) {
             budget.checkpoint()
             if (mutation.kind == SqlMutationKind.INSERT) insert(table, mutation, parameters)
             else mutate(table, mutation, parameters)
-        } ?: budget.exceeded("Execution time")
+        } ?: budget.exceeded("executionMillis", sql.options.maxExecutionMillis)
     }
 
     private suspend fun insert(table: SqlTable, mutation: SqlMutation, parameters: List<SqlValue>): SqlWriteResult {
         val columns = columns(table, mutation.columns)
         if (mutation.rows.any { it.size != columns.size }) throw SqlException(SqlErrorCode.SYNTAX, "INSERT VALUES width does not match column list")
-        if (mutation.rows.size.toLong() > sql.options.maxResultRows) budget.exceeded("Mutation row count")
+        if (mutation.rows.size.toLong() > sql.options.maxResultRows) budget.exceeded("mutations", sql.options.maxResultRows, mutation.rows.size.toLong())
         mutation.rows.flatten().forEach { expression ->
             if (containsColumn(expression) || containsAggregate(expression) || containsSubquery(expression)) {
                 throw SqlException(SqlErrorCode.UNSUPPORTED, "INSERT VALUES requires scalar constant expressions", expression.position)
@@ -135,7 +138,7 @@ internal class SqlWriter(private val sql: MarykSql) {
         if ("__key" !in names) throw SqlException(SqlErrorCode.UNSUPPORTED, "Mutations require WHERE __key = expression", where.position)
     }
 
-    private suspend fun evaluate(query: SqlQuery, parameters: List<SqlValue>, readOptions: SqlReadOptions = SqlReadOptions()): List<List<SqlValue>> {
+    internal suspend fun evaluate(query: SqlQuery, parameters: List<SqlValue>, readOptions: SqlReadOptions = SqlReadOptions()): List<List<SqlValue>> {
         val prepared = sql.prepare(query)
         val bound = prepared.bindParameters(parameters)
         val rows = mutableListOf<List<SqlValue>>()
@@ -146,7 +149,7 @@ internal class SqlWriter(private val sql: MarykSql) {
         return rows
     }
 
-    private fun table(parts: List<SqlName>): SqlTable {
+    internal fun table(parts: List<SqlName>): SqlTable {
         val schema = parts.takeIf { it.size == 2 }?.first() ?: SqlName(sql.options.defaultSchema)
         val table = sql.catalog.tables.singleOrNull { matches(schema, it.schema) && matches(parts.last(), it.name) }
             ?: throw SqlException(SqlErrorCode.BINDING, "Unknown table '${parts.joinToString(".") { it.text }}'")
@@ -154,7 +157,7 @@ internal class SqlWriter(private val sql: MarykSql) {
         return table
     }
 
-    private fun columns(table: SqlTable, names: List<SqlName>): List<CatalogColumn> {
+    internal fun columns(table: SqlTable, names: List<SqlName>): List<CatalogColumn> {
         val columns = names.map { name ->
             table.bindings.singleOrNull { matches(name, it.column.name) }
                 ?: throw SqlException(SqlErrorCode.BINDING, "Unknown column '${name.text}' in table '${table.name}'")
@@ -164,7 +167,7 @@ internal class SqlWriter(private val sql: MarykSql) {
         return columns
     }
 
-    private fun nativeValue(column: CatalogColumn, value: SqlValue): Any? {
+    internal fun nativeValue(column: CatalogColumn, value: SqlValue): Any? {
         if (value == SqlValue.Null) {
             if (!column.column.nullable) throw SqlException(SqlErrorCode.TYPE, "Column '${column.column.name}' is required")
             return null
@@ -189,7 +192,7 @@ internal class SqlWriter(private val sql: MarykSql) {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun pair(column: CatalogColumn, value: SqlValue) =
+    internal fun pair(column: CatalogColumn, value: SqlValue) =
         (column.wrapper!!.ref() as IsPropertyReference<Any, IsValueDefinitionWrapper<Any, *, IsPropertyContext, *>, *>) with nativeValue(column, value)
 
     private fun systemColumn(name: String) = SqlExpr.Column(listOf(SqlName(name)), 0)

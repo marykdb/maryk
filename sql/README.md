@@ -160,7 +160,7 @@ val changed = sql.execute(
 check(changed.failures.isEmpty())
 ```
 
-`SqlWriteResult.affectedRows` counts successful Maryk statuses; `failures` describes unsuccessful statuses. A missing key or a version predicate that no longer matches yields zero affected rows. A concurrent change after selection is rejected by the store's version guard. Multi-row inserts follow the store's per-record behavior and can partly succeed; inspect both result fields. `RETURNING`, `UPSERT`, `INSERT … SELECT`, SQL transactions, and table-wide or join writes remain unsupported.
+`SqlWriteResult.affectedRows` counts successful Maryk statuses; `failures` describes unsuccessful statuses. A missing key or a version predicate that no longer matches yields zero affected rows. A concurrent change after selection is rejected by the store's version guard. Multi-row inserts follow the store's per-record behavior and can partly succeed; inspect both result fields. `RETURNING` and `INSERT … SELECT` are available through the separate atomic API below. Ordinary `execute()` does not support them. `UPSERT`, SQL transactions, and table-wide or join writes remain unsupported through this method.
 
 The layer does not provide DDL, JDBC, recursive CTEs, correlated subqueries, window functions, live SQL subscriptions, or vendor-specific dialect compatibility. Unsupported forms fail explicitly. Schema creation and migrations remain Maryk APIs.
 
@@ -261,3 +261,58 @@ The CLI runs queries by default. `--write` enables the bounded mutation surface 
 ```
 
 The existing CI matrix picks up SQL through its aggregate JVM, Native, JS, and WasmJS tasks. A configured target or CI task is not proof that it was executed locally; check test reports for the platform being deployed.
+
+## Atomic SQL change sets
+
+Use `prepareAtomic` to plan a bounded change set and `execute()` on the prepared object to commit it. The backend must support Maryk atomic requests; `sql.supportsAtomicWrites` exposes this capability. Ordinary `MarykSql.execute(...)` keeps its existing single-key write contract and per-record insert behavior.
+
+```kotlin
+import maryk.sql.SqlWriteStatement
+import maryk.core.query.responses.AtomicStatus
+
+val prepared = sql.prepareAtomic(
+    changeSetId = "import-2026-10-10-001",
+    statements = listOf(
+        SqlWriteStatement(
+            "INSERT INTO Person (name, age) VALUES ('Ada', 37), ('Lin', 42) " +
+                "RETURNING __key, __version, name",
+        ),
+        SqlWriteStatement(
+            "UPDATE Invoice SET status = 'reviewed' WHERE status = 'draft' RETURNING __key",
+        ),
+    ),
+)
+val result = prepared.execute()
+if (result.response.status == AtomicStatus.Committed) {
+    println(result.affectedRows)
+    result.returning.forEach { statementResult ->
+        statementResult.rows.forEach { row -> println(row.values) }
+    }
+}
+```
+
+A single statement can use `prepareAtomic(id, statement, parameters)` or `executeAtomic(id, statement, parameters)`. `executeAtomic` plans and executes once. Retain the prepared object and call its `execute()` again after a lost connection, cancellation, timeout, or `OutcomeUnknown`; replanning can choose different keys, records, values, or guards. The prepared object's `request` exposes the normalized Maryk change set. Successful receipts replay the original operation responses without rerunning stale guards. Retain the prepared object when the caller needs the same `RETURNING` result; the serialized Maryk request alone does not contain those row projections.
+
+Atomic SQL supports:
+
+- Multi-row `INSERT … VALUES` and `INSERT … SELECT`, including bounded query expressions, joins, and CTEs supported by the read engine. Insert queries must produce the same number of columns as the target list.
+- Multiple independently parameterized statements across registered models in one change set.
+- `UPDATE`, soft `DELETE`, and `UNDELETE` with general SQL `WHERE` predicates. `WHERE` remains mandatory. Table scans still require `SqlOptions(allowTableScan = true)`.
+- `RETURNING` scalar columns, `*`, qualified columns/wildcards, and optional aliases. Arbitrary returning expressions and subqueries are unsupported. Updates return assigned values, inserts return planned stored values without filling omitted defaults, and deletes return the selected values before deletion. `__version` is the version reported by the committed member, including an unchanged version for a no-op.
+
+All selected mutation targets carry their observed version into the commit. A stale target, duplicate key, unique conflict, or model-validation failure rejects the entire change set. Rejected, unsupported, and unknown outcomes report zero confirmed affected rows and no returning rows; inspect `result.response` for the actual status and failure information. Returning results correspond to the input statement order; statements without `RETURNING` have empty columns and rows. No post-commit read is used to construct them.
+
+At most 1,000 statements and 1,000 mutated records are accepted in total. Maryk's payload and backend work limits also apply. Limits never split a SQL change set into several commits. A model/key can be mutated only once in the batch; overlapping predicates or repeated writes to the same record are rejected during preparation. Hard deletion is unsupported in atomic SQL.
+
+`sql.atomicWriteCapabilities` reports the statement ceiling and the datastore's
+atomic limits; it is `null` for unsupported stores. The new defaults allow larger
+batches of small records, while payload and storage-work budgets still bound
+expensive changes. SQL execution budgets apply in addition to those ceilings.
+Execution-budget and atomic-count failures expose `SqlLimitException.limit`, `maximum`, and
+`actual` (when known). Commit-time limits are reported through
+`result.response.failure`. The planning deadline does not cover the later commit;
+a commit timeout or cancellation can leave an uncertain outcome.
+
+Preparation reads stored data before submitting the change set. Statements do not read each other's staged writes. Target version guards do not protect against newly inserted matching records or changes to other rows used by an insert query or subquery. This API provides all-or-nothing writes over the planned targets, not a general read/write transaction or serializable predicate protection. Empty selections produce a successful zero-row result, with `request == null` and no stored receipt.
+
+`UPSERT`, `ON CONFLICT`, interactive `BEGIN`/`COMMIT`, and repeated writes to the same record remain unsupported.

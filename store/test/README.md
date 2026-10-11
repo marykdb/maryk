@@ -17,6 +17,8 @@ scan behavior, and versioning consistency.
 - Atomic change-sets across models, late validation and unique-conflict rollback,
   version and value guards, competing writes, retry receipts, and suppression of
   notifications for aborted changes.
+- Serializable transactions: staged reads, repeated writes, hard deletion,
+  savepoints, read-only scopes, predicate conflicts and commit recovery.
 - Change and update responses.
 - Cursor-paged update history, tied versions, complete selected revisions,
   and creation/deletion events after key reuse.

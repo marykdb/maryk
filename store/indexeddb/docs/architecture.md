@@ -58,6 +58,16 @@ commit-journal rows, the clock, and the retry receipt are sent to one native
 The browser adapters explicitly implement `AtomicIndexedDbByteStore`; the generic
 byte-store interface's sequential batch fallback does not establish this guarantee.
 
+## Serializable transaction scopes
+
+Interactive scopes replay an ordered read/write journal into the same private
+byte-store overlay. Each preview holds the Maryk writer lock or fenced lease only
+for that replay; application suspension retains no native IndexedDB transaction.
+A datastore revision fence rejects changes by other Maryk writers between steps.
+Commit publishes the final bytes, revision and retry receipt in one native batch.
+Atomic requests use this engine with initial-state checks and a restricted write
+set. See the [shared transaction contract](../../../core/docs/query.md#serializable-transactions).
+
 ## Versioning
 
 `open` creates or upgrades all required object stores for the configured models and options. Existing connections close on `versionchange`, and blocked opens fail clearly instead of hanging.

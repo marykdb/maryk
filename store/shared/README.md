@@ -5,6 +5,8 @@ Not intended as a standalone store.
 
 ## What it contains
 
+- Separate atomic write-set and transaction capabilities, sharing each built-in
+  backend's commit implementation. See [Choosing a write boundary](../../core/docs/query.md#choosing-a-write-boundary).
 - Unified datastore contracts and request orchestration used by all engines.
 - Optional `TransactionalDataStore` capability and common serializable transaction
   scopes, read-your-own-writes, repeated mutations, savepoints, rollback, explicit

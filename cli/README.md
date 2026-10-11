@@ -11,7 +11,7 @@ The CLI supports interactive browsing and editing:
 - Connect to RocksDB or FoundationDB stores.
 - List models, inspect schema, and fetch records.
 - Scan through records with keyboard navigation and inline actions.
-- Run read-only SQL with `sql SELECT ...` or `sql --file report.sql`; see the [SQL guide](../sql/README.md).
+- Run bounded SQL queries with `sql SELECT ...` or `sql --file report.sql`, serializable mutations with `sql --write ...`, and interactive BEGIN/COMMIT sessions with savepoints; see the [command reference](docs/commands.md) and [SQL guide](../sql/README.md).
 - Edit records with `set`, `unset`, `append`, and `remove`, and save/load snapshots.
 
 ## Getting Started
@@ -72,13 +72,14 @@ Keep the Maryk server loopback-bound behind TLS termination or use SSH tunneling
 ## Development Notes
 
 - Commands are registered through `CommandRegistry` and return structured output so the UI can render consistently.
-- The CLI uses a lightweight command line parser that supports quoted arguments, preparing the client for future commands like store connections and queries.
+- The CLI uses a lightweight command line parser for command arguments; SQL commands preserve SQL quotes and comments for the SQL parser.
 - Tests live in `cli/src/commonTest/kotlin` and can be executed via `./gradlew :cli:jvmTest`.
 
 ## Commands
 
 - `connect`: Connect to a store (`rocksdb` or `foundationdb`).
 - `serve`: Start an HTTP server that exposes a store (`rocksdb` or `foundationdb`).
+- `sql [options] <statement>`: Query the connected store; `--write` enables mutations and interactive transaction controls.
 - `disconnect`: Close the current store connection.
 - `list`: Show available data models.
 - `model [--with-deps] [--key-index-format] [<name|id>]`: Inspect a model's schema.

@@ -11,7 +11,7 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 - Need the fastest feedback loop or CI determinism? Use Memory.
 - Need durable browser-local storage for JS/WasmJS apps? Use IndexedDB.
 - Want durable, embedded storage across desktop/mobile/server without running a service? Use RocksDB.
-- Need ACID transactions and scale‑out (JVM or native with `libfdb_c` present)? Use FoundationDB.
+- Need distributed ACID storage and scale‑out (JVM or native with `libfdb_c` present)? Use FoundationDB.
 - Need remote access to a local store over HTTP or SSH? Use Remote Store.
 
 All engines share the same API surface, so you can start with Memory in tests, use IndexedDB in browser apps, use RocksDB for embedded persistence, and move to FoundationDB on the server without changing your models or queries.
@@ -103,6 +103,11 @@ The `store/test` module contains a generic test suite (`runDataStoreTests`) that
 
 
 ## Transactions
+
+Atomic requests and transaction scopes share each built-in engine's commit
+implementation. Use an atomic request for known writes with initial-state guards;
+use a transaction for protected reads, repeated writes, hard deletion or
+savepoints. See [Choosing a write boundary](../core/docs/query.md#choosing-a-write-boundary).
 
 All built-in engines expose the [shared serializable transaction contract](../core/docs/query.md#serializable-transactions).
 The scope combines queries and mutations across registered models, stages repeated

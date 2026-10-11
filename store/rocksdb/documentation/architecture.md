@@ -101,6 +101,14 @@ The store opens RocksDB as an `OptimisticTransactionDB`. Maryk keeps a small `Tr
 
 This keeps the implementation portable across JVM and Native targets while relying on RocksDB for atomic commit, rollback/savepoints, read-your-writes, and optimistic conflict detection.
 
+Maryk's public `transaction` scope is separate from this native adapter. Each
+preview replays its journal in a fresh native transaction and closes without
+publication. A datastore revision key protects reads and predicates across
+previews; commit publishes the complete journal and retry receipt together.
+Application suspension holds no native transaction open. `AtomicRequest` uses
+the same engine with initial-state checks. See the
+[shared transaction contract](../../../core/docs/query.md#serializable-transactions).
+
 ## Migrations and Version Updates
 
 Operational details and full runtime API are documented in [Migrations](./migrations.md).

@@ -8,7 +8,7 @@ Built with Compose Multiplatform.
 - Store manager (RocksDB / FoundationDB / Remote).
 - Model catalog + schema inspection.
 - Record scan/filter/sort + pinned columns.
-- SQL modal with highlighting, catalog autocomplete, typed parameters, results, and guarded writes.
+- SQL modal with highlighting, catalog autocomplete, typed parameters, results, serializable writes, transaction sessions, savepoints, and commit resolution.
 - Record inspector (data tree, YAML, history/diff).
 - Typed form editor.
 - Schema export plus data import/export.
@@ -23,9 +23,9 @@ From repo root:
 
 Notes:
 
-- FoundationDB needs `libfdb_c` (see `/store/foundationdb/README.md`).
+- FoundationDB needs `libfdb_c` (see [FoundationDB setup](../store/foundationdb/README.md)).
 - Saved store configs: `~/.maryk/app/stores.conf`.
 
 ## Full guide
 
-See `/app/docs/README.md`.
+See [App guide](docs/README.md).

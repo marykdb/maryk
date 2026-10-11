@@ -129,13 +129,19 @@ Soft delete filtering is layered in: if `filterSoftDeleted` is true, we check th
 
 ## Error Handling & Validations
 
-Each add, change, or delete object is committed in its own FDB transaction. Read-for-write validation (uniques and parent existence for nested values) runs inside that object's transaction to avoid races. FDB retries conflicting transactions, and Maryk returns validation errors (for example, a unique violation) as structured per-object statuses. A multi-object request is therefore not atomic: objects committed before a later failure remain committed.
+Outside an explicit atomic request or transaction scope, each add, change, or delete object is committed in its own FDB transaction. Read-for-write validation (uniques and parent existence for nested values) runs inside that object's transaction to avoid races. FDB retries conflicting transactions, and Maryk returns validation errors (for example, a unique violation) as structured per-object statuses. A multi-object request is therefore not atomic: objects committed before a later failure remain committed.
 
 Explicit `AtomicRequest` execution uses one transaction across every participating
 model instead. Conditions and schema fences are read inside that transaction;
 values, indexes, history, cluster-log entries, and the successful retry receipt
 commit together. Transaction retries discard attempt-local notifications. See
 [Atomic requests](../../../core/docs/query.md#atomic) for the bounded contract.
+
+Interactive transaction scopes use the same commit boundary for an ordered
+read/write journal. A revision fence protects point reads and range decisions,
+while durable responses receive ordered mutation versions at commit. Preview
+never publishes its staged bytes. See
+[Serializable transactions](../../../core/docs/query.md#serializable-transactions).
 
 ## Why use separate historic subspaces?
 

@@ -20,7 +20,8 @@ Recommended order for new users:
   - [Keys](key.md): design unique and efficient keys for data objects.
   - [Index Design](index-design.md): choose between ordered, normalized, and search-oriented indexes.
 - [Versioning](versioning.md): track and request historical value versions.
-- [Querying Data](query.md): add, change, get and scan objects.
+- [Querying Data](query.md): typed reads and writes, atomic change sets and serializable transactions.
+  - [Choosing a write boundary](query.md#choosing-a-write-boundary): initial-state write sets versus ordered read/write scopes.
   - [Reference Graphs](reference-graphs.md): select specific properties to return.
   - [Filters](filters.md): filter operators for narrowing query results.
   - [Aggregations](aggregations.md): aggregate data with value and bucket operators.

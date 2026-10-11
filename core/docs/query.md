@@ -22,6 +22,8 @@ Use:
 - `GetUpdateHistory` / `ScanUpdateHistory` for bounded, newest-first historical update entries.
 - `GetUpdates` / `ScanUpdates` for chronological sync.
 - `executeFlow(...)` for live views.
+- `executeAtomic(...)` for a fixed write set with initial-state guards.
+- `transaction { ... }` for serializable reads and ordered writes.
 
 Use reference graphs with reads to fetch only the fields you need.
 
@@ -40,6 +42,36 @@ Use reference graphs with reads to fetch only the fields you need.
 | Browse historical update entries | `Model.scanUpdateHistory(...)` |
 
 Start with `add`, `get`, and `scan`. Add filters, ordering, reference graphs, and update streams when the access pattern needs them.
+
+## Choosing a write boundary
+
+Atomic execution and transactions share the backend commit engine, but expose
+different contracts. Keep both entry points: a fixed, retryable write set is useful
+without an interactive read/write lifecycle.
+
+| Requirement | Atomic request | Transaction scope |
+| --- | --- | --- |
+| Commit several models together | Yes, within one store | Yes, within one store |
+| Checks | All guards and preconditions use the initial state | Each operation sees the preceding staged operations |
+| Read and decide inside the boundary | Explicit record guards only; earlier application reads are outside it | Get and Scan, including empty predicates, protected by a revision fence |
+| Write the same record repeatedly | Once per write set | Separate ordered requests |
+| Hard deletion | Unsupported | Supported |
+| Savepoints and rollback | No interactive staging lifecycle | Supported before commit submission |
+| Recover an uncertain commit | Resubmit the identical request and change-set ID | Resolve the retained transaction's exact commit |
+
+For example, adding an observation and its report with known values fits an atomic
+request. Scanning for pending records and changing every match, while protecting
+the decision from concurrent insertions, requires a transaction. Atomic version
+guards protect selected records; they do not protect an earlier scan's predicate.
+
+Capabilities remain separate for custom adapters: inspect `atomicCapabilities`
+and `transactionCapabilities` for the operation you need. Built-in local engines
+provide both, and Remote advertises its backend's capabilities. Neither API falls
+back to a sequence of ordinary writes when unsupported.
+
+The optional [SQL layer](../../sql/README.md) follows the same distinction:
+`execute` uses serializable autocommit, `transaction` supplies an interactive
+scope, and `prepareAtomic` retains preselected targets for an atomic write set.
 
 ## Basic Query Actions
 
@@ -603,6 +635,12 @@ responses when durable mutation versions are needed.
 The scoped callback runs on the shared datastore dispatcher. Ordinary store
 `execute` calls inside it join that scope. Replication and subscriptions belong
 outside the transaction.
+
+An atomic request executed through `tx.executeAtomic(...)`, or through the same
+built-in store inside its scoped callback, joins the outer journal. Its guards
+are checked before that group's writes against the current staged view. It returns
+`AtomicStatus.Staged`; the outer commit determines durability and recovery. The
+inner change-set ID does not create an independently committed retry receipt.
 
 The callback runs once by default. `transactionWithRetry` explicitly retries the
 whole callback after a conflict, up to three attempts with short backoff. Keep

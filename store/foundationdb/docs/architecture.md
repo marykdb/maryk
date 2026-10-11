@@ -31,6 +31,17 @@ Capabilities in the FDB engine:
 - Initializes per‑model directories via DirectoryLayer.
 - Launches the store actor (coroutine) to process incoming requests one by one. Add, change, and delete processors use one FDB transaction per object; multi-object requests can therefore return partial results. Reads use transactions or iterators scoped to the required operation.
 
+### Public atomic requests and transaction scopes
+
+Explicit atomic requests and serializable transaction journals use one native
+transaction per replay attempt across participating models, schema fences and
+receipts. Preview aborts its native transaction; application suspension retains
+no native snapshot. A datastore revision fence detects intervening Maryk writes,
+including writes outside the models selected by the scope. Atomic requests keep
+initial-state checks; interactive journals read earlier staged writes and support
+repeated mutations and hard deletion. See the
+[shared transaction contract](../../../core/docs/query.md#serializable-transactions).
+
 ### Cluster Update Log (Optional)
 
 Goal: cluster-wide `executeFlow` updates (multi-writer, multi-reader) using only FoundationDB.

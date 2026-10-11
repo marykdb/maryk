@@ -11,7 +11,7 @@ Start here when you want to understand the data contract. Stores and tools build
 - [Index Design](docs/index-design.md): compose ordered and search-oriented indexes.
 - [Property Types](docs/properties/README.md): supported property definitions and validation.
 - [Keys](docs/key.md): compose model keys and key parts.
-- [Querying](docs/query.md): add/change/delete/get/scan and update streams.
+- [Querying](docs/query.md): typed requests, atomic change sets, serializable transactions and update streams.
 - [Versioning](docs/versioning.md): historical reads and compatibility.
 - [Serialization](docs/serialization/README.md): YAML/JSON/ProtoBuf for models, values, and requests.
 

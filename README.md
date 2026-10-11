@@ -10,6 +10,7 @@ Use Maryk when you want:
 - One schema shared by clients, servers, tools, and tests.
 - Stable binary-compatible property indexes instead of reflection-heavy runtime mapping.
 - Version-aware storage: historic reads, change queries, update streams, and efficient sync.
+- Bounded SQL queries and mutations, atomic change sets, and serializable transaction scopes over the same models.
 - One request API across in-memory, browser IndexedDB, embedded RocksDB, distributed FoundationDB, and remote stores.
 - Portable JSON, YAML, and ProtoBuf serialization built from the same model definitions.
 
@@ -21,7 +22,7 @@ Start with the [website](https://marykdb.github.io/maryk/) for the best reading 
 
 Maryk is Kotlin Multiplatform. Platform support depends on the module:
 
-- Core modeling, validation, querying, JSON/YAML serialization, generator support, Memory Store, shared store logic, test models, and test helpers target JVM, Android, JS, WasmJS, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
+- Core modeling, validation, querying, SQL, JSON/YAML serialization, generator support, Memory Store, shared store logic, test models, and test helpers target JVM, Android, JS, WasmJS, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
 - IndexedDB Store targets JS browser and WasmJS browser for persistent browser storage.
 - File IO targets JVM, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
 - RocksDB Store targets JVM, Android, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native through the `rocksdb-multiplatform` bindings.
@@ -87,7 +88,7 @@ See [store/README.md](store/README.md) for the decision guide.
 - [Core](core/README.md) – Data models, property types, keys, queries, versioning, serialization.
 - [Library](lib/README.md) – Shared utilities for things like Strings and ByteArrays.
 - [File](file/README.md) – Minimal cross-platform file IO layer used by tooling and stores.
-- [SQL](sql/README.md) – Portable, bounded SQL queries and guarded row mutations over Maryk stores.
+- [SQL](sql/README.md) – Portable, bounded SQL queries, atomic change sets, and serializable mutations over Maryk stores.
 - [JSON](json/README.md) & [YAML](yaml/README.md) – Streaming parsers and writers.
 - [Generator](generator/README.md) – Code generation from YAML and JSON models.
 - [Test Library](testlib/README.md) – Testing utilities and helpers.

@@ -16,19 +16,26 @@ Maryk is not “a database” in the SQL sense and not only a serializer. It is 
 
 ## Be careful when
 
-- Your main workload is ad-hoc relational joins across many unrelated tables.
+- Your main workload needs unbounded relational joins or a cost-based optimizer across large unrelated tables.
 - Your primary use case is analytical OLAP over huge fact tables.
 - You need full-text search as a core query path.
 - Your schema changes are unplanned and dynamic per tenant.
 - Your team does not want Kotlin models to be the source of truth.
 
-Maryk can still participate in those systems, but pair it with the right tool: SQL/OLAP/search for those query classes, Maryk for typed operational data, sync, and storage.
+The optional [SQL layer](../querying/sql/) supports bounded joins, subqueries,
+windows and mutations over Maryk stores. Its budgets fail explicitly rather than
+truncating results; it does not provide DDL, JDBC or an OLAP engine. Pair Maryk
+with analytics or search tools when those workloads exceed this scope.
+
+Atomic change sets and serializable transactions are available across the built-in
+local stores; Remote forwards backend capabilities. Choose FoundationDB for
+distributed storage rather than solely to obtain a transaction API.
 
 ## Compared with common choices
 
 | Alternative | Maryk difference |
 | --- | --- |
-| SQL ORM | Maryk models are storage/transport/query contracts. Querying is key/index/scan oriented, not join oriented. |
+| SQL ORM | Maryk models are storage/transport/query contracts. Typed requests use keys/indexes/scans; the optional SQL layer adds bounded relational queries over the same models. |
 | Kotlin serialization | Maryk adds property indexes, validation, typed references, requests, stores, and version-aware history. |
 | Protocol Buffers | Maryk avoids separate `.proto` files and derives JSON/YAML/ProtoBuf from the Kotlin model. |
 | Document stores | Maryk keeps strong property definitions, stable indexes, typed queries, and schema compatibility checks. |

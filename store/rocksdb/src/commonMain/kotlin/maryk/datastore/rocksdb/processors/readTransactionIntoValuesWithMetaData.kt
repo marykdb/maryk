@@ -13,6 +13,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.readStorageToValues
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForCache
@@ -31,6 +32,7 @@ import maryk.datastore.rocksdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.readValue
+import maryk.datastore.shared.rethrowIfFatal
 
 /**
  * Read values for [key] from an [iterator] to a ValuesWithMeta object.
@@ -158,7 +160,21 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
 
         var currentVersion = 0uL
         // Will start by going to next key so will miss the creation timestamp
-        val getQualifier = iterator.historicQualifierRetriever(key, toVersion, 1u) { version ->
+        val getQualifier = iterator.historicQualifierRetriever(key, toVersion, 1u, canSkipQualifier = { bytes, offset, length ->
+            if (length == 1 && bytes[offset] == SOFT_DELETE_INDICATOR) {
+                true
+            } else {
+                try {
+                    var qualifierIndex = offset
+                    val reference = getPropertyReferenceByStorageBytes(length, { bytes[qualifierIndex++] })
+                    val definition = reference.propertyDefinition
+                    ((definition as? IsDefinitionWrapper<*, *, *, *>)?.definition ?: definition) is IsSimpleValueDefinition<*, *>
+                } catch (cause: Throwable) {
+                    cause.rethrowIfFatal()
+                    false
+                }
+            }
+        }) { version ->
             currentVersion = version
             maxVersion = maxOf(currentVersion, maxVersion)
         }

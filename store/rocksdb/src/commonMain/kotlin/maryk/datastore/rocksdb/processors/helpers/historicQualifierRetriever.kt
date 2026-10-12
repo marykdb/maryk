@@ -5,26 +5,30 @@ import maryk.datastore.rocksdb.DBIterator
 import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.matchesRange
 import maryk.lib.extensions.compare.matchesRangePart
+import maryk.lib.extensions.compare.nextByteInSameLength
 
 /** Find historic qualifiers on [iterator] for [key] */
 internal fun DBIterator.historicQualifierRetriever(
     key: Key<*>,
     toVersion: ULong,
     maxVersions: UInt,
+    canSkipQualifier: (ByteArray, Int, Int) -> Boolean = { _, _, _ -> false },
     handleVersion: (ULong) -> Unit
 ): (((Int) -> Byte, Int) -> Unit) -> Boolean {
     var lastQualifier: ByteArray? = null
     var lastQualifierLength = 0
     var counter = 0u
+    val toVersionBytes = toVersion.toReversedVersionBytes()
+    var seekAfter: ByteArray? = null
 
     return { resultHandler ->
         val offset = key.size
 
-        val toVersionBytes = toVersion.toReversedVersionBytes()
-
         var found = false
         qualifierFinder@while (true) {
-            next()
+            val nextQualifier = seekAfter
+            seekAfter = null
+            if (nextQualifier == null) next() else seek(nextQualifier)
             if (!isValid()) {
                 break // At end of iterator
             } else {
@@ -59,9 +63,24 @@ internal fun DBIterator.historicQualifierRetriever(
                     resultHandler({ qualifier[offset+it] }, lastQualifierLength)
 
                     counter++
+                    // Prefix seeking is safe only for scalar leaves. Container prefixes
+                    // also contain child qualifiers, which must remain visible.
+                    if (counter >= maxVersions && canSkipQualifier(qualifier, offset, lastQualifierLength)) {
+                        val prefix = qualifier.copyOfRange(0, versionOffset)
+                        val end = prefix.nextByteInSameLength()
+                        if (!end.contentEquals(prefix)) {
+                            val endLength = end.indexOfLast { it != 0.toByte() } + 1
+                            seekAfter = end.copyOf(endLength) + ByteArray(VERSION_BYTE_SIZE)
+                        }
+                    }
 
                     break
-                } else continue
+                } else {
+                    if (canSkipQualifier(qualifier, offset, versionOffset - offset)) {
+                        seekAfter = qualifier.copyOfRange(0, versionOffset) + toVersionBytes
+                    }
+                    continue
+                }
             }
         }
 

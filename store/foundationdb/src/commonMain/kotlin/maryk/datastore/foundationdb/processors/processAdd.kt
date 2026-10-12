@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.currentCoroutineContext
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
@@ -22,6 +23,7 @@ import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
+import maryk.datastore.foundationdb.FoundationDBBulkAddContext
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
@@ -56,14 +58,18 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
     objectToAdd.validate()
 
     var updateToEmit: Update<DM>? = null
+    val initialState = currentCoroutineContext()[FoundationDBBulkAddContext]
+        ?.takeIf { it.owner === this }
+        ?.initialRecords?.remove(dataModelId to Bytes(key.bytes))
 
     runRequestTransaction(dataModelId) { tr ->
         updateToEmit = null
         val packedKey = packKey(tableDirs.keysPrefix, key.bytes)
         val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, key.bytes)
 
-        val existing = tr.get(packedKey).awaitResult()
-        val tombstoneVersion = tr.get(tombstoneKey).awaitResult()?.readHLCTimestampIfExact()
+        val existing = if (initialState != null) initialState.existing else tr.get(packedKey).awaitResult()
+        val tombstoneVersion = if (initialState != null) initialState.tombstoneVersion
+            else tr.get(tombstoneKey).awaitResult()?.readHLCTimestampIfExact()
         if (ignoreIfVersionNotNewer) {
             val currentVersion = if (existing != null) {
                 tr.get(packKey(tableDirs.tablePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact()

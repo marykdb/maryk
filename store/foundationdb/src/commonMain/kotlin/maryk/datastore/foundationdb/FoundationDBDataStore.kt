@@ -305,7 +305,11 @@ class FoundationDBDataStore private constructor(
         val migrationRequest = currentCoroutineContext()[FoundationDBMigrationRequestContext]
         currentAtomicContext(this)?.let { atomic ->
             val tr = atomic.transaction as Transaction
-            dataModelId?.let { requireModelSchemaReady(tr, it, migrationRequest?.transactionGuard) }
+            val bulkAdd = currentCoroutineContext()[FoundationDBBulkAddContext]?.takeIf { it.owner === this }
+            dataModelId?.let {
+                requireModelSchemaReady(tr, it, migrationRequest?.transactionGuard,
+                    schemaReadyChecked = bulkAdd?.schemaCheckedModels?.contains(it) == true)
+            }
             return block(tr)
         }
         return tc.run { tr ->
@@ -321,6 +325,13 @@ class FoundationDBDataStore private constructor(
         transaction: Transaction,
         dataModelId: UInt,
         migrationTransactionGuard: ((Transaction) -> Unit)?,
+    ) = requireModelSchemaReady(transaction, dataModelId, migrationTransactionGuard, false)
+
+    private fun requireModelSchemaReady(
+        transaction: Transaction,
+        dataModelId: UInt,
+        migrationTransactionGuard: ((Transaction) -> Unit)?,
+        schemaReadyChecked: Boolean,
     ) {
         migrationTransactionGuards.value[dataModelId]?.invoke(transaction)
         migrationTransactionGuard?.invoke(transaction)
@@ -328,7 +339,7 @@ class FoundationDBDataStore private constructor(
             rebuildOwnerGuard(transaction)
             return
         }
-        if (!schemaFenceReady.value) return
+        if (schemaReadyChecked || !schemaFenceReady.value) return
         val tableDirectories = directoriesByDataModelIndex[dataModelId]
             ?: throw StorageException("Unknown data model id $dataModelId")
         transaction.requireModelSchemaReady(
@@ -1431,24 +1442,38 @@ class FoundationDBDataStore private constructor(
                 val revision = Bytes(transaction.get(transactionRevisionKey).awaitResult() ?: byteArrayOf(0))
                 var observedVersion = if (!request.commit && request.stagingVersion == null)
                     directoriesByDataModelIndex.values.maxOfOrNull { readMaximumStoredWatermark(transaction, it) } ?: 0uL else 0uL
-                // These reads all describe the initial state. Issue them before waiting so a
-                // large atomic request does not spend its transaction lifetime on serial round trips.
-                val versionReads = mutableListOf<FdbFuture<ByteArray?>>()
+                // Atomic all-add requests have distinct targets, so the same initial reads
+                // can also serve their add processors. Mixed/repeated-write transactions do not
+                // reuse record reads: later members must see earlier mutations.
+                val bulkAdd = if (request.initialStateChecks && request.requests.all { it is AddRequest<*> })
+                    FoundationDBBulkAddContext(this@FoundationDBDataStore) else null
+                val pendingReads = mutableListOf<FdbFuture<ByteArray?>>()
+                val recordReads = mutableListOf<FoundationDBAtomicRecordReads>()
                 try {
                     for ((model, keys) in request.mutationKeys()) {
                         val id = getDataModelId(model)
                         requireModelSchemaReady(transaction, id)
+                        bulkAdd?.schemaCheckedModels?.add(id)
                         val dirs = getTableDirs(id)
                         for (key in keys) {
-                            versionReads += transaction.get(packKey(dirs.tablePrefix, key.bytes))
-                            versionReads += transaction.get(packKey(dirs.replicationTombstonePrefix, key.bytes))
+                            val current = transaction.get(packKey(dirs.tablePrefix, key.bytes)).also { pendingReads += it }
+                            val tombstone = transaction.get(packKey(dirs.replicationTombstonePrefix, key.bytes)).also { pendingReads += it }
+                            val existing = bulkAdd?.let {
+                                transaction.get(packKey(dirs.keysPrefix, key.bytes)).also { pendingReads += it }
+                            }
+                            recordReads += FoundationDBAtomicRecordReads(id, key, current, tombstone, existing)
                         }
                     }
-                    for (read in versionReads) {
-                        observedVersion = maxOf(observedVersion, read.awaitResult()?.readHLCTimestampIfExact() ?: 0uL)
+                    for (read in recordReads) {
+                        val current = read.current.awaitResult()?.readHLCTimestampIfExact() ?: 0uL
+                        val tombstone = read.tombstone.awaitResult()?.readHLCTimestampIfExact()
+                        observedVersion = maxOf(observedVersion, current, tombstone ?: 0uL)
+                        read.existing?.let { existing ->
+                            bulkAdd!!.initialRecords[read.modelId to read.key] = FoundationDBInitialAddState(existing.awaitResult(), tombstone)
+                        }
                     }
                 } finally {
-                    versionReads.filterNot { it.isDone }.forEach { it.cancel() }
+                    pendingReads.filterNot { it.isDone }.forEach { it.cancel() }
                 }
                 val executionVersion = if (request.commit) nextMutationClock(version, maxOf(observedVersion, request.stagingVersion ?: 0uL))
                     else HLC(request.stagingVersion ?: nextMutationClock(version, observedVersion).timestamp)
@@ -1456,7 +1481,7 @@ class FoundationDBDataStore private constructor(
                 val readContext = FoundationDBReadContext(transaction.getReadVersion().awaitResult(), transaction)
                 atomicTransactions.update { it + transaction }
                 val result = try {
-                    runBlocking(parentJob + atomic) {
+                    runBlocking(parentJob + atomic + (bulkAdd ?: EmptyCoroutineContext)) {
                         applyTransactionMembers(request, revision, executionVersion) { member, memberVersion ->
                             val response = CompletableDeferred<IsResponse>()
                             val action = StoreAction(member, response)
@@ -2274,3 +2299,11 @@ private data class SensitiveModelReferences(
 )
 
 private class TransactionPreview(val response: TransactionResponse) : RuntimeException()
+
+private data class FoundationDBAtomicRecordReads(
+    val modelId: UInt,
+    val key: Bytes,
+    val current: FdbFuture<ByteArray?>,
+    val tombstone: FdbFuture<ByteArray?>,
+    val existing: FdbFuture<ByteArray?>?,
+)

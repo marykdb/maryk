@@ -1,5 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -11,6 +13,7 @@ import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.currentAtomicContext
 
 internal typealias AddStoreAction<DM> = StoreAction<DM, AddRequest<DM>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootDataModel>
@@ -26,9 +29,9 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAddRequ
         val dbIndex = getDataModelId(addRequest.dataModel)
         val tableDirs = getTableDirs(dbIndex)
 
-        withContext(Dispatchers.IO) {
-            // Process each object in its own FDB transaction
+        suspend fun addObjects() {
             for ((index, objectToAdd) in addRequest.objects.withIndex()) {
+                currentCoroutineContext().ensureActive()
                 val key = addRequest.keysForObjects?.getOrNull(index)
                     ?: addRequest.dataModel.key(objectToAdd)
 
@@ -43,6 +46,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAddRequ
                 statuses += status
             }
         }
+        // Atomic execution already owns an IO worker and one transaction. Avoid
+        // redispatching every member; ordinary adds retain their IO dispatch.
+        if (currentAtomicContext(this) != null) addObjects()
+        else withContext(Dispatchers.IO) { addObjects() }
     }
 
     storeAction.response.complete(

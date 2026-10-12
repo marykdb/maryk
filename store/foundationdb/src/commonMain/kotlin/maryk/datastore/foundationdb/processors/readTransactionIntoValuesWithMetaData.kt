@@ -23,10 +23,11 @@ import maryk.core.values.Values
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
+import maryk.datastore.foundationdb.processors.helpers.PreparedRecordRead
+import maryk.datastore.foundationdb.processors.helpers.prepareRecordRead
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.FDBIterator
-import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.checkExistence
 import maryk.datastore.foundationdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.foundationdb.processors.helpers.isHistoricDeleteMarker
@@ -35,7 +36,6 @@ import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.withCurrentPayload
 import maryk.datastore.shared.readValue
-import maryk.foundationdb.Range as FDBRange
 
 /**
  * Read values for [key] from a FoundationDB [tr] into a ValuesWithMeta object.
@@ -53,7 +53,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     select: RootPropRefGraph<DM>?,
     toVersion: ULong?,
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?,
-    decryptValue: DecryptValue? = null
+    decryptValue: DecryptValue? = null,
+    preparedRead: PreparedRecordRead? = null,
 ): ValuesWithMetaData<DM>? {
     if (toVersion != null && creationVersion > toVersion) return null
     var maxVersion = creationVersion
@@ -67,7 +68,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
 
         val iterator = FDBIterator(
-            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).asList().awaitResult().iterator()
+            (preparedRead ?: prepareRecordRead(tr, tableDirs, key.bytes, select, toVersion)).awaitRows().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)
@@ -164,7 +165,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         val prefixWithKeyRange = packKey(tableDirs.historicTablePrefix, key.bytes)
 
         val iterator = FDBIterator(
-            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).asList().awaitResult().iterator()
+            (preparedRead ?: prepareRecordRead(tr, tableDirs, key.bytes, select, toVersion)).awaitRows().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)

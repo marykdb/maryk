@@ -141,12 +141,22 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
         runRequestTransaction(dataModelId) { tr ->
             updateToEmit = null
             val keyBytes = key.bytes
-            val tombstoneVersion = if (ignoreIfVersionNotNewer) {
+            val tombstoneRead = if (ignoreIfVersionNotNewer) {
                 tr.get(packKey(tableDirs.replicationTombstonePrefix, keyBytes))
-                    .awaitResult()
-                    ?.readHLCTimestampIfExact()
             } else null
-            val createdBytes = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult()
+            val createdRead = tr.get(packKey(tableDirs.keysPrefix, keyBytes))
+            val latestRead = tr.get(packKey(tableDirs.tablePrefix, keyBytes))
+            val (createdBytes, latest, tombstoneVersion) = try {
+                Triple(
+                    createdRead.awaitResult(),
+                    latestRead.awaitResult(),
+                    tombstoneRead?.awaitResult()?.readHLCTimestampIfExact(),
+                )
+            } finally {
+                createdRead.cancel()
+                latestRead.cancel()
+                tombstoneRead?.cancel()
+            }
             if (createdBytes?.readHLCTimestampIfExact() == null) {
                 return@runRequestTransaction if (tombstoneVersion != null && version.timestamp <= tombstoneVersion) {
                     ChangeSuccess(tombstoneVersion, emptyList())
@@ -156,8 +166,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             }
 
             // Validate expected last version if provided
-            val latest = tr.get(packKey(tableDirs.tablePrefix, keyBytes)).awaitResult()
-                ?: return@runRequestTransaction DoesNotExist(key)
+            if (latest == null) return@runRequestTransaction DoesNotExist(key)
             val latestVersion = latest.readHLCTimestampIfExact() ?: return@runRequestTransaction DoesNotExist(key)
             val lastAppliedVersion = maxOf(latestVersion, tombstoneVersion ?: 0uL)
             if (ignoreIfVersionNotNewer && version.timestamp <= lastAppliedVersion) {

@@ -1,5 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -9,6 +11,7 @@ import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.shared.currentAtomicContext
 import maryk.datastore.shared.StoreAction
 
 internal typealias ChangeStoreAction<DM> = StoreAction<DM, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -27,8 +30,9 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeR
         val dbIndex = getDataModelId(changeRequest.dataModel)
         val tableDirs = getTableDirs(dbIndex)
 
-        withContext(Dispatchers.IO) {
+        suspend fun changeObjects() {
             for (objectChange in changeRequest.objects) {
+                currentCoroutineContext().ensureActive()
                 val status = processChange(
                     dataModel = changeRequest.dataModel,
                     key = objectChange.key,
@@ -40,6 +44,8 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeR
                 statuses += status
             }
         }
+        if (currentAtomicContext(this) != null) changeObjects()
+        else withContext(Dispatchers.IO) { changeObjects() }
     }
 
     storeAction.response.complete(

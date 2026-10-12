@@ -66,13 +66,19 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         updateToEmit = null
         val keyBytes = key.bytes
         val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, keyBytes)
-        val tombstoneVersion = tr.get(tombstoneKey).awaitResult()?.readHLCTimestampIfExact()
-        val exists = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult()
-            ?.readHLCTimestampIfExact() != null
-
-        val currentVersion = if (exists) {
-            tr.get(packKey(tableDirs.tablePrefix, keyBytes)).awaitResult()?.readHLCTimestampIfExact()
-        } else null
+        val tombstoneRead = tr.get(tombstoneKey)
+        val existsRead = tr.get(packKey(tableDirs.keysPrefix, keyBytes))
+        val versionRead = tr.get(packKey(tableDirs.tablePrefix, keyBytes))
+        val (tombstoneVersion, exists, currentVersion) = try {
+            val tombstone = tombstoneRead.awaitResult()?.readHLCTimestampIfExact()
+            val exists = existsRead.awaitResult()?.readHLCTimestampIfExact() != null
+            val latest = versionRead.awaitResult()?.readHLCTimestampIfExact()
+            Triple(tombstone, exists, latest.takeIf { exists })
+        } finally {
+            tombstoneRead.cancel()
+            existsRead.cancel()
+            versionRead.cancel()
+        }
         val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
         if (lastVersion != null && !exists) {
             return@runRequestTransaction DoesNotExist(key)

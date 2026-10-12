@@ -592,9 +592,9 @@ class IndexRebuildBatchingTest {
 
         try {
             assertEquals(
-                5,
+                7,
                 store.execute(
-                    TestMarykModel.add(*Array(5) { index ->
+                    TestMarykModel.add(*Array(7) { index ->
                         TestMarykModel.create {
                             int with 5
                             uint with index.toUInt()
@@ -614,9 +614,9 @@ class IndexRebuildBatchingTest {
             val tableDirectories = store.getTableDirs(TestMarykModel)
             indexables.forEach { deleteCompleteIndexContents(store.tc, tableDirectories, it) }
 
-            assertTrue(walkDataRecordsAndFillIndex(store.tc, tableDirectories, indexables, TestMarykModel) > 0)
+            assertTrue(walkDataRecordsAndFillIndex(store.tc, tableDirectories, indexables, TestMarykModel, rowsPerReadTransaction = 2, bytesPerReadTransaction = 256) > 0)
             assertEquals(
-                5,
+                7,
                 store.execute(
                     TestMarykModel.scan(
                         where = Equals(TestMarykModel.ref { int } with 5)

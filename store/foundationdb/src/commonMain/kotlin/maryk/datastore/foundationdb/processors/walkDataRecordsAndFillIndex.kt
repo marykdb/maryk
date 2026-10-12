@@ -18,6 +18,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.model.modelIndexRebuildScratchKey
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
@@ -31,7 +32,7 @@ import maryk.datastore.foundationdb.processors.helpers.withCurrentPayload
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.shared.readValue
 import maryk.datastore.shared.rethrowIfFatal
-import maryk.foundationdb.KeyValue
+import maryk.foundationdb.StreamingMode
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.TransactionContext
@@ -126,12 +127,11 @@ internal fun walkDataRecordsAndFillIndex(
         }
     }
 
-    var nextKey: ByteArray? = null
+    val keyCursor = RebuildRangeCursor(tc, tableDirectories.keysPrefix, rowsPerReadTransaction, bytesPerReadTransaction)
     var writeTransactions = 0
 
     while (true) {
-        val keyRow = readNextKeyRow(tc, tableDirectories.keysPrefix, nextKey) ?: break
-        nextKey = keyRow.key
+        val keyRow = keyCursor.next() ?: break
         if (keyRow.value.readHLCTimestampIfExact() == null) continue
 
         val keyBytes = keyRow.key.copyOfRange(tableDirectories.keysPrefix.size, keyRow.key.size)
@@ -221,15 +221,54 @@ private fun materializeRecord(
     return latestVersion != null || tableDirectories is HistoricTableDirectories
 }
 
-private fun readNextKeyRow(
+/** A bounded cursor over immutable scratch output or schema-fenced record keys. */
+private class RebuildRangeCursor(
+    private val tc: TransactionContext,
+    private val prefix: ByteArray,
+    private val rowsPerTransaction: Int,
+    private val bytesPerTransaction: Int,
+) {
+    private var page: Iterator<RawStorageRow> = emptyList<RawStorageRow>().iterator()
+    private var afterKey: ByteArray? = null
+    private var exhausted = false
+
+    fun next(): RawStorageRow? {
+        if (!page.hasNext()) {
+            if (exhausted) return null
+            val rows = readRawStoragePage(tc, Range(afterKey?.plus(byteArrayOf(0)) ?: prefix, Range.startsWith(prefix).end), rowsPerTransaction, bytesPerTransaction)
+            if (rows.isEmpty()) {
+                exhausted = true
+                return null
+            }
+            afterKey = rows.last().key
+            page = rows.iterator()
+        }
+        return page.next()
+    }
+}
+
+private fun readRawStoragePage(
     tc: TransactionContext,
-    keysPrefix: ByteArray,
-    afterKey: ByteArray?,
-): KeyValue? = tc.run { tr ->
-    tr.getRange(Range(afterKey ?: keysPrefix, Range.startsWith(keysPrefix).end), 2, false)
-        .asList()
-        .awaitResult()
-        .firstOrNull { afterKey == null || !it.key.contentEquals(afterKey) }
+    range: Range,
+    rowsPerTransaction: Int,
+    bytesPerTransaction: Int,
+): List<RawStorageRow> = tc.run { tr ->
+    val rows = ArrayList<RawStorageRow>(rowsPerTransaction)
+    val iterator = tr.getRange(range, rowsPerTransaction, false, StreamingMode.ITERATOR).iterator()
+    var bytes = 0
+    try {
+        while (rows.size < rowsPerTransaction && iterator.hasNext()) {
+            val row = iterator.nextBlocking()
+            val rowBytes = row.key.size + row.value.size
+            // One legal row may exceed the budget; defer subsequent rows.
+            if (rows.isNotEmpty() && bytes + rowBytes > bytesPerTransaction) break
+            rows += RawStorageRow(row.key.copyOf(), row.value.copyOf())
+            bytes += rowBytes
+        }
+    } finally {
+        iterator.cancel()
+    }
+    rows
 }
 
 private fun forEachRawStoragePage(
@@ -243,27 +282,9 @@ private fun forEachRawStoragePage(
     var afterKey: ByteArray? = null
 
     while (true) {
-        val page = tc.run { tr ->
-            val pageRows = mutableListOf<RawStorageRow>()
-            var nextStart = afterKey?.plus(byteArrayOf(0)) ?: range.begin
-            var bytes = 0
-            while (pageRows.size < rowsPerTransaction) {
-                val row = tr.getRange(Range(nextStart, range.end), 1, false)
-                    .asList()
-                    .awaitResult()
-                    .firstOrNull()
-                    ?: break
-                val rowBytes = row.key.size + row.value.size
-                // A legal single FDB row can exceed the caller budget. It is
-                // still bounded to one row/transaction; only further rows are
-                // deferred to the next transaction.
-                if (pageRows.isNotEmpty() && bytes + rowBytes > bytesPerTransaction) break
-                pageRows += RawStorageRow(row.key.copyOf(), row.value.copyOf())
-                bytes += rowBytes
-                nextStart = row.key + byteArrayOf(0)
-            }
-            pageRows
-        }
+        val page = readRawStoragePage(
+            tc, Range(afterKey?.plus(byteArrayOf(0)) ?: range.begin, range.end), rowsPerTransaction, bytesPerTransaction,
+        )
         if (page.isEmpty()) break
         onReadTransaction?.invoke(IndexRebuildReadTransaction(
             rows = page.size,
@@ -541,7 +562,7 @@ private fun replayHistoricIndexThroughScratch(
         outputSink.flush()
         diffScratchOutputs(
             tc, outputPrefixes[previousOutput], outputPrefix, indexReference,
-            version, mutationSink,
+            version, mutationSink, rowsPerTransaction, bytesPerTransaction,
         )
         previousOutput = nextOutput
     }
@@ -602,51 +623,42 @@ private fun diffScratchOutputs(
     indexReference: ByteArray,
     version: ByteArray,
     sink: IndexMutationSink,
+    rowsPerTransaction: Int,
+    bytesPerTransaction: Int,
 ) {
+    val previousCursor = RebuildRangeCursor(tc, previousPrefix, rowsPerTransaction, bytesPerTransaction)
+    val currentCursor = RebuildRangeCursor(tc, currentPrefix, rowsPerTransaction, bytesPerTransaction)
     var previous: RawStorageRow? = null
     var current: RawStorageRow? = null
-    var previousAfter: ByteArray? = null
-    var currentAfter: ByteArray? = null
     while (true) {
-        if (previous == null) previous = readNextScratchOutput(tc, previousPrefix, previousAfter)
-        if (current == null) current = readNextScratchOutput(tc, currentPrefix, currentAfter)
+        if (previous == null) previous = previousCursor.next()
+        if (current == null) current = currentCursor.next()
         val old = previous
         val next = current
         if (old == null && next == null) return
         when {
             old == null -> {
                 sink.add(IndexMutation.Historic(indexReference, decodeScratchOutput(currentPrefix, next!!), version, EMPTY_BYTEARRAY))
-                currentAfter = next.key
                 current = null
             }
             next == null -> {
                 sink.add(IndexMutation.Historic(indexReference, decodeScratchOutput(previousPrefix, old), version, HISTORIC_REMOVAL_MARKER))
-                previousAfter = old.key
                 previous = null
             }
             compareUnsigned(old.key, previousPrefix.size, next.key, currentPrefix.size) < 0 -> {
                 sink.add(IndexMutation.Historic(indexReference, decodeScratchOutput(previousPrefix, old), version, HISTORIC_REMOVAL_MARKER))
-                previousAfter = old.key
                 previous = null
             }
             compareUnsigned(old.key, previousPrefix.size, next.key, currentPrefix.size) > 0 -> {
                 sink.add(IndexMutation.Historic(indexReference, decodeScratchOutput(currentPrefix, next), version, EMPTY_BYTEARRAY))
-                currentAfter = next.key
                 current = null
             }
             else -> {
-                previousAfter = old.key
-                currentAfter = next.key
                 previous = null
                 current = null
             }
         }
     }
-}
-
-private fun readNextScratchOutput(tc: TransactionContext, prefix: ByteArray, after: ByteArray?): RawStorageRow? = tc.run { transaction ->
-    transaction.getRange(Range(after?.plus(byteArrayOf(0)) ?: prefix, Range.startsWith(prefix).end), 1, false)
-        .asList().awaitResult().firstOrNull()?.let { RawStorageRow(it.key.copyOf(), it.value.copyOf()) }
 }
 
 private fun decodeScratchOutput(prefix: ByteArray, row: RawStorageRow): ByteArray =

@@ -152,9 +152,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readCurrentValues
 
     return decodeStorageRowsToValues(
         dataModel = dataModel,
-        rows = rows.map { (rowKey, rowValue) ->
-            tableQualifierFromRowKey(rowKey, keyBytes).let { qualifier -> qualifier to decryptValue(qualifier, rowValue) }
-        },
+        rows = decryptSelectedStorageRows(dataModel, rows.map { (rowKey, rowValue) ->
+            tableQualifierFromRowKey(rowKey, keyBytes) to rowValue
+        }, select, decryptValue),
         select = select,
     )
 }
@@ -242,4 +242,26 @@ private fun ByteArray.nextKeyPrefixUpperBound(): ByteArray? {
         }
     }
     return null
+}
+
+/** Decrypt only payloads the selection decoder may consume, including structural parents. */
+internal suspend fun decryptSelectedStorageRows(
+    dataModel: IsRootDataModel,
+    rows: List<Pair<ByteArray, ByteArray>>,
+    select: RootPropRefGraph<*>?,
+    decryptValue: suspend (ByteArray, ByteArray) -> ByteArray,
+): List<Pair<ByteArray, ByteArray>> {
+    if (select != null && select.properties.isEmpty()) return rows
+    return rows.map { row ->
+        val (qualifier, value) = row
+        val selected = select == null || run {
+            var index = 0
+            val reference = dataModel.getPropertyReferenceByStorageBytes(length = qualifier.size, reader = { qualifier[index++] })
+            select.contains(reference)
+        }
+        if (!selected) row else {
+            val decrypted = decryptValue(qualifier, value)
+            if (decrypted === value) row else qualifier to decrypted
+        }
+    }
 }

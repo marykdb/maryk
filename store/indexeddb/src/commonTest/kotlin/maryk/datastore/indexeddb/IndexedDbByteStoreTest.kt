@@ -327,6 +327,24 @@ class IndexedDbByteStoreTest {
     }
 
     @Test
+    fun cancellingBulkScanAbortsItsReadonlyTransaction() = runTest {
+        installIndexedDbForTests()
+        val store = openIndexedDbByteStore(
+            databaseName = "maryk-indexeddb-cancelled-bulk-scan-${Random.nextInt()}",
+            objectStoreNames = setOf("rows"),
+        )
+        try {
+            store.writeBatch((0..2).map { index ->
+                IndexedDbWriteOperation.Put("rows", byteArrayOf(index.toByte()), byteArrayOf(index.toByte()))
+            })
+            val scan = async(start = CoroutineStart.UNDISPATCHED) { store.scan("rows", limit = 256u) }
+            scan.cancel()
+            assertFailsWith<CancellationException> { scan.await() }
+            assertContentEquals(byteArrayOf(2), store.get("rows", byteArrayOf(2)))
+        } finally { store.close() }
+    }
+
+    @Test
     fun cancellingScanAbortsCursorBeforeNextContinuation() = runTest {
         installIndexedDbForTests()
 
@@ -343,7 +361,7 @@ class IndexedDbByteStoreTest {
             }
 
             scan = async(start = CoroutineStart.UNDISPATCHED) {
-                store.scan("rows", limit = 3u)
+                store.scan("rows", reverse = true, limit = 3u)
             }
             assertFailsWith<CancellationException> { scan.await() }
             delay(1)

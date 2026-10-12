@@ -18,10 +18,11 @@ interface AtomicIndexedDbByteStore : IndexedDbByteStore
 internal class AtomicAwareIndexedDbByteStore(
     private val delegate: IndexedDbByteStore,
     private val owner: Any,
-) : IndexedDbByteStore by delegate {
+) : IndexedDbByteStore by delegate, IndexedDbBatchReadStore {
     private suspend fun active() = currentAtomicContext(owner)?.transaction as? StagedIndexedDbByteStore ?: delegate
     override suspend fun <T> transaction(storeNames: Set<String>, mode: IndexedDbTransactionMode, block: suspend (IndexedDbByteStore) -> T): T =
         if (active() !== delegate) block(this) else delegate.transaction(storeNames, mode) { block(this) }
+    override suspend fun getBatchValues(storeName: String, keys: List<ByteArray>) = active().getBatch(storeName, keys)
     override suspend fun get(storeName: String, key: ByteArray) = active().get(storeName, key)
     override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) =
         writeBatch(listOf(IndexedDbWriteOperation.Put(storeName, key, value)))

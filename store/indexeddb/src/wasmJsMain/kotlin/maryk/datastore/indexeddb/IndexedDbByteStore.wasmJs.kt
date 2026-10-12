@@ -93,7 +93,7 @@ private class WasmIndexedDbByteStore(
     private val database: JsAny,
     private val databaseName: String,
     private val lockName: String,
-) : AtomicIndexedDbByteStore, IndexedDbLifecycleAware {
+) : AtomicIndexedDbByteStore, IndexedDbLifecycleAware, IndexedDbBatchReadStore {
     // Startup handlers can call the datastore actor, which runs in a separate coroutine.
     // The store is not exposed to general callers until this startup-only owner is cleared.
     private var startupLeaseOwnerId: String? = null
@@ -134,6 +134,20 @@ private class WasmIndexedDbByteStore(
         return withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
             withIndexedDbWriteContext(leaseOwnerId, block)
         }
+    }
+
+    override suspend fun getBatchValues(storeName: String, keys: List<ByteArray>): List<ByteArray?> {
+        if (keys.isEmpty()) return emptyList()
+        val nativeKeys = JsArray<JsArray<JsNumber>>()
+        keys.forEachIndexed { index, key -> nativeKeys[index] = key.toIndexedDbKey() }
+        val results = suspendCancellableCoroutine<JsArray<JsAny?>> { continuation ->
+            getIndexedDbValues(database, storeName, nativeKeys,
+                onSuccess = { if (continuation.isActive) continuation.resume(it) },
+                onError = { if (continuation.isActive) continuation.resumeWithException(IllegalStateException(it)) },
+                onCancel = { cancel -> continuation.invokeOnCancellation { cancel() } },
+            )
+        }
+        return keys.indices.map { results[it]?.toByteArrayFromIndexed() }
     }
 
     override suspend fun get(storeName: String, key: ByteArray): ByteArray? {
@@ -503,6 +517,34 @@ private fun writeIndexedDbBatch(
     )
 }
 
+private fun getIndexedDbValues(
+    database: JsAny,
+    storeName: String,
+    keys: JsArray<JsArray<JsNumber>>,
+    onSuccess: (JsArray<JsAny?>) -> Unit,
+    onError: (String) -> Unit,
+    onCancel: ((() -> Unit) -> Unit),
+) {
+    js(
+        """
+        let done = false;
+        const transaction = database.transaction([storeName], "readonly");
+        const rows = new Array(keys.length).fill(null);
+        const fail = message => { if (!done) { done = true; onError(message); } };
+        onCancel(() => { done = true; try { transaction.abort(); } catch (_) {} });
+        transaction.oncomplete = () => { if (!done) { done = true; onSuccess(rows); } };
+        transaction.onerror = () => fail(transaction.error?.message ?? "IndexedDB batch read failed");
+        transaction.onabort = () => fail(transaction.error?.message ?? "IndexedDB batch read aborted");
+        const store = transaction.objectStore(storeName);
+        keys.forEach((key, index) => {
+            const request = store.get(key);
+            request.onsuccess = () => { if (!done) rows[index] = request.result ?? null; };
+            request.onerror = () => fail(request.error?.message ?? "IndexedDB batch get failed");
+        });
+        """
+    )
+}
+
 private fun getIndexedDbValue(
     database: JsAny,
     storeName: String,
@@ -654,6 +696,22 @@ private fun scanIndexedDbValues(
             range = globalThis.IDBKeyRange.upperBound(endKey, !includeEnd);
         }
 
+        if (!reverse && limit > 1 && limit <= 256) {
+            let keys = null;
+            let values = null;
+            const keysRequest = store.getAllKeys(range === null ? undefined : range, limit);
+            const valuesRequest = store.getAll(range === null ? undefined : range, limit);
+            keysRequest.onsuccess = () => { keys = keysRequest.result; };
+            valuesRequest.onsuccess = () => { values = valuesRequest.result; };
+            keysRequest.onerror = () => fail(keysRequest.error?.message ?? "IndexedDB bulk key scan failed");
+            valuesRequest.onerror = () => fail(valuesRequest.error?.message ?? "IndexedDB bulk value scan failed");
+            transaction.oncomplete = () => {
+                if (!cancelled) succeed(keys.map((key, index) => [key, values[index]]));
+            };
+            transaction.onerror = () => fail(transaction.error?.message ?? "IndexedDB bulk scan failed");
+            transaction.onabort = () => fail(transaction.error?.message ?? "IndexedDB bulk scan aborted");
+            return cancel;
+        }
         const rows = [];
         const request = store.openCursor(range === null ? undefined : range, reverse ? "prev" : "next");
         request.onsuccess = () => {

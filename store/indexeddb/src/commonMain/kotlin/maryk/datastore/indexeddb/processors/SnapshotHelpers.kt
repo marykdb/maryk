@@ -10,6 +10,7 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.datastore.indexeddb.IndexedDbByteStore
 import maryk.datastore.indexeddb.IndexedDbRecordMeta
 import maryk.datastore.indexeddb.decodeRecordMeta
+import maryk.datastore.indexeddb.decryptSelectedStorageRows
 import maryk.datastore.indexeddb.decodeStorageRowsToValues
 import maryk.datastore.indexeddb.encodeRecordMeta
 
@@ -36,7 +37,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readCurrentSnapsh
     val (meta, rows) = decodeCurrentSnapshot(snapshot)
     val values = decodeStorageRowsToValues(
         dataModel,
-        rows.map { (qualifier, value) -> qualifier to decryptValue(qualifier, value) },
+        decryptSelectedStorageRows(dataModel, rows, select, decryptValue),
         select,
     ) ?: return null
 
@@ -61,7 +62,7 @@ internal suspend fun <DM : IsRootDataModel> decodeCurrentSnapshotRecord(
     val (meta, rows) = decodeCurrentSnapshot(snapshot)
     val values = decodeStorageRowsToValues(
         dataModel,
-        rows.map { (qualifier, value) -> qualifier to decryptValue(qualifier, value) },
+        decryptSelectedStorageRows(dataModel, rows, select, decryptValue),
         select,
     ) ?: return null
 

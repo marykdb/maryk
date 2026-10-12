@@ -36,6 +36,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
     storeAction: ScanStoreAction<DM>,
 ) {
     val request = storeAction.request
+    val readSelect = if (request.where == null && request.aggregations == null) request.select else null
     request.checkToVersion(keepAllVersions)
     val continuation = request.resolveCursor()
 
@@ -78,10 +79,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
         val keyBytes = keyScanRange.ranges.first().start
         val toVersion = request.toVersion
         val record = if (toVersion != null) {
-            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
+            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
         } else {
-            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, null)
-                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
+            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, readSelect)
+                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
         }
         if (
             record != null &&
@@ -142,10 +143,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
         if (keyBytes != null) {
             val toVersion = request.toVersion
             val record = if (toVersion != null) {
-                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
+                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
             } else {
-                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, null)
-                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
+                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, readSelect)
+                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
             }
             if (
                 record != null &&
@@ -225,16 +226,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
 
                     val toVersion = request.toVersion
                     val record = if (toVersion != null) {
-                        readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
+                        readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
                     } else {
                         decodeCurrentSnapshotRecord(
                             request.dataModel,
                             keyBytes,
                             snapshotBytes,
-                            null,
+                            readSelect,
                             { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
                         )
-                            ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
+                            ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
                     }
                         ?: return@scanInBatches true
                     if (request.filterSoftDeleted && record.isDeleted) return@scanInBatches true
@@ -271,16 +272,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
 
                     val toVersion = request.toVersion
                     val record = if (toVersion != null) {
-                        readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
+                        readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
                     } else {
                         decodeCurrentSnapshotRecord(
                             request.dataModel,
                             keyBytes,
                             snapshotBytes,
-                            null,
+                            readSelect,
                             { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
                         )
-                            ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
+                            ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
                     }
                         ?: return@scanInBatches true
                     if (request.filterSoftDeleted && record.isDeleted) return@scanInBatches true

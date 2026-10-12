@@ -93,9 +93,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectCurrentUni
     uniqueStoreName: String,
     keyBytes: ByteArray,
     uniqueStore: IndexedDbByteStore = byteStore,
+    tableRows: List<Pair<ByteArray, ByteArray>>? = null,
 ): List<IndexedDbUniqueRow> {
     val rows = mutableListOf<IndexedDbUniqueRow>()
-    for ((rowKey, rowValue) in scanTableRows(tableStoreName, keyBytes)) {
+    for ((rowKey, rowValue) in tableRows ?: scanTableRows(tableStoreName, keyBytes)) {
         val qualifier = tableQualifierFromRowKey(rowKey, keyBytes)
         var index = 0
         val reference = dataModel.getPropertyReferenceByStorageBytes(

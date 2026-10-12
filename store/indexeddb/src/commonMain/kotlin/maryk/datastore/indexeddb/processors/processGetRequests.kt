@@ -17,6 +17,7 @@ import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.datastore.indexeddb.getBatch
 import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.shared.checkToVersion
 
@@ -33,30 +34,37 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetRequest
     val aggregator = request.aggregations?.let(::Aggregator)
     val values = ArrayList<ValuesWithMetaData<DM>>(request.keys.size.coerceAtLeast(4))
 
-    for (key in request.keys) {
-        val toVersion = request.toVersion
-        val record = if (toVersion != null) {
-            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, key.bytes, toVersion, request.select)
-        } else {
-            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, key.bytes, request.select)
-                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, key.bytes, request.select)
-        }
-            ?: continue
-        if (request.filterSoftDeleted && record.isDeleted) continue
-        val valuesForFilter = if (request.where != null && request.select != null) {
-            if (toVersion != null) {
-                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, key.bytes, toVersion, null)
+    // Filter and project the same record version instead of fetching it twice.
+    val readSelect = if (request.where != null && request.select != null) null else request.select
+    for (keys in request.keys.chunked(256)) {
+        val snapshots = if (request.toVersion == null && keys.size > 1) {
+            byteStore.getBatch(keyStoreName, keys.map { it.bytes })
+        } else null
+        for ((keyIndex, key) in keys.withIndex()) {
+            val toVersion = request.toVersion
+            val record = if (toVersion != null) {
+                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, key.bytes, toVersion, readSelect)
             } else {
-                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, key.bytes, null)
-                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, key.bytes, null)
-            }?.values ?: continue
-        } else {
-            record.values
-        }
-        if (!valuesMatchFilter(request.dataModel, valuesForFilter, request.where, request.toVersion)) continue
+                if (snapshots != null) {
+                    val snapshot = snapshots[keyIndex] ?: continue
+                    decodeCurrentSnapshotRecord(request.dataModel, key.bytes, snapshot, readSelect) { qualifier, value ->
+                        sensitiveFields.decryptValueIfNeeded(modelId, key.bytes, qualifier, value)
+                    } ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, key.bytes, readSelect)
+                } else {
+                    readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, key.bytes, readSelect)
+                        ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, key.bytes, readSelect)
+                }
+            }
+                ?: continue
+            if (request.filterSoftDeleted && record.isDeleted) continue
+            if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)) continue
 
-        values += record
-        aggregator?.aggregate { reference -> record.values[reference] }
+            val selectedRecord = if (readSelect == request.select) record
+                else record.copy(values = record.values.filterWithSelect(request.select))
+            values += selectedRecord
+            aggregator?.aggregate { reference -> selectedRecord.values[reference] }
+
+        }
     }
 
     storeAction.response.complete(

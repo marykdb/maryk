@@ -85,7 +85,7 @@ private class BrowserIndexedDbByteStore(
     private val database: dynamic,
     private val databaseName: String,
     private val lockName: String,
-) : AtomicIndexedDbByteStore, IndexedDbLifecycleAware {
+) : AtomicIndexedDbByteStore, IndexedDbLifecycleAware, IndexedDbBatchReadStore {
     // Startup handlers can call the datastore actor, which runs in a separate coroutine.
     // The store is not exposed to general callers until this startup-only owner is cleared.
     private var startupLeaseOwnerId: String? = null
@@ -126,6 +126,42 @@ private class BrowserIndexedDbByteStore(
 
         return withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
             withIndexedDbWriteContext(leaseOwnerId, block)
+        }
+    }
+
+    override suspend fun getBatchValues(storeName: String, keys: List<ByteArray>): List<ByteArray?> {
+        if (keys.isEmpty()) return emptyList()
+        return suspendCancellableCoroutine { continuation ->
+            val transaction = database.transaction(arrayOf(storeName), "readonly")
+            val results = MutableList<ByteArray?>(keys.size) { null }
+            var completed = false
+            fun fail(message: String) {
+                if (!completed) {
+                    completed = true
+                    if (continuation.isActive) continuation.resumeWithException(IllegalStateException(message))
+                }
+            }
+            continuation.invokeOnCancellation {
+                completed = true
+                abortTransaction(transaction)
+            }
+            transaction.oncomplete = { _: dynamic ->
+                if (!completed && continuation.isActive) {
+                    completed = true
+                    continuation.resume(results)
+                }
+            }
+            transaction.onerror = { _: dynamic -> fail("IndexedDB batch read failed") }
+            transaction.onabort = { _: dynamic -> fail("IndexedDB batch read aborted") }
+            val store = transaction.objectStore(storeName)
+            keys.forEachIndexed { index, key ->
+                val request = store.get(key.toIndexedDbKey())
+                request.onsuccess = { _: dynamic ->
+                    val value = request.result
+                    if (!completed && value != null && value != undefined) results[index] = toByteArrayValue(value)
+                }
+                request.onerror = { _: dynamic -> fail("IndexedDB batch get failed") }
+            }
         }
     }
 
@@ -276,6 +312,8 @@ private class BrowserIndexedDbByteStore(
         val transaction = database.transaction(arrayOf(storeName), "readonly")
         val store = transaction.objectStore(storeName)
         val range = createRange(startKey, includeStart, endKey, includeEnd)
+        // Pair both requests in one readonly transaction so keys and values share a view.
+        if (!reverse && limit in 2u..256u) return awaitBulkScan(store, transaction, range, limit.toInt())
         val request = if (range == null) {
             store.openCursor(undefined, direction)
         } else {
@@ -283,6 +321,43 @@ private class BrowserIndexedDbByteStore(
         }
 
         return awaitCursorScan(request, transaction, limit)
+    }
+
+    private suspend fun awaitBulkScan(
+        store: dynamic,
+        transaction: dynamic,
+        range: dynamic,
+        limit: Int,
+    ): List<Pair<ByteArray, ByteArray>> = suspendCancellableCoroutine { continuation ->
+        var completed = false
+        var keys: dynamic = null
+        var values: dynamic = null
+        fun fail(message: String) {
+            if (!completed) {
+                completed = true
+                if (continuation.isActive) continuation.resumeWithException(IllegalStateException(message))
+            }
+        }
+        continuation.invokeOnCancellation {
+            completed = true
+            abortTransaction(transaction)
+        }
+        transaction.oncomplete = { _: dynamic ->
+            if (!completed && continuation.isActive) {
+                completed = true
+                continuation.resume(List(keys.length.unsafeCast<Int>()) { index ->
+                    toByteArrayKey(keys[index]) to toByteArrayValue(values[index])
+                })
+            }
+        }
+        transaction.onerror = { _: dynamic -> fail("IndexedDB bulk scan failed") }
+        transaction.onabort = { _: dynamic -> fail("IndexedDB bulk scan aborted") }
+        val keyRequest = store.getAllKeys(range ?: undefined, limit)
+        val valueRequest = store.getAll(range ?: undefined, limit)
+        keyRequest.onsuccess = { _: dynamic -> if (!completed) keys = keyRequest.result }
+        valueRequest.onsuccess = { _: dynamic -> if (!completed) values = valueRequest.result }
+        keyRequest.onerror = { _: dynamic -> fail("IndexedDB bulk key scan failed") }
+        valueRequest.onerror = { _: dynamic -> fail("IndexedDB bulk value scan failed") }
     }
 
     private suspend fun awaitCursorScan(

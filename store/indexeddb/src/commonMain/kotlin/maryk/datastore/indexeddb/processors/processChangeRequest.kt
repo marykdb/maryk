@@ -28,6 +28,8 @@ import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.indexeddb.IndexedDbRecordMeta
 import maryk.datastore.indexeddb.IndexedDbTransactionMode
 import maryk.datastore.indexeddb.IndexedDbWriteOperation
+import maryk.datastore.indexeddb.createTableRowKey
+import maryk.datastore.indexeddb.decodeStorageRowsToValues
 import maryk.datastore.indexeddb.decodeRecordMeta
 import maryk.datastore.indexeddb.encodeChangeJournalPayload
 import maryk.datastore.indexeddb.tableQualifierFromRowKey
@@ -75,7 +77,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 val tombstoneVersion = if (ignoreIfVersionNotNewer) {
                     byteStore.get("hd:$modelId", keyBytes)?.readTrailingVersion()
                 } else null
-                val currentMeta = byteStore.get(keyStoreName, keyBytes)?.let(::decodeRecordMeta)
+                val currentSnapshot = byteStore.get(keyStoreName, keyBytes)
+                val currentMeta = currentSnapshot?.let(::decodeRecordMeta)
                 if (currentMeta == null) {
                     statuses += if (tombstoneVersion != null && version.timestamp <= tombstoneVersion) {
                         ChangeSuccess(tombstoneVersion, emptyList())
@@ -104,7 +107,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     return@transaction
                 }
 
-                val currentValues = readCurrentValuesDecrypted(byteStore, request.dataModel, tableStoreName, keyBytes, null)
+                // Older soft-delete snapshots may omit payload rows when history is disabled.
+                val encodedCurrentRows = currentSnapshot.takeIf { it.size > 17 && !currentMeta.isDeleted }
+                    ?.let { decodeCurrentSnapshot(it).second }
+                val currentValues = encodedCurrentRows?.let { rows ->
+                    decodeStorageRowsToValues(request.dataModel, rows.map { (qualifier, value) ->
+                        qualifier to sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value)
+                    }, null)
+                } ?: readCurrentValuesDecrypted(byteStore, request.dataModel, tableStoreName, keyBytes, null)
                     ?: run {
                         statuses += DoesNotExist(objectChange.key)
                         return@transaction
@@ -130,7 +140,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 if (changedValues == currentValues && targetIsDeleted == currentMeta.isDeleted) {
                     if (ignoreIfVersionNotNewer) {
                         val operations = mutableListOf<IndexedDbWriteOperation>()
-                        val currentRows = scanTableRows(tableStoreName, keyBytes)
+                        val currentRows = encodedCurrentRows?.map { (qualifier, value) -> createTableRowKey(keyBytes, qualifier) to value }
+                            ?: scanTableRows(tableStoreName, keyBytes)
                         operations.put(
                             keyStoreName,
                             keyBytes,
@@ -165,7 +176,11 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     validateUniqueRows(request.dataModel, keyBytes, uniqueStoreName, storagePlan.uniqueRows)
                 }
 
-                val oldIndexRows = collectCurrentIndexRows(request.dataModel, keyBytes)
+                val oldTableRows = encodedCurrentRows?.map { (qualifier, value) -> createTableRowKey(keyBytes, qualifier) to value }
+                    ?: scanTableRows(tableStoreName, keyBytes)
+                val oldIndexRows = request.dataModel.Meta.indexes.orEmpty().flatMap { index ->
+                    index.toStorageByteArraysForIndex(currentValues, keyBytes).map { createIndexRowKey(index.referenceStorageByteArray.bytes, it) }
+                }
                 val oldUniqueRows = collectCurrentUniqueRows(
                     request.dataModel,
                     modelId,
@@ -173,8 +188,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     uniqueStoreName,
                     keyBytes,
                     byteStore,
+                    oldTableRows,
                 )
-                val oldTableRows = scanTableRows(tableStoreName, keyBytes)
                 val indexChanges = buildList {
                     request.dataModel.Meta.indexes?.forEach { index ->
                         val oldValues = index.toStorageByteArraysForIndex(currentValues, keyBytes)
@@ -197,23 +212,28 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     }
                 }
                 val operations = mutableListOf<IndexedDbWriteOperation>()
-                for (indexRow in oldIndexRows) {
-                    operations.delete(indexStoreName, indexRow)
-                }
+                val activeIndexRows = if (targetIsDeleted) emptyList() else storagePlan.indexRows
+                val (removedIndexRows, addedIndexRows) = diffIndexValues(if (currentMeta.isDeleted) emptyList() else oldIndexRows, activeIndexRows)
+                removedIndexRows.forEach { operations.delete(indexStoreName, it) }
+                addedIndexRows.forEach { operations.put(indexStoreName, it, keyBytes) }
+
+                val activeUniqueRows = if (targetIsDeleted) emptyList() else storagePlan.uniqueRows
+                val newUniqueKeys = activeUniqueRows.map { Bytes(it.uniqueKey) }.toSet()
+                val oldOwnedUniqueKeys = oldUniqueRows.flatMap { it.existingKeys }.map(::Bytes).toSet()
                 for (row in oldUniqueRows) {
-                    for (candidateKey in row.candidateKeys) {
-                        if (byteStore.get(uniqueStoreName, candidateKey)?.contentEquals(row.keyBytes) == true) {
-                            operations.delete(uniqueStoreName, candidateKey)
-                        }
+                    for (candidateKey in row.existingKeys) {
+                        if (Bytes(candidateKey) !in newUniqueKeys) operations.delete(uniqueStoreName, candidateKey)
                     }
                 }
-                for ((rowKey, _) in oldTableRows) {
-                    operations.delete(tableStoreName, rowKey)
-                }
+                activeUniqueRows.filter { Bytes(it.uniqueKey) !in oldOwnedUniqueKeys }
+                    .forEach { operations.put(uniqueStoreName, it.uniqueKey, keyBytes) }
 
-                for ((rowKey, rowValue) in storagePlan.tableRows) {
-                    operations.put(tableStoreName, rowKey, rowValue)
-                }
+                val oldTableValues = oldTableRows.associate { (key, value) -> Bytes(key) to value }
+                val newTableValues = storagePlan.tableRows.associate { (key, value) -> Bytes(key) to value }
+                oldTableRows.filter { (key, _) -> Bytes(key) !in newTableValues }
+                    .forEach { (key, _) -> operations.delete(tableStoreName, key) }
+                storagePlan.tableRows.filter { (key, value) -> oldTableValues[Bytes(key)]?.contentEquals(value) != true }
+                    .forEach { (key, value) -> operations.put(tableStoreName, key, value) }
                 operations.put(
                     keyStoreName,
                     keyBytes,
@@ -222,14 +242,6 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                         storagePlan.tableRows.map { (rowKey, rowValue) -> tableQualifierFromRowKey(rowKey, keyBytes) to rowValue },
                     )
                 )
-                if (!targetIsDeleted) {
-                    for (indexRow in storagePlan.indexRows) {
-                        operations.put(indexStoreName, indexRow, keyBytes)
-                    }
-                    for (row in storagePlan.uniqueRows) {
-                        operations.put(uniqueStoreName, row.uniqueKey, row.keyBytes)
-                    }
-                }
                 if (keepAllVersions) {
                     operations.addHistoricSnapshot(
                         historicTableStoreName,

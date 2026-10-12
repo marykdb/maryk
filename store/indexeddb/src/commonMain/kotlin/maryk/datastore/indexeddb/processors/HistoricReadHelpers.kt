@@ -13,6 +13,7 @@ import maryk.core.query.changes.change
 import maryk.core.query.requests.change
 import maryk.datastore.indexeddb.IndexedDbByteStore
 import maryk.datastore.indexeddb.createObjectRowKeyPrefix
+import maryk.datastore.indexeddb.decryptSelectedStorageRows
 import maryk.datastore.indexeddb.decodeStorageRowsToValues
 import maryk.datastore.indexeddb.scanInBatches
 import maryk.lib.extensions.compare.compareTo
@@ -150,7 +151,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readHistoricRecor
     val (meta, storageRows) = decodeHistoricSnapshot(value)
     val values = decodeStorageRowsToValues(
         dataModel,
-        storageRows.map { (qualifier, rowValue) -> qualifier to decryptValue(qualifier, rowValue) },
+        decryptSelectedStorageRows(dataModel, storageRows, select, decryptValue),
         select,
     )
         ?: dataModel.emptyValues()

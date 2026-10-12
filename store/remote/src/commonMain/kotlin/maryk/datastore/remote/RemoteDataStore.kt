@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
@@ -613,7 +614,7 @@ class RemoteDataStore private constructor(
 
         return callbackFlow {
             requireOpen()
-            val job = launch(Dispatchers.Default) {
+            val job = launch(Dispatchers.Default, start = CoroutineStart.LAZY) {
                 val useFlowProtocolV2 = flowRetryPolicy.maxReconnectAttempts > 0u ||
                     flowRetryPolicy.heartbeatTimeoutMillis != null
                 var reconnectAttempts = 0u
@@ -793,6 +794,7 @@ class RemoteDataStore private constructor(
             listeners.track(job) { cause ->
                 close(cause)
             }
+            job.start()
 
             awaitClose {
                 job.cancel()
@@ -1038,8 +1040,7 @@ internal class RemoteListenerRegistry {
             jobs.clear()
             handles to flowJobs
         }
-        handles.forEach { it.close() }
-        cancelAndJoin(flowJobs)
+        cancelAndJoin(flowJobs, handles)
     }
 
     suspend fun close() {
@@ -1051,14 +1052,15 @@ internal class RemoteListenerRegistry {
             jobs.clear()
             handles to flowJobs
         }
-        handles.forEach { it.close() }
-        cancelAndJoin(flowJobs)
+        cancelAndJoin(flowJobs, handles)
         cleanupScope.cancel()
     }
 
-    private suspend fun cancelAndJoin(flowJobs: List<Job>) {
+    private suspend fun cancelAndJoin(flowJobs: List<Job>, handles: List<RemoteFlowHandle>) {
         val currentJob = currentCoroutineContext()[Job]
+        // Cancel reconnect loops before a closed channel can look like a retryable disconnect.
         flowJobs.forEach { it.cancel() }
+        handles.forEach { it.close() }
         flowJobs.filterNot { it === currentJob }.forEach { it.join() }
     }
 }

@@ -2,6 +2,7 @@ package maryk.datastore.remote
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.get
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -16,6 +17,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readRemaining
 import io.ktor.utils.io.writeFully
 import java.io.BufferedInputStream
@@ -153,6 +155,30 @@ class RemoteDataStoreTest {
         } finally {
             allowCompletion.complete(Unit)
             close.await()
+        }
+    }
+
+    @Test
+    fun listenerRegistryCancelsReconnectJobsBeforeClosingChannels() = runBoundedIntegrationTest {
+        for (closeAll in listOf(true, false)) {
+            val registry = RemoteListenerRegistry()
+            val job = Job()
+            var activeWhenChannelClosed: Boolean? = null
+            val channel = object : ByteReadChannel by ByteReadChannel.Empty {
+                override fun cancel(cause: Throwable?) {
+                    activeWhenChannelClosed = job.isActive
+                }
+            }
+            val client = HttpClient(MockEngine { respond("") })
+            try {
+                registry.track(job) {}
+                registry.add(RemoteFlowHandle(client.get("http://localhost/flow"), channel))
+                if (closeAll) registry.closeAll() else registry.close()
+                assertEquals(false, activeWhenChannelClosed, "Closing a channel must not leave its reconnect job active")
+            } finally {
+                registry.close()
+                client.close()
+            }
         }
     }
 
@@ -838,7 +864,11 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun closeAllListenersStopsAReconnectableRemoteFlow() = runBoundedIntegrationTest {
+    fun closeAllListenersStopsAReconnectableRemoteFlow() {
+        repeat(10) { assertCloseAllListenersStopsAReconnectableRemoteFlow() }
+    }
+
+    private fun assertCloseAllListenersStopsAReconnectableRemoteFlow() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val firstConnectionOpened = CompletableDeferred<Unit>()
         val port = ServerSocket(0).use { it.localPort }

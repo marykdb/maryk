@@ -542,7 +542,25 @@ private fun replayHistoricIndexThroughScratch(
     var previousOutput = 0
     var currentVersion: ByteArray? = null
 
+    // Flush each version's state before deriving its index entries. Budgets also bound
+    // large versions without changing the order of version materialization.
+    val pendingState = mutableListOf<RawStorageRow>()
+    var pendingStateBytes = 0
+    fun flushState() {
+        if (pendingState.isEmpty()) return
+        tc.run { transaction ->
+            verifyRebuildOwner?.invoke(transaction)
+            pendingState.forEach { row ->
+                if (row.value.isHistoricDeleteMarker()) transaction.clear(row.key)
+                else transaction.set(row.key, row.value)
+            }
+        }
+        pendingState.clear()
+        pendingStateBytes = 0
+    }
+
     fun flushVersion(version: ByteArray) {
+        flushState()
         val values = RebuildValuesGetter.historicState(
             tc, statePrefix, keyBytes, modelId, decryptValue, rowsPerTransaction, bytesPerTransaction, onReadTransaction,
         )
@@ -580,10 +598,13 @@ private fun replayHistoricIndexThroughScratch(
             val encodedQualifier = row.key.copyOfRange(versionOffset + VERSION_BYTE_SIZE, row.key.size)
             val qualifier = decodeZeroFreeUsing01OrNull(encodedQualifier) ?: return@forEach
             val stateKey = packKey(statePrefix, encodeZeroFreeUsing01(qualifier))
-            tc.run { transaction ->
-                verifyRebuildOwner?.invoke(transaction)
-                if (row.value.isHistoricDeleteMarker()) transaction.clear(stateKey) else transaction.set(stateKey, row.value)
-            }
+            val stateBytes = stateKey.size + row.value.size
+            if (pendingState.isNotEmpty() && (
+                pendingState.size >= scratchMutationsPerTransaction ||
+                pendingStateBytes.toLong() + stateBytes > scratchBytesPerTransaction
+            )) flushState()
+            pendingState += RawStorageRow(stateKey, row.value)
+            pendingStateBytes += stateBytes
         }
     }
     currentVersion?.let(::flushVersion)

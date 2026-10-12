@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -167,9 +166,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
             }
 
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
-                runBlocking {
-                    cache.readValue(dbIndex, key, reference, readVersion, valueReader)
-                }
+                cache.readValue(dbIndex, key, reference, readVersion, valueReader)
             }
 
             fun addCreation(creationEventVersion: ULong) {

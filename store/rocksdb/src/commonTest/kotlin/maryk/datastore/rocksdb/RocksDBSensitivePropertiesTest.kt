@@ -273,6 +273,8 @@ class RocksDBSensitivePropertiesTest {
                 val secondKey = assertIs<AddSuccess<SensitiveRocksModel>>(
                     store.execute(SensitiveRocksModel.add(SensitiveRocksModel(Bytes(ByteArray(16) { 2 }), "other"))).statuses.single()
                 ).key
+                // Warm the decoded cache before replacing its ciphertext.
+                assertEquals(1, store.execute(SensitiveRocksModel.get(secondKey)).values.size)
                 val reference = SensitiveRocksModel.secret.ref().toStorageByteArray()
                 val storedValue = store.db.get(store.getColumnFamilies(1u).table, firstKey.bytes + reference)!!
                 val payload = storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size)

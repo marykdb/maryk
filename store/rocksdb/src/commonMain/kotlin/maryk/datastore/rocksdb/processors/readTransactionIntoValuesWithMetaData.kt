@@ -92,23 +92,21 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                         val valueBytes = iterator.value()
                         currentVersion = valueBytes.readVersionBytes()
 
-                        val plainValue = dataStore.decryptValueIfNeeded(
+                        dataStore.withDecryptedValueIfNeeded(
                             columnFamilies.modelId,
                             key.bytes,
                             requireNotNull(reference as? IsPropertyReference<*, *, *>).toStorageByteArray(),
                             valueBytes,
                             VERSION_BYTE_SIZE,
                             valueBytes.size - VERSION_BYTE_SIZE,
-                        )
-                        index = 0
-                        val reader = { plainValue[index++] }
-
-                        cachedRead(reference, currentVersion) {
-                            val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
-                                ?: reference.propertyDefinition
-
-                            readValue(definition, reader) {
-                                plainValue.size - index
+                        ) { payload, offset, length ->
+                            cachedRead(reference, currentVersion) {
+                                var valueIndex = offset
+                                val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                    ?: reference.propertyDefinition
+                                readValue(definition, { payload[valueIndex++] }) {
+                                    offset + length - valueIndex
+                                }
                             }
                         }
                     }
@@ -189,20 +187,18 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                 if (valueBytes.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }
-                                val plainValue = dataStore.decryptValueIfNeeded(
+                                dataStore.withDecryptedValueIfNeeded(
                                     columnFamilies.modelId,
                                     key.bytes,
                                     (reference as? IsPropertyReference<*, *, *>)?.toStorageByteArray() ?: return@cachedRead null,
                                     valueBytes,
-                                )
-                                index = 0
-                                val reader = { plainValue[index++] }
-
-                                val definition =
-                                    (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                ) { payload, offset, length ->
+                                    var valueIndex = offset
+                                    val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                         ?: reference.propertyDefinition
-                                readValue(definition, reader) {
-                                    plainValue.size - index
+                                    readValue(definition, { payload[valueIndex++] }) {
+                                        offset + length - valueIndex
+                                    }
                                 }
                             }
                             ListSize -> {

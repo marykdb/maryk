@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Bytes
@@ -63,9 +62,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
                 historicalReader = reader
             ) { key, creationVersion, sortingKey ->
                 val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                    runBlocking {
-                        cache.readValue(dbIndex, key, reference, version, valueReader)
-                    }
+                    cache.readValue(dbIndex, key, reference, version, valueReader)
                 }
 
                 val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(

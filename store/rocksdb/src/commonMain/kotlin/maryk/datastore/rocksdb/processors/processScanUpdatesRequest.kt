@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.createScanRange
@@ -208,9 +207,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                 lastResponseVersion = maxOf(lastResponseVersion, lastVersion)
 
                 val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                    runBlocking {
-                        cache.readValue(dbIndex, key, reference, version, valueReader)
-                    }
+                    cache.readValue(dbIndex, key, reference, version, valueReader)
                 }
 
                 val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
@@ -327,9 +324,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                         scanRequest.toVersion
                     )?.let { createdVersion ->
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                            runBlocking {
-                                cache.readValue(dbIndex, addedKey, reference, version, valueReader)
-                            }
+                            cache.readValue(dbIndex, addedKey, reference, version, valueReader)
                         }
 
                         getSingleValues(addedKey, createdVersion, scanRequest.toVersion, cacheReader)?.let { valuesWithMeta ->
@@ -542,9 +537,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                         lastResponseVersion = maxOf(lastResponseVersion, lastVersion)
 
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
-                            runBlocking {
-                                cache.readValue(dbIndex, key, reference, readVersion, valueReader)
-                            }
+                            cache.readValue(dbIndex, key, reference, readVersion, valueReader)
                         }
 
                         val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
@@ -667,9 +660,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                             scanRequest.toVersion
                         )?.let { creationVersion ->
                             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
-                                runBlocking {
-                                    cache.readValue(dbIndex, addedKey, reference, readVersion, valueReader)
-                                }
+                                cache.readValue(dbIndex, addedKey, reference, readVersion, valueReader)
                             }
 
                             getSingleValues(addedKey, creationVersion, scanRequest.toVersion, cacheReader)?.let { valuesWithMeta ->

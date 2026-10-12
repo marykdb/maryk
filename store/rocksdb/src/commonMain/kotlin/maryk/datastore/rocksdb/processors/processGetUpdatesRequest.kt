@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
@@ -118,9 +117,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
                                 lastResponseVersion = maxOf(lastResponseVersion, lastVersion)
 
                                 val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                                    runBlocking {
-                                        cache.readValue(dbIndex, key, reference, version, valueReader)
-                                    }
+                                    cache.readValue(dbIndex, key, reference, version, valueReader)
                                 }
 
                                 fun getSingleValues(version: ULong?) =

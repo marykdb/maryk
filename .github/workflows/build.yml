@@ -28,6 +28,7 @@ jobs:
           bash .github/scripts/check-publish-provenance.sh
           bash .github/scripts/verify-build-provenance.test.sh
           bash .github/scripts/verify-publish-provenance.test.sh
+          bash .github/scripts/verify-installer-publication.test.sh
 
   build:
     strategy:

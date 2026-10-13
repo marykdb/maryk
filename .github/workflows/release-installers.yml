@@ -9,6 +9,11 @@ on:
         description: Existing release tag to build and attach
         required: true
         type: string
+      maven_published_locally:
+        description: Maven was published locally; verify Central availability instead of CI publication provenance
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.event.release.tag_name || inputs.tag }}"
@@ -26,11 +31,18 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
       GH_TOKEN: ${{ github.token }}
+      WORKFLOW_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.RELEASE_TAG }}
           fetch-depth: 0
+
+      - name: Use dispatch publication verifier
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          git show "$WORKFLOW_SHA:.github/scripts/verify-installer-publication.sh" > .github/scripts/verify-installer-publication.sh
 
       - name: Setup JDK 21
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
@@ -64,8 +76,9 @@ jobs:
         shell: bash
         env:
           SOURCE_SHA: ${{ steps.provenance.outputs.source_sha }}
+          MAVEN_PUBLISHED_LOCALLY: ${{ inputs.maven_published_locally || false }}
         run: |
-          bash .github/scripts/verify-publish-provenance.sh
+          bash .github/scripts/verify-installer-publication.sh
 
   distributions:
     name: ${{ matrix.name }}

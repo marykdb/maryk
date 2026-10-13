@@ -57,7 +57,11 @@ check_required "$release_workflow" \
   'EXPECTED_SHA="$ACTUAL_SHA" bash .github/scripts/verify-build-provenance.sh' \
   'name: Verify matching Maven publication' \
   'SOURCE_SHA: ${{ steps.provenance.outputs.source_sha }}' \
-  'bash .github/scripts/verify-publish-provenance.sh' \
+  'maven_published_locally:' \
+  'default: false' \
+  'MAVEN_PUBLISHED_LOCALLY: ${{ inputs.maven_published_locally || false }}' \
+  'git show "$WORKFLOW_SHA:.github/scripts/verify-installer-publication.sh" > .github/scripts/verify-installer-publication.sh' \
+  'bash .github/scripts/verify-installer-publication.sh' \
   ':app:verifyDistributionVersion' \
   '-PreleaseTag="$RELEASE_TAG"' \
   'Smoke test packaged macOS app' \

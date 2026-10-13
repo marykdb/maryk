@@ -432,8 +432,29 @@ internal class ClusterUpdateLog(
         )
     }
 
-    internal fun decodeEntry(key: ByteArray, value: ByteArray): DecodedUpdate? =
-        decodeValue(value)?.copy(commitVersion = commitVersionFromLogKey(key))
+    internal fun decodeEntry(key: ByteArray, value: ByteArray): DecodedUpdate? {
+        val tuple = unpackLogTuple(key) ?: return null
+        if (tuple.size != 6) return null
+        val shard = tuple[0] as? Long ?: return null
+        val modelId = tuple[1] as? Long ?: return null
+        if (shard !in 0..Int.MAX_VALUE.toLong() || modelId !in 0..UInt.MAX_VALUE.toLong()) return null
+        val v2 = tuple[2] is Versionstamp
+        val versionstamp = tuple[if (v2) 2 else 5] as? Versionstamp ?: return null
+        if (!versionstamp.isComplete) return null
+        val clock = tuple[if (v2) 3 else 2] as? ByteArray ?: return null
+        val recordKey = tuple[if (v2) 4 else 3] as? ByteArray ?: return null
+        val origin = tuple[if (v2) 5 else 4] as? ByteArray ?: return null
+        if (clock.size != ULong.SIZE_BYTES) return null
+
+        val decoded = decodeValue(value) ?: return null
+        if (
+            decoded.header.modelId != modelId.toUInt() ||
+            !clock.contentEquals(decoded.update.version.toBigEndianBytes()) ||
+            !recordKey.contentEquals(decoded.update.keyBytes.bytes) ||
+            !origin.contentEquals(decoded.header.origin.encodeToByteArray())
+        ) return null
+        return decoded.copy(commitVersion = versionstamp.transactionVersion().readLongBigEndian())
+    }
 
     private fun decodeStoredEntry(tr: Transaction, key: ByteArray, value: ByteArray): DecodedUpdate? {
         if (!value.isChunkManifest()) return decodeEntry(key, value)
@@ -539,11 +560,6 @@ internal class ClusterUpdateLog(
         } else {
             combineToByteArray(logPrefix, tuple.pack())
         }
-
-    private fun commitVersionFromLogKey(key: ByteArray): Long? {
-        val versionstamp = versionstampFromLogKey(key) ?: return null
-        return versionstamp.transactionVersion().readLongBigEndian()
-    }
 
     private fun versionstampFromLogKey(key: ByteArray): Versionstamp? {
         val tuple = unpackLogTuple(key) ?: return null

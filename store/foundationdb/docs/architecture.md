@@ -49,8 +49,9 @@ Goal: cluster-wide `executeFlow` updates (multi-writer, multi-reader) using only
 Subspaces (under the configured store root):
 
 - `__updates__/v1/log`: append-only log entries written in the same transaction as the table mutation.
-  - Key uses a FoundationDB versionstamp to avoid collisions: `(shard, modelId, hlc_be_8, keyBytes, originIdBytes, versionstamp)`.
+  - Current keys order by commit: `(shard, modelId, versionstamp, hlc_be_8, keyBytes, originIdBytes)`. Retained legacy keys use `(shard, modelId, hlc_be_8, keyBytes, originIdBytes, versionstamp)`.
   - Value contains `(originId, modelId, type, version, keyBytes, payload)` where payload is values (Add), changes (Change), or hardDelete flag (Delete).
+  - Readers validate the complete six-field stored identity and require its model, event HLC, record key and origin to match the decoded payload in both formats. Malformed or mismatched entries are skipped while the physical cursor advances; stored rows remain untouched. Chunked payloads use the same check after reconstruction. Commit versions come from the validated versionstamp, independently of the event HLC.
 - `__updates__/v1/consumers/<consumerId>`: per-consumer cursors, one per shard. Each node/process must use a unique `consumerId`.
 - `__updates__/v1/heads`: "wake keys" updated with versionstamped values. Tailers watch these to avoid polling the entire log when idle.
 - `__updates__/v1/hlc`: per-node HLC markers. Each writer updates `hlc/<consumerId>` (8 bytes big-endian HLC timestamp) on every append.

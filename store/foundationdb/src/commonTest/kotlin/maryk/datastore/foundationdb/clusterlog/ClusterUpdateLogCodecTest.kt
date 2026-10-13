@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb.clusterlog
 
 import maryk.core.clock.HLC
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with
@@ -32,15 +33,15 @@ class ClusterUpdateLogCodecTest {
     private val modelId = 2u
     private val models = mapOf(modelId to SimpleMarykModel)
 
-    private fun newLog() = ClusterUpdateLog(
+    private fun newLog(dataModels: Map<UInt, IsRootDataModel> = models, origin: String = "node-a") = ClusterUpdateLog(
         logPrefix = byteArrayOf(1, 2, 3),
         consumerPrefix = byteArrayOf(4, 5, 6),
         headPrefix = byteArrayOf(7, 8, 9),
         headGroupCount = 2,
         hlcMaxPrefix = byteArrayOf(13, 14, 15),
         shardCount = 4,
-        originId = "node-a",
-        dataModelsById = models,
+        originId = origin,
+        dataModelsById = dataModels,
         consumerId = "consumer-a",
         retention = ClusterUpdateLog.retentionDefault(),
     )
@@ -160,7 +161,7 @@ class ClusterUpdateLogCodecTest {
             Tuple.from(
                 0,
                 modelId.toLong(),
-                ByteArray(8),
+                ByteArray(8).also { it[7] = 10 },
                 key.bytes,
                 "node-a".encodeToByteArray(),
                 Versionstamp.complete(transactionVersion(1L)),
@@ -173,6 +174,43 @@ class ClusterUpdateLogCodecTest {
 
         assertNotNull(decoded)
         assertEquals(1L, decoded.commitVersion)
+    }
+
+    @Test
+    fun v2EntryRejectsPayloadOutsideItsStoredIdentity() {
+        verifyEntryIdentity(legacy = false)
+    }
+
+    @Test
+    fun legacyEntryRejectsPayloadOutsideItsStoredIdentity() {
+        verifyEntryIdentity(legacy = true)
+    }
+
+    private fun verifyEntryIdentity(legacy: Boolean) {
+        val log = newLog(mapOf(modelId to SimpleMarykModel, modelId + 1u to SimpleMarykModel))
+        val recordKey = Bytes(ByteArray(16) { 3 })
+        val update = ClusterLogDeletion(recordKey, version = 10uL, hardDelete = false)
+        val stamp = Versionstamp.complete(transactionVersion(41L))
+        val versionBytes = ByteArray(8).also { it[7] = 10 }
+        val fields = if (legacy) {
+            listOf(0, modelId.toLong(), versionBytes, recordKey.bytes, "node-a".encodeToByteArray(), stamp)
+        } else {
+            listOf(0, modelId.toLong(), stamp, versionBytes, recordKey.bytes, "node-a".encodeToByteArray())
+        }
+        val rowKey = combineToByteArray(byteArrayOf(1, 2, 3), Tuple.from(*fields.toTypedArray()).pack())
+        val valid = log.encodeValue(modelId, update, SimpleMarykModel)
+        assertEquals(update, assertNotNull(log.decodeEntry(rowKey, valid)).update)
+        assertEquals(41L, assertNotNull(log.decodeEntry(rowKey, valid)).commitVersion)
+        val mismatchedPayloads = listOf(
+            log.encodeValue(modelId, update.copy(version = 11uL), SimpleMarykModel),
+            log.encodeValue(modelId, update.copy(keyBytes = Bytes(ByteArray(16) { 4 })), SimpleMarykModel),
+            log.encodeValue(modelId + 1u, update, SimpleMarykModel),
+            newLog(origin = "node-b").encodeValue(modelId, update, SimpleMarykModel),
+        )
+        for (payload in mismatchedPayloads) assertNull(log.decodeEntry(rowKey, payload))
+        val longKey = combineToByteArray(byteArrayOf(1, 2, 3), Tuple.from(*(fields + listOf("extra")).toTypedArray()).pack())
+        assertNull(log.decodeEntry(longKey, valid))
+        assertNull(log.decodeEntry(byteArrayOf(1, 2, 3), valid))
     }
 
     @Test

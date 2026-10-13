@@ -72,3 +72,9 @@ windows, joined mutations, correlated queries and complex map/collection expansi
 use the common SQL engine over this store's public requests. See the [SQL guide](../../sql/README.md) for supported
 syntax, execution strategies, transaction tooling and resource limits. The shared
 SQL conformance contract verifies these features through this adapter.
+
+Check statements read the current staged values. Complex properties are materialized
+once per Check, including provisional history nodes from preceding changes in the
+same request. Scalar checks keep direct qualifier lookup. A failed Check rejects the
+record mutation; empty collections remain distinct from absent properties. See the
+[shared query contract](../../core/docs/query.md#change).

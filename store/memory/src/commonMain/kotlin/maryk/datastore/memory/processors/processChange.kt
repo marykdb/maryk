@@ -19,6 +19,7 @@ import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -199,12 +200,18 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                         setChanged(true)
                     }
                     is Check -> {
-                        for ((reference, value) in change.referenceValuePairs) {
-                            if (objectToChange[reference] != value) {
-                                addValidationFail(
-                                    InvalidValueException(reference, value.toString())
-                                )
-                            }
+                        // Use the statement's staged state, not the original record
+                        // or a collection count stored at its root qualifier.
+                        val completeValues = if (change.referenceValuePairs.any { it.reference.comparablePropertyDefinition !is IsSimpleValueDefinition<*, *> }) {
+                            val currentRecord = objectToChange.copy(values = newValueList.map { node ->
+                                if (node is DataRecordHistoricValues<*>) (node.toAdd as DataRecordNode?) ?: node else node
+                            })
+                            dataModel.recordToValueWithMeta(null, null, currentRecord)?.values
+                        } else null
+                        for ((reference, expected) in change.referenceValuePairs) {
+                            val actual = if (reference.comparablePropertyDefinition is IsSimpleValueDefinition<*, *>) getValue<Any>(newValueList, reference.toStorageByteArray())?.value
+                                else completeValues?.get(reference)
+                            if (actual != expected) addValidationFail(InvalidValueException(reference, expected.toString()))
                         }
                     }
                     is Change -> {

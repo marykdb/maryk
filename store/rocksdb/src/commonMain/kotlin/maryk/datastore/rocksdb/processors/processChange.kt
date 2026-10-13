@@ -27,6 +27,7 @@ import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -397,17 +398,22 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                         setChanged(true)
                     }
                     is Check -> {
-                        for ((reference, value) in change.referenceValuePairs) {
-                            transaction.getValue(columnFamilies, defaultReadOptions, null, reference.toStorageByteArray(key.bytes)) { b, o, l ->
-                                var readIndex = o
-                                // Convert stored value excluding defining byte
-                                val storedValue = readValue(reference.comparablePropertyDefinition, { b[readIndex++] }) { o + l - readIndex }
-                                if (storedValue != value) {
-                                    addValidationFail(
-                                        InvalidValueException(reference, value.toString())
-                                    )
-                                }
+                        val completeValues = if (change.referenceValuePairs.any { it.reference.comparablePropertyDefinition !is IsSimpleValueDefinition<*, *> }) {
+                            transaction.getIterator(defaultReadOptions, columnFamilies.table).use { iterator ->
+                                dataModel.readTransactionIntoValuesWithMetaData(
+                                    iterator, this, persistedVersion, columnFamilies, key, null, null,
+                                    { _, _, reader -> reader() },
+                                )?.values
                             }
+                        } else null
+                        for ((reference, expected) in change.referenceValuePairs) {
+                            val actual = if (reference.comparablePropertyDefinition !is IsSimpleValueDefinition<*, *>) {
+                                completeValues?.get(reference)
+                            } else transaction.getValue(columnFamilies, defaultReadOptions, null, reference.toStorageByteArray(key.bytes)) { bytes, offset, length ->
+                                var readIndex = offset
+                                readValue(reference.comparablePropertyDefinition, { bytes[readIndex++] }) { offset + length - readIndex }
+                            }
+                            if (actual != expected) addValidationFail(InvalidValueException(reference, expected.toString()))
                         }
                     }
                     is Change -> {

@@ -184,3 +184,13 @@ The `store/test` module contains a reusable test suite that the RocksDB store ru
 - `processors/*` – per-request processing and scan logic.
 - `processors/helpers/*` – version bytes, get/set value/index/unique, soft delete checks.
 - `Transaction.kt`, `DBAccessor.kt`, `DBIterator.kt` – local transaction and read wrappers.
+
+### Complete-value checks and empty collection removal
+
+Check statements decode scalar qualifiers directly and materialize complex values
+once from the current native transaction. A missing expected scalar fails validation;
+collection counts are never compared to whole collection values. Checks after a
+change see the staged writes, and validation failure rolls back the record savepoint.
+Root list/set/map counts have no type indicator: a zero-count byte means a present,
+empty collection. Nullable removal deletes that qualifier and its descendants,
+including the empty case, and retains the normal history tombstones.

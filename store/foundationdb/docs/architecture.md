@@ -207,3 +207,11 @@ Full migration operations guide: [Migrations](./migrations.md).
 - Processors: `store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/…`
 - Helpers: `store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/…`
 - Tests: `store/foundationdb/src/commonTest/kotlin/maryk/datastore/foundationdb/FoundationDBDataStoreTest.kt` and shared test suite in `store/test/…`
+
+### Complete-value checks
+
+Both check-only and mixed Change requests compare complete values from the current
+native transaction. Scalars use direct qualifier reads; each Check with complex
+properties materializes the record once. Collection counts are not decoded as
+collection values. A missing expected property fails validation. Checks after a
+change see preceding staged writes, and a failed check aborts the record mutation.

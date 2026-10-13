@@ -91,3 +91,11 @@ events may retain an older event version. Replay rejects malformed identities,
 truncated record keys and future events with `StorageException`. The existing
 listener failure path asks consumers to resubscribe for a fresh snapshot and
 leaves stored entries untouched.
+
+### Ordered checks
+
+Checks compare complete values at their position in the materialized change list.
+Earlier changes are applied to a private value view before evaluating the next
+Check; a failed Check publishes no rows. Incrementing-map additions are materialized
+before this evaluation, and missing parent maps are seeded only for preceding value
+writes. Requests without Checks retain the direct materialization path.

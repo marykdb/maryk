@@ -102,13 +102,18 @@ internal fun <DM : IsRootDataModel> evaluateChecks(
     changes: List<IsChange>,
     currentValues: Values<DM>,
 ): List<ValidationException> {
+    if (changes.none { it is Check }) return emptyList()
     val exceptions = mutableListOf<ValidationException>()
+    var stagedValues = currentValues
 
     for (change in changes) {
-        if (change !is Check) continue
+        if (change !is Check) {
+            stagedValues = seedMissingRootMaps(stagedValues, listOf(change)).change(change)
+            continue
+        }
 
         for ((reference, value) in change.referenceValuePairs) {
-            if (currentValues[reference] != value) {
+            if (stagedValues[reference] != value) {
                 exceptions += InvalidValueException(reference, value.toString())
             }
         }

@@ -150,6 +150,14 @@ val changeRequest = Person.run {
 }
 ```
 
+A whole list, set or map can be replaced with `Change(ref with replacement)`.
+An empty replacement keeps the property present; a nullable `ref with null` removes
+it when allowed by the definition. `Check(ref with expectedCollection)` compares
+the complete collection, including an empty one. Checks see changes preceding them
+in the same ordered change request; a failing check rolls back that record's changes.
+These values also survive atomic request receipts, transaction journals and Remote
+transport. Use collection operations when changing individual members.
+
 ### Delete
 
 With [`DeleteRequest`](../src/commonMain/kotlin/maryk/core/query/requests/DeleteRequest.kt),

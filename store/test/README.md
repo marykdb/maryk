@@ -35,6 +35,11 @@ backend test classes supply isolated stores and execute those cases.
 restoration windows, projections, tied cursors with writes between pages, key
 reuse, ordered durable transaction revisions, complete atomic revision payloads,
 filtering before limits, rollback and savepoint history across every engine and Remote.
+`ModelContractRegressionCases` covers inclusive composite date boundaries on current
+and historic cursor pages in both directions, variable string prefixes, complete
+list/set/map transaction replacements, atomic empty replacements and retries,
+nullable removal, and collection/missing-property Checks with rollback. Run it on
+Memory, RocksDB, FoundationDB, IndexedDB and Remote.
 Keep regressions with the implementation commit that fixes them. Native RocksDB
 iterator-loop regressions also use an iterator budget because a coroutine
 timeout cannot interrupt a runnable native scanner.

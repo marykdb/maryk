@@ -56,7 +56,9 @@ internal fun <T : Any> deleteByReference(
     // Value to delete
     @Suppress("UNCHECKED_CAST")
     val prevValue: T = transaction.getValue(columnFamilies, readOptions, null, referenceToCompareTo) { b, o, l ->
-        if (l == 1 && b[o] == TypeIndicator.DeletedIndicator.byte) {
+        // Root collection counts have no type indicator: zero means present and empty.
+        if (reference !is MapReference<*, *, *> && reference !is ListReference<*, *> && reference !is SetReference<*, *> &&
+            l == 1 && b[o] == TypeIndicator.DeletedIndicator.byte) {
             // does not exist so nothing to delete
             null
         } else {

@@ -22,6 +22,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -275,16 +276,33 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             // Clear old snapshot cache so subsequent reads reflect post-write transaction state.
             storeGetter.clearCache()
 
+            fun checkedValues(check: Check): Values<DM>? =
+                if (check.referenceValuePairs.any { it.reference.comparablePropertyDefinition !is IsSimpleValueDefinition<*, *> }) {
+                    dataModel.readTransactionIntoValuesWithMetaData(
+                        tr, createdBytes.readHLCTimestampIfExact()!!, tableDirs, key, null, null,
+                        { _, _, reader -> reader() },
+                        decryptValue = { modelId, value, offset, length, recordKey, qualifier ->
+                            decryptValueIfNeeded(modelId, recordKey, qualifier, value, offset, length)
+                        },
+                    )?.values
+                } else null
+
+            fun checkedValue(reference: IsPropertyReference<Any, *, *>, completeValues: Values<DM>?): Any? =
+                if (reference.comparablePropertyDefinition is IsSimpleValueDefinition<*, *>) {
+                    tr.getValue(tableDirs, null, keyBytes, reference.toStorageByteArray(), decryptValue = { modelId, value, offset, length, recordKey, qualifier ->
+                        decryptValueIfNeeded(modelId, recordKey, qualifier, value, offset, length)
+                    }) { bytes, offset, length -> bytes.convertToValue(reference, offset, length) }
+                } else completeValues?.get(reference)
+
             // Fast path: only Check operations — handle deterministically and return
             val onlyChecks = changes.all { it is Check }
             if (onlyChecks) {
                 val exceptions = mutableListOf<ValidationException>()
                 for (change in changes) {
                     val check = change as Check
+                    val completeValues = checkedValues(check)
                     for ((reference, expected) in check.referenceValuePairs) {
-                        val actual = tr.getValue(tableDirs, null, keyBytes, reference.toStorageByteArray(), decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }) { bytes, offset, length ->
-                            bytes.convertToValue(reference, offset, length)
-                        }
+                        val actual = checkedValue(reference, completeValues)
                         if (actual != expected) {
                             exceptions += InvalidValueException(reference, expected.toString())
                         }
@@ -417,36 +435,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                             isChanged = true
                         }
                         is Check -> {
+                            val completeValues = checkedValues(change)
                             for ((reference, expected) in change.referenceValuePairs) {
-                                val refBytes = reference.toStorageByteArray()
-                                val packed = tr.get(packKey(tableDirs.tablePrefix, key.bytes, refBytes)).awaitResult()
-                                if (packed == null) {
+                                if (checkedValue(reference, completeValues) != expected) {
                                     addValidation(InvalidValueException(reference, expected.toString()))
-                                } else {
-                                    requireVersionedValue(packed)
-                                    val stored = decryptValueIfNeeded(
-                                        dataModelId,
-                                        key.bytes,
-                                        refBytes,
-                                        packed,
-                                        VERSION_BYTE_SIZE,
-                                        packed.size - VERSION_BYTE_SIZE,
-                                    )
-                                    try {
-                                        val storable = Value.castDefinition(reference.propertyDefinition)
-                                        @Suppress("UNCHECKED_CAST")
-                                        val expectedBytes = (storable as IsStorageBytesEncodable<Any>).toStorageBytes(expected, TypeIndicator.NoTypeIndicator.byte)
-                                        if (!stored.contentEquals(expectedBytes)) {
-                                            addValidation(InvalidValueException(reference, expected.toString()))
-                                        }
-                                    } catch (error: Throwable) {
-                                        error.rethrowIfFatal()
-                                        // Collections and embedded values are stored across multiple rows.
-                                        val actual = storeGetter[reference]
-                                        if (actual != expected) {
-                                            addValidation(InvalidValueException(reference, expected.toString()))
-                                        }
-                                    }
                                 }
                             }
                             if (validationExceptions.isNotEmpty()) {

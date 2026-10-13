@@ -22,19 +22,19 @@ data class StatsAggregator<T: Comparable<T>>(
         val value = valueFetcher(request.reference) as T?
 
         if (value != null) {
-            this.summedValue = summedValue?.let {
+            summedValue = summedValue?.let {
                 arithmeticDefinition.add(it, value)
             } ?: value
 
-            this.maxValue = this.maxValue?.let {
-                maxOf(value, maxValue!!)
+            maxValue = maxValue?.let {
+                maxOf(value, it)
             } ?: value
 
-            this.minValue = this.minValue?.let {
-                minOf(value, minValue!!)
+            minValue = minValue?.let {
+                minOf(value, it)
             } ?: value
 
-            this.valueCount++
+            valueCount++
         }
     }
 

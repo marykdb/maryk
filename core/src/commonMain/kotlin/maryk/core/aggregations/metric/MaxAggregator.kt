@@ -14,8 +14,8 @@ data class MaxAggregator<T: Comparable<T>>(
         val value = valueFetcher(request.reference) as T?
 
         if (value != null) {
-            this.maxValue = this.maxValue?.let {
-                maxOf(value, maxValue!!)
+            maxValue = maxValue?.let {
+                maxOf(value, it)
             } ?: value
         }
     }

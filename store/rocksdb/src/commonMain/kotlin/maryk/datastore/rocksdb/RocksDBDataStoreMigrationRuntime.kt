@@ -113,7 +113,7 @@ internal fun RocksDBDataStore.migrationMetricsInternal(modelId: UInt): Migration
 internal fun RocksDBDataStore.migrationMetricsInternal(): Map<UInt, MigrationMetrics> = migrationMetricsByModelId.value
 
 internal suspend fun RocksDBDataStore.migrationAuditEventsInternal(modelId: UInt, limit: Int): List<MigrationAuditEvent> =
-    migrationAuditLogStore?.read(modelId, limit) ?: emptyList()
+    migrationAuditLogStore?.read(modelId, limit).orEmpty()
 
 internal suspend fun RocksDBDataStore.awaitMigrationInternal(modelId: UInt) {
     pendingMigrationWaiters.value[modelId]?.await()

@@ -26,7 +26,7 @@ internal fun <DM : IsRootDataModel> processGetChangesRequest(
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
     getRequest.checkMaxVersions(dataStore.keepAllVersions)
-    val toVersion = getRequest.toVersion?.let { HLC(it) }
+    val toVersion = getRequest.toVersion?.let(::HLC)
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, toVersion)
 
     for (key in getRequest.keys) {

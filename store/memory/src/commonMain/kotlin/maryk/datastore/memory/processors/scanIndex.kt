@@ -76,7 +76,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
         ?.takeIf { excludedStartIndexValue != null }
         ?.let { Bytes((it as Key<*>).bytes) }
 
-    val toVersion = scanRequest.toVersion?.let { HLC(it) }
+    val toVersion = scanRequest.toVersion?.let(::HLC)
     val includeSoftDeleted = !scanRequest.filterSoftDeleted
 
     fun isCanonicalCursorEntry(dataRecord: DataRecord<DM>, indexValue: ByteArray): Boolean {

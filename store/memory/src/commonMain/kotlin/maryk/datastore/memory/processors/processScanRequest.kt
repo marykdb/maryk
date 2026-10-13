@@ -40,7 +40,7 @@ internal fun <DM : IsRootDataModel> processScanRequest(
         recordFetcher = recordFetcher,
         allowTableScanOverride = scanRequest.toVersion != null
     ) { record, orderKey ->
-        val toVersion = scanRequest.toVersion?.let { HLC(it) }
+        val toVersion = scanRequest.toVersion?.let(::HLC)
 
         val valuesWithMetaData = scanRequest.dataModel.recordToValueWithMeta(
             scanRequest.select,

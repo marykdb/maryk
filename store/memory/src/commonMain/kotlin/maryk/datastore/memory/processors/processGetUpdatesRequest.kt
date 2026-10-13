@@ -30,7 +30,7 @@ internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
     getRequest.checkMaxVersions(dataStore.keepAllVersions)
-    val toVersion = getRequest.toVersion?.let { HLC(it) }
+    val toVersion = getRequest.toVersion?.let(::HLC)
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, toVersion)
 
     val expectedSize = getRequest.keys.size.coerceAtLeast(4)

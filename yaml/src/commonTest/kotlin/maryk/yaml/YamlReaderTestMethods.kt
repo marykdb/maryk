@@ -21,45 +21,45 @@ import kotlin.test.expect
 import kotlin.test.fail
 
 fun IsJsonLikeReader.assertStartDocument() {
-    expect(StartDocument) { this.nextToken() }
+    expect(StartDocument) { nextToken() }
 }
 
 fun IsJsonLikeReader.assertStartObject(type: MapType = MapType.Map) {
-    assertIs<StartObject>(this.nextToken()).apply {
+    assertIs<StartObject>(nextToken()).apply {
         assertEquals(type, this.type)
     }
 }
 
 fun IsJsonLikeReader.assertEndObject() {
-    expect(EndObject) { this.nextToken() }
+    expect(EndObject) { nextToken() }
 }
 
 fun IsJsonLikeReader.assertFieldName(value: String?) {
     expect(value) {
-        assertIs<FieldName>(this.nextToken()).value
+        assertIs<FieldName>(nextToken()).value
     }
 }
 
 fun IsJsonLikeReader.assertStartComplexFieldName() {
-    expect(StartComplexFieldName) { this.nextToken() }
+    expect(StartComplexFieldName) { nextToken() }
 }
 
 fun IsJsonLikeReader.assertEndComplexFieldName() {
-    expect(EndComplexFieldName) { this.nextToken() }
+    expect(EndComplexFieldName) { nextToken() }
 }
 
 fun IsJsonLikeReader.assertStartArray(type: ArrayType = ArrayType.Sequence) {
-    assertIs<StartArray>(this.nextToken()).apply {
+    assertIs<StartArray>(nextToken()).apply {
         assertEquals(type, this.type)
     }
 }
 
 fun IsJsonLikeReader.assertEndArray() {
-    expect(EndArray) { this.nextToken() }
+    expect(EndArray) { nextToken() }
 }
 
 fun <T : Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null) {
-    assertIs<Value<*>>(this.nextToken()).apply {
+    assertIs<Value<*>>(nextToken()).apply {
         expect(value) { this.value }
         type?.let {
             expect(type) { this.type }
@@ -68,7 +68,7 @@ fun <T : Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null
 }
 
 fun IsJsonLikeReader.assertByteArrayValue(value: ByteArray, type: ValueType<ByteArray>) {
-    this.nextToken().apply {
+    nextToken().apply {
         if (this is Value<*> && this.value is ByteArray) {
             val byteArray = this.value as? ByteArray
 
@@ -84,10 +84,10 @@ fun IsJsonLikeReader.assertByteArrayValue(value: ByteArray, type: ValueType<Byte
 }
 
 fun IsJsonLikeReader.assertEndDocument() {
-    expect(EndDocument) { this.nextToken() }
+    expect(EndDocument) { nextToken() }
 }
 
 fun IsJsonLikeReader.assertInvalidYaml(): InvalidYamlContent =
     assertFailsWith {
-        println(this.nextToken())
+        println(nextToken())
     }

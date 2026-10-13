@@ -42,6 +42,6 @@ internal class RocksDBMigrationAuditLogStore(
             ?.mapNotNull(MigrationAuditEvent::fromPersistedLine)
             ?.toList()
             ?.takeLast(limit.coerceAtLeast(0))
-            ?: emptyList()
+            .orEmpty()
     }
 }

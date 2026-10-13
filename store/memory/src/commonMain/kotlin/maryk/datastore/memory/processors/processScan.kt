@@ -137,5 +137,5 @@ internal fun <DM: IsRootDataModel> shouldProcessRecord(
         return false
     }
 
-    return !scanRequest.shouldBeFiltered(record, scanRequest.toVersion?.let { HLC(it) }, recordFetcher)
+    return !scanRequest.shouldBeFiltered(record, scanRequest.toVersion?.let(::HLC), recordFetcher)
 }

@@ -10,12 +10,9 @@ open class Aggregator(
      * Aggregate values from valueFetcher
      */
     open fun aggregate(valueFetcher: ValueByPropertyReference<*>) {
-        aggregations.namedAggregations.let { namedAggregations ->
-            for ((key, request) in namedAggregations) {
-                val aggregator = this.aggregators.getOrPut(key, request::createAggregator)
-
-                aggregator.aggregate(valueFetcher)
-            }
+        for ((key, request) in aggregations.namedAggregations) {
+            val aggregator = aggregators.getOrPut(key, request::createAggregator)
+            aggregator.aggregate(valueFetcher)
         }
     }
 

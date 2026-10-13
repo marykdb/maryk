@@ -35,7 +35,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
     val dbIndex = getDataModelId(getRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex)
 
-    val aggregator = getRequest.aggregations?.let { Aggregator(it) }
+    val aggregator = getRequest.aggregations?.let(::Aggregator)
 
     getRequest.checkToVersion(keepAllVersions)
 

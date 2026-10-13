@@ -16,12 +16,10 @@ fun IsValueDataModel<*, *>.generateKotlin(
         "maryk.core.models.ValueDataModel",
         "maryk.core.properties.types.ValueDataObject"
     )
-    val addImport: (String) -> Unit = { importsToAdd.add(it) }
+    val addImport: (String) -> Unit = importsToAdd::add
 
     val enumKotlinDefinitions = mutableSetOf<String>()
-    val propertiesKotlin = generateKotlin(addImport, generationContext) {
-        enumKotlinDefinitions.add(it)
-    }
+    val propertiesKotlin = generateKotlin(addImport, generationContext, enumKotlinDefinitions::add)
 
     val code = """
     data class ${Meta.name.kotlinIdentifier()}(
@@ -40,13 +38,8 @@ fun IsValueDataModel<*, *>.generateKotlin(
     writeKotlinFile(packageName, importsToAdd, enumKotlinDefinitions, code, writer)
 }
 
-private fun List<KotlinForProperty>.generatePropertyNamesForConstructor(): String {
-    val properties = mutableListOf<String>()
-    for (it in this) {
-        properties.add(it.name)
-    }
-    return properties.joinToString(", ")
-}
+private fun List<KotlinForProperty>.generatePropertyNamesForConstructor(): String =
+    joinToString(", ") { it.name }
 
 private fun List<KotlinForProperty>.generateObjectValuesForProperties(): String =
     joinToString(",\n") { "val ${it.value}" }

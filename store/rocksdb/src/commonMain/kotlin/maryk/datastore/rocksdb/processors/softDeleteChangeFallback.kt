@@ -46,7 +46,7 @@ internal fun <DM : IsRootDataModel> addSoftDeleteChangeIfMissing(
 
     val isDeleted = value[valueLength - 1] == TRUE
     val updatedChanges = addChangeVersion(
-        changes = objectChange?.changes ?: emptyList(),
+        changes = objectChange?.changes.orEmpty(),
         version = version,
         change = ObjectSoftDeleteChange(isDeleted)
     )

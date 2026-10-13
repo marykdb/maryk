@@ -31,7 +31,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
     val dbIndex = getDataModelId(scanRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex)
 
-    val aggregator = scanRequest.aggregations?.let { Aggregator(it) }
+    val aggregator = scanRequest.aggregations?.let(::Aggregator)
     var lastEmittedKey: Key<DM>? = null
     var lastEmittedOrderKey: ByteArray? = null
 

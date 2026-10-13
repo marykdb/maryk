@@ -23,7 +23,7 @@ internal fun <DM : IsRootDataModel> processGetRequest(
 ) {
     val getRequest = storeAction.request
     val valuesWithMeta = ArrayList<ValuesWithMetaData<DM>>(getRequest.keys.size.coerceAtLeast(4))
-    val toVersion = getRequest.toVersion?.let { HLC(it) }
+    val toVersion = getRequest.toVersion?.let(::HLC)
 
     val dataStore = dataStoreFetcher.invoke(getRequest.dataModel)
 

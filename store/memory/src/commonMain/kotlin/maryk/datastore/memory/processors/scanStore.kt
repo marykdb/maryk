@@ -23,7 +23,7 @@ internal fun <DM : IsRootDataModel> scanStore(
     scanRange: KeyScanRanges,
     processStoreValue: (DataRecord<DM>, ByteArray?) -> Unit
 ): DataFetchType {
-    val toVersion = scanRequest.toVersion?.let { HLC(it) }
+    val toVersion = scanRequest.toVersion?.let(::HLC)
     val scanRecords = dataStore.getRecordsAtVersion(toVersion)
 
     var overallStartKey: ByteArray?

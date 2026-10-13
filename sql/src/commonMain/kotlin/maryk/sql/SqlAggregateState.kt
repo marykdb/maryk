@@ -42,7 +42,10 @@ internal class SqlAggregateState(private val call: SqlExpr.Call, private val eva
         "avg" -> when (val total = sum) {
             SqlValue.Null -> SqlValue.Null
             is SqlValue.Float64 -> SqlValue.Float64(total.value / count)
-            else -> SqlValue.Exact(total.decimal().divideRounded(Decimal.parse(count.toString()), maxOf(6u, total.decimal().scale)))
+            else -> {
+                val decimal = total.decimal()
+                SqlValue.Exact(decimal.divideRounded(Decimal.parse(count.toString()), maxOf(6u, decimal.scale)))
+            }
         }
         else -> value
     }

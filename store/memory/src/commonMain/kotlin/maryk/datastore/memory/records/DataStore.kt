@@ -341,7 +341,7 @@ internal class DataStore<DM : IsRootDataModel>(
             return (previousRecords + currentRecord).sortedBy { it.firstVersion.timestamp }
         }
 
-        return getHardDeletedRecordByKey(key, toVersion)?.let(::listOf) ?: emptyList()
+        return getHardDeletedRecordByKey(key, toVersion)?.let(::listOf).orEmpty()
     }
 
     /** Check if any currently visible key was hard deleted before and later reused. */

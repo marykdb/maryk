@@ -81,15 +81,15 @@ class RequestContext(
             throw RequestException("Collect($collectionName): Value $values is not of right dataModel $toCollect ")
         }
 
-        if (this.collectedResults == null) {
-            this.collectedResults = mutableMapOf()
+        if (collectedResults == null) {
+            collectedResults = mutableMapOf()
         }
-        this.collectedResults!![collectionName] = values
+        collectedResults!![collectionName] = values
     }
 
     /** Retrieve result values by [collectionName] */
     fun retrieveResult(collectionName: String) =
-        this.collectedResults?.get(collectionName)
+        collectedResults?.get(collectionName)
 
     /**
      * Collects Injects [inject] so they can be encoded in a higher Requests object
@@ -100,18 +100,18 @@ class RequestContext(
     ) {
         var reference: IsPropertyReference<Any, *, *>? = null
 
-        if (this.collectedReferenceCreators != null) {
+        if (collectedReferenceCreators != null) {
             // Create the reference by walking all parent reference creators
-            for (creator in this.collectedReferenceCreators!!) {
+            for (creator in collectedReferenceCreators!!) {
                 reference = creator(reference)
             }
         }
 
-        if (this.collectedInjects == null) {
-            this.collectedInjects = mutableListOf()
+        if (collectedInjects == null) {
+            collectedInjects = mutableListOf()
         }
 
-        this.collectedInjects!!.add(
+        collectedInjects!!.add(
             InjectWithReference(inject, reference!!)
         )
     }
@@ -121,46 +121,46 @@ class RequestContext(
         levelItem: Any,
         propertyRefCreator: (AnyPropertyReference?) -> IsPropertyReference<in Any, *, *>
     ) {
-        if (!this.collectedLevels.isNullOrEmpty() && levelItem == this.collectedLevels!!.last()) {
-            this.collectedReferenceCreators?.removeAt(this.collectedReferenceCreators!!.size - 1)
+        if (!collectedLevels.isNullOrEmpty() && levelItem == collectedLevels!!.last()) {
+            collectedReferenceCreators?.removeAt(collectedReferenceCreators!!.size - 1)
         } else {
-            if (this.collectedLevels == null) {
-                this.collectedLevels = mutableListOf()
+            if (collectedLevels == null) {
+                collectedLevels = mutableListOf()
             }
-            this.collectedLevels!!.add(levelItem)
+            collectedLevels!!.add(levelItem)
         }
 
-        if (this.collectedReferenceCreators == null) {
-            this.collectedReferenceCreators = mutableListOf()
+        if (collectedReferenceCreators == null) {
+            collectedReferenceCreators = mutableListOf()
         }
 
-        this.collectedReferenceCreators!!.add(propertyRefCreator)
+        collectedReferenceCreators!!.add(propertyRefCreator)
     }
 
     /** Removes the last injection [levelItem] and its reference creator */
     fun closeInjectLevel(
         levelItem: Any
     ) {
-        if (!this.collectedLevels.isNullOrEmpty() && levelItem == this.collectedLevels!!.last()) {
-            this.collectedLevels!!.removeAt(this.collectedLevels!!.size - 1)
-            if (!this.collectedReferenceCreators.isNullOrEmpty()) {
-                this.collectedReferenceCreators!!.removeAt(this.collectedReferenceCreators!!.size - 1)
+        if (!collectedLevels.isNullOrEmpty() && levelItem == collectedLevels!!.last()) {
+            collectedLevels!!.removeAt(collectedLevels!!.size - 1)
+            if (!collectedReferenceCreators.isNullOrEmpty()) {
+                collectedReferenceCreators!!.removeAt(collectedReferenceCreators!!.size - 1)
             }
         }
     }
 
     /** Collect [incMapChange] so IncMapAdditions can be resolved */
     fun collectIncMapChange(incMapChange: IncMapChange) {
-        if(this.collectedIncMapChanges == null) {
-            this.collectedIncMapChanges = mutableListOf()
+        if(collectedIncMapChanges == null) {
+            collectedIncMapChanges = mutableListOf()
         }
 
-        if (!this.collectedIncMapChanges!!.contains(incMapChange)) {
-            this.collectedIncMapChanges!!.add(incMapChange)
+        if (!collectedIncMapChanges!!.contains(incMapChange)) {
+            collectedIncMapChanges!!.add(incMapChange)
         }
     }
 
     /** Get all collected Incrementing Map Changes */
     fun getCollectedIncMapChanges(): List<IncMapChange> =
-        this.collectedIncMapChanges ?: emptyList()
+        collectedIncMapChanges.orEmpty()
 }

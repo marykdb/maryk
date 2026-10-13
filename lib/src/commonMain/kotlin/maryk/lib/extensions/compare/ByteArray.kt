@@ -13,7 +13,7 @@ package maryk.lib.extensions.compare
  * - `byteArrayOf(0xFF.toByte()) > byteArrayOf(0x01)`
  */
 infix operator fun ByteArray.compareTo(other: ByteArray): Int {
-    val minSize = minOf(this.size, other.size)
+    val minSize = minOf(size, other.size)
     var index = 0
     while (index < minSize) {
         val a = this[index].toInt() and 0xFF
@@ -23,7 +23,7 @@ infix operator fun ByteArray.compareTo(other: ByteArray): Int {
         }
         index++
     }
-    return this.size - other.size
+    return size - other.size
 }
 
 /**
@@ -50,7 +50,7 @@ infix operator fun ByteArray.compareTo(other: ByteArray): Int {
 fun ByteArray.compareToRange(other: ByteArray, offset: Int, length: Int = other.size - offset): Int {
     validateRange(offset = offset, length = length, arraySize = other.size)
 
-    val minSize = minOf(this.size, length)
+    val minSize = minOf(size, length)
     var index = 0
     while (index < minSize) {
         val a = this[index].toInt() and 0xFF
@@ -60,7 +60,7 @@ fun ByteArray.compareToRange(other: ByteArray, offset: Int, length: Int = other.
         }
         index++
     }
-    return this.size - length
+    return size - length
 }
 
 /**
@@ -81,7 +81,7 @@ fun ByteArray.compareToRange(other: ByteArray, offset: Int, length: Int = other.
 fun ByteArray.compareDefinedRange(other: ByteArray, offset: Int = 0, length: Int = other.size - offset): Int {
     validateRange(offset = offset, length = length, arraySize = other.size)
 
-    val minSize = minOf(this.size, length)
+    val minSize = minOf(size, length)
     var index = 0
     while (index < minSize) {
         val a = this[index].toInt() and 0xFF
@@ -91,7 +91,7 @@ fun ByteArray.compareDefinedRange(other: ByteArray, offset: Int = 0, length: Int
         }
         index++
     }
-    return if (length < this.size) this.size - length else 0
+    return if (length < size) size - length else 0
 }
 
 /**
@@ -108,14 +108,14 @@ fun ByteArray.compareDefinedRange(other: ByteArray, offset: Int = 0, length: Int
  * - Caller must ensure compared ranges are within bounds.
  * - No defensive bounds checks are performed for performance.
  */
-fun ByteArray.matchesRange(fromOffset: Int, bytes: ByteArray, sourceLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
-    validateOffset(fromOffset, this.size)
+fun ByteArray.matchesRange(fromOffset: Int, bytes: ByteArray, sourceLength: Int = size, offset: Int = 0, length: Int = bytes.size): Boolean {
+    validateOffset(fromOffset, size)
     validateOffset(offset, bytes.size)
     requireNonNegative(sourceLength)
     requireNonNegative(length)
 
     if (length != sourceLength) return false
-    validateRange(offset = fromOffset, length = length, arraySize = this.size)
+    validateRange(offset = fromOffset, length = length, arraySize = size)
     validateRange(offset = offset, length = length, arraySize = bytes.size)
 
     var index = length - 1
@@ -141,14 +141,14 @@ fun ByteArray.matchesRange(fromOffset: Int, bytes: ByteArray, sourceLength: Int 
  * - Caller must ensure compared ranges are within bounds.
  * - No defensive bounds checks are performed for performance.
  */
-fun ByteArray.matchesRangePart(fromOffset: Int, bytes: ByteArray, sourceLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
-    validateOffset(fromOffset, this.size)
+fun ByteArray.matchesRangePart(fromOffset: Int, bytes: ByteArray, sourceLength: Int = size, offset: Int = 0, length: Int = bytes.size): Boolean {
+    validateOffset(fromOffset, size)
     validateOffset(offset, bytes.size)
     requireNonNegative(sourceLength)
     requireNonNegative(length)
 
     if (length > sourceLength) return false
-    validateRange(offset = fromOffset, length = length, arraySize = this.size)
+    validateRange(offset = fromOffset, length = length, arraySize = size)
     validateRange(offset = offset, length = length, arraySize = bytes.size)
 
     var index = length - 1
@@ -166,7 +166,7 @@ fun ByteArray.matchesRangePart(fromOffset: Int, bytes: ByteArray, sourceLength: 
  * Returns the same byte array when every byte is already at its maximum.
  */
 fun ByteArray.nextByteInSameLength(): ByteArray {
-    val newArray = this.copyOf()
+    val newArray = copyOf()
     for (i in newArray.lastIndex downTo 0) {
         if (newArray[i] != 0xFF.toByte()) {
             newArray[i]++
@@ -182,7 +182,7 @@ fun ByteArray.nextByteInSameLength(): ByteArray {
  * Will throw IllegalStateException if byte array cannot be lowered further
  */
 fun ByteArray.prevByteInSameLength(maxLengthToRead: Int? = null): ByteArray {
-    val newArray = this.copyOf()
+    val newArray = copyOf()
     val startIndex = maxLengthToRead?.let { newArray.size - it.coerceAtMost(newArray.size) } ?: 0
     for (i in newArray.lastIndex downTo startIndex) {
         if (newArray[i] != 0.toByte()) {

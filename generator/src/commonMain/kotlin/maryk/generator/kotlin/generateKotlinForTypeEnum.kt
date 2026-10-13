@@ -10,9 +10,7 @@ import maryk.core.properties.enum.MultiTypeEnumDefinition
 fun MultiTypeEnumDefinition<*>.generateKotlin(packageName: String, writer: (String) -> Unit) {
     val importsToAdd = mutableSetOf<String>()
 
-    val code = this.generateKotlinClass {
-        importsToAdd.add(it)
-    }
+    val code = generateKotlinClass(importsToAdd::add)
 
     writeKotlinFile(packageName, importsToAdd, null, code, writer)
 }
@@ -28,16 +26,12 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
     addImport("maryk.core.properties.definitions.IsUsableInMultiType")
 
     val reservedIndices = this.reservedIndices.let { indexes ->
-        when {
-            indexes.isNullOrEmpty() -> ""
-            else -> "\n"+ "reservedIndices = listOf(${indexes.toKotlinUIntList()}),".prependIndent().prependIndent().prependIndent()
-        }
+        if (indexes.isNullOrEmpty()) ""
+        else "\n"+ "reservedIndices = listOf(${indexes.toKotlinUIntList()}),".prependIndent().prependIndent().prependIndent()
     }
     val reservedNames = this.reservedNames.let { names ->
-        when {
-            names.isNullOrEmpty() -> ""
-            else -> "\n"+ "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }}),".prependIndent().prependIndent().prependIndent()
-        }
+        if (names.isNullOrEmpty()) ""
+        else "\n"+ "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }}),".prependIndent().prependIndent().prependIndent()
     }
 
     return """

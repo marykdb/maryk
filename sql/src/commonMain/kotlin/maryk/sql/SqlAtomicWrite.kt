@@ -61,7 +61,7 @@ data class SqlAtomicWriteResult(
 data class SqlAtomicCapabilities(val store: AtomicCapabilities, val maxStatements: UInt = MAX_ATOMIC_OPERATIONS)
 
 val MarykSql.atomicWriteCapabilities: SqlAtomicCapabilities?
-    get() = dataStore.atomicCapabilities?.let { SqlAtomicCapabilities(it) }
+    get() = dataStore.atomicCapabilities?.let(::SqlAtomicCapabilities)
 
 val MarykSql.supportsAtomicWrites: Boolean get() = dataStore.supportsAtomicRequests
 

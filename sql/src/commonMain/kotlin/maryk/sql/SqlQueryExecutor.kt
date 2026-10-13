@@ -293,7 +293,7 @@ internal class SqlRuntime(
                         evaluator.windowResults = emptyMap()
                     } else if (plan.aggregate) {
                         suspend fun projectGroup(group: List<InputRow>) {
-                            val row = group.firstOrNull() ?: emptyMap()
+                            val row = group.firstOrNull().orEmpty()
                             if (query.having != null && evaluator.eval(query.having, row, group).truth() != true) return
                             projected(if (discardProjection) emptyProjection else query.select.map { evaluator.eval(it.expression, row, group) }, row, group)
                         }

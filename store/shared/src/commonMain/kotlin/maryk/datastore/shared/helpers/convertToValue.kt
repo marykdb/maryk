@@ -30,11 +30,11 @@ fun <T : Any> ByteArray.convertToValueOrNull(
         } as TypedValue<*, *>
 
         @Suppress("UNCHECKED_CAST")
-        (return if (typedValue.type != reference.type) {
+        return if (typedValue.type != reference.type) {
             null
         } else {
             typedValue.value as T?
-        })
+        }
     }
 
     val value = readValue(reference.comparablePropertyDefinition, reader) {

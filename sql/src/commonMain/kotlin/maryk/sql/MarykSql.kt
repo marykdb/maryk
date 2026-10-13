@@ -112,7 +112,7 @@ class MarykSql private constructor(
     suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlAtomicWriteResult = executePrepared(statement, parameters, null)
 
     internal suspend fun executePrepared(statement: String, parameters: List<SqlValue>, parsed: SqlMutation?): SqlAtomicWriteResult {
-        val syntax = parsed?.let { listOf(it) }
+        val syntax = parsed?.let(::listOf)
         if (dataStore.transactionCapabilities == null) throw SqlException(SqlErrorCode.UNSUPPORTED, "This datastore does not support transactional SQL writes")
         val ambient = currentTransaction(dataStore)
         if (ambient != null) return SqlAtomicWriter(MarykSql.create(SqlTransactionStore(dataStore, ambient), catalog, options))

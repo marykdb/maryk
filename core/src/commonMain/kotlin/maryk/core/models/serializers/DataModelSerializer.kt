@@ -45,10 +45,10 @@ import maryk.yaml.UnknownYamlTag
 import maryk.yaml.YamlWriter
 
 private fun IsDefinitionWrapper<*, *, *, *>.transportIndex(): Int {
-    require(this.index <= Short.MAX_VALUE.toUInt()) {
-        "${this.index} for $name is outside range $(0..Short.MAX_VALUE)"
+    require(index <= Short.MAX_VALUE.toUInt()) {
+        "$index for $name is outside range $(0..Short.MAX_VALUE)"
     }
-    return this.index.toInt()
+    return index.toInt()
 }
 
 // Property transport indices are restricted to 1..32767. The upper bit marks
@@ -130,7 +130,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
      */
     override fun readJson(json: String, context: CX?): V {
         val reader = JsonReader(json)
-        return this.readJson(reader, context).also {
+        return readJson(reader, context).also {
             reader.requireEndDocument()
         }
     }
@@ -201,46 +201,40 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                     if (definition == null) {
                         reader.skipUntilNextField()
                         continue@walker
-                    } else {
+                    }
+                    reader.nextToken()
+
+                    // Skip null values
+                    val valueToken = reader.currentToken as? JsonToken.Value<*>
+                    if (valueToken != null && valueToken.value == null) {
                         reader.nextToken()
+                        continue@walker
+                    }
 
-                        // Skip null values
-                        val valueToken = reader.currentToken as? JsonToken.Value<*>
-                        if (valueToken != null && valueToken.value == null) {
-                            reader.nextToken()
-                            continue@walker
+                    if (reader is IsYamlReader) {
+                        val yamlType = (reader.currentToken as? TokenWithType)?.type
+                        if (yamlType is UnknownYamlTag) {
+                            isInject = yamlType.name == ":Inject"
                         }
+                    }
 
-                        if (reader is IsYamlReader) {
-                            reader.currentToken.let { yamlToken ->
-                                if (yamlToken is TokenWithType) {
-                                    yamlToken.type.let {
-                                        if (it is UnknownYamlTag) {
-                                            isInject = it.name == ":Inject"
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    if (isInject) {
+                        val inject = Inject.Serializer.readJson(reader, Inject.Serializer.transformContext(context as RequestContext))
 
-                        if (isInject) {
-                            val inject = Inject.Serializer.readJson(reader, Inject.Serializer.transformContext(context as RequestContext))
-
-                            values[definition.index] = inject
+                        values[definition.index] = inject
+                    } else {
+                        val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *>) {
+                            @Suppress("UNCHECKED_CAST")
+                            (definition as IsEmbeddedObjectDefinition<*, *, CX, *>).readJsonToValues(
+                                reader,
+                                context
+                            )
                         } else {
-                            val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *>) {
-                                @Suppress("UNCHECKED_CAST")
-                                (definition as IsEmbeddedObjectDefinition<*, *, CX, *>).readJsonToValues(
-                                    reader,
-                                    context
-                                )
-                            } else {
-                                definition.readJson(reader, context)
-                            }
-
-                            values[definition.index] = readValue
-                            definition.capture(context, readValue)
+                            definition.readJson(reader, context)
                         }
+
+                        values[definition.index] = readValue
+                        definition.capture(context, readValue)
                     }
                 }
                 else -> break@walker
@@ -251,16 +245,16 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
 
     override fun calculateProtoBufLength(values: V, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
-        for (definition in this.model) {
+        for (definition in model) {
             val originalValue = values.original(definition.index)
 
             totalByteLength = totalByteLength.addProtoByteLength(
-                this.protoBufLengthToAddForField(originalValue, definition, cacher, context)
+                protoBufLengthToAddForField(originalValue, definition, cacher, context)
             )
         }
 
         if (context is RequestContext) {
-            context.closeInjectLevel(this.model)
+            context.closeInjectLevel(model)
         }
 
         return totalByteLength
@@ -284,9 +278,9 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
 
         // If it is an Inject it needs to be collected for protobuf since it cannot be encoded inline
         // Except if it is the InjectWithReference object in which it is encoded
-        if (value is Inject<*, *> && this.model != InjectWithReference) {
+        if (value is Inject<*, *> && model != InjectWithReference) {
             if (context is RequestContext) {
-                context.collectInjectLevel(this.model, definition::ref)
+                context.collectInjectLevel(model, definition::ref)
                 context.collectInject(value)
             }
 
@@ -298,7 +292,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                     || definition is IsMapDefinition<*, *, *>)
         ) {
             // Collect inject level if value can contain sub values
-            context.collectInjectLevel(this.model, definition::ref)
+            context.collectInjectLevel(model, definition::ref)
         }
 
         definition.capture(context, value)
@@ -306,10 +300,10 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
     }
 
     override fun writeProtoBuf(values: V, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
-        for (definition in this.model) {
+        for (definition in model) {
             val originalValue = values.original(definition.index)
 
-            this.writeProtoBufField(originalValue, definition, cacheGetter, writer, context)
+            writeProtoBufField(originalValue, definition, cacheGetter, writer, context)
         }
     }
 
@@ -327,7 +321,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
     ) {
         if (value == null) return // Skip empty values
 
-        if (value is Inject<*, *> && this.model != InjectWithReference) {
+        if (value is Inject<*, *> && model != InjectWithReference) {
             return // Skip Inject values since they are encoded in Requests object
         }
 
@@ -349,12 +343,12 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
     /** Creates Values [V] from a [items] map */
     open fun createValues(context: CX?, items: IsValueItems): V {
         @Suppress("UNCHECKED_CAST")
-        return when (this.model) {
+        return when (model) {
             is IsObjectDataModel<*> ->
-                ObjectValues(this.model, items, context as? RequestContext) as V
+                ObjectValues(model, items, context as? RequestContext) as V
             is IsValuesDataModel ->
-                Values(this.model, items, context as? RequestContext) as V
-            else -> throw IllegalStateException("Unknown properties type ${this.model::class.simpleName}")
+                Values(model, items, context as? RequestContext) as V
+            else -> throw IllegalStateException("Unknown properties type ${model::class.simpleName}")
         }
     }
 

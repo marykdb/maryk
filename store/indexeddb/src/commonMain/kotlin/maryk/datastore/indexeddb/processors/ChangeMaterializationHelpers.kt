@@ -124,7 +124,7 @@ internal fun <DM : IsRootDataModel> evaluateChecks(
 
 @Suppress("UNCHECKED_CAST")
 internal fun Any?.orEmptyComparableMap(): Map<Comparable<Any>, Any> =
-    this as? Map<Comparable<Any>, Any> ?: emptyMap()
+    (this as? Map<Comparable<Any>, Any>).orEmpty()
 
 @Suppress("UNCHECKED_CAST")
 internal fun zeroComparableKeyFor(

@@ -14,7 +14,7 @@ data class ValueCountAggregator<T: Comparable<T>>(
         val value = valueFetcher(request.reference) as T?
 
         if (value != null) {
-            this.valueCount++
+            valueCount++
         }
     }
 

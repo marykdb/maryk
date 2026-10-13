@@ -114,7 +114,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                 } else {
                     scanRequest.dataModel.recordToValueWithMeta(
                         scanRequest.select,
-                        scanRequest.toVersion?.let { HLC(it) },
+                        scanRequest.toVersion?.let(::HLC),
                         historyRecord
                     )?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
@@ -160,7 +160,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                     version = lastResponseVersion,
                     reason = when {
                         record == null -> HardDelete
-                        record.isDeleted(scanRequest.toVersion?.let { HLC(it) }) -> SoftDelete
+                        record.isDeleted(scanRequest.toVersion?.let(::HLC)) -> SoftDelete
                         else -> NotInRange
                     }
                 )
@@ -175,7 +175,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                 if (record != null) {
                     scanRequest.dataModel.recordToValueWithMeta(
                         scanRequest.select,
-                        scanRequest.toVersion?.let { HLC(it) },
+                        scanRequest.toVersion?.let(::HLC),
                         record
                     )?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
@@ -301,7 +301,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                     } else {
                         scanRequest.dataModel.recordToValueWithMeta(
                             scanRequest.select,
-                            scanRequest.toVersion?.let { HLC(it) },
+                            scanRequest.toVersion?.let(::HLC),
                             record
                         )?.let { valuesWithMeta ->
                             updates += AdditionUpdate(
@@ -346,7 +346,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                 version = lastResponseVersion,
                 reason = when {
                     record == null -> HardDelete
-                    record.isDeleted(scanRequest.toVersion?.let { HLC(it) }) -> SoftDelete
+                    record.isDeleted(scanRequest.toVersion?.let(::HLC)) -> SoftDelete
                     else -> NotInRange
                 }
             )
@@ -358,7 +358,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
             if (record != null) {
                 scanRequest.dataModel.recordToValueWithMeta(
                     scanRequest.select,
-                    scanRequest.toVersion?.let { HLC(it) },
+                    scanRequest.toVersion?.let(::HLC),
                     record
                 )?.let { valuesWithMeta ->
                     updates += AdditionUpdate(

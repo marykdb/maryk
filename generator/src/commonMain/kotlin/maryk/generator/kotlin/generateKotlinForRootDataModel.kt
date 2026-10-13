@@ -32,7 +32,7 @@ fun IsRootDataModel.generateKotlin(
     val importsToAdd = mutableSetOf(
         "maryk.core.models.RootDataModel",
     )
-    val addImport: (String) -> Unit = { importsToAdd.add(it) }
+    val addImport: (String) -> Unit = importsToAdd::add
 
     // Add key definitions if they are not the default UUIDv4 key
     val versionAsKotlin = if (Meta.version != Version(1)) {
@@ -61,25 +61,19 @@ fun IsRootDataModel.generateKotlin(
     }
 
     val reservedIndices = Meta.reservedIndices.let { indexes ->
-        when {
-            indexes.isNullOrEmpty() -> null
-            else -> "reservedIndices = listOf(${indexes.toKotlinUIntList()})"
-        }
+        if (indexes.isNullOrEmpty()) null
+        else "reservedIndices = listOf(${indexes.toKotlinUIntList()})"
     }
     val reservedNames = Meta.reservedNames.let { names ->
-        when {
-            names.isNullOrEmpty() -> null
-            else -> "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }})"
-        }
+        if (names.isNullOrEmpty()) null
+        else "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }})"
     }
     val minimumKeyScanByteRange = Meta.minimumKeyScanByteRange?.let {
         "minimumKeyScanByteRange = ${it}u"
     }
 
     val enumKotlinDefinitions = mutableSetOf<String>()
-    val propertiesKotlin = this.generateKotlin(addImport, generationContext) {
-        enumKotlinDefinitions.add(it)
-    }
+    val propertiesKotlin = generateKotlin(addImport, generationContext, enumKotlinDefinitions::add)
 
     val constructorParameters = arrayOf(
         versionAsKotlin,

@@ -19,7 +19,7 @@ data class SumAggregator<T: Comparable<T>>(
         val value = valueFetcher(request.reference) as T?
 
         if (value != null) {
-            this.summedValue = this.summedValue?.let {
+            summedValue = summedValue?.let {
                 arithmeticDefinition.add(it, value)
             } ?: value
         }

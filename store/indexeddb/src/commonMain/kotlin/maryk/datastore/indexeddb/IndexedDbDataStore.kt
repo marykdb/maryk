@@ -124,7 +124,7 @@ class IndexedDbDataStore private constructor(
         AtomicCapabilities(maxWorkBytes = MAX_ATOMIC_WORK_BYTES.toUInt(), maxScanRows = MAX_ATOMIC_SCAN_ROWS.toUInt()) else null
     override val supportsAtomicRequests: Boolean get() = nativeByteStore is AtomicIndexedDbByteStore
 
-    override val transactionCapabilities = atomicCapabilities?.let { TransactionCapabilities(it) }
+    override val transactionCapabilities = atomicCapabilities?.let(::TransactionCapabilities)
 
     override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
         processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,

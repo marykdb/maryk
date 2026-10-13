@@ -81,7 +81,7 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
         override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Companion>): RootPropRefGraph<*> =
             RootPropRefGraph<IsRootDataModel>(
                 // Protobuf omits an empty repeated field; an empty selection is meaningful.
-                properties = values<List<IsPropRefGraphNode<IsRootDataModel>>?>(1u) ?: emptyList()
+                properties = values<List<IsPropRefGraphNode<IsRootDataModel>>?>(1u).orEmpty()
             )
 
         override val Serializer = object: ObjectDataModelSerializer<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(this) {

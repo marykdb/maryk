@@ -14,8 +14,8 @@ data class MinAggregator<T: Comparable<T>>(
         val value = valueFetcher(request.reference) as T?
 
         if (value != null) {
-            this.minValue = this.minValue?.let {
-                minOf(value, minValue!!)
+            minValue = minValue?.let {
+                minOf(value, it)
             } ?: value
         }
     }

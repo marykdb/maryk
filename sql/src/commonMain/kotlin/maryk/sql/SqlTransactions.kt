@@ -54,7 +54,7 @@ class SqlTransaction internal constructor(val transaction: Transaction, private 
     suspend fun query(statement: String, parameters: List<SqlValue> = emptyList(), readOptions: SqlReadOptions = SqlReadOptions()): SqlResult =
         lock.withLock { active(); sql.query(statement, parameters, readOptions) }
     internal suspend fun prepare(statement: String, parameters: List<SqlValue>, parsed: SqlMutation? = null) =
-        SqlAtomicWriter(sql).prepare(transaction.id, listOf(SqlWriteStatement(statement, parameters)), transactional = true, syntax = parsed?.let { listOf(it) })
+        SqlAtomicWriter(sql).prepare(transaction.id, listOf(SqlWriteStatement(statement, parameters)), transactional = true, syntax = parsed?.let(::listOf))
     suspend fun execute(statement: String, parameters: List<SqlValue> = emptyList()): SqlAtomicWriteResult = lock.withLock { active(); prepare(statement, parameters).execute() }
     suspend fun savepoint(): TransactionSavepoint = lock.withLock { transaction.savepoint() }
     suspend fun rollbackTo(savepoint: TransactionSavepoint) = lock.withLock { transaction.rollbackTo(savepoint) }

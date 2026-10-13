@@ -11,24 +11,18 @@ fun DataModel<*>.generateKotlin(
     val importsToAdd = mutableSetOf(
         "maryk.core.models.DataModel",
     )
-    val addImport: (String) -> Unit = { importsToAdd.add(it) }
+    val addImport: (String) -> Unit = importsToAdd::add
 
     val enumKotlinDefinitions = mutableSetOf<String>()
-    val propertiesKotlin = generateKotlin(addImport, generationContext) {
-        enumKotlinDefinitions.add(it)
-    }
+    val propertiesKotlin = generateKotlin(addImport, generationContext, enumKotlinDefinitions::add)
 
     val reservedIndices = Meta.reservedIndices.let { indexes ->
-        when {
-            indexes.isNullOrEmpty() -> null
-            else -> "reservedIndices = listOf(${indexes.toKotlinUIntList()}),"
-        }
+        if (indexes.isNullOrEmpty()) null
+        else "reservedIndices = listOf(${indexes.toKotlinUIntList()}),"
     }
     val reservedNames = Meta.reservedNames.let { names ->
-        when {
-            names.isNullOrEmpty() -> null
-            else -> "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }}),"
-        }
+        if (names.isNullOrEmpty()) null
+        else "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }}),"
     }
 
     val constructorParameters = arrayOf(reservedIndices, reservedNames)

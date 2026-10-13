@@ -63,7 +63,7 @@ internal class FoundationDBMigrationAuditLogStore(
             ?.mapNotNull(MigrationAuditEvent::fromPersistedLine)
             ?.toList()
             ?.takeLast(limit.coerceAtLeast(0))
-            ?: emptyList()
+            .orEmpty()
     }
 
     private fun writeStoredBytes(tr: Transaction, modelPrefix: ByteArray, key: ByteArray, bytes: ByteArray) {

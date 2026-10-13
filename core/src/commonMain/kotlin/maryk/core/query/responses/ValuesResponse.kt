@@ -61,7 +61,7 @@ data class ValuesResponse<DM : IsRootDataModel>(
         override fun invoke(values: ObjectValues<ValuesResponse<*>, Companion>) = ValuesResponse(
             dataModel = values(1u),
             // Protobuf omits an empty repeated field.
-            values = values<List<ValuesWithMetaData<IsRootDataModel>>?>(2u) ?: emptyList(),
+            values = values<List<ValuesWithMetaData<IsRootDataModel>>?>(2u).orEmpty(),
             aggregations = values(3u),
             nextCursor = values(4u),
             dataFetchType = values(dataFetchType.index),

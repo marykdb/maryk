@@ -38,8 +38,8 @@ open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference
             referenceProperty.capture(context, item.reference)
 
             writer.writeStartObject()
-            for (propertyWrapper in this.containedDataModel) {
-                if (propertyWrapper != this.referenceProperty) {
+            for (propertyWrapper in containedDataModel) {
+                if (propertyWrapper != referenceProperty) {
                     writer.writeField(item, propertyWrapper, context)
                 }
             }
@@ -81,9 +81,9 @@ open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference
 
                     val valueMap = MutableValueItems()
 
-                    valueMap[this.referenceProperty.index] =
-                        this.referenceProperty.definition.fromString(value, context).also {
-                            this.referenceProperty.capture(context, it)
+                    valueMap[referenceProperty.index] =
+                        referenceProperty.definition.fromString(value, context).also {
+                            referenceProperty.capture(context, it)
                         }
 
                     reader.nextToken()
@@ -94,10 +94,10 @@ open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference
                         }
                         reader.nextToken()
 
-                        this.containedDataModel.Serializer.walkJsonToRead(reader, valueMap, context)
+                        containedDataModel.Serializer.walkJsonToRead(reader, valueMap, context)
                     }
 
-                    val dataObjectMap = ObjectValues(this.containedDataModel, valueMap, context)
+                    val dataObjectMap = ObjectValues(containedDataModel, valueMap, context)
                     items.add(
                         dataObjectMap.toDataObject()
                     )

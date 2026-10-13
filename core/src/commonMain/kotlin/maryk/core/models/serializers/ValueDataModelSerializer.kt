@@ -68,7 +68,7 @@ open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO
             throw ParseException("Expected $byteSize bytes for ${model.Meta.name}, got ${b.size}")
         }
         var index = 0
-        return this.readFromBytes {
+        return readFromBytes {
             b[index++]
         }
     }

@@ -115,7 +115,7 @@ internal fun FoundationDBDataStore.migrationMetricsInternal(modelId: UInt): Migr
 internal fun FoundationDBDataStore.migrationMetricsInternal(): Map<UInt, MigrationMetrics> = migrationMetricsByModelId.value
 
 internal suspend fun FoundationDBDataStore.migrationAuditEventsInternal(modelId: UInt, limit: Int): List<MigrationAuditEvent> =
-    migrationAuditLogStore?.read(modelId, limit) ?: emptyList()
+    migrationAuditLogStore?.read(modelId, limit).orEmpty()
 
 internal suspend fun FoundationDBDataStore.awaitMigrationInternal(modelId: UInt) {
     pendingMigrationWaiters.value[modelId]?.await()

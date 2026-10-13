@@ -25,7 +25,7 @@ data class AddResponse<DM : IsRootDataModel>(
 
         override fun invoke(values: SimpleObjectValues<AddResponse<*>>) = AddResponse(
             dataModel = values(1u),
-            statuses = values<List<TypedValue<TypeEnum<IsAddResponseStatus<IsRootDataModel>>, IsAddResponseStatus<IsRootDataModel>>>?>(2u)?.map { it.value } ?: emptyList()
+            statuses = values<List<TypedValue<TypeEnum<IsAddResponseStatus<IsRootDataModel>>, IsAddResponseStatus<IsRootDataModel>>>?>(2u)?.map { it.value }.orEmpty()
         )
     }
 }

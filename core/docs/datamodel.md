@@ -40,6 +40,14 @@ Person.validate(johnSmith)
 val key = Person.key(johnSmith)
 ```
 
+`create { ... }` and `Values.copy { ... }` use a nested collector per execution
+thread on JVM, Android and Native. Builders on different threads cannot write into
+each other's values. Nested builders keep their own default policy, and exceptions
+restore the parent collector. The builder block is synchronous; finish it before
+passing its result to another thread. JS and Wasm use their single-threaded context.
+This protects value construction; it does not make a mutable result or datastore
+write atomic.
+
 ## Basic DataModels
 
 Basic DataModels form the foundation for defining data structures. DataModels consist of properties and can be

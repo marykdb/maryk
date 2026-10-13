@@ -3,9 +3,31 @@ package maryk.core.models
 import maryk.core.values.div
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.expect
 
 class ValuesDslTest {
+    @Test
+    fun nestedFailureRestoresOuterFrameAndDefaults() {
+        val outer = TestMarykModel.create(setDefaults = false) {
+            string with "haha-outer"
+            assertFailsWith<IllegalStateException> {
+                TestMarykModel.create {
+                    string with "haha-inner"
+                    error("Abort inner builder")
+                }
+            }
+            uint with 3u
+        }
+        assertEquals("haha-outer", outer { string })
+        assertEquals(3u, outer { uint })
+        assertNull(outer.values[TestMarykModel.enum.index])
+        assertNull(ValuesCollectorContext.currentItems())
+        assertEquals(true, ValuesCollectorContext.currentSetDefaults())
+    }
+
     @Test
     fun buildValuesWithDsl() {
         val v = TestMarykModel.create {

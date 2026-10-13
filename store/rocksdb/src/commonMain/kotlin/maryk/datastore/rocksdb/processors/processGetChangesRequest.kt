@@ -103,6 +103,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetChangesRequest(
                                     key = key,
                                     readOptions = defaultReadOptions,
                                     fromVersion = getRequest.fromVersion,
+                                    toVersion = getRequest.toVersion,
+                                    maxVersions = getRequest.maxVersions,
                                     objectChange = objectChange
                                 )
                             } else {
@@ -129,4 +131,4 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetChangesRequest(
 }
 
 private fun GetChangesRequest<*>.needsSoftDeleteFallback() =
-    toVersion == null && (maxVersions > 1u || !filterSoftDeleted)
+    toVersion != null || maxVersions > 1u || !filterSoftDeleted

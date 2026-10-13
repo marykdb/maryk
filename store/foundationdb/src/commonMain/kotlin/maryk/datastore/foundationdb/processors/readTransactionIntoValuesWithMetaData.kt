@@ -237,6 +237,11 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         )
     }
 
+    // Reconcile legacy current-only transitions after reading older historic values.
+    if (toVersion != null) {
+        isDeleted = isSoftDeleted(tr, tableDirs, toVersion, key.bytes, decryptValue = decryptValue)
+    }
+
     // The existence marker, rather than the presence of property values, identifies the row.
 
     return ValuesWithMetaData(

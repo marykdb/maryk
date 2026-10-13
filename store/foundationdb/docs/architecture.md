@@ -112,6 +112,15 @@ Some representative helpers used across processors:
 - Index/unique writers and historic value writers.
 - Zero‑free qualifier encoding: `encodeZeroFreeUsing01`/`decodeZeroFreeUsing01` ensure qualifiers in historic keys contain no 0x00 bytes. A single 0x00 separator is placed between the encoded qualifier and the inverted version bytes for unambiguous split and ordering; forward scans then yield latest‑first entries efficiently.
 
+Legacy stores can retain a current soft-delete marker without its matching
+historic row. A current marker at or before the requested snapshot determines
+the deletion state, even when an older historic marker exists. Later markers
+cannot affect earlier snapshots. Historic values reconcile this state after
+decoding, so projections and soft-delete filters agree. Change readers merge
+only in-bound transitions and keep their soft-delete `maxVersions` limit;
+finite history uses the exact event version and can recover a restoration even
+when filtering deleted records.
+
 ## Request Flow (Example)
 
 ### Add

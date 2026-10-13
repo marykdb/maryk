@@ -20,13 +20,15 @@ internal fun <DM : IsRootDataModel> addSoftDeleteChangeIfMissing(
     readOptions: ReadOptions,
     key: Key<DM>,
     fromVersion: ULong,
+    toVersion: ULong?,
+    maxVersions: UInt,
     objectChange: DataObjectVersionedChange<DM>?,
     sortingKey: ByteArray? = null
 ): DataObjectVersionedChange<DM>? {
-    val hasSoftDelete = objectChange?.changes?.any { versioned ->
-        versioned.changes.any { it is ObjectSoftDeleteChange }
-    } == true
-    if (hasSoftDelete) return objectChange
+    // An exact revision already containing its transition needs no legacy lookup.
+    if (toVersion == fromVersion && objectChange?.changes?.any { versioned ->
+            versioned.version == fromVersion && versioned.changes.any { it is ObjectSoftDeleteChange }
+        } == true) return objectChange
 
     val softDeleteQualifier = key.bytes + SOFT_DELETE_INDICATOR
     val valueLength = dbAccessor.get(columnFamilies.table, readOptions, softDeleteQualifier, recyclableByteArray)
@@ -38,7 +40,9 @@ internal fun <DM : IsRootDataModel> addSoftDeleteChangeIfMissing(
         recyclableByteArray
     }
     val version = value.readVersionBytes()
-    if (version < fromVersion) return objectChange
+    // A legacy current marker belongs only to its own version window.
+    // In finite history, the window is the single indexed revision.
+    if (version < fromVersion || (toVersion != null && version > toVersion)) return objectChange
 
     val isDeleted = value[valueLength - 1] == TRUE
     val updatedChanges = addChangeVersion(
@@ -46,10 +50,24 @@ internal fun <DM : IsRootDataModel> addSoftDeleteChangeIfMissing(
         version = version,
         change = ObjectSoftDeleteChange(isDeleted)
     )
+    val retainedSoftDeleteVersions = updatedChanges.asReversed()
+        .filter { versioned -> versioned.changes.any { it is ObjectSoftDeleteChange } }
+        .take(maxVersions.coerceAtMost(Int.MAX_VALUE.toUInt()).toInt())
+        .mapTo(mutableSetOf()) { it.version }
+    val limitedChanges = updatedChanges.mapNotNull { versioned ->
+        if (versioned.version in retainedSoftDeleteVersions) versioned else {
+            val remaining = versioned.changes.filterNot { it is ObjectSoftDeleteChange }
+            when {
+                remaining.isEmpty() -> null
+                remaining.size == versioned.changes.size -> versioned
+                else -> versioned.copy(changes = remaining)
+            }
+        }
+    }
     return DataObjectVersionedChange(
         key = key,
         sortingKey = objectChange?.sortingKey ?: sortingKey?.let(::Bytes),
-        changes = updatedChanges
+        changes = limitedChanges
     )
 }
 

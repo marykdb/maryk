@@ -90,6 +90,20 @@ Common read helpers:
 - `DBAccessorStoreValuesGetter` decodes values on demand and can capture the highest seen version while reading.
 - `getValue()` selects latest versus historic storage based on `toVersion`.
 
+Older stores can have a current soft-delete marker without its historic row.
+The change-reader fallback uses that marker only when its timestamp lies within
+the inclusive requested version window. Finite update history narrows this window
+to the single indexed revision, so a later deletion or restoration cannot consume
+an older revision's page limit or become its continuation boundary.
+
+For snapshot state and filters, a current marker whose timestamp is at or before
+the requested snapshot overrides an older historic marker. This applies to both
+deletion and restoration; a later marker cannot change an earlier snapshot.
+Change readers merge a recovered current transition with existing history and
+retain at most `maxVersions` soft-delete transitions, independently of other
+properties. Active-record history still includes a restoration transition when
+its historic row is missing.
+
 ## Transactions and Concurrency
 
 The store opens RocksDB as an `OptimisticTransactionDB`. Maryk keeps a small `Transaction` adapter around the native RocksDB transaction API so processors can use the same request-local access pattern while commits are handled by RocksDB atomically.

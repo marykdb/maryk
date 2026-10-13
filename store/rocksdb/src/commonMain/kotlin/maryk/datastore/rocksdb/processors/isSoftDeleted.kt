@@ -1,13 +1,13 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.datastore.rocksdb.DBAccessor
+import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.rocksDBNotFound
 
 /** Check if Object is soft deleted */
 internal fun isSoftDeleted(
@@ -24,7 +24,17 @@ internal fun isSoftDeleted(
     key.copyInto(softDeleteQualifier, 0, keyOffset, keyOffset + keyLength)
     softDeleteQualifier[keyLength] = SOFT_DELETE_INDICATOR
 
-    val historicValue = dbAccessor.getValue(
+    // The latest marker is authoritative once its own version fits the snapshot,
+    // even if a legacy store has an older historic marker or no matching row.
+    if (toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
+        val value = recyclableByteArray
+        val length = dbAccessor.get(columnFamilies.table, readOptions, softDeleteQualifier, value)
+        if (length == ULong.SIZE_BYTES + 1 && value.readVersionBytes() <= toVersion) {
+            return value[length - 1] == TRUE
+        }
+    }
+
+    return dbAccessor.getValue(
         columnFamilies,
         readOptions,
         toVersion,
@@ -33,16 +43,5 @@ internal fun isSoftDeleted(
     ) { b, o, l ->
         if (l != 1) return@getValue false
         b[l + o - 1] == TRUE
-    }
-    if (historicValue != null || toVersion == null) {
-        return historicValue == true
-    }
-
-    val valueBytes = recyclableByteArray
-    val length = dbAccessor.get(columnFamilies.table, readOptions, softDeleteQualifier, valueBytes)
-    if (length == rocksDBNotFound || length != ULong.SIZE_BYTES + 1) return false
-
-    val version = valueBytes.readVersionBytes()
-    val deleted = valueBytes[length - 1] == TRUE
-    return deleted && version <= toVersion
+    } == true
 }

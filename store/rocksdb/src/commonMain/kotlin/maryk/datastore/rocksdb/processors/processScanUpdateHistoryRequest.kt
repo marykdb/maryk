@@ -199,18 +199,16 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
                 sortingKey = null,
                 cachedRead = cacheReader
             )
-            val updatedObjectChange = if (!scanRequest.filterSoftDeleted) {
-                addSoftDeleteChangeIfMissing(
-                    dbAccessor = dbAccessor,
-                    columnFamilies = historicColumnFamilies,
-                    readOptions = defaultReadOptions,
-                    key = key,
-                    fromVersion = version,
-                    objectChange = objectChange
-                )
-            } else {
-                objectChange
-            }
+            val updatedObjectChange = addSoftDeleteChangeIfMissing(
+                dbAccessor = dbAccessor,
+                columnFamilies = historicColumnFamilies,
+                readOptions = defaultReadOptions,
+                key = key,
+                fromVersion = version,
+                toVersion = version,
+                maxVersions = 1u,
+                objectChange = objectChange
+            )
             updatedObjectChange?.changes?.forEach { versionedChange ->
                 val changes = versionedChange.changes
                 if (changes.contains(ObjectCreate)) {

@@ -30,7 +30,11 @@ scan behavior, and versioning consistency.
 Add generic behavior here when every store should pass it. Add engine-specific tests in the engine module when behavior depends on RocksDB, FoundationDB or native platform details.
 
 `CareQueryRegressionCases` holds the shared scan and history regressions;
-backend test classes supply isolated stores and execute those cases. Keep
-regressions with the implementation commit that fixes them. Native RocksDB
+backend test classes supply isolated stores and execute those cases.
+`HistoryBoundsRegressionCases` exercises native revision limits, soft-delete and
+restoration windows, projections, tied cursors with writes between pages, key
+reuse, ordered durable transaction revisions, complete atomic revision payloads,
+filtering before limits, rollback and savepoint history across every engine and Remote.
+Keep regressions with the implementation commit that fixes them. Native RocksDB
 iterator-loop regressions also use an iterator budget because a coroutine
 timeout cannot interrupt a runnable native scanner.

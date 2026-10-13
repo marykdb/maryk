@@ -145,19 +145,15 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     cachedRead = cacheReader,
                     decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                 )
-                val updatedObjectChange = if (!scanRequest.filterSoftDeleted) {
-                    addSoftDeleteChangeIfMissing(
-                        tr = tr,
-                        tableDirs = tableDirs,
-                        key = key,
-                        fromVersion = version,
-                        objectChange = objectChange,
-                        toVersion = version,
-                        maxVersions = 1u,
-                    )
-                } else {
-                    objectChange
-                }
+                val updatedObjectChange = addSoftDeleteChangeIfMissing(
+                    tr = tr,
+                    tableDirs = tableDirs,
+                    key = key,
+                    fromVersion = version,
+                    objectChange = objectChange,
+                    toVersion = version,
+                    maxVersions = 1u,
+                )
                 updatedObjectChange?.changes?.forEach { versionedChange ->
                     val changes = versionedChange.changes
                     if (changes.contains(ObjectCreate)) {

@@ -109,4 +109,4 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
 }
 
 private fun GetChangesRequest<*>.needsSoftDeleteFallback() =
-    maxVersions > 1u || !filterSoftDeleted
+    toVersion != null || maxVersions > 1u || !filterSoftDeleted

@@ -229,6 +229,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                         readOptions = defaultReadOptions,
                         key = key,
                         fromVersion = scanRequest.fromVersion,
+                        toVersion = scanRequest.toVersion,
+                        maxVersions = scanRequest.maxVersions,
                         objectChange = objectChange,
                         sortingKey = sortingKey
                     )
@@ -559,6 +561,8 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                                 readOptions = defaultReadOptions,
                                 key = key,
                                 fromVersion = scanRequest.fromVersion,
+                                toVersion = scanRequest.toVersion,
+                                maxVersions = scanRequest.maxVersions,
                                 objectChange = objectChange
                             )
                         } else {
@@ -694,4 +698,4 @@ private fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
     order == null && startKey == null && includeStart && fromVersion == 0uL && toVersion == null && maxVersions == 1u
 
 private fun ScanUpdatesRequest<*>.needsSoftDeleteFallback() =
-    toVersion == null && (maxVersions > 1u || !filterSoftDeleted)
+    toVersion != null || maxVersions > 1u || !filterSoftDeleted

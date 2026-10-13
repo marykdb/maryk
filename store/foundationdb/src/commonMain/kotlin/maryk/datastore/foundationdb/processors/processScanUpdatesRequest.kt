@@ -591,7 +591,7 @@ private fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
     order == null && startKey == null && includeStart && fromVersion == 0uL && toVersion == null && maxVersions == 1u
 
 private fun ScanUpdatesRequest<*>.needsSoftDeleteFallback() =
-    maxVersions > 1u || !filterSoftDeleted
+    toVersion != null || maxVersions > 1u || !filterSoftDeleted
 
 private fun <DM : IsRootDataModel> ValuesWithMetaData<DM>.withSoftDeleteState(
     tr: Transaction,

@@ -386,9 +386,10 @@ class RequestExecutionTest {
                         store.activationStarted.await()
 
                         collector.cancel()
+                        // Keep activation suspended until cancellation has requested pending-listener cleanup.
+                        withTimeout(2.seconds) { store.cleanupAfterActivation.await() }
                         store.releaseActivation.complete(Unit)
-                        collector.join()
-                        store.cleanupAfterActivation.await()
+                        withTimeout(2.seconds) { collector.join() }
                     }
                 } finally {
                     store.releaseInitialRead.complete(Unit)
@@ -488,7 +489,8 @@ private class FlowRegistrationTestStore : AbstractDataStore(
 
     override fun startFlows() {
         super.startFlows()
-        launch {
+        // Subscribe before requests can emit the cleanup action; SharedFlow does not replay it.
+        launch(start = CoroutineStart.UNDISPATCHED) {
             updateSharedFlow.collect { action ->
                 if (action is RemovePendingUpdateListenerAction && action.listener.activatedListener.value != null) {
                     cleanupAfterActivation.complete(Unit)

@@ -76,21 +76,31 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
 
-      - name: Cache Kotlin Konan
+      - name: Detect Kotlin version
+        shell: bash
+        run: |
+          KOTLIN_VERSION=$(awk -F '"' '/^[[:space:]]*kotlin[[:space:]]*=/ { print $2; exit }' gradle/libs.versions.toml)
+          test -n "$KOTLIN_VERSION"
+          echo "KOTLIN_VERSION=$KOTLIN_VERSION" >> "$GITHUB_ENV"
+
+      - name: Cache Kotlin/Native dependencies
         id: cache-kotlin-konan
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            ~/.konan/**/*
-          key: kotlin-konan-${{ runner.os }}
+            ~/.konan/dependencies/cache/**
+            ~/.konan/kotlin-native-prebuilt-*
+          key: konan-deps-${{ runner.os }}-${{ runner.arch }}-${{ env.KOTLIN_VERSION }}
+          restore-keys: |
+            konan-deps-${{ runner.os }}-${{ runner.arch }}
 
       - uses: gradle/actions/setup-gradle@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
         with:
           gradle-home-cache-cleanup: true
 
-      - name: Build the project
-        # Maven Central _really_ doesn't like parallel uploads, so disable parallelization
-        run: ./gradlew publish --dependency-verification=strict --no-configuration-cache --no-parallel
+      - name: Publish Maven artifacts
+        # Snapshot uploads are capped at three; releases stage for one aggregate upload.
+        run: ./gradlew publish --dependency-verification=strict --no-configuration-cache --parallel
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVENCENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVENCENTRAL_PASSWORD }}

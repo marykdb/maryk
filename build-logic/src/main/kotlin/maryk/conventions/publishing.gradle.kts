@@ -1,6 +1,7 @@
 package maryk.conventions
 
 import com.vanniktech.maven.publish.Checksum
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 
 plugins {
     id("com.vanniktech.maven.publish")
@@ -9,11 +10,31 @@ plugins {
 mavenPublishing {
     publishToMavenCentral()
 
-    // Keep Central uploads small by omitting redundant checksum files.
+    // Keep Central release bundles small by omitting redundant checksum files.
     checksums(Checksum.MD5, Checksum.SHA1)
     excludeSignatureChecksums()
 
-    signAllPublications()
+    // Central only requires signatures for releases; snapshots avoid extra uploads.
+    if (!project.version.toString().endsWith("-SNAPSHOT")) {
+        signAllPublications()
+    }
+}
+
+// Bound direct snapshot uploads across modules. Releases stage locally in
+// parallel before the publishing plugin uploads a single aggregated bundle.
+if (project.version.toString().endsWith("-SNAPSHOT")) {
+    val uploadService = gradle.sharedServices.registerIfAbsent(
+        "marykSnapshotMavenUpload",
+        MavenUploadService::class.java,
+    ) {
+        maxParallelUsages.set(3)
+    }
+
+    tasks.withType<PublishToMavenRepository>().configureEach {
+        if (name.endsWith("ToMavenCentralRepository")) {
+            usesService(uploadService)
+        }
+    }
 }
 
 mavenPublishing {

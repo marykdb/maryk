@@ -333,6 +333,12 @@ When applied, it will deliver an [`ValuesResponse`](../src/commonMain/kotlin/mar
 with a list of [`ValuesWithMetaData`](../src/commonMain/kotlin/maryk/core/query/ValuesWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion`, and `isDeleted`.
 
+An inclusive range bound on a composite-index part includes matching records
+with later index parts. Later predicates are checked on their actual parts rather
+than appended to the range boundary. This also preserves strict string comparisons:
+`GreaterThan("Jan")` includes `"Janne"`, while `LessThanEquals("Jan")` excludes it.
+These rules apply in either direction and to retained historical index reads.
+
 For pagination, pass `response.nextCursor` unchanged into the next scan. The opaque,
 versioned cursor stores both the primary key and the effective ordering boundary, so
 index pagination does not need to re-read the boundary record. It is bound to the

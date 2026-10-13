@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.processors.datastore.matchers.convertFilterToIndexPartsToMatch
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.filters.IsFilter
+import maryk.lib.extensions.compare.nextByteInSameLength
 
 /** Create a scan range with [filter] and [keyScanRange] */
 fun IsIndexable.createScanRange(filter: IsFilter?, keyScanRange: KeyScanRanges, startIndexKey: ByteArray? = null): IndexableScanRanges {
@@ -37,6 +38,7 @@ private fun createScanRangeFromParts(
     var endShouldContinue = true
 
     var keyIndex = -1
+    var rangePartIndex: Int? = null
 
     var startInclusive = true
     var endInclusive = true
@@ -47,6 +49,9 @@ private fun createScanRangeFromParts(
     val toRemove = mutableListOf<IsIndexPartialToMatch>()
 
     for (keyPart in listOfParts) {
+        // A range part ends the contiguous prefix. Later index fields remain
+        // residual predicates; the opposite bound may still use this same part.
+        if (rangePartIndex?.let { keyPart.indexableIndex > it } == true) break
         if (keyIndex + 1 == keyPart.indexableIndex) {
             keyIndex++ // continue to next indexable
         } else if (keyIndex != keyPart.indexableIndex) {
@@ -98,17 +103,32 @@ private fun createScanRangeFromParts(
                 }
             }
             is IndexPartialToBeBigger -> {
+                rangePartIndex = keyPart.indexableIndex
                 if (startShouldContinue) {
                     keyPart.toBeSmaller.forEach { addByte(start, it) }
-                    startInclusive = keyPart.inclusive
-                    toRemove += keyPart
+                    // Start at the prefix itself, then enforce strictness on the
+                    // actual part. Advancing a string prefix would skip longer values.
+                    startInclusive = true
+                    startShouldContinue = false
                 }
             }
             is IndexPartialToBeSmaller -> {
+                rangePartIndex = keyPart.indexableIndex
                 if (endShouldContinue) {
                     keyPart.toBeBigger.forEach { addByte(end, it) }
                     endInclusive = keyPart.inclusive
-                    toRemove += keyPart
+                    endShouldContinue = false
+                    if (keyPart.inclusive) {
+                        // Include all trailing index fields at this boundary.
+                        // The residual matcher rejects longer variable-size values.
+                        end.forEach { bytes ->
+                            val bound = bytes.toByteArray()
+                            val successor = bound.nextByteInSameLength()
+                            bytes.clear()
+                            if (successor !== bound) bytes.addAll(successor.toList())
+                        }
+                        endInclusive = false
+                    }
                 }
             }
             is IndexPartialToBeOneOf -> {
@@ -141,6 +161,18 @@ private fun createScanRangeFromParts(
                 // Partial sizes are not used for scan range creation
             }
         }
+    }
+
+    // A lower bound alone leaves the equality prefix as the upper boundary.
+    // Include its complete suffix, rather than comparing the prefix to full rows.
+    if (rangePartIndex != null && endShouldContinue && end.any { it.isNotEmpty() }) {
+        end.forEach { bytes ->
+            val bound = bytes.toByteArray()
+            val successor = bound.nextByteInSameLength()
+            bytes.clear()
+            if (successor !== bound) bytes.addAll(successor.toList())
+        }
+        endInclusive = false
     }
 
     listOfParts.apply {

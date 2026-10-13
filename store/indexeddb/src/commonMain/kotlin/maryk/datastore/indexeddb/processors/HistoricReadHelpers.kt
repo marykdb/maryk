@@ -1,6 +1,7 @@
 package maryk.datastore.indexeddb.processors
 
 import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.emptyValues
 import maryk.core.models.key
@@ -16,6 +17,7 @@ import maryk.datastore.indexeddb.createObjectRowKeyPrefix
 import maryk.datastore.indexeddb.decryptSelectedStorageRows
 import maryk.datastore.indexeddb.decodeStorageRowsToValues
 import maryk.datastore.indexeddb.scanInBatches
+import maryk.datastore.indexeddb.decodeRecordMeta
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchesRangePart
 
@@ -56,8 +58,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
 
     for ((rowKey, rowValue) in rows) {
         val version = rowKey.readTrailingVersion()
+        if (version < fromVersion || (toVersion != null && version > toVersion)) continue
         if (rowValue.isUnserializableChangeLogMarker()) {
-            if (version < fromVersion || (toVersion != null && version > toVersion)) continue
             val historicRecord = historicTableStoreName?.let {
                 readHistoricRecord(dataModel, it, keyBytes, version, select, decryptValue)
             }
@@ -73,7 +75,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
             continue
         }
 
-        val decoded = decodeVersionedChange(dataModel, decryptChangePayload(version, rowValue))
+        val decoded = decodeStoredVersionedChange(dataModel, decryptChangePayload(version, rowValue), keyBytes, version)
         for (versionedChanges in decoded.changes) {
             if (versionedChanges.version < fromVersion) continue
             if (toVersion != null && versionedChanges.version > toVersion) continue
@@ -136,18 +138,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readHistoricRecor
     select: RootPropRefGraph<DM>?,
     decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
 ): ValuesWithMetaData<DM>? {
-    val rowKeyPrefix = createObjectRowKeyPrefix(keyBytes)
-    val rows = scan(
-        storeName = storeName,
-        startKey = createHistoricSnapshotRowKey(keyBytes, toVersion),
-        endKey = keyPrefixUpperBound(rowKeyPrefix),
-        includeEnd = false,
-        limit = 1u,
-    ).filter { (rowKey, _) ->
-        rowKey.matchesRangePart(0, rowKeyPrefix, sourceLength = rowKey.size, length = rowKeyPrefix.size)
-    }
-
-    val (_, value) = rows.firstOrNull() ?: return null
+    val value = readHistoricSnapshotBytes(storeName, keyBytes, toVersion) ?: return null
     val (meta, storageRows) = decodeHistoricSnapshot(value)
     val values = decodeStorageRowsToValues(
         dataModel,
@@ -163,6 +154,56 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readHistoricRecor
         lastVersion = meta.lastVersion,
         isDeleted = meta.isDeleted,
     )
+}
+
+/** Resolve a canonical snapshot before any logical read or filter limit. */
+internal suspend fun IndexedDbByteStore.readHistoricSnapshotBytes(
+    storeName: String,
+    keyBytes: ByteArray,
+    toVersion: ULong,
+): ByteArray? {
+    val rowKeyPrefix = createObjectRowKeyPrefix(keyBytes)
+    fun isSnapshotIdentity(rowKey: ByteArray) =
+        rowKey.size == rowKeyPrefix.size + ULong.SIZE_BYTES &&
+            rowKey.matchesRangePart(0, rowKeyPrefix, sourceLength = rowKey.size, length = rowKeyPrefix.size)
+
+    fun checkedSnapshot(rowKey: ByteArray, rowValue: ByteArray): ByteArray {
+        if (rowValue.size < 17) throw StorageException("Invalid IndexedDB historic snapshot metadata")
+        val meta = decodeRecordMeta(rowValue.copyOfRange(0, 17))
+        if (meta.lastVersion != rowKey.readTrailingInvertedVersion() || meta.firstVersion > meta.lastVersion) {
+            throw StorageException("IndexedDB historic snapshot metadata does not match its stored revision")
+        }
+        return rowValue
+    }
+
+    // Keep ordinary point reads at one snapshot; batch only after an invalid identity.
+    val first = scan(
+        storeName = storeName,
+        startKey = createHistoricSnapshotRowKey(keyBytes, toVersion),
+        endKey = keyPrefixUpperBound(rowKeyPrefix),
+        includeEnd = false,
+        limit = 1u,
+    ).firstOrNull() ?: return null
+    if (isSnapshotIdentity(first.first)) return checkedSnapshot(first.first, first.second)
+
+    var snapshot: ByteArray? = null
+    scanInBatches(
+        storeName = storeName,
+        startKey = first.first,
+        includeStart = false,
+        endKey = keyPrefixUpperBound(rowKeyPrefix),
+        includeEnd = false,
+        targetLimit = UInt.MAX_VALUE,
+    ) { rowKey, rowValue ->
+        if (isSnapshotIdentity(rowKey)) {
+            snapshot = checkedSnapshot(rowKey, rowValue)
+            false
+        } else {
+            true
+        }
+    }
+
+    return snapshot
 }
 
 internal suspend fun IndexedDbByteStore.readHistoricUniqueKey(

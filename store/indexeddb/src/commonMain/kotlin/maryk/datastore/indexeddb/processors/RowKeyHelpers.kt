@@ -22,3 +22,7 @@ internal fun createHistoricVersionedRowKey(rowKey: ByteArray, version: ULong): B
 
 internal fun createHistoricCleanupRowKey(keyBytes: ByteArray, historicRowKey: ByteArray): ByteArray =
     combineToByteArray(createObjectRowKeyPrefix(keyBytes), historicRowKey)
+
+/** History identities contain exactly an inverted version and one model key. */
+internal fun ByteArray.isUpdateHistoryRowKey(keyByteSize: Int): Boolean =
+    size == ULong.SIZE_BYTES + keyByteSize

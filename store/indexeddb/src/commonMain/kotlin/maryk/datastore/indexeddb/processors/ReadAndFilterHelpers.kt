@@ -403,17 +403,7 @@ internal suspend fun IndexedDbDataStore.readStorageRows(
 ): List<Pair<ByteArray, ByteArray>>? {
     val modelId = getDataModelId(dataModel)
     if (toVersion != null) {
-        val rowKeyPrefix = createObjectRowKeyPrefix(keyBytes)
-        val rows = byteStore.scan(
-            storeName = "ht:$modelId",
-            startKey = createHistoricSnapshotRowKey(keyBytes, toVersion),
-            endKey = keyPrefixUpperBound(rowKeyPrefix),
-            includeEnd = false,
-            limit = 1u,
-        ).filter { (rowKey, _) ->
-            rowKey.matchesRangePart(0, rowKeyPrefix, sourceLength = rowKey.size, length = rowKeyPrefix.size)
-        }
-        val snapshot = rows.firstOrNull()?.second ?: return null
+        val snapshot = byteStore.readHistoricSnapshotBytes("ht:$modelId", keyBytes, toVersion) ?: return null
         return decodeHistoricSnapshot(snapshot).second
     }
 

@@ -8,7 +8,7 @@ import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexDelete
 import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.IsChange
-import maryk.datastore.indexeddb.processors.decodeVersionedChange
+import maryk.datastore.indexeddb.processors.decodeStoredVersionedChange
 import maryk.datastore.indexeddb.processors.decodeCurrentSnapshotRecord
 import maryk.datastore.indexeddb.processors.encodeVersionedChange
 import maryk.datastore.indexeddb.processors.isUnserializableChangeLogMarker
@@ -111,9 +111,11 @@ private suspend fun decodeChangeJournalPayload(
         )
     }
     val ordinary = readBytes()
-    val changes = decodeVersionedChange(
+    val changes = decodeStoredVersionedChange(
         dataModel,
         sensitiveFields.decryptChangeLogPayloadIfNeeded(modelId, key, version, ordinary),
+        key,
+        version,
     ).changes.single().changes.toMutableList()
     val indexUpdates = buildList {
         repeat(readSize().toInt()) {
@@ -214,14 +216,18 @@ internal suspend fun decodeCommitJournalEntry(
     key: ByteArray,
     value: ByteArray,
 ): Update<out IsRootDataModel>? {
-    require(key.size >= ULong.SIZE_BYTES && value.size >= JournalHeaderSize) {
-        "Invalid IndexedDB commit journal entry"
+    if (key.size != ULong.SIZE_BYTES + UInt.SIZE_BYTES || value.size < JournalHeaderSize) {
+        throw StorageException("Invalid IndexedDB commit journal identity or header")
     }
     val version = value.readBigEndianULong(1 + UInt.SIZE_BYTES)
+    if (version > key.readBigEndianULong()) {
+        throw StorageException("IndexedDB journal event version exceeds its committed clock")
+    }
     val type = value[0]
     val modelId = value.readBigEndianUInt(1)
     val dataModel = dataModelsById[modelId] ?: return null
     val keyEnd = JournalHeaderSize + dataModel.Meta.keyByteSize
+    if (value.size < keyEnd) throw StorageException("Invalid IndexedDB commit journal record key")
     val objectKey = dataModel.key(value.copyOfRange(JournalHeaderSize, keyEnd))
     val payload = value.copyOfRange(keyEnd, value.size)
     return when (type) {

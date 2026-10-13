@@ -66,6 +66,7 @@ import maryk.datastore.indexeddb.processors.processUpdateResponse
 import maryk.datastore.indexeddb.processors.put
 import maryk.datastore.indexeddb.processors.isHardDeleteTombstone
 import maryk.datastore.indexeddb.processors.isUnserializableChangeLogMarker
+import maryk.datastore.indexeddb.processors.isUpdateHistoryRowKey
 import maryk.datastore.indexeddb.processors.readInvertedVersion
 import maryk.datastore.indexeddb.processors.readTrailingVersion
 import maryk.datastore.indexeddb.processors.readTrailingInvertedVersion
@@ -412,7 +413,8 @@ class IndexedDbDataStore private constructor(
             if (byteStore.get("meta", markerKey) != null) continue
 
             byteStore.scanInBatches("uh:$modelId", targetLimit = UInt.MAX_VALUE) { rowKey, rowValue ->
-                if (!rowValue.isHardDeleteTombstone()) return@scanInBatches true
+                if (!rowKey.isUpdateHistoryRowKey(indexedDbModelsById.getValue(modelId).Meta.keyByteSize) ||
+                    !rowValue.isHardDeleteTombstone()) return@scanInBatches true
                 val version = rowKey.readInvertedVersion()
                 val keyBytes = rowKey.copyOfRange(rowKey.size - indexedDbModelsById.getValue(modelId).Meta.keyByteSize, rowKey.size)
                 hardDeleteTombstoneMigrationBeforeWrite?.invoke(modelId, keyBytes, version)
@@ -440,13 +442,13 @@ class IndexedDbDataStore private constructor(
 
             suspend fun migrateRows(
                 storeName: String,
-                identity: (ByteArray) -> Pair<ByteArray, ULong>,
+                identity: (ByteArray) -> Pair<ByteArray, ULong>?,
                 isMarker: (ByteArray) -> Boolean,
             ) {
                 val operations = mutableListOf<IndexedDbWriteOperation>()
                 byteStore.scanInBatches(storeName, targetLimit = UInt.MAX_VALUE) { rowKey, rowValue ->
                     if (!isMarker(rowValue) && !sensitiveFields.isEncryptedChangeLogPayload(rowValue)) {
-                        val (recordKey, version) = identity(rowKey)
+                        val (recordKey, version) = identity(rowKey) ?: return@scanInBatches true
                         operations += IndexedDbWriteOperation.Put(
                             storeName,
                             rowKey,
@@ -496,8 +498,10 @@ class IndexedDbDataStore private constructor(
                     migrateRows(
                         storeName = "uh:$modelId",
                         identity = { rowKey ->
-                            rowKey.copyOfRange(rowKey.size - dataModel.Meta.keyByteSize, rowKey.size) to
-                                rowKey.readInvertedVersion()
+                            if (!rowKey.isUpdateHistoryRowKey(dataModel.Meta.keyByteSize)) null else {
+                                rowKey.copyOfRange(rowKey.size - dataModel.Meta.keyByteSize, rowKey.size) to
+                                    rowKey.readInvertedVersion()
+                            }
                         },
                         isMarker = { it.isUnserializableChangeLogMarker() || it.isHardDeleteTombstone() },
                     )

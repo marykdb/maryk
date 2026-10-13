@@ -1,6 +1,7 @@
 package maryk.datastore.indexeddb.processors
 
 import maryk.core.models.IsRootDataModel
+import maryk.core.exceptions.StorageException
 import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.protobuf.WriteCache
@@ -42,6 +43,20 @@ internal fun <DM : IsRootDataModel> decodeVersionedChange(
     @Suppress("UNCHECKED_CAST")
     return DataObjectVersionedChange.Serializer.readProtoBuf(bytes.size, { bytes[index++] }, requestContext).toDataObject()
         as DataObjectVersionedChange<DM>
+}
+
+/** Stored log rows represent exactly one revision of their key and version. */
+internal fun <DM : IsRootDataModel> decodeStoredVersionedChange(
+    dataModel: DM,
+    bytes: ByteArray,
+    keyBytes: ByteArray,
+    version: ULong,
+): DataObjectVersionedChange<DM> {
+    val decoded = decodeVersionedChange(dataModel, bytes)
+    if (!decoded.key.bytes.contentEquals(keyBytes) || decoded.changes.singleOrNull()?.version != version) {
+        throw StorageException("Stored IndexedDB history payload does not match its record key and version")
+    }
+    return decoded
 }
 
 internal fun requestContextFor(dataModel: IsRootDataModel): RequestContext =

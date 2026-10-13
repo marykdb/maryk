@@ -48,8 +48,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
         includeStart = paging.continuation == null,
         targetLimit = UInt.MAX_VALUE,
     ) { rowKey, rowValue ->
+        if (!rowKey.isUpdateHistoryRowKey(request.dataModel.Meta.keyByteSize)) return@scanInBatches true
         val version = rowKey.readInvertedVersion()
-        if (rowKey.size != 8 + request.dataModel.Meta.keyByteSize) return@scanInBatches true
         val toVersion = paging.toVersion
         if (version < request.fromVersion) return@scanInBatches false
         if (toVersion != null && version > toVersion) return@scanInBatches true
@@ -96,9 +96,11 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
             return@scanInBatches updates.size.toUInt() < paging.scanLimit
         }
 
-        val decoded = decodeVersionedChange(
+        val decoded = decodeStoredVersionedChange(
             request.dataModel,
             sensitiveFields.decryptChangeLogPayloadIfNeeded(modelId, keyBytes, version, rowValue),
+            keyBytes,
+            version,
         )
         val historicRecord = readHistoricRecordDecrypted(byteStore, 
             dataModel = request.dataModel,

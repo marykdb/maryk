@@ -54,9 +54,6 @@ Define the model in Kotlin. Reuse it for validation, serialization, storage, his
 	</Card>
 </CardGrid>
 
-Explore bounded relational queries and writes in the [SQL guide](querying/sql/).
-SQL shares the same models and stores and keeps explicit resource limits.
-
 ## Quick start
 
 1) **Add the dependency**
@@ -90,5 +87,7 @@ val json = Person.Serializer.writeJson(jane, pretty = true)
 Start with [Getting Started](getting-started/), then run the complete [First Store Tutorial](tutorials/first-store/).
 
 Browse the reference sections: [Data Modeling](data-modeling/), [Querying](querying/), [Serialization](serialization/), [Stores](stores/), [CLI](cli/), and [App](app/).
+
+Use Maryk's [typed request API](querying/) as the main API for application reads, writes, history, and sync. The [SQL layer](querying/sql/) is optional, for reporting, ad hoc queries, and tabular integrations. You can use every Maryk store without adding SQL.
 
 Picking storage? See [Stores](stores/) for the overview, or jump straight to [In‑Memory](stores/memory/), [IndexedDB](stores/indexeddb/), [RocksDB](stores/rocksdb/), [FoundationDB](stores/foundationdb/), or [Remote](stores/remote/).

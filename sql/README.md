@@ -2,6 +2,8 @@
 
 Maryk SQL is an optional Kotlin Multiplatform query and mutation layer over Maryk's public datastore requests. Use SQL for reporting, ad hoc queries, and tabular integrations while keeping Maryk models and stores as the source of truth.
 
+For application reads, writes, history, and sync, use Maryk's [typed request API](../core/docs/query.md) as your main API. SQL is not required to use Maryk stores; add the `maryk-sql` dependency only when your application needs SQL.
+
 The parser, binder, expressions, joins, aggregation, and execution live in `commonMain`. There is no embedded SQLite database, JDBC dependency, or duplicate copy of your data to maintain.
 
 ## Reading path

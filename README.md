@@ -10,13 +10,15 @@ Use Maryk when you want:
 - One schema shared by clients, servers, tools, and tests.
 - Stable binary-compatible property indexes instead of reflection-heavy runtime mapping.
 - Version-aware storage: historic reads, change queries, update streams, and efficient sync.
-- Bounded SQL queries and mutations, atomic change sets, and serializable transaction scopes over the same models.
+- Typed queries and mutations, atomic change sets, and serializable transaction scopes over the same models.
 - One request API across in-memory, browser IndexedDB, embedded RocksDB, distributed FoundationDB, and remote stores.
 - Portable JSON, YAML, and ProtoBuf serialization built from the same model definitions.
 
 Maryk is a good fit for local-first apps, cross-platform products, Kotlin-heavy backends, tools that need typed data files, and systems where schema evolution and incremental sync matter.
 
 Start with the [website](https://marykdb.github.io/maryk/) for the best reading path. Source docs live in this repository and the website is maintained in `website/`.
+
+Use the [typed request API](https://marykdb.github.io/maryk/querying/) as your main API for application reads, writes, history, and sync. [SQL](https://marykdb.github.io/maryk/querying/sql/) is an optional layer for reporting, ad hoc queries, and tabular integrations; it is not required to use Maryk stores.
 
 ## Platform Support
 
@@ -91,7 +93,7 @@ See [store/README.md](store/README.md) for the decision guide.
 - [Core](core/README.md) – Data models, property types, keys, queries, versioning, serialization.
 - [Library](lib/README.md) – Shared utilities for things like Strings and ByteArrays.
 - [File](file/README.md) – Minimal cross-platform file IO layer used by tooling and stores.
-- [SQL](sql/README.md) – Portable, bounded SQL queries, atomic change sets, and serializable mutations over Maryk stores.
+- [SQL (optional)](sql/README.md) – Bounded SQL queries and mutations for reporting, ad hoc queries, and tabular integrations.
 - [JSON](json/README.md) & [YAML](yaml/README.md) – Streaming parsers and writers.
 - [Generator](generator/README.md) – Code generation from YAML and JSON models.
 - [Test Library](testlib/README.md) – Testing utilities and helpers.

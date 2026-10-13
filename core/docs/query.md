@@ -2,6 +2,8 @@
 
 Maryk stores support a range of query actions. Requests can run locally or be serialized and sent to a remote store.
 
+Use Maryk's typed request API as the main API for application reads, writes, history, and sync. Start with the requests in this guide. SQL is an optional layer for reporting, ad hoc queries, and tabular integrations; it is not required to use Maryk stores.
+
 ## Mental model
 
 A Maryk query is a typed request object created from a `RootDataModel`.

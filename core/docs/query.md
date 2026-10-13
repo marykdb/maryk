@@ -678,7 +678,7 @@ read keys and cumulative returned read rows are capped at 100,000 and reported a
 `maxReadKeys` and `maxReadRows`. Individual Scan requests already enforce a
 100,000-row page limit; the transaction also bounds cumulative returned rows.
 Memory bounds copied staging nodes to 100,000; RocksDB and IndexedDB
-bound staging work to 4 MiB. FoundationDB bounds each native attempt to 4 seconds
+bound staging work to 4 MiB. FoundationDB bounds each native attempt to 4.5 seconds
 and 4 MiB, with its 10,000-byte key and 100,000-byte value ceilings. Its native
 transaction exists only for a replay attempt. These limits fail explicitly;
 no transaction is split into multiple commits. Receipts are retained without

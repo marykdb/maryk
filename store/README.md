@@ -80,7 +80,7 @@ Use the Maryk CLI or the Maryk App to connect to a store, scan records, and edit
 - Type: HTTP gateway that exposes any local store (RocksDB/FoundationDB) via Ktor.
 - Strengths: Remote access for tooling and apps without changing Maryk requests; optional SSH tunneling.
 - Why it’s a great fit: Keeps Maryk’s request/response protocol intact while letting clients connect over a network boundary.
-- Typical use cases: Remote CLI/app connections, shared dev stores, server‑side stores accessed by local tooling.
+- Typical use cases: Remote App/programmatic connections, shared dev stores, server‑side stores accessed by local tooling. The CLI serves local stores but does not connect to remote endpoints.
 - Learn more: `store/remote/README.md`.
 
 ## Shared Code

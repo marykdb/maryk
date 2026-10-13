@@ -21,6 +21,10 @@ Design the key carefully: once data is stored its structure cannot change withou
 
 Key structures must have fixed byte lengths so they can be indexed and scanned efficiently.
 
+Properties used in a key must be required and final. Use an immutable creation
+time for time-based keys; an editable timestamp belongs in a secondary index.
+Changing a key property cannot move an existing record to another key.
+
 Key parts must have predictable sizes. Numbers, dates, fixed bytes, references, enums, booleans, multi‑type type IDs and small value objects all qualify. Strings, flexible bytes, collections and embedded models cannot be used because their length varies.
 
 ## The Order of Keys

@@ -43,37 +43,39 @@ val def = ListDefinition(
 ```
 
 ## Operations
-List can be applied with List operations through `ListPropertyChange` to check
-or change their contents. It can be defined with a set with `addValuesToEnd` or 
-a list with `deleteValues`. It can also operate with the value index by
- a map with `addValuesAtIndex` or a list with `deleteAtIndex`. 
-
-The current value can be compared against `valueToCompare`
-
-**Example on a model with a list containing strings.**
+Use `ListChange` with `ListValueChanges` to remove matching values, insert at
+unsigned indexes, or append values. Operations run in that order: removals,
+indexed insertions, then appends. Insertion indexes refer to the list after
+removals and any preceding insertion. Use a separate `Check` to compare the
+complete current list before changing it.
 
 ```kotlin
 ListChange(
     Model.ref { listOfStrings }.change(
-        addValuesToEnd = listOf("three", "four"),
-        deleteValues = listOf("one", "two")
+        deleteValues = listOf("one", "two"),
+        addValuesToEnd = listOf("three", "four")
     )
 )
 ```
 
-**Example with indexed operations on a model with a list containing strings.**
+Indexed insertions use `UInt` indexes:
 
-Kotlin:
 ```kotlin
 ListChange(
     Model.ref { listOfStrings }.change(
         addValuesAtIndex = mapOf(
-            0 to "three", 
-            0 to "four"
-        ),
-        deleteAtIndex = setOf(1, 2)
+            0u to "three",
+            1u to "four"
+        )
     )
 )
+```
+
+For replacement or deletion of one item, use its reference:
+
+```kotlin
+Change(Model.ref { listOfStrings.at(0u) } with "replacement")
+Change(Model.ref { listOfStrings.at(0u) } with null)
 ```
 
 ## Indexing list values

@@ -109,7 +109,10 @@ The tunnel uses the system `ssh` binary with local port forwarding. `localPort` 
 
 ## Inspect local data with the CLI
 
-The CLI can inspect the local store that you are serving:
+The CLI can inspect a local store directly. Stop the server before opening the
+same RocksDB directory: RocksDB allows only one process to hold its store lock.
+For concurrent inspection of a running server, use the App Remote connection or
+a programmatic `RemoteDataStore` client instead.
 
 ```text
 maryk --connect rocksdb --dir ./data --exec "list"

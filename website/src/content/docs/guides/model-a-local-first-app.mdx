@@ -186,7 +186,10 @@ The request code stays the same across Memory, IndexedDB, and RocksDB.
 
 ## Inspect early
 
-Use the CLI for fast checks:
+Use the CLI for fast checks after closing the app's RocksDB connection. A second
+process cannot open the same RocksDB directory while the app holds its lock.
+To inspect a running store, expose it through Remote Store and use the App Remote
+connection or a programmatic client.
 
 ```text
 maryk --connect rocksdb --dir ./data/maryk --exec "list"

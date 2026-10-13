@@ -3,7 +3,10 @@
 Properties can be changed, deleted or checked with property operations.
 
 ## Check property value
-A `Check` compares a property value; subsequent operations run only when the check passes.
+A `Check` compares the complete property value at its position in the change
+request, including changes preceding it. A failed check rolls back that record's
+changes. Empty lists, sets, and maps differ from absent properties; list order
+matters, while sets and maps compare their complete contents.
 
 Check if firstName is `John`
 ```kotlin
@@ -22,6 +25,10 @@ Change(
     Person.ref { lastName } with "Doe"
 )
 ```
+
+A whole list, set, or map can also be replaced with `Change(ref with replacement)`.
+An empty replacement keeps the property present and must satisfy its size
+constraints. Use the member operations below for incremental edits.
 
 ### Deletion
 Set a property to `null` to delete it.

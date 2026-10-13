@@ -17,7 +17,7 @@ Small expect/actual file IO layer used by tooling and stores to read/write local
 
 ## Platforms
 Actual implementations exist for:
-- JVM/Android
+- JVM (Android callers can use the JVM artifact; no dedicated Android target)
 - POSIX native (Linux, macOS, iOS, tvOS, watchOS and Android Native)
 - mingwX64
 

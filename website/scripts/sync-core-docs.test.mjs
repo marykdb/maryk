@@ -161,3 +161,17 @@ test('syncDocs fails when a mapped source has been removed', () => {
     /missing\.md/,
   );
 });
+
+
+test('syncDocs rewrites backup and CLI credential links with their anchors', () => {
+  for (const prefix of ['../../', '../../../']) {
+    assert.equal(
+      rewriteLinks('[Backup](../../store/shared/README.md#point-in-time-backup-and-restore)', prefix),
+      `[Backup](${prefix}stores/shared/#point-in-time-backup-and-restore)`,
+    );
+    assert.equal(
+      rewriteLinks('[CLI](../../cli/docs/commands.md#serve)', prefix),
+      `[CLI](${prefix}cli/commands/#serve)`,
+    );
+  }
+});

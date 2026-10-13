@@ -35,7 +35,6 @@ Maryk is Kotlin Multiplatform. Platform support depends on the module:
 
 These docs describe the current source branch. When using a published artifact,
 read the matching release tag and use the same version for every Maryk module.
-SQL and the explicit atomic/transaction APIs were added after 0.12.1.
 
 Add the core dependency:
 

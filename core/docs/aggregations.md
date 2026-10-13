@@ -98,7 +98,7 @@ val getResponse = dataStore.execute(
 
 ### Min (Minimum)
 
-The **Min** aggregation operator finds the minimum value among all numeric attributes for a specified property. This 
+The **Min** aggregation operator finds the minimum value among all comparable values for a specified property. This
 operator is beneficial when you want to identify the smallest quantity of a given attribute.
 
 **Use case:** Find the earliest registration date of users.
@@ -119,7 +119,7 @@ val getResponse = dataStore.execute(
 
 ### Max (Maximum)
 
-The **Max** aggregation operator identifies the maximum value among all numeric attributes for a specified property. 
+The **Max** aggregation operator identifies the maximum value among all comparable values for a specified property.
 This operator is useful when you want to ascertain the highest quantity of a given attribute.
 
 **Use case:** Find the latest registration date of users.

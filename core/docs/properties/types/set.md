@@ -43,17 +43,20 @@ val def = SetDefinition(
 ```
 
 ## Operations
-Set can be applied with Set operations through `SetPropertyChange` to check
-or change the contents. It can be defined with a set with `addValues` or a set with 
-`deleteValues`. Use a separate `Check` when the current value must be compared before the change.
+Use `SetChange` with `SetValueChanges` to add members. Remove a member with
+`Change` on its `item(value)` reference. Use a separate `Check` when the complete
+current set must be compared before changing it.
 
-Kotlin example on a model with a set containing strings.
 ```kotlin
 SetChange(
     Model.ref { setOfStrings }.change(
-        addValues = setOf("three", "four"),
-        deleteValues = setOf("one", "two")
+        addValues = setOf("three", "four")
     )
+)
+
+Change(
+    Model.ref { setOfStrings.item("one") } with null,
+    Model.ref { setOfStrings.item("two") } with null
 )
 ```
 

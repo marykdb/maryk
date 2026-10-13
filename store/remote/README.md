@@ -98,7 +98,7 @@ store: rocksdb
 dir: ./data
 host: 127.0.0.1
 port: 8210
-bearer-token: replace-with-a-secret
+bearer-token-file: ./maryk-token
 ```
 
 ```text
@@ -111,8 +111,14 @@ Accepted config keys:
 - `cluster` or `clusterFile`: FoundationDB cluster file
 - `host`: bind host (default `127.0.0.1`)
 - `port`: bind port (default `8210`)
-- `bearer-token`: optional bearer credential required by every endpoint
+- `bearer-token-env`: name of an environment variable containing the credential
+- `bearer-token-file`: path to a UTF-8 credential file
+- `bearer-token-stdin`: read the credential from stdin (use a blank value in config)
+- `bearer-token`: literal credential retained for compatibility
 - `allow-insecure-remote-binding`: explicit unsafe opt-in for any non-loopback plaintext bind, including bearer or custom authentication
+
+Choose at most one token source. Prefer environment, file, or stdin to a literal
+command-line token; see the [CLI reference](../../cli/docs/commands.md#serve).
 
 ## Connect as a client
 
@@ -142,8 +148,12 @@ Notes:
 Use it like any other store:
 
 ```kotlin
+import maryk.core.query.responses.statuses.AddSuccess
+
 val add = remote.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "haha" }))
-val get = remote.execute(SimpleMarykModel.get(add.statuses.first().key))
+val status = add.statuses.single() as? AddSuccess<SimpleMarykModel>
+    ?: error("Add failed: ${add.statuses.single()}")
+val get = remote.execute(SimpleMarykModel.get(status.key))
 ```
 
 Stores with managed migrations also expose the shared `MigrationAdmin` API through

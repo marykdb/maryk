@@ -86,7 +86,11 @@ See [`GetUpdates`/`ScanUpdates`](query.md#getscan-updates).
 
 ## Live update flows
 
-For live views, use `executeFlow` with a `Get`, `Scan`, `GetUpdates` or `ScanUpdates` style request supported by the store. The flow first emits the initial state and then emits additions, changes and removals.
+For live views, use `executeFlow` with a `Get`, `Scan`, `GetUpdates` or `ScanUpdates` style request supported by the store. Collection starts the initial read and subscription; merely obtaining the flow does not start either. Each collector owns a separate subscription. Cancelling collection releases its listener (or Remote stream). A historical `toVersion` is not allowed on a live request.
+
+`Get` and `Scan` emit an initial values snapshot followed by additions, changes
+and removals. Update requests emit their requested initial updates before live
+changes; that initial response is not necessarily a complete values snapshot.
 
 ```kotlin
 val updates = store.executeFlow(Person.scan())
@@ -100,14 +104,28 @@ Use this for desktop screens, local caches, and sync loops that should keep runn
 
 ## Sync pattern
 
-A typical sync client stores the latest processed version locally.
+A UI or cache sync client needs a complete initial snapshot and a checkpoint that belongs to
+that snapshot. The highest version on an arbitrary scan page is not a safe
+checkpoint: other pages can contain older records or concurrent writes.
 
-1. Fetch current data with `Scan` or `Get`.
-2. Store the highest returned version.
-3. Later call `ScanUpdates(fromVersion = lastSeenVersion)`.
-4. Apply returned updates.
-5. Persist the highest processed version.
-6. Repeat or switch to `executeFlow` for live updates.
+1. With retained history and snapshot support, call `captureSnapshotVersion()`
+   (from `maryk.datastore.shared`) and use that boundary as
+   `toVersion` for every initial scan page. Follow `nextCursor` until it is absent.
+2. Apply every page before persisting the captured snapshot boundary.
+3. Fetch subsequent chronological updates with `ScanUpdates(fromVersion = checkpoint)`.
+4. Apply complete returned revisions in source-version order. When replaying into
+   a Maryk store, await each target `processUpdate` call before sending the next.
+   Do not treat a record/page limit or
+   a property-history `maxVersions` cap as proof that synchronization is complete.
+5. Persist the checkpoint only after all updates through it have been applied.
+   `fromVersion` is inclusive, so handle the repeated boundary revision on resume.
+6. Use `executeFlow` for ongoing updates and resume from the persisted checkpoint
+   after interruption. Newest-first update-history pages are for browsing history;
+   they are not a chronological replication feed.
+
+For an initial copy into another Maryk store with source versions and complete
+retained history, use the shared
+[backup and restore helpers](../../store/shared/README.md#point-in-time-backup-and-restore).
 
 If the client can miss long periods, keep enough history on the server to cover the expected offline window. If history was compacted or disabled, fall back to a fresh full scan.
 
@@ -149,8 +167,10 @@ For background, see the [Hybrid Logical Clocks paper](https://cse.buffalo.edu/te
   manifest version, so a format change must increment the version and document
   any compatibility reader; it must not silently reinterpret old data.
 - A portable backup contains complete versioned changes, including the
-  soft-delete transition/state at its snapshot. A hard-deleted record remains in
-  a pre-delete snapshot but is absent from a post-delete snapshot. Keep its
+  soft-delete transition/state at its snapshot. Hard deletion can erase earlier
+  history in persistent engines; capturing a version does not preserve erased
+  rows. Coordinate hard deletion with backup creation, or use soft deletion until
+  the backup completes. Keep its
   destination encrypted and access-controlled; writer implementations should
   add integrity checks and publish only after completion.
 - Restore portable backups into an empty disposable store. Restore is streaming,

@@ -92,6 +92,10 @@ export function rewriteLinks(md, prefix) {
       (_match, anchor = '') => withPrefix(`app/${anchor}`));
     out = out.replace(/\((?:\.\.\/)+generator\/README\.md(#[^)]*)?\)/g,
       (_match, anchor = '') => withPrefix(`generator/${anchor}`));
+    out = out.replace(/\((?:\.\.\/)+store\/shared\/README\.md(#[^)]*)?\)/g,
+      (_match, anchor = '') => withPrefix(`stores/shared/${anchor}`));
+    out = out.replace(/\((?:\.\.\/)+cli\/docs\/commands\.md(#[^)]*)?\)/g,
+      (_match, anchor = '') => withPrefix(`cli/commands/${anchor}`));
     const pairs = [
     ['(datamodel.md)', withPrefix('data-modeling/datamodels/')],
     ['(properties/README.md)', withPrefix('data-modeling/properties/')],

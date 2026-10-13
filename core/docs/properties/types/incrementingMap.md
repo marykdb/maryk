@@ -47,9 +47,9 @@ val def = IncrementingMapDefinition(
 ```
 
 ## Operations
-Maps can be applied with Map operations through `IncMapChange` to check
-or change the contents. It can be defined with a map with `valuesToAdd` or a set of 
-`keysToDelete`.
+Use `IncMapChange` with `addValues` to append values under generated keys.
+Use `Change` on an `at(key)` reference to replace or remove an existing entry,
+and a separate `Check` to compare values before changing them.
 
 Example on a model with a map containing integers mapped to strings:
 ```kotlin

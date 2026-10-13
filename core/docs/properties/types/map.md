@@ -49,20 +49,18 @@ val def = MapDefinition(
 ```
 
 ## Operations
-Maps can be applied with Map operations through `MapPropertyChange` to check
-or change the contents. It can be defined with a map with `valuesToAdd` or a set of 
-`keysToDelete`.
+Use `Change` on an `at(key)` reference to add or replace a map entry. Set that
+entry to `null` to remove it. There is no separate `MapChange` request. Use a
+`Check` to compare the complete map or an individual entry before changing it.
 
-Example on a model with a map containing integers mapped to strings:
+For a map with `UInt32` keys and string values:
+
 ```kotlin
-MapChange(
-    Model.ref { mapOfIntToString }.change(
-        valuesToAdd = mapOf(
-            3 to "three",
-            4 to "four"
-        ),
-        keysToDelete = setOf(1, 2)
-    )
+Change(
+    Model.ref { mapOfIntToString.at(3u) } with "three",
+    Model.ref { mapOfIntToString.at(4u) } with "four",
+    Model.ref { mapOfIntToString.at(1u) } with null,
+    Model.ref { mapOfIntToString.at(2u) } with null
 )
 ```
 

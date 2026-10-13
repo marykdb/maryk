@@ -942,6 +942,9 @@
          <artifact name="aapt2-9.4.0-15978811-linux.jar">
             <sha256 value="f5bebd466ecf14d341fd465f2756a16d86052f29eb4532003d5ff7bcffd08de5" origin="Downloaded from Google Maven"/>
          </artifact>
+         <artifact name="aapt2-9.4.0-15978811-osx.jar">
+            <sha256 value="eb93ce9d0fa121333f12395b3ab30822c5cdb9155737f20d342fe71809757059" origin="Downloaded from Google Maven"/>
+         </artifact>
          <artifact name="aapt2-9.4.0-15978811.pom">
             <sha256 value="5d3820b1ddbbc1dae97aab61cce5cbcb81221dec3e0b71f692e86056502baf14" origin="Downloaded from Google Maven"/>
          </artifact>

@@ -5,4 +5,5 @@ private val localFrames = object : ThreadLocal<MutableList<ValuesCollectorFrame>
 }
 
 internal actual val valuesCollectorFrames: MutableList<ValuesCollectorFrame>
-    get() = localFrames.get()
+    // Android annotates get() as nullable; initialValue() always supplies a frame stack.
+    get() = checkNotNull(localFrames.get())

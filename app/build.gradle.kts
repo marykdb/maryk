@@ -44,7 +44,7 @@ val protocPlatform = when {
     System.getProperty("os.name").contains("Windows", ignoreCase = true) -> "windows-x86_64"
     else -> "linux-x86_64"
 }
-val protocForJvmTests by configurations.creating
+val protocForJvmTests = configurations.create("protocForJvmTests")
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
@@ -107,7 +107,7 @@ dependencies {
     add(protocForJvmTests.name, "${libs.protoc.get()}:$protocPlatform@exe")
 }
 
-val prepareProtocForJvmTests by tasks.registering {
+val prepareProtocForJvmTests = tasks.register("prepareProtocForJvmTests") {
     val destination = layout.buildDirectory.file("protoc/protoc.exe")
     inputs.files(protocForJvmTests)
     outputs.file(destination)

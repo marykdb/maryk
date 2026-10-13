@@ -24,6 +24,14 @@ class ValueInTest {
     )
 
     @Test
+    fun collectionAlternativesRoundTrip() {
+        val filter = ValueIn(TestMarykModel.ref { list } with setOf(listOf(1, 2), emptyList()))
+        checkProtoBufConversion(filter, ValueIn, { context })
+        checkJsonConversion(filter, ValueIn, { context })
+        checkYamlConversion(filter, ValueIn, { context })
+    }
+
+    @Test
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.valueIn, ValueIn, { this.context })
     }

@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -22,6 +23,20 @@ class CheckTest {
         ),
         dataModel = TestMarykModel
     )
+
+    @Test
+    fun collectionChecksRoundTrip() {
+        for (check in listOf(
+            Check(TestMarykModel.ref { setOfString } with setOf("first", "second")),
+            Check(TestMarykModel.ref { list } with listOf(1, 2)),
+            Check(TestMarykModel.ref { map } with mapOf(LocalTime(1, 0) to "first", LocalTime(2, 0) to "second")),
+            Check(TestMarykModel.ref { setOfString } with emptySet<String>(), TestMarykModel.ref { list } with emptyList<Int>(), TestMarykModel.ref { map } with emptyMap<LocalTime, String>()),
+        )) {
+            checkProtoBufConversion(check, Check, { context })
+            checkJsonConversion(check, Check, { context })
+            checkYamlConversion(check, Check, { context })
+        }
+    }
 
     @Test
     fun convertToProtoBufAndBack() {

@@ -4,8 +4,8 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.models.ReferenceValuePairDataModel
 import maryk.core.properties.definitions.IsChangeableValueDefinition
-import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.contextual.ContextualPropertyValueDefinition
 import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.wrapper.SetDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -29,10 +29,10 @@ data class ReferenceValueSetPair<T : Any> internal constructor(
         override val value by set(
             index = 2u,
             getter = ReferenceValueSetPair<*>::values,
-            valueDefinition = ContextualValueDefinition(
+            valueDefinition = ContextualPropertyValueDefinition(
                 contextualResolver = { context: RequestContext? ->
                     context?.reference?.let {
-                        it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
+                        it.comparablePropertyDefinition as IsSerializablePropertyDefinition<Any, IsPropertyContext>
                     } ?: throw ContextNotFoundException()
                 }
             )

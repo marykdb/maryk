@@ -10,8 +10,8 @@ import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSetDefinition
-import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.contextual.ContextualPropertyValueDefinition
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
@@ -32,18 +32,18 @@ data class ReferenceValuePair<T : Any> internal constructor(
 
     override fun toString() = "$reference: $value"
 
-    companion object : ReferenceValuePairDataModel<ReferenceValuePair<Any>, Companion, Any, Any, ContextualDefinitionWrapper<Any, Any, RequestContext, ContextualValueDefinition<RequestContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>, ReferenceValuePair<Any>>>() {
+    companion object : ReferenceValuePairDataModel<ReferenceValuePair<Any>, Companion, Any, Any, ContextualDefinitionWrapper<Any, Any, RequestContext, ContextualPropertyValueDefinition<RequestContext, IsPropertyContext, Any>, ReferenceValuePair<Any>>>() {
         override val reference by addReference(
             ReferenceValuePair<*>::reference
         )
         override val value by contextual(
             index = 2u,
             getter = ReferenceValuePair<*>::value,
-            definition = ContextualValueDefinition(
+            definition = ContextualPropertyValueDefinition(
                 contextualResolver = { context: RequestContext? ->
                     context?.reference?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.comparablePropertyDefinition as IsValueDefinition<Any, IsPropertyContext>
+                        it.comparablePropertyDefinition as IsSerializablePropertyDefinition<Any, IsPropertyContext>
                     } ?: throw ContextNotFoundException()
                 }
             )

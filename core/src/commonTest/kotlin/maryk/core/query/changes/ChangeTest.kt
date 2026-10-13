@@ -37,6 +37,26 @@ class ChangeTest {
     )
 
     @Test
+    fun collectionReplacementsRoundTrip() {
+        val changes = listOf(
+            Change(TestMarykModel.ref { set } with setOf(LocalDate(2020, 1, 1), LocalDate(2021, 1, 1))),
+            Change(TestMarykModel.ref { list } with listOf(1, 2, 3)),
+            Change(TestMarykModel.ref { setOfString } with setOf("first", "second")),
+            Change(TestMarykModel.ref { map } with mapOf(LocalTime(1, 0) to "first", LocalTime(2, 0) to "second")),
+            Change(TestMarykModel.ref { set } with emptySet<LocalDate>()),
+            Change(TestMarykModel.ref { list } with emptyList<Int>()),
+            Change(TestMarykModel.ref { setOfString } with emptySet<String>()),
+            Change(TestMarykModel.ref { map } with emptyMap<LocalTime, String>()),
+            Change(TestMarykModel.ref { set } with null, TestMarykModel.ref { list } with null, TestMarykModel.ref { map } with null),
+        )
+        for (change in changes) {
+            checkProtoBufConversion(change, Change, { context })
+            checkJsonConversion(change, Change, { context })
+            checkYamlConversion(change, Change, { context })
+        }
+    }
+
+    @Test
     fun testValueChange() {
         expect(TestMarykModel.ref { string }) {
             valueChange.referenceValuePairs[0].reference as ValueWithFlexBytesPropertyReference<*, *, *, *>

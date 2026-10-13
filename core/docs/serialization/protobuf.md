@@ -47,6 +47,30 @@ val values = User.Serializer.readProtoBuf(byteLength, byteSource::read)
 - Stable property indexes let decoders skip unknown fields safely, enabling forward/backward compatibility. See [Versioning](../versioning.md).
 - Keep indexes stable across versions; add new fields with new indexes instead of renaming/reusing.
 
+### Complete collection values and empty presence
+
+Whole-property reference pairs (`Change`, `Check`, `Equals`, and `ValueIn`
+alternatives) resolve scalar and collection definitions. Collection values use a
+length-delimited envelope containing the property's ordinary entries at tag 1;
+entries accumulate within that envelope. An empty envelope represents an empty
+replacement, while an absent value in a nullable Change pair still means removal.
+Scalar reference-pair encodings retain their existing tags and bytes.
+
+Ordinary model values need separate presence for empty nonpacked collections and
+maps: no ordinary entries would otherwise be indistinguishable from an absent
+property. The model serializer emits a zero-length, length-delimited field at
+`32768 + propertyIndex` for these empty values. Property transport indexes are
+limited to 1..32767, so the marker cannot collide with a supported property tag.
+Packed numeric collections retain their existing empty encoding. Nonempty values
+and storage formats are unchanged; no datastore migration is required.
+
+Maryk-aware readers restore these markers to empty collections and reject malformed
+marker lengths or conflicting earlier values. Older Maryk readers and generated
+Proto3 clients skip the presence marker as an unknown field and still observe an
+absent property. Upgrade both transport endpoints when empty versus absent matters.
+Older scalar-only reference-pair codecs cannot read the new whole-collection
+envelopes; upgrade both endpoints before using these formerly unsupported requests.
+
 ## Reading Without a Compiled Model
 You can read index→value pairs when a compiled model isn’t present, useful for tooling and diagnostics.
 

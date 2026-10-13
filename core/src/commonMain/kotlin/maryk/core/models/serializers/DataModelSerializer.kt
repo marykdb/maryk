@@ -9,6 +9,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -49,6 +50,21 @@ private fun IsDefinitionWrapper<*, *, *, *>.transportIndex(): Int {
     }
     return this.index.toInt()
 }
+
+// Property transport indices are restricted to 1..32767. The upper bit marks
+// presence of an empty collection, without changing ordinary property encodings.
+private const val EMPTY_COLLECTION_TAG_OFFSET = 32768u
+
+private fun IsDefinitionWrapper<*, *, *, *>.needsEmptyCollectionMarker(value: Any): Boolean =
+    when (val property = definition) {
+        is IsMapDefinition<*, *, *> -> (value as? Map<*, *>)?.isEmpty() == true
+        is IsCollectionDefinition<*, *, *, *> -> (value as? Collection<*>)?.isEmpty() == true &&
+            when ((property.valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
+                VAR_INT, BIT_32, BIT_64 -> false
+                else -> true
+            }
+        else -> false
+    }
 
 /** Serializer for DataModels */
 open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO>, CX: IsPropertyContext>(
@@ -261,6 +277,11 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
             return 0 // Skip null value in counting
         }
 
+        if (definition.needsEmptyCollectionMarker(value)) {
+            definition.capture(context, value)
+            return ProtoBuf.calculateKeyLength(definition.transportIndex().toUInt() + EMPTY_COLLECTION_TAG_OFFSET) + 1
+        }
+
         // If it is an Inject it needs to be collected for protobuf since it cannot be encoded inline
         // Except if it is the InjectWithReference object in which it is encoded
         if (value is Inject<*, *> && this.model != InjectWithReference) {
@@ -312,7 +333,10 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
 
         definition.capture(context, value)
 
-        definition.definition.writeTransportBytesWithKey(definition.transportIndex(), value, cacheGetter, writer, context)
+        if (definition.needsEmptyCollectionMarker(value)) {
+            ProtoBuf.writeKey(definition.transportIndex().toUInt() + EMPTY_COLLECTION_TAG_OFFSET, LENGTH_DELIMITED, writer)
+            writer(0)
+        } else definition.definition.writeTransportBytesWithKey(definition.transportIndex(), value, cacheGetter, writer, context)
     }
 
     /**
@@ -399,6 +423,26 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         context: CX?,
         remainingLength: () -> Int
     ) {
+        if (key.tag > EMPTY_COLLECTION_TAG_OFFSET && key.tag < EMPTY_COLLECTION_TAG_OFFSET * 2u) {
+            val index = key.tag - EMPTY_COLLECTION_TAG_OFFSET
+            val wrapper = model[index]
+            val definition = wrapper?.definition
+            if (definition is IsCollectionDefinition<*, *, *, *> || definition is IsMapDefinition<*, *, *>) {
+                if (key.wireType != LENGTH_DELIMITED || readProtoBufValueLength(key, byteReader, remainingLength) != 0) {
+                    throw ParseException("Empty collection marker must be length-delimited with zero length")
+                }
+                if (values[index] != null) throw ParseException("Empty collection marker conflicts with an earlier value")
+                @Suppress("UNCHECKED_CAST")
+                val empty = when (definition) {
+                    is IsCollectionDefinition<*, *, *, *> ->
+                        (definition as IsCollectionDefinition<Any, Collection<Any>, CX, IsSubDefinition<Any, CX>>).newMutableCollection(context)
+                    else -> mutableMapOf<Any, Any>()
+                }
+                values[index] = empty
+                wrapper.capture(context, empty)
+                return
+            }
+        }
         val dataObjectPropertyDefinition = model[key.tag]
         val propertyDefinition = dataObjectPropertyDefinition?.definition
 

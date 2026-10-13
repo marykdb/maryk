@@ -1,5 +1,9 @@
 package maryk.core.values
 
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
+import maryk.lib.exceptions.ParseException
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.models.graph
@@ -12,10 +16,40 @@ import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.expect
 
 class ValuesTest {
+    @Test
+    fun malformedEmptyCollectionPresenceIsRejected() {
+        for ((wireType, payload) in listOf(WireType.VAR_INT to listOf<Byte>(0), WireType.LENGTH_DELIMITED to listOf<Byte>(1, 42))) {
+            val bytes = mutableListOf<Byte>()
+            ProtoBuf.writeKey(32768u + TestMarykModel.setOfString.index, wireType, bytes::add)
+            bytes += payload
+            var index = 0
+            assertFailsWith<ParseException> { TestMarykModel.Serializer.readProtoBuf(bytes.size, { bytes[index++] }) }
+        }
+    }
+
+    @Test
+    fun emptyCollectionsRemainDistinctFromMissingAndEmptyStringItems() {
+        for (values in listOf(
+            TestMarykModel.create(setDefaults = false) {},
+            TestMarykModel.create(setDefaults = false) { setOfString with emptySet(); listOfString with emptyList(); map with emptyMap(); list with emptyList() },
+            TestMarykModel.create(setDefaults = false) { setOfString with setOf(""); listOfString with listOf(""); map with mapOf(LocalTime(1, 0) to "") },
+        )) {
+            val cache = WriteCache()
+            val size = TestMarykModel.Serializer.calculateProtoBufLength(values, cache)
+            val bytes = ByteArray(size)
+            var index = 0
+            TestMarykModel.Serializer.writeProtoBuf(values, cache, { bytes[index++] = it })
+            assertEquals(size, index)
+            index = 0
+            assertEquals(values, TestMarykModel.Serializer.readProtoBuf(size, { bytes[index++] }))
+        }
+    }
+
     @Test
     fun copy() {
         val original = TestMarykModel.create {

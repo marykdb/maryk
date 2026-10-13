@@ -34,6 +34,7 @@ jobs:
       matrix:
         include:
           - os: macos-latest
+            timeout_minutes: 75
             gradle_task: "macosArm64Test tvosSimulatorArm64Test watchosSimulatorArm64Test iosSimulatorArm64Test compileKotlinIosArm64 compileKotlinIosX64 compileKotlinTvosArm64 compileKotlinWatchosArm32 compileKotlinWatchosArm64 compileKotlinWatchosDeviceArm64"
             job_name: macOS Apple Arm tests
           - os: macos-26-intel
@@ -48,7 +49,7 @@ jobs:
       fail-fast: false
     name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: ${{ matrix.timeout_minutes || 60 }}
     env:
       FDB_VERSION: '7.3.79'
 

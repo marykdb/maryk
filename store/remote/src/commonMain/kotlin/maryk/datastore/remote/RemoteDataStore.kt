@@ -1,15 +1,12 @@
 package maryk.datastore.remote
 
-import maryk.core.models.migration.StorageFormat
-import maryk.core.models.migration.hasFloatingPointValueObjects
-
-import io.ktor.client.request.get
 import io.ktor.client.HttpClient
 import io.ktor.client.request.headers
-import io.ktor.client.request.post
+import io.ktor.client.request.prepareGet
 import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.HttpStatement
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -21,7 +18,6 @@ import io.ktor.http.URLParserException
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.readFully
-import io.ktor.utils.io.readRemaining
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -47,11 +43,14 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.IOException
+import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.migration.StorageFormat
+import maryk.core.models.migration.hasFloatingPointValueObjects
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationRuntimeStatus
@@ -309,7 +308,7 @@ class RemoteDataStore private constructor(
 
         private suspend fun fetchInfo(client: HttpClient, baseUrl: Url, bearerToken: String?): InfoResult {
             val bytes = readNonFlowResponseBytes("info") {
-                client.get(buildUrl(baseUrl, RemoteStoreProtocol.infoPath)) {
+                client.prepareGet(buildUrl(baseUrl, RemoteStoreProtocol.infoPath)) {
                     headers {
                         append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
                         appendStoreHeaders(bearerToken)
@@ -444,7 +443,7 @@ class RemoteDataStore private constructor(
         descriptors: List<BatchRequestDescriptor>,
     ): List<IsResponse> {
         val responseBytes = readNonFlowResponseBytes("execute", MAX_BATCH_RESPONSE_BODY_BYTES) {
-            httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.executePath)) {
+            httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.executePath)) {
                 headers {
                     append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                     append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
@@ -826,7 +825,7 @@ class RemoteDataStore private constructor(
         val context = requestContext(updateResponse.dataModel)
         val payload = RemoteStoreCodec.encode(UpdateResponse.Serializer, updateResponse, context, MAX_REQUEST_BODY_BYTES)
         val responseBytes = readNonFlowResponseBytes("process-update") {
-            httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.processUpdatePath)) {
+            httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.processUpdatePath)) {
                 headers {
                     append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                     append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
@@ -848,7 +847,7 @@ class RemoteDataStore private constructor(
     override suspend fun captureSnapshotVersion(): ULong {
         requireOpen()
         val responseBytes = readNonFlowResponseBytes("snapshot version") {
-            httpClient.get(buildUrl(baseUrl, RemoteStoreProtocol.snapshotVersionPath)) {
+            httpClient.prepareGet(buildUrl(baseUrl, RemoteStoreProtocol.snapshotVersionPath)) {
                 headers {
                     append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
                     appendStoreHeaders(bearerToken)
@@ -885,7 +884,7 @@ class RemoteDataStore private constructor(
     private suspend fun executeMigrationAdmin(request: RemoteMigrationRequest): RemoteMigrationResponse {
         requireOpen()
         val responseBytes = readNonFlowResponseBytes("migration administration") {
-            httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.migrationsPath)) {
+            httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.migrationsPath)) {
                 headers {
                     append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                     append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
@@ -1119,8 +1118,7 @@ private suspend fun requireSuccess(response: HttpResponse, operation: String) {
 
 private suspend fun readErrorPreview(response: HttpResponse): String {
     val bytes = response.bodyAsChannel()
-        .readRemaining(MAX_ERROR_PREVIEW_BYTES.toLong() + 1L)
-        .readByteArray()
+        .readBoundedBytes(MAX_ERROR_PREVIEW_BYTES + 1)
     response.call.cancel()
     return bytes.copyOf(minOf(bytes.size, MAX_ERROR_PREVIEW_BYTES)).decodeToString()
 }
@@ -1153,8 +1151,7 @@ private suspend fun readResponseBytes(
         }
     }
     val bytes = response.bodyAsChannel()
-        .readRemaining(maxBytes.toLong() + 1L)
-        .readByteArray()
+        .readBoundedBytes(maxBytes + 1)
     if (bytes.size > maxBytes) {
         response.call.cancel()
         throw IllegalStateException("Remote store $operation response exceeds max size: ${bytes.size} > $maxBytes")
@@ -1162,14 +1159,33 @@ private suspend fun readResponseBytes(
     return bytes
 }
 
+private suspend fun ByteReadChannel.readBoundedBytes(limit: Int): ByteArray {
+    // Stop at the bound without waiting for another byte or EOF.
+    val result = Buffer()
+    val chunk = ByteArray(minOf(8192, limit))
+    var remaining = limit
+    while (remaining > 0) {
+        val count = readAvailable(chunk, 0, minOf(chunk.size, remaining))
+        if (count < 0) {
+            closedCause?.let { throw it }
+            break
+        }
+        result.write(chunk, 0, count)
+        remaining -= count
+    }
+    return result.readByteArray()
+}
+
 private suspend fun readNonFlowResponseBytes(
     operation: String,
     maxBytes: Int = MAX_FRAME_SIZE_BYTES,
-    request: suspend () -> HttpResponse,
-): ByteArray = executeNonFlowRequest(request = request) { response ->
-    requireSuccess(response, operation)
-    requireContentType(response, RemoteStoreProtocol.contentType, operation)
-    readResponseBytes(response, operation, maxBytes)
+    request: suspend () -> HttpStatement,
+): ByteArray = executeNonFlowRequest(request = request) { statement ->
+    statement.execute { response ->
+        requireSuccess(response, operation)
+        requireContentType(response, RemoteStoreProtocol.contentType, operation)
+        readResponseBytes(response, operation, maxBytes)
+    }
 }
 
 internal suspend fun <Response, Result> executeNonFlowRequest(

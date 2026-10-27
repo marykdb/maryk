@@ -5,7 +5,9 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.get
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import io.ktor.server.application.Application
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -18,6 +20,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.ByteChannel
 import io.ktor.utils.io.readRemaining
 import io.ktor.utils.io.writeFully
 import java.io.BufferedInputStream
@@ -86,6 +89,66 @@ import maryk.test.models.TestMarykModel
 import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteDataStoreTest {
+    @Test
+    fun nonFlowResponseRejectsOversizedOpenBodyBeforeEof() = runBoundedIntegrationTest {
+        val failure = rejectOpenInfoResponse(bytesToWrite = 16 * 1024 * 1024 + 1)
+        assertTrue(failure.message.orEmpty().contains("exceeds max size"))
+    }
+
+    @Test
+    fun nonFlowResponseRejectsOversizedContentLengthBeforeReadingBody() = runBoundedIntegrationTest {
+        val failure = rejectOpenInfoResponse(contentLength = (16 * 1024 * 1024 + 1).toString())
+        assertTrue(failure.message.orEmpty().contains("exceeds max size"))
+    }
+
+    @Test
+    fun nonFlowErrorPreviewStopsBeforeEof() = runBoundedIntegrationTest {
+        val failure = rejectOpenInfoResponse(bytesToWrite = 4097, status = HttpStatusCode.Forbidden)
+        assertTrue(failure.message.orEmpty().contains("HTTP 403"))
+        assertTrue(failure.message.orEmpty().length < 4300)
+    }
+
+    private suspend fun rejectOpenInfoResponse(
+        bytesToWrite: Int = 0,
+        contentLength: String? = null,
+        status: HttpStatusCode = HttpStatusCode.OK,
+    ): IllegalStateException = coroutineScope {
+        val body = ByteChannel(autoFlush = true)
+        val writer = launch {
+            val chunk = ByteArray(4096) { 'x'.code.toByte() }
+            var remaining = bytesToWrite
+            while (remaining > 0) {
+                val count = minOf(chunk.size, remaining)
+                body.writeFully(chunk, 0, count)
+                remaining -= count
+            }
+            awaitCancellation()
+        }
+        val client = HttpClient(MockEngine {
+            respond(
+                content = body,
+                status = status,
+                headers = headersOf(*buildMap {
+                    put(HttpHeaders.ContentType, listOf(RemoteStoreProtocol.contentType))
+                    contentLength?.let { put(HttpHeaders.ContentLength, listOf(it)) }
+                }.toList().toTypedArray()),
+            )
+        })
+        try {
+            val failure = withTimeout(5000) {
+                assertFailsWith<IllegalStateException> {
+                    RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://localhost", httpClient = client))
+                }
+            }
+            assertTrue(body.isClosedForRead)
+            failure
+        } finally {
+            writer.cancel()
+            body.close()
+            client.close()
+        }
+    }
+
     @Test
     fun closeMakesCallerOwnedClientRemoteStoreTerminal() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))

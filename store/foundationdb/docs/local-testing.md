@@ -1,6 +1,6 @@
 # Local Test Server
 
-This module can automatically install and run a local FoundationDB server for JVM tests.
+This module can automatically install and run a local FoundationDB server for JVM and desktop native tests.
 
 - **Automatic test lifecycle:** macOS/Linux only. `scripts/run-fdb-for-tests.sh` starts `fdbserver` on `127.0.0.1:4500`, writes logs to `build/testdatastore/logs`, and PID to `build/testdatastore/fdbserver.pid`; `scripts/stop-fdb-for-tests.sh` stops that managed server and removes the test database directory.
 - **Windows:** unsupported for Maryk FoundationDB JVM tests. `scripts/install-foundationdb.ps1` exits intentionally because the required release artifacts and checksums are not pinned. Do not use it as an installer; use macOS/Linux for the managed local test lifecycle.
@@ -9,7 +9,7 @@ This module can automatically install and run a local FoundationDB server for JV
 
 ### Gradle Integration
 
-- **Auto start/stop:** `jvmTest` depends on starting FDB and finalizes by stopping it.
+- **Auto start/stop:** JVM and supported native test tasks acquire the shared test-server lease, reset test data, start FDB, and finalize by stopping it. The lease prevents another Gradle invocation in the same checkout from resetting the server during a test run.
 - **Tasks:**
     - `installFoundationDB`: installs or links FDB locally.
     - `startFoundationDBForTests`: starts the local server.

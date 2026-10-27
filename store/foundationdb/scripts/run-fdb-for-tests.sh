@@ -54,7 +54,7 @@ esac
 
 validate_cluster_address() {
   if [[ ! -f "$CLUSTER_FILE" ]]; then
-    printf 'test@%s\n' "$FDB_LISTEN" > "$CLUSTER_FILE"
+    printf 'test:test@%s\n' "$FDB_LISTEN" > "$CLUSTER_FILE"
     return
   fi
 

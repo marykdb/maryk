@@ -52,12 +52,17 @@ PATH="$path_only/bin:/usr/bin:/bin" \
   FDB_READY_ATTEMPTS=1 FDB_READY_DELAY_SECONDS=0 FDB_STARTUP_PROBE_DELAY_SECONDS=0 \
   bash "$path_only/repo/store/foundationdb/scripts/run-fdb-for-tests.sh" >/dev/null
 SERVER_PIDS+=("$(cat "$path_only/repo/build/testdatastore/fdbserver.pid")")
+grep -Eq '^[[:alnum:]_]+:[[:alnum:]]+@127\.0\.0\.1:4500$' \
+  "$path_only/repo/store/foundationdb/fdb.cluster" || {
+  echo "Expected a generated cluster file with both a description and an ID." >&2
+  exit 1
+}
 
 mismatched_listen="$(new_fixture mismatched-listen)"
 write_server "$mismatched_listen/bin"
 cp "$path_only/bin/fdbcli" "$mismatched_listen/bin/fdbcli"
 mkdir -p "$mismatched_listen/repo/store/foundationdb"
-printf 'test@127.0.0.1:4500\n' > "$mismatched_listen/repo/store/foundationdb/fdb.cluster"
+printf 'test:test@127.0.0.1:4500\n' > "$mismatched_listen/repo/store/foundationdb/fdb.cluster"
 if output="$(PATH="$mismatched_listen/bin:/usr/bin:/bin" FDB_LISTEN=127.0.0.1:4501 \
   bash "$mismatched_listen/repo/store/foundationdb/scripts/run-fdb-for-tests.sh" 2>&1)"; then
   echo "Expected mismatched FDB_LISTEN to fail before starting a server." >&2

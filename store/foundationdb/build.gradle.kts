@@ -182,7 +182,7 @@ tasks.withType<KotlinNativeTest>().configureEach {
         environment("DYLD_LIBRARY_PATH", libDir)
         environment("LD_LIBRARY_PATH", libDir)
         environment("FDB_CLUSTER_FILE", rootProject.projectDir.resolve("store/foundationdb/fdb.cluster").absolutePath)
-        dependsOn(installFoundationDB, startFoundationDBForTests)
+        dependsOn(installFoundationDB, resetFoundationDBTestData, startFoundationDBForTests)
         finalizedBy(stopFoundationDBForTests)
 
     } else {

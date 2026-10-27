@@ -14,6 +14,12 @@ import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberDescriptor
+import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.UInt16
+import maryk.core.properties.types.numeric.UInt8
+import maryk.core.properties.types.numeric.SInt32
+import maryk.core.properties.types.numeric.SInt16
+import maryk.core.properties.types.numeric.SInt8
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.UInt64
@@ -53,7 +59,12 @@ data class NumberDefinition<T : Comparable<T>>(
 
     override fun average(sum: T, count: Long): T {
         require(count > 0L) { "Average count must be positive" }
-        return type.divide(sum, type.ofLong(count))
+        // JS shares the runtime number type: a whole Float/Double must still use
+        // floating-point division. All supported 32-bit integers fit exactly in Double.
+        return when (type) {
+            SInt8, SInt16, SInt32, UInt8, UInt16, UInt32 -> type.ofLong(type.toDouble(sum).toLong() / count)
+            else -> type.divide(sum, type.ofLong(count))
+        }
     }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =

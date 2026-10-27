@@ -132,12 +132,15 @@ class AggregationsResponseTest {
             by day: !DateHistogram
               of: dateTime
               buckets:
+                []
             each enum: !EnumValues
               of: enum
               buckets:
+                []
             each type: !Types
               of: multi.*
               buckets:
+                []
 
             """.trimIndent()
         ) {

@@ -12,22 +12,20 @@ data class SumAggregator<T: Comparable<T>>(
         "Sum",
     )
 
-    private var summedValue: T? = null
+    private val accumulator = ArithmeticAccumulator(arithmeticDefinition)
 
     override fun aggregate(valueFetcher: ValueByPropertyReference<*>) {
         @Suppress("UNCHECKED_CAST")
         val value = valueFetcher(request.reference) as T?
 
         if (value != null) {
-            summedValue = summedValue?.let {
-                arithmeticDefinition.add(it, value)
-            } ?: value
+            accumulator.add(value)
         }
     }
 
     override fun toResponse() =
         SumResponse(
             request.reference,
-            summedValue
+            accumulator.sum()
         )
 }

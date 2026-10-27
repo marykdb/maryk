@@ -12,8 +12,7 @@ data class StatsAggregator<T: Comparable<T>>(
         "Stats",
     )
 
-    private var summedValue: T? = null
-    private var valueCount: Long = 0L
+    private val accumulator = ArithmeticAccumulator(arithmeticDefinition)
     private var minValue: T? = null
     private var maxValue: T? = null
 
@@ -22,9 +21,7 @@ data class StatsAggregator<T: Comparable<T>>(
         val value = valueFetcher(request.reference) as T?
 
         if (value != null) {
-            summedValue = summedValue?.let {
-                arithmeticDefinition.add(it, value)
-            } ?: value
+            accumulator.add(value)
 
             maxValue = maxValue?.let {
                 maxOf(value, it)
@@ -33,19 +30,15 @@ data class StatsAggregator<T: Comparable<T>>(
             minValue = minValue?.let {
                 minOf(value, it)
             } ?: value
-
-            valueCount++
         }
     }
 
     override fun toResponse() =
         StatsResponse(
             request.reference,
-            sum = summedValue,
-            average = summedValue?.let {
-                arithmeticDefinition.average(it, valueCount)
-            },
-            valueCount = valueCount.toULong(),
+            sum = accumulator.sum(),
+            average = accumulator.average(),
+            valueCount = accumulator.count.toULong(),
             min = minValue,
             max = maxValue
         )

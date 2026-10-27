@@ -12,27 +12,21 @@ data class AverageAggregator<T: Comparable<T>>(
         "Average",
     )
 
-    private var summedValue: T? = null
-    private var valueCount: Long = 0L
+    private val accumulator = ArithmeticAccumulator(arithmeticDefinition)
 
     override fun aggregate(valueFetcher: ValueByPropertyReference<*>) {
         @Suppress("UNCHECKED_CAST")
         val value = valueFetcher(request.reference) as T?
 
         if (value != null) {
-            summedValue = summedValue?.let {
-                arithmeticDefinition.add(it, value)
-            } ?: value
-            valueCount++
+            accumulator.add(value)
         }
     }
 
     override fun toResponse() =
         AverageResponse(
             request.reference,
-            summedValue?.let {
-                arithmeticDefinition.average(it, valueCount)
-            },
-            valueCount.toULong()
+            accumulator.average(),
+            accumulator.count.toULong()
         )
 }

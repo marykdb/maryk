@@ -23,6 +23,15 @@ fixed-unit quantities. A Decimal with `scale = 0u` is equally suitable for
 whole-number totals that need a range beyond `Long`; averages still retain that
 zero scale and therefore round half-to-even to a whole number.
 
+Integer and Decimal aggregations accumulate exactly before producing a response.
+An average can therefore succeed even when its intermediate sum exceeds the
+property type. Integer averages truncate towards zero; Decimal averages retain
+the property scale and round half-to-even. `Sum` and `Stats` throw
+`ArithmeticException` when the final sum cannot fit the existing result type
+(or Decimal storage width), rather than returning a wrapped value. Intermediate
+signed sums may cancel before that final check. Float/Double retain their IEEE
+arithmetic behavior. Existing record data and response schemas do not change.
+
 Aggregations can be added to any `Get` or `Scan` request through the `aggregations` property. Responses return the aggregated values alongside the requested objects.
 
 The sections below summarise each operator with short examples to demonstrate how they are used in Maryk.

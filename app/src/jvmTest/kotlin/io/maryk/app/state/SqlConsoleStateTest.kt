@@ -2,6 +2,10 @@ package io.maryk.app.state
 
 import androidx.compose.ui.text.input.TextFieldValue
 import io.maryk.app.config.StoreConnector
+import io.maryk.app.config.StoreDefinition
+import io.maryk.app.config.StoreKind
+import io.maryk.app.data.DataExportFormat
+import io.maryk.app.data.DataImportScope
 import io.maryk.app.ui.sql.sqlResultsTsv
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -16,17 +20,22 @@ import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.requests.IsStoreRequest
+import maryk.core.query.requests.scan
 import maryk.core.query.responses.IsResponse
 import maryk.datastore.memory.InMemoryDataStore
+import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.TransactionalDataStore
 import maryk.core.query.requests.TransactionRequest
 import maryk.sql.SqlExecutionStatus
 import maryk.sql.SqlValue
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 private object ConsoleItem : RootDataModel<ConsoleItem>(keyDefinition = { ConsoleItem.id.ref() }) {
@@ -36,6 +45,25 @@ private object ConsoleItem : RootDataModel<ConsoleItem>(keyDefinition = { Consol
 
 class SqlConsoleStateTest {
     private suspend fun SqlConsoleState.finished() = withTimeout(5000) { while (running) yield() }
+
+    @Test fun timeTravelBlocksAllImportEntryPoints() = runBlocking {
+        val browser = BrowserState(StoreConnector(), this)
+        browser.updateTimeTravelEnabled(true)
+        browser.requestImportDataDialog()
+        assertNull(browser.dataImportDialog)
+        assertEquals("Time travel mode active.", browser.lastActionMessage)
+        browser.clearLastActionMessage()
+        browser.startImportFromPath("must-not-be-read.json")
+        assertFalse(browser.isWorking)
+        assertEquals("Time travel mode active.", browser.lastActionMessage)
+        browser.clearLastActionMessage()
+        browser.importData(1u, DataExportFormat.JSON, DataImportScope.MULTIPLE, "must-not-be-read.json")
+        assertFalse(browser.isWorking)
+        assertEquals("Time travel mode active.", browser.lastActionMessage)
+        browser.updateTimeTravelEnabled(false)
+        browser.requestImportDataDialog()
+        assertNotNull(browser.dataImportDialog)
+    }
 
     @Test fun enteringTimeTravelClearsPersistedWriteMode() = runBlocking {
         val browser = BrowserState(StoreConnector(), this)
@@ -134,6 +162,9 @@ class SqlConsoleStateTest {
             browser.updateTimeTravelEnabled(true)
             assertFalse(state.writeMode)
             browser.disconnect()
+            var closed = false
+            browser.requestClose { closed = true }
+            assertFalse(closed)
             assertTrue(state.running)
             assertNotNull(state.catalog)
             assertTrue(state.writeInFlight)
@@ -141,7 +172,76 @@ class SqlConsoleStateTest {
             state.finished()
             assertEquals(null, state.error)
             assertFalse(state.writeInFlight)
+            browser.requestClose { closed = true }
+            assertTrue(closed)
+            assertNull(state.catalog)
         } finally { release.complete(Unit); state.detach(); store.close() }
+    }
+
+    @Test fun windowCloseRetainsAnUncertainCommitUntilResolution() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to ConsoleItem))
+        var loseResponse = true
+        val transport = object : IsDataStore by store, TransactionalDataStore by store {
+            override suspend fun executeTransaction(request: TransactionRequest) = store.executeTransaction(request).also {
+                if (request.commit && loseResponse) { loseResponse = false; error("Lost response") }
+            }
+        }
+        val browser = BrowserState(StoreConnector(), this)
+        val state = browser.sqlConsole
+        try {
+            state.attach(transport)
+            state.writeMode = true
+            state.editor = TextFieldValue("INSERT INTO ConsoleItem (id) VALUES (1)")
+            state.run(0)
+            state.finished()
+            val retained = assertNotNull(state.pendingCommit)
+            var closed = false
+            browser.requestClose { closed = true }
+            assertFalse(closed)
+            assertTrue(browser.lastActionMessage.orEmpty().contains("Open SQL console"))
+            assertSame(retained, state.pendingCommit)
+            assertNotNull(state.catalog)
+            state.resolveCommit()
+            state.finished()
+            assertNull(state.pendingCommit)
+            browser.requestClose { closed = true }
+            assertTrue(closed)
+            assertNull(state.catalog)
+        } finally { state.detach(); store.close() }
+    }
+
+    @Test fun windowCloseReleasesConnectionAndDiscardsStagedWritesBeforeItsScopeEnds() = runBlocking {
+        val folder = Files.createTempDirectory("maryk-browser-close-")
+        val owner = Job()
+        val browser = BrowserState(StoreConnector(), CoroutineScope(coroutineContext + owner))
+        try {
+            RocksDBDataStore.open(relativePath = folder.toString(), dataModelsById = mapOf(1u to ConsoleItem)).close()
+            browser.connect(StoreDefinition("close-test", "Close test", StoreKind.ROCKS_DB, folder.toString()))
+            withTimeout(5000) { while (browser.isWorking) yield() }
+            assertNotNull(browser.activeConnection, browser.lastActionMessage)
+            val state = browser.sqlConsole
+            state.writeMode = true
+            for (sql in listOf("BEGIN", "INSERT INTO ConsoleItem (id) VALUES (1)")) {
+                state.editor = TextFieldValue(sql)
+                state.run(0)
+                state.finished()
+                assertNull(state.error)
+            }
+            assertTrue(state.transactionActive)
+            var closed = false
+            browser.requestClose { closed = true; owner.cancel() }
+            assertTrue(closed)
+            assertNull(browser.activeConnection)
+            assertFalse(state.transactionActive)
+            val reopened = RocksDBDataStore.open(relativePath = folder.toString(), dataModelsById = mapOf(1u to ConsoleItem))
+            try {
+                assertTrue(reopened.execute(ConsoleItem.scan(allowTableScan = true)).values.isEmpty())
+            } finally { reopened.close() }
+        } finally {
+            browser.disconnect()
+            owner.cancel()
+            folder.toFile().deleteRecursively()
+        }
     }
 
     @Test fun aggregateArithmeticInitializesFloatingParameters() = runBlocking {

@@ -317,9 +317,21 @@ class BrowserState(
     }
 
     fun disconnect() {
+        tryDisconnect()
+    }
+
+    internal fun requestClose(onClosed: () -> Unit) {
+        if (tryDisconnect()) {
+            onClosed()
+        } else {
+            lastActionMessage = "Window close failed. Open SQL console to finish or cancel writes and resolve any pending commit."
+        }
+    }
+
+    private fun tryDisconnect(): Boolean {
         if (sqlConsole.pendingCommit != null || sqlConsole.writeInFlight) {
             lastActionMessage = "Finish or cancel SQL writes and resolve any pending commit before disconnecting."
-            return
+            return false
         }
         sqlConsole.detach()
         connectJob?.cancel()
@@ -353,6 +365,7 @@ class BrowserState(
         if (closeFailure != null) {
             System.err.println(lastActionMessage)
         }
+        return true
     }
 
     fun clearLastActionMessage() {
@@ -1266,6 +1279,7 @@ class BrowserState(
     }
 
     fun requestImportDataDialog() {
+        if (rejectImportDuringTimeTravel()) return
         dataImportDialog = ImportDataDialogRequest(defaultModelId = selectedModelId)
     }
 
@@ -1485,6 +1499,7 @@ class BrowserState(
         path: String? = null,
         allowRetryOnModelMismatch: Boolean = false,
     ) {
+        if (rejectImportDuringTimeTravel()) return
         val connection = activeConnection ?: return
         val model = connection.dataStore.dataModelsById[modelId] ?: return
         val extensions = format.extensionsForImport()
@@ -1509,6 +1524,7 @@ class BrowserState(
                             format = format,
                             scope = detectedScope,
                             snapshot = snapshot,
+                            beforeWrite = { check(!timeTravelEnabled) { "Time travel mode active." } },
                         )
                     } else {
                         importDataFromSnapshot(
@@ -1517,6 +1533,7 @@ class BrowserState(
                             format = format,
                             scope = detectedScope,
                             snapshot = snapshot,
+                            beforeWrite = { check(!timeTravelEnabled) { "Time travel mode active." } },
                         )
                     }
                 }
@@ -1559,6 +1576,7 @@ class BrowserState(
     }
 
     fun startImportFromPath(path: String) {
+        if (rejectImportDuringTimeTravel()) return
         val cleanPath = path.trim()
         if (cleanPath.isEmpty()) return
         isWorking = true
@@ -1596,6 +1614,12 @@ class BrowserState(
             isWorking = false
             importData(modelId, format, scopeDetected, cleanPath, allowRetryOnModelMismatch = true)
         }
+    }
+
+    private fun rejectImportDuringTimeTravel(): Boolean {
+        if (!timeTravelEnabled) return false
+        lastActionMessage = "Time travel mode active."
+        return true
     }
 
     private fun Throwable?.hasDefNotFound(): Boolean {

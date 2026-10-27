@@ -124,7 +124,7 @@ class SqlConsoleState(private val scope: CoroutineScope) {
         val oldSession = session
         session = null
         transactionActive = false
-        if (oldSession?.activeTransaction != null) scope.launch {
+        if (oldSession?.activeTransaction != null) scope.launch(start = CoroutineStart.UNDISPATCHED) {
             withContext(NonCancellable) {
                 try { oldSession.close() }
                 catch (failure: IllegalStateException) {

@@ -164,20 +164,20 @@ private fun runMarykApp() = application {
         }
 
         BrowserSessionScopes(sessions, { it.id }) { session ->
+            val scope = rememberCoroutineScope()
+            val connector = remember { StoreConnector() }
+            val browserState = remember(session.id) { BrowserState(connector, scope) }
+            val closeWindow = { browserState.requestClose { closeBrowserWindow(session) } }
             val sessionWindowState = rememberWindowState(
                 width = defaultWidth.dp,
                 height = defaultHeight.dp,
                 position = WindowPosition(Alignment.Center),
             )
             Window(
-                onCloseRequest = { closeBrowserWindow(session) },
+                onCloseRequest = closeWindow,
                 title = "Maryk - ${session.store.name}",
                 state = sessionWindowState,
             ) {
-                val scope = rememberCoroutineScope()
-                val connector = remember { StoreConnector() }
-                val browserState = remember(session.id) { BrowserState(connector, scope) }
-
                 LaunchedEffect(session.id) {
                     browserState.connect(session.store)
                 }
@@ -188,11 +188,11 @@ private fun runMarykApp() = application {
 
                 MenuBar {
                     Menu("File") {
-                        Item("Close Window", onClick = { closeBrowserWindow(session) }, shortcut = shortcutClose)
+                        Item("Close Window", onClick = closeWindow, shortcut = shortcutClose)
                     }
                     Menu("Data") {
                         Item("Reload Results", onClick = { browserState.scanFromStart() }, shortcut = shortcutReload)
-                        Item("Import data…", onClick = { browserState.requestImportDataDialog() })
+                        Item("Import data…", onClick = { browserState.requestImportDataDialog() }, enabled = !browserState.timeTravelEnabled)
                         Item("Export all models…", onClick = { browserState.requestExportAllDialog() })
                         Item("Export data…", onClick = { browserState.requestExportDataDialog() })
                     }
@@ -209,7 +209,7 @@ private fun runMarykApp() = application {
 
                 BrowserWindowContent(
                     state = browserState,
-                    onClose = { closeBrowserWindow(session) },
+                    onClose = closeWindow,
                 )
             }
         }

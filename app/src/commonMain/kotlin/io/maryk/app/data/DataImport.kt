@@ -105,6 +105,7 @@ internal suspend fun importDataFromSnapshot(
     format: DataExportFormat,
     scope: DataImportScope,
     snapshot: ImportSnapshot,
+    beforeWrite: () -> Unit = {},
 ): ImportResult {
     val requestContext = RequestContext(
         DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
@@ -115,6 +116,7 @@ internal suspend fun importDataFromSnapshot(
     val records = mutableListOf<Pair<Key<IsRootDataModel>, Values<IsRootDataModel>>>()
 
     suspend fun importBatch(batch: List<Pair<Key<IsRootDataModel>, Values<IsRootDataModel>>>) {
+        beforeWrite()
         val response = dataStore.execute(model.add(*batch.toTypedArray()))
         val (ok, errors) = countStatuses(response.statuses)
         imported += ok
@@ -169,6 +171,7 @@ internal suspend fun importVersionedDataFromSnapshot(
     format: DataExportFormat,
     scope: DataImportScope,
     snapshot: ImportSnapshot,
+    beforeWrite: () -> Unit = {},
 ): ImportResult {
     val requestContext = RequestContext(
         DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
@@ -179,7 +182,9 @@ internal suspend fun importVersionedDataFromSnapshot(
 
     suspend fun handleRecord(values: ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) {
         val record = DataObjectVersionedChange(values)
-        val success = applyVersionedRecord(dataStore, model, normalizeVersionedRecord(model, record, requestContext))
+        val normalized = normalizeVersionedRecord(model, record, requestContext)
+        beforeWrite()
+        val success = applyVersionedRecord(dataStore, model, normalized)
         if (success) {
             imported += 1
         } else {
@@ -707,7 +712,7 @@ private suspend fun applyVersionedRecord(
 ): Boolean {
     val lastVersion = record.changes.maxOfOrNull { it.version } ?: return false
     val update = InitialChangesUpdate(lastVersion, listOf(record))
-    val response = dataStore.execute(UpdateResponse(model, update))
+    val response = dataStore.processUpdate(UpdateResponse(model, update))
     val result = response.result as? AddOrChangeResponse<IsRootDataModel> ?: return false
     return result.statuses.all { it.isSuccessStatus() }
 }

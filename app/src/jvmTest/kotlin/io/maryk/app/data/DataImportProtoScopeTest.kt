@@ -17,8 +17,10 @@ import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.scan
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.requests.add
+import maryk.core.query.requests.delete
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.memory.InMemoryDataStore
 import maryk.datastore.shared.IsDataStore
 import maryk.yaml.YamlWriter
@@ -30,6 +32,105 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DataImportProtoScopeTest {
+    @Test
+    fun writeGuardRejectsCurrentAndVersionedImportsAfterPreflightForEveryFormat() = runBlocking {
+        val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = mapOf(1u to ProtoScopeModel))
+        val destination = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = mapOf(1u to ProtoScopeModel))
+        val folder = Files.createTempDirectory("maryk-import-write-guard-")
+        try {
+            source.execute(ProtoScopeModel.add(ProtoScopeModel.create { id with 7u; number with 42u }))
+            for (format in DataExportFormat.entries) for (history in listOf(false, true)) {
+                exportModelDataToFolder(source, ProtoScopeModel, format, folder.toString(), includeVersionHistory = history)
+                val suffix = if (history) ".versions" else ""
+                val snapshot = ImportSnapshot.read(folder.resolve("${ProtoScopeModel.Meta.name}.data$suffix.${format.extension}").toString())
+                var checks = 0
+                val beforeWrite = { checks += 1; error("Time travel mode active.") }
+                val failure = assertFailsWith<IllegalStateException> {
+                    if (history) {
+                        importVersionedDataFromSnapshot(destination, ProtoScopeModel, format, DataImportScope.MULTIPLE, snapshot, beforeWrite)
+                    } else {
+                        importDataFromSnapshot(destination, ProtoScopeModel, format, DataImportScope.MULTIPLE, snapshot, beforeWrite)
+                    }
+                }
+                assertEquals("Time travel mode active.", failure.message)
+                assertEquals(1, checks)
+                assertTrue(destination.execute(ProtoScopeModel.scan(allowTableScan = true)).values.isEmpty())
+            }
+        } finally {
+            source.close()
+            destination.close()
+            folder.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun versionedImportsUseProcessUpdateAndPreserveHistoryForEveryFormat() = runBlocking {
+        val source = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to ProtoScopeModel),
+        )
+        val folder = Files.createTempDirectory("maryk-import-versioned-routing-")
+        try {
+            val values = ProtoScopeModel.create {
+                id with 7u
+                number with 42u
+            }
+            val key = ProtoScopeModel.key(values)
+            source.execute(ProtoScopeModel.add(values))
+            source.execute(ProtoScopeModel.delete(key))
+            val expectedHistory = loadCompleteChangesForKey(source, ProtoScopeModel, key)
+
+            DataExportFormat.entries.forEach { format ->
+                val destination = InMemoryDataStore.open(
+                    keepAllVersions = true,
+                    dataModelsById = mapOf(1u to ProtoScopeModel),
+                )
+                try {
+                    var updatesProcessed = 0
+                    val importStore = object : IsDataStore by destination {
+                        override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                            request: RQ,
+                        ): RP = error("Versioned imports must use processUpdate")
+
+                        override suspend fun <DM : IsRootDataModel> processUpdate(
+                            updateResponse: UpdateResponse<DM>,
+                        ): ProcessResponse<DM> {
+                            updatesProcessed += 1
+                            return destination.processUpdate(updateResponse)
+                        }
+                    }
+                    exportModelDataToFolder(
+                        dataStore = source,
+                        model = ProtoScopeModel,
+                        format = format,
+                        folder = folder.toString(),
+                        includeVersionHistory = true,
+                    )
+                    val path = folder.resolve("${ProtoScopeModel.Meta.name}.data.versions.${format.extension}")
+
+                    assertEquals(
+                        ImportResult(imported = 1, failed = 0),
+                        importVersionedDataFromFile(
+                            dataStore = importStore,
+                            model = ProtoScopeModel,
+                            format = format,
+                            scope = DataImportScope.MULTIPLE,
+                            path = path.toString(),
+                        ),
+                        format.label,
+                    )
+                    assertEquals(1, updatesProcessed, format.label)
+                    assertEquals(expectedHistory, loadCompleteChangesForKey(destination, ProtoScopeModel, key), format.label)
+                } finally {
+                    destination.close()
+                }
+            }
+        } finally {
+            source.close()
+            folder.toFile().deleteRecursively()
+        }
+    }
+
     @Test
     fun preservesPartialOutcomeWhenVersionedRecordApplicationFails() = runBlocking {
         val source = InMemoryDataStore.open(
@@ -64,14 +165,12 @@ class DataImportProtoScopeTest {
             val failingStore = object : IsDataStore by destination {
                 var versionedUpdates = 0
 
-                override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
-                    request: RQ,
-                ): RP {
-                    if (request is UpdateResponse<*>) {
-                        versionedUpdates += 1
-                        if (versionedUpdates == 2) throw IllegalStateException("second versioned record failed")
-                    }
-                    return destination.execute(request)
+                override suspend fun <DM : IsRootDataModel> processUpdate(
+                    updateResponse: UpdateResponse<DM>,
+                ): ProcessResponse<DM> {
+                    versionedUpdates += 1
+                    if (versionedUpdates == 2) throw IllegalStateException("second versioned record failed")
+                    return destination.processUpdate(updateResponse)
                 }
             }
             val path = folder.resolve("${ProtoScopeModel.Meta.name}.data.versions.json")

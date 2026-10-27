@@ -5,7 +5,8 @@ import kotlin.test.Test
 class FoldedStringReaderTest {
     @Test
     fun rejectsUnpairedSurrogates() {
-        createYamlReader(">\n \uD800").assertInvalidYaml()
+        val surrogate = charArrayOf(0xD800.toChar()).concatToString()
+        createYamlReader(">\n $surrogate").assertInvalidYaml()
     }
 
     @Test

@@ -10,6 +10,154 @@ import kotlin.test.assertTrue
 
 internal class YamlWriterTest {
     @Test
+    fun preservesEmptyBlockArraysAtRootAndInObjects() {
+        val root = buildString {
+            YamlWriter(::append).apply {
+                writeStartArray()
+                writeEndArray()
+            }
+        }
+        assertEquals("[]", root)
+        createYamlReader(root).apply {
+            assertStartArray()
+            assertEndArray()
+            assertEndDocument()
+        }
+        for (tagged in listOf(false, true)) {
+            val output = buildString {
+                YamlWriter(::append).apply {
+                    writeStartObject()
+                    writeFieldName("items")
+                    if (tagged) writeTag("!!seq")
+                    writeStartArray()
+                    writeEndArray()
+                    writeFieldName("next")
+                    writeInt(1)
+                    writeEndObject()
+                }
+            }
+            createYamlReader(output).apply {
+                assertStartObject()
+                assertFieldName("items")
+                assertStartArray()
+                assertEndArray()
+                assertFieldName("next")
+                assertValue(1L)
+                assertEndObject()
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
+    fun writesMixedContainersAndScalarsInBlockAndCompactArrays() {
+        for (compact in listOf(false, true)) {
+            val output = buildString {
+                YamlWriter(::append).apply {
+                    writeStartArray(compact)
+                    writeStartObject()
+                    writeEndObject()
+                    writeInt(1)
+                    writeStartArray()
+                    writeEndArray()
+                    writeInt(2)
+                    writeStartObject()
+                    writeFieldName("nested")
+                    writeStartArray()
+                    writeEndArray()
+                    writeFieldName("value")
+                    writeInt(3)
+                    writeEndObject()
+                    writeStartArray()
+                    writeEndArray()
+                    writeStartObject()
+                    writeEndObject()
+                    writeEndArray()
+                }
+            }
+            createYamlReader(output).apply {
+                assertStartArray()
+                assertStartObject()
+                assertEndObject()
+                assertValue(1L)
+                assertStartArray()
+                assertEndArray()
+                assertValue(2L)
+                assertStartObject()
+                assertFieldName("nested")
+                assertStartArray()
+                assertEndArray()
+                assertFieldName("value")
+                assertValue(3L)
+                assertEndObject()
+                assertStartArray()
+                assertEndArray()
+                assertStartObject()
+                assertEndObject()
+                assertEndArray()
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
+    fun emptyArraysPreserveNestedBlockIndentation() {
+        val output = buildString {
+            YamlWriter(::append).apply {
+                writeStartArray()
+                writeStartArray()
+                writeStartArray()
+                writeEndArray()
+                writeStartArray()
+                writeInt(1)
+                writeEndArray()
+                writeEndArray()
+                writeStartArray()
+                writeEndArray()
+                writeEndArray()
+            }
+        }
+        createYamlReader(output).apply {
+            assertStartArray()
+            assertStartArray()
+            assertStartArray()
+            assertEndArray()
+            assertStartArray()
+            assertValue(1L)
+            assertEndArray()
+            assertEndArray()
+            assertStartArray()
+            assertEndArray()
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun taggedCompactArrayElementsHaveOneSeparator() {
+        val output = buildString {
+            YamlWriter(::append).apply {
+                writeStartArray(true)
+                writeInt(1)
+                writeTag("!!seq")
+                writeStartArray()
+                writeEndArray()
+                writeInt(2)
+                writeEndArray()
+            }
+        }
+        createYamlReader(output).apply {
+            assertStartArray()
+            assertValue(1L)
+            assertStartArray()
+            assertEndArray()
+            assertValue(2L)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun writesCanonicalNonFiniteFloatScalars() {
         assertEquals(".nan", buildString { YamlWriter(::append).writeDouble(Double.NaN) })
         assertEquals(".inf", buildString { YamlWriter(::append).writeDouble(Double.POSITIVE_INFINITY) })
@@ -18,7 +166,9 @@ internal class YamlWriterTest {
 
     @Test
     fun rejectsUnpairedSurrogatesInWrittenText() {
-        val invalidValues = listOf("\uD800", "\uDC00", "before\uD800after")
+        val highSurrogate = charArrayOf(0xD800.toChar()).concatToString()
+        val lowSurrogate = charArrayOf(0xDC00.toChar()).concatToString()
+        val invalidValues = listOf(highSurrogate, lowSurrogate, "before${highSurrogate}after")
 
         invalidValues.forEach { value ->
             assertFailsWith<JsonWriteException> {

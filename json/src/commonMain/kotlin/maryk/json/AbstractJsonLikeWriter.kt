@@ -40,7 +40,7 @@ abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
     protected val typeStack = mutableListOf<JsonEmbedType>()
 
     override fun writeStartObject(isCompact: Boolean) {
-        typeStack.add(JsonEmbedType.Object(isCompact))
+        checkContainerValueAllowed()
         checkTypeIsAllowed(
             START_OBJ,
             arrayOf(
@@ -49,11 +49,13 @@ abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
                 ARRAY_VALUE,
                 START_ARRAY,
                 END_OBJ,
+                END_ARRAY,
                 TAG,
                 COMPLEX_FIELD_NAME_START,
                 COMPLEX_FIELD_NAME_END
             )
         )
+        typeStack.add(JsonEmbedType.Object(isCompact))
     }
 
     override fun writeEndObject() {
@@ -68,7 +70,7 @@ abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
     }
 
     override fun writeStartArray(isCompact: Boolean) {
-        typeStack.add(JsonEmbedType.Array(isCompact))
+        checkContainerValueAllowed()
         checkTypeIsAllowed(
             START_ARRAY,
             arrayOf(
@@ -77,11 +79,13 @@ abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
                 START_ARRAY,
                 ARRAY_VALUE,
                 END_ARRAY,
+                END_OBJ,
                 TAG,
                 COMPLEX_FIELD_NAME_START,
                 COMPLEX_FIELD_NAME_END
             )
         )
+        typeStack.add(JsonEmbedType.Array(isCompact))
     }
 
     override fun writeEndArray() {
@@ -96,10 +100,21 @@ abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
     }
 
     override fun writeFieldName(name: String) {
+        if (typeStack.lastOrNull() !is JsonEmbedType.Object) {
+            throw IllegalJsonOperation("Field names can only be written inside objects")
+        }
         checkTypeIsAllowed(
             FIELD_NAME,
             arrayOf(START_OBJ, OBJ_VALUE, END_ARRAY, END_OBJ)
         )
+    }
+
+    private fun checkContainerValueAllowed() {
+        if (typeStack.lastOrNull() is JsonEmbedType.Object &&
+            lastType != FIELD_NAME && lastType != TAG && lastType != COMPLEX_FIELD_NAME_END
+        ) {
+            throw IllegalJsonOperation("Object values require a field name")
+        }
     }
 
     protected fun checkTypeIsAllowed(type: JsonType, allowed: Array<JsonType>) {

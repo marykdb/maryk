@@ -52,6 +52,7 @@ class YamlWriter(
 
     private var prefix: String = ""
     private var prefixWasWritten = false
+    private val arrayPrefixes = mutableListOf<String>()
     private var compactStartedAtLevel: Int? = null
     private var pendingObjectStart = false
     private var pendingObjectStartHasTag = false
@@ -90,17 +91,16 @@ class YamlWriter(
                 || this.lastType == COMPLEX_FIELD_NAME_END
             ) {
                 writer(" ")
-            } else if (this.lastType == END_OBJ) {
-                val lastEmbedType = this.typeStack.lastOrNull()
-                if (lastEmbedType is JsonEmbedType.Array) {
-                    writer(", ")
-                }
+            } else if (this.typeStack.lastOrNull() is JsonEmbedType.Array &&
+                this.lastType in arrayOf(ARRAY_VALUE, END_OBJ, END_ARRAY)
+            ) {
+                writer(", ")
             }
             writer("{")
 
             super.writeStartObject(isCompact)
 
-            this.compactStartedAtLevel = this.typeStack.size
+            if (this.compactStartedAtLevel == null) this.compactStartedAtLevel = this.typeStack.size
         } else {
             val prefixWasWrittenBefore = this.prefixWasWritten
             if (lastType == FIELD_NAME || lastType == TAG) {
@@ -159,6 +159,7 @@ class YamlWriter(
     }
 
     override fun writeStartArray(isCompact: Boolean) {
+        arrayPrefixes += prefix
         writePendingObjectStart()
         if (!this.lastIsCompact) {
             when (lastType) {
@@ -181,26 +182,28 @@ class YamlWriter(
                         writer(" ")
                     }
                 }
-                START_ARRAY -> {
-                    writer("$prefixToWrite- ")
-                    this.prefixWasWritten = true
-                    prefix += spacing
-                }
-                END_ARRAY -> {
-                    prefix = prefix.removeSuffix(spacing)
-                    writer("$prefixToWrite- ")
-                    this.prefixWasWritten = true
-                    prefix += spacing
+                START_ARRAY, ARRAY_VALUE, END_OBJ, END_ARRAY -> {
+                    if (typeStack.lastOrNull() is JsonEmbedType.Array) {
+                        writer("$prefixToWrite- ")
+                        this.prefixWasWritten = true
+                        prefix += spacing
+                    }
                 }
                 else -> Unit
             }
-        } else if (lastType != START_ARRAY && lastType != FIELD_NAME) {
+        } else if (lastType == TAG || lastType == FIELD_NAME || lastType == COMPLEX_FIELD_NAME_END) {
+            writer(" ")
+        } else if (typeStack.lastOrNull() is JsonEmbedType.Array &&
+            lastType in arrayOf(ARRAY_VALUE, END_OBJ, END_ARRAY)
+        ) {
             writer(",")
         }
 
         if (isCompact || this.lastIsCompact) {
             writer("[")
-            this.compactStartedAtLevel = this.typeStack.size + 1 // is written later so + 1
+            if (this.compactStartedAtLevel == null) {
+                this.compactStartedAtLevel = this.typeStack.size + 1 // is written later so + 1
+            }
             this.prefixWasWritten = false
         }
 
@@ -216,13 +219,16 @@ class YamlWriter(
                 this.prefixWasWritten = false
             }
         } else {
-            super.writeEndArray()
-            val lastType = if (typeStack.isEmpty()) null else typeStack.last()
-
-            if (lastType == null || (lastType !is Object && lastType !is ComplexField)) {
-                prefix = prefix.removeSuffix(spacing)
+            if (lastType == START_ARRAY) {
+                val parent = typeStack.getOrNull(typeStack.lastIndex - 1)
+                val emptyPrefix = if (parent is Object) prefix + spacing else prefixToWrite
+                writer("${emptyPrefix}[]")
+                if (parent != null) writer("\n")
+                prefixWasWritten = false
             }
+            super.writeEndArray()
         }
+        prefix = arrayPrefixes.removeAt(arrayPrefixes.lastIndex)
     }
 
     /** Writes the field [name] for an object */
@@ -306,7 +312,7 @@ class YamlWriter(
                 is JsonEmbedType.Array -> {
                     super.checkArrayValueAllowed()
                     if (this.lastIsCompact) {
-                        if (lastTypeBeforeOperation == ARRAY_VALUE) {
+                        if (lastTypeBeforeOperation in arrayOf(ARRAY_VALUE, END_OBJ, END_ARRAY)) {
                             writer(", ")
                         }
                         writer(renderedValue)

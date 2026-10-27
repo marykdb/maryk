@@ -34,7 +34,7 @@ Methods compatible with the [`JsonWriter`](../json/README.md) interface:
 - `writeEndObject()` - Closes an Object.
 - `writeStartArray(isCompact: Boolean)` - Writes the start of a new array. If isCompact is 'true' it will use the inline `[a1, a2, a3]`
    syntax and with `false` (default) it will use `- a1` with every value on a new line and indented.
-- `writeEndArray()` - Closes an array
+- `writeEndArray()` - Closes an array. Empty arrays use `[]` in both block and inline modes, preserving the difference between an empty sequence and a null value.
 - `writeFieldName(name: String)` - Writes the field name for an object. Adds `:` at the end.
 - `writeString(value: String)` or `writeValue(value: String)` - Writes a string value. Automatically uses 'quotes' if the content could be interpreted as YAML syntax.
 - `writeInt(int: Int)` - Writes an integer value.

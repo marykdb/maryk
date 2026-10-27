@@ -12,6 +12,8 @@ import maryk.core.query.DefinitionsContext
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.test.ByteCollector
+import maryk.yaml.YamlReader
+import maryk.yaml.YamlWriter
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -39,6 +41,19 @@ internal class EmbeddedValuesDefinitionTest {
             string with "default"
         }
     )
+
+    @Test
+    fun emptyEmbeddedValueCollectionsRoundTripThroughYaml() {
+        val list = ListDefinition(valueDefinition = def)
+        val output = buildString {
+            list.writeJsonValue(emptyList(), YamlWriter(::append))
+        }
+        expect("[]") { output }
+        var offset = 0
+        val reader = YamlReader { output.getOrNull(offset++) }
+        reader.nextToken()
+        expect(emptyList()) { list.readJson(reader) }
+    }
 
     @Test
     fun hasValues() {

@@ -40,7 +40,8 @@ class StringInSingleQuoteReaderTest {
 
     @Test
     fun rejectsRawControlCharactersAndUnpairedSurrogates() {
-        listOf("'value\u0001'", "'\uD800'").forEach { input ->
+        val surrogate = charArrayOf(0xD800.toChar()).concatToString()
+        listOf("'value\u0001'", "'$surrogate'").forEach { input ->
             createYamlReader(input).assertInvalidYaml()
         }
     }

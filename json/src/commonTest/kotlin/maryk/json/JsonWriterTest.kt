@@ -6,6 +6,49 @@ import kotlin.test.assertFailsWith
 
 internal class JsonWriterTest {
     @Test
+    fun writesAdjacentMixedContainers() {
+        val output = buildString {
+            JsonWriter(writer = ::append).apply {
+                writeStartArray()
+                writeStartObject()
+                writeEndObject()
+                writeStartArray()
+                writeEndArray()
+                writeStartObject()
+                writeFieldName("nested")
+                writeStartArray()
+                writeStartObject()
+                writeEndObject()
+                writeStartArray()
+                writeEndArray()
+                writeEndArray()
+                writeEndObject()
+                writeEndArray()
+            }
+        }
+        assertEquals("""[{},[],{"nested":[{},[]]}]""", output)
+    }
+
+    @Test
+    fun mixedContainersStillRequireObjectFieldNames() {
+        for (startArray in listOf(true, false)) {
+            val writer = JsonWriter {}
+            writer.writeStartObject()
+            writer.writeFieldName("child")
+            writer.writeStartObject()
+            writer.writeEndObject()
+            assertFailsWith<IllegalJsonOperation> {
+                if (startArray) writer.writeStartArray() else writer.writeStartObject()
+            }
+        }
+        val arrayWriter = JsonWriter {}
+        arrayWriter.writeStartArray()
+        arrayWriter.writeStartObject()
+        arrayWriter.writeEndObject()
+        assertFailsWith<IllegalJsonOperation> { arrayWriter.writeFieldName("invalid") }
+    }
+
+    @Test
     fun writeExpectedJSON() {
         val output = buildString {
             val writer = JsonWriter { append(it) }
@@ -91,8 +134,8 @@ internal class JsonWriterTest {
     @Test
     fun rejectsLoneSurrogates() {
         val writer = JsonWriter {}
-        val highSurrogate = 0xD800.toChar().toString()
-        val lowSurrogate = 0xDC00.toChar().toString()
+        val highSurrogate = charArrayOf(0xD800.toChar()).concatToString()
+        val lowSurrogate = charArrayOf(0xDC00.toChar()).concatToString()
 
         assertEquals(0xD800, highSurrogate.single().code)
         assertEquals(0xDC00, lowSurrogate.single().code)

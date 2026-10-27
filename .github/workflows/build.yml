@@ -127,7 +127,7 @@ jobs:
     timeout-minutes: 30
     # Keep this version synchronized with browser-smoke/package-lock.json.
     container:
-      image: mcr.microsoft.com/playwright@sha256:bc6ab0d6d44ff4826e4cb8c1e6d801e185bfc42bb0753f8e2a30efc70db054c7 # v1.63.0-noble
+      image: mcr.microsoft.com/playwright@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea # v1.64.1-noble
       options: --user 1001
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -154,7 +154,7 @@ jobs:
       - name: Verify Playwright image version
         working-directory: store/indexeddb/browser-smoke
         shell: bash
-        run: test "$(node -p 'require("./node_modules/playwright/package.json").version')" = '1.63.0'
+        run: test "$(node -p 'require("./node_modules/playwright/package.json").version')" = '1.64.1'
 
       - name: Configure Playwright browsers for Karma
         working-directory: store/indexeddb/browser-smoke

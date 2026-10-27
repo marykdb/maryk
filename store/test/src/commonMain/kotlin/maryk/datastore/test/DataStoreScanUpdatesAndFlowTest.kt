@@ -1287,8 +1287,8 @@ class DataStoreScanUpdatesAndFlowTest(
                     IndexChange(listOf(
                         IndexUpdate(
                             index = Bytes("CyE"),
-                            indexKey = Bytes("wAf_______4IAAAARQAAAQ"),
-                            previousIndexKey = Bytes("wEZmZmZmZmQIAAAARQAAAQ")
+                            indexKey = Bytes("QAf_______8IAAAARQAAAQ"),
+                            previousIndexKey = Bytes("QEZmZmZmZmUIAAAARQAAAQ")
                         )
                     ))
                 ), changes)

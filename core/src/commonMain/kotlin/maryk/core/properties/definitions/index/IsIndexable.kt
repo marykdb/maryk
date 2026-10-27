@@ -23,7 +23,7 @@ interface IsIndexable {
 
     /** Convert indexable to one or more ByteArrays for index entries */
     fun toStorageByteArraysForIndex(values: IsValuesGetter, key: ByteArray? = null): List<ByteArray> = try {
-        toStorageByteArrays(values).map { valueBytes ->
+        indexComponents(values).map { valueBytes ->
             val length = valueBytes.size
             combineToByteArray(
                 valueBytes,

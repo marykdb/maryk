@@ -1,5 +1,9 @@
 package maryk.datastore.remote
 
+import io.ktor.server.request.path
+import maryk.core.models.migration.StorageFormat
+import maryk.core.models.migration.hasFloatingPointValueObjects
+
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -221,6 +225,12 @@ internal fun Application.remoteStoreModule(
 
     routing {
         intercept(ApplicationCallPipeline.Call) {
+            if (info.valueStorageFormat == StorageFormat.CURRENT.toUInt() && context.request.path() != RemoteStoreProtocol.infoPath &&
+                context.request.headers[RemoteStoreProtocol.valueStorageFormatHeader] != StorageFormat.CURRENT.toString()) {
+                context.respondText("Value-object storage format differs; upgrade the client and server together", status = HttpStatusCode.BadRequest)
+                finish()
+                return@intercept
+            }
             val callPermit = callAdmission.tryAcquire()
             if (callPermit == null) {
                 context.respondText("Remote Store is at call capacity", status = HttpStatusCode.ServiceUnavailable)
@@ -1058,6 +1068,7 @@ private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
         supportsAtomicRequests = dataStore.supportsAtomicRequests,
         atomicCapabilities = dataStore.atomicCapabilities,
         transactionCapabilities = dataStore.transactionCapabilities,
+        valueStorageFormat = if (dataStore.dataModelsById.values.any { it.hasFloatingPointValueObjects() }) StorageFormat.CURRENT.toUInt() else 1u,
     )
 }
 

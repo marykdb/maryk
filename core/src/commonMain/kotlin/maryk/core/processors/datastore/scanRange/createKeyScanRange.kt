@@ -29,7 +29,13 @@ fun <DM : IsRootDataModel> DM.createScanRange(filter: IsFilter?, startKey: ByteA
         uniqueFilters
     )
 
-    keyParts.sortBy { it.indexableIndex }
+    keyParts.sortWith(compareBy<IsIndexPartialToMatch> { it.indexableIndex }.thenBy {
+        when (it) {
+            is IndexPartialToMatch -> 0
+            is IndexPartialToBeOneOf -> 1
+            else -> 2
+        }
+    })
 
     return createScanRangeFromParts(startKey, includeStart, keyParts, equalPairs, uniqueFilters)
 }
@@ -51,12 +57,16 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
     var startShouldContinue = true
     var endShouldContinue = true
     var keyIndex = -1
+    var rangePartIndex: Int? = null
+    val anchoredIndexParts = mutableSetOf<Int>()
     var startInclusive = true
     var endInclusive = true
     var equalBytes = 0u
 
     val toRemove = mutableListOf<IsIndexPartialToMatch>()
     for (keyPart in keyParts) {
+        if (rangePartIndex?.let { keyPart.indexableIndex > it } == true) break
+        if (keyPart.indexableIndex in anchoredIndexParts) continue
         if (keyIndex + 1 == keyPart.indexableIndex) {
             keyIndex++ // continue to next indexable
         } else if (keyIndex != keyPart.indexableIndex) {
@@ -70,6 +80,7 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
 
         when (keyPart) {
             is IndexPartialToMatch -> {
+                anchoredIndexParts += keyPart.indexableIndex
                 keyPart.toMatch.forEach {
                     if (startShouldContinue) addByte(start, it)
                     if (endShouldContinue) addByte(end, it)
@@ -77,24 +88,29 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
                 toRemove.add(keyPart)
             }
             is IndexPartialToBeBigger -> {
+                rangePartIndex = keyPart.indexableIndex
                 if (startShouldContinue) {
                     keyPart.toBeSmaller.forEach {
                         addByte(start, it)
                     }
                     startInclusive = keyPart.inclusive
+                    startShouldContinue = false
                     toRemove.add(keyPart)
                 }
             }
             is IndexPartialToBeSmaller -> {
+                rangePartIndex = keyPart.indexableIndex
                 if (endShouldContinue) {
                     keyPart.toBeBigger.forEach {
                         addByte(end, it)
                     }
                     endInclusive = keyPart.inclusive
+                    endShouldContinue = false
                     toRemove.add(keyPart)
                 }
             }
             is IndexPartialToBeOneOf -> {
+                anchoredIndexParts += keyPart.indexableIndex
                 if (keyPart.toBeOneOf.isEmpty()) {
                     return KeyScanRanges(
                         ranges = emptyList(),

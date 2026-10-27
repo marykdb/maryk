@@ -34,7 +34,7 @@ class MetaFileTest {
 
         // Verify exact YAML structure
         val expected = """
-            |version: 1
+            |version: 2
             |indexKeyFormatVersion: 2
             |models:
             |  1:
@@ -177,7 +177,7 @@ class MetaFileTest {
         File.writeText(
             "$path/MARYK_META.yml",
             """
-                |version: 2
+                |version: 3
                 |indexKeyFormatVersion: 2
                 |models: {}
                 |

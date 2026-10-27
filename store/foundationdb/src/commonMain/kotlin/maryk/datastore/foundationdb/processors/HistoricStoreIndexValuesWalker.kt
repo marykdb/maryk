@@ -5,8 +5,7 @@ import maryk.foundationdb.Transaction
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.definitions.index.toStorageByteArrayForIndexValue
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -107,13 +106,7 @@ internal class HistoricStoreIndexValuesWalker(
             if (mapKey == null || version == null) return
 
             val valueAndKey = try {
-                val valueLength = typedIndexable.calculateStorageByteLength(mapKey)
-                ByteArray(valueLength + valueLength.calculateVarByteLength() + key.size).also { bytes ->
-                    var writeIndex = 0
-                    typedIndexable.writeStorageBytes(mapKey) { bytes[writeIndex++] = it }
-                    valueLength.writeVarBytes { bytes[writeIndex++] = it }
-                    key.copyInto(bytes, writeIndex)
-                }
+                typedIndexable.toStorageByteArrayForIndexValue(mapKey, key)
             } catch (_: ValidationException) {
                 return
             } catch (_: ParseException) {
@@ -206,15 +199,7 @@ internal class HistoricStoreIndexValuesWalker(
                 val setItem = (indexable as SetAnyValueReference<Any, *>).readStorageBytes(setItemLength) { setItemBytes[readIndex++] }
                 if (readIndex != setItemBytes.size) continue
 
-                val valueAndKey = ByteArray(
-                    indexable.calculateStorageByteLength(setItem) +
-                        setItemLength.calculateVarByteLength() +
-                        key.size
-                )
-                var writeIndex = 0
-                indexable.writeStorageBytes(setItem) { valueAndKey[writeIndex++] = it }
-                setItemLength.writeVarBytes { valueAndKey[writeIndex++] = it }
-                key.copyInto(valueAndKey, writeIndex)
+                val valueAndKey = indexable.toStorageByteArrayForIndexValue(setItem, key)
 
                 if (currentlyPresent.remove(setItem) == true) {
                     handleIndex(valueAndKey, historicKey.readReversedVersionBytes(versionOffset))

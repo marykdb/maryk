@@ -1,5 +1,6 @@
 package maryk.core.processors.datastore.matchers
 
+import maryk.core.properties.definitions.index.decodeIndexString
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
 import maryk.core.processors.datastore.findByteIndexByPartIndex
 import maryk.lib.exceptions.ParseException
@@ -104,7 +105,7 @@ data class IndexPartialToRegexMatch(
             indexPartCount = indexPartCount
         )
         val fullOffset = offset + internalOffset
-        val stringValue = bytes.decodeToString(fullOffset, fullOffset + size)
+        val stringValue = decodeIndexString(bytes, fullOffset, size)
         return regex.matches(valueTransformer?.invoke(stringValue) ?: stringValue)
     }
 }

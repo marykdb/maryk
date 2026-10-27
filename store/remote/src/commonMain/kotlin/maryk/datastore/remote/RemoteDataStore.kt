@@ -1,5 +1,8 @@
 package maryk.datastore.remote
 
+import maryk.core.models.migration.StorageFormat
+import maryk.core.models.migration.hasFloatingPointValueObjects
+
 import io.ktor.client.request.get
 import io.ktor.client.HttpClient
 import io.ktor.client.request.headers
@@ -223,6 +226,9 @@ class RemoteDataStore private constructor(
 
                 val infoResult = fetchInfo(client, effectiveUrl, config.bearerToken)
                 val modelMap = buildModelMap(infoResult.info, infoResult.definitionsContext)
+                require(modelMap.values.none { it.hasFloatingPointValueObjects() } || infoResult.info.valueStorageFormat == StorageFormat.CURRENT.toUInt()) {
+                    "Remote value-object storage format differs; upgrade the client and server together"
+                }
 
                 RemoteDataStore(
                     httpClient = client,
@@ -306,7 +312,7 @@ class RemoteDataStore private constructor(
                 client.get(buildUrl(baseUrl, RemoteStoreProtocol.infoPath)) {
                     headers {
                         append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
-                        appendBearerToken(bearerToken)
+                        appendStoreHeaders(bearerToken)
                     }
                 }
             }
@@ -446,7 +452,7 @@ class RemoteDataStore private constructor(
                         RemoteStoreProtocol.executeProtocolHeader,
                         RemoteStoreProtocol.batchExecuteProtocol,
                     )
-                    appendBearerToken(bearerToken)
+                    appendStoreHeaders(bearerToken)
                 }
                 setBody(payload)
             }
@@ -627,7 +633,7 @@ class RemoteDataStore private constructor(
                             headers {
                                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                                 append(HttpHeaders.Accept, RemoteStoreProtocol.streamContentType)
-                                appendBearerToken(bearerToken)
+                                appendStoreHeaders(bearerToken)
                                 if (useFlowProtocolV2) {
                                     append(
                                         RemoteStoreProtocol.flowProtocolHeader,
@@ -824,7 +830,7 @@ class RemoteDataStore private constructor(
                 headers {
                     append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                     append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
-                    appendBearerToken(bearerToken)
+                    appendStoreHeaders(bearerToken)
                 }
                 setBody(payload)
             }
@@ -845,7 +851,7 @@ class RemoteDataStore private constructor(
             httpClient.get(buildUrl(baseUrl, RemoteStoreProtocol.snapshotVersionPath)) {
                 headers {
                     append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
-                    appendBearerToken(bearerToken)
+                    appendStoreHeaders(bearerToken)
                 }
             }
         }
@@ -883,7 +889,7 @@ class RemoteDataStore private constructor(
                 headers {
                     append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                     append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
-                    appendBearerToken(bearerToken)
+                    appendStoreHeaders(bearerToken)
                 }
                 setBody(RemoteMigrationAdminCodec.encodeRequest(request))
             }
@@ -995,7 +1001,8 @@ class RemoteBatchOutcomeUnknownException(
     message: String,
 ) : IllegalStateException(message)
 
-private fun HeadersBuilder.appendBearerToken(bearerToken: String?) {
+private fun HeadersBuilder.appendStoreHeaders(bearerToken: String?) {
+    append(RemoteStoreProtocol.valueStorageFormatHeader, StorageFormat.CURRENT.toString())
     if (bearerToken != null) {
         append(HttpHeaders.Authorization, "Bearer $bearerToken")
     }

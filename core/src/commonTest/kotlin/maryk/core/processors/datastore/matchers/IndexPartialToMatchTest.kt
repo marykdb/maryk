@@ -1,5 +1,8 @@
 package maryk.core.processors.datastore.matchers
 
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.index.encodeIndexComponent
+import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -32,7 +35,8 @@ class IndexPartialToMatchTest {
 
     @Test
     fun keyPartialRegExToMatch() {
-        val encoded = dynamicIndexBytes("TestMarykModel", 5)
+        val component = TestMarykModel.string.ref().encodeIndexComponent("TestMarykModel".encodeToByteArray())
+        val encoded = component + byteArrayOf(component.size.toByte()) + ByteArray(5)
         assertTrue {
             IndexPartialToRegexMatch(0, 5, 1, Regex("^(TestMarykModel)$")).match(encoded, sourceEnd = encoded.size)
         }
@@ -41,11 +45,12 @@ class IndexPartialToMatchTest {
     @Test
     fun dynamicMatchersRespectNonZeroOffset() {
         val prefix = byteArrayOf(11, 12, 13)
-        val encoded = dynamicIndexBytes("TestMarykModel", 5)
+        val component = TestMarykModel.string.ref().encodeIndexComponent("TestMarykModel".encodeToByteArray())
+        val encoded = component + byteArrayOf(component.size.toByte()) + ByteArray(5)
         val bytes = prefix + encoded
 
         assertTrue {
-            IndexPartialSizeToMatch(0, null, 5, 1, "TestMarykModel".length)
+            IndexPartialSizeToMatch(0, null, 5, 1, component.size)
                 .match(bytes, offset = prefix.size, length = encoded.size - 5, sourceEnd = bytes.size)
         }
         assertTrue {
@@ -53,7 +58,7 @@ class IndexPartialToMatchTest {
                 .match(bytes, offset = prefix.size, length = encoded.size - 5, sourceEnd = bytes.size)
         }
         assertTrue {
-            IndexPartialToMatch(0, null, 5, 1, "TestMarykModel".encodeToByteArray())
+            IndexPartialToMatch(0, null, 5, 1, component)
                 .match(bytes, offset = prefix.size, length = encoded.size - 5, sourceEnd = bytes.size)
         }
     }

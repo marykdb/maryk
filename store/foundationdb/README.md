@@ -254,3 +254,38 @@ windows, joined mutations, correlated queries and complex map/collection expansi
 use the common SQL engine over this store's public requests. See the [SQL guide](../../sql/README.md) for supported
 syntax, execution strategies, transaction tooling and resource limits. The shared
 SQL conformance contract verifies these features through this adapter.
+
+## Opening storage format 2
+
+Opening an older store performs one resumable, exclusive upgrade before
+application schema migrations or requests. There is one migration: the released,
+unversioned layout (legacy format 1) upgrades directly to storage format 2.
+Float/Double values and index components now share the ordered numeric encoding.
+The upgrade converts affected current/historical fields, collection qualifiers,
+packed value objects and unique lookups, including contextual encryption and
+sensitive unique tokens. Original versions, record IDs and references are kept.
+Unchanged cells and fixed-width non-floating indexes are not rewritten.
+Legacy variable-width index entries gain escaped boundaries and UTF-16 string
+ordering. Primary keys whose bytes change require an explicit key/reference
+migration and fail preflight.
+
+The store metadata records `maryk.storage/format = 2` only after verification.
+Later opens read the stamp and skip the conversion and data scans. A durable
+checkpoint and temporary staged rows make interruption recoverable by reopening
+with the same stored source schemas. Sensitive unique token translations are
+also temporary and are deleted before publication. Complete pending application
+schema migrations with their original library before starting this upgrade.
+Legacy field encryption is not converted. Do not run old writers during the
+upgrade or downgrade afterward. Restart scans and replication subscriptions from
+a fresh snapshot; old scan cursors are rejected.
+
+Per-model `maryk.storage/maintenance` metadata separately records completion of
+clock repair and optional history/tombstone backfills. Later opens read these
+completion flags and the operational clock watermark, skipping old repair-marker
+checks and scans. Models first opened later and newly enabled history still get
+their required maintenance. This is engine metadata, independent of model schema
+versions, with no extra fields on application records.
+
+FoundationDB cluster logs distinguish old/new packed-value
+payloads in an existing type bit; old queued payloads can be read without a queue
+rewrite or extra log-envelope bytes.

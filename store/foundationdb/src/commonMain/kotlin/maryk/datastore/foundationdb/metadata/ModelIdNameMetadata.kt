@@ -9,6 +9,8 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 
+internal val transactionRevisionMetadataSuffix = "transaction/revision".encodeToByteArray()
+
 private const val ID_KEY_SIZE = UInt.SIZE_BYTES
 
 internal fun UInt.toMetadataBytes(): ByteArray {
@@ -51,6 +53,8 @@ internal fun readStoredModelNames(
     val iterator = tr.getRange(range).iterator()
     while (iterator.hasNext()) {
         val kv = iterator.nextBlocking()
+        // The existing transaction coordinator shares this subspace with the ID map.
+        if (kv.key.contentEquals(metadataPrefix + transactionRevisionMetadataSuffix)) continue
         stored[decodeModelIdFromKey(kv.key, metadataPrefix.size)] = kv.value.decodeToString()
     }
     stored

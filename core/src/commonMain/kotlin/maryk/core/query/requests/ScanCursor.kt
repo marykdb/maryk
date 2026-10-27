@@ -459,7 +459,8 @@ private fun readULong(source: ByteArray, offset: Int): ULong {
 private val CURSOR_MAGIC = byteArrayOf(0x4d, 0x4b, 0x53, 0x43)
 private const val CURSOR_FORMAT_VERSION: Byte = 2
 private const val CURSOR_HEADER_SIZE = 4 + 1 + 2 + ULong.SIZE_BYTES * 2 + 2 + Int.SIZE_BYTES
-private const val SCAN_LAYOUT_FINGERPRINT_VERSION: Byte = 1
+// Version 2 includes ordered index components and the unified floating-point codec.
+private const val SCAN_LAYOUT_FINGERPRINT_VERSION: Byte = 2
 private const val LAYOUT_CYCLE: Byte = 0
 private const val LAYOUT_VALUE: Byte = 1
 private const val TYPE_REFERENCE_LAYOUT: UInt = 0u

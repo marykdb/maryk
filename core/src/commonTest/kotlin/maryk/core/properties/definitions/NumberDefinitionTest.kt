@@ -5,6 +5,11 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.SInt8
+import maryk.core.properties.types.numeric.SInt16
+import maryk.core.properties.types.numeric.UInt8
+import maryk.core.properties.types.numeric.UInt16
+import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
@@ -58,6 +63,21 @@ internal class NumberDefinitionTest {
         3.4028235E38F,
         323.73957F
     )
+
+    @Test
+    fun averagesUseTheFullCountForNarrowIntegers() {
+        expect(0.toByte()) { NumberDefinition(type = SInt8).average(0.toByte(), 256L) }
+        expect(0.toByte()) { NumberDefinition(type = SInt8).average(127.toByte(), 128L) }
+        expect(0.toShort()) { NumberDefinition(type = SInt16).average(32767.toShort(), 65536L) }
+        expect(0) { NumberDefinition(type = SInt32).average(Int.MAX_VALUE, 4294967296L) }
+        expect(0.toUByte()) { NumberDefinition(type = UInt8).average(255.toUByte(), 256L) }
+        expect(0.toUShort()) { NumberDefinition(type = UInt16).average(65535.toUShort(), 65536L) }
+        expect(0u) { NumberDefinition(type = UInt32).average(UInt.MAX_VALUE, 4294967296L) }
+        expect((-1).toByte()) { NumberDefinition(type = SInt8).average((-3).toByte(), 2L) }
+        expect(1u) { NumberDefinition(type = UInt32).average(UInt.MAX_VALUE, Int.MAX_VALUE.toLong() + 1L) }
+        expect(1L) { NumberDefinition(type = SInt64).average(Long.MAX_VALUE, Long.MAX_VALUE) }
+        expect(2uL) { NumberDefinition(type = UInt64).average(ULong.MAX_VALUE, Long.MAX_VALUE) }
+    }
 
     @Test
     fun hasValuesSet() {

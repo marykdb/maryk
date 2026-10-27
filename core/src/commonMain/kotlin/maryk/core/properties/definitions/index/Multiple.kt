@@ -64,7 +64,7 @@ data class Multiple(
                 return
             }
 
-            references[depth].forEachStorageByteArray(values) { option ->
+            references[depth].forEachIndexComponent(values) { option ->
                 selectedValues[depth] = option
                 partLengths[depth] = option.size
                 appendCombination(
@@ -79,7 +79,7 @@ data class Multiple(
     }
 
     override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int?): Int {
-        val subValues = references.map { it.toStorageByteArrays(values) }
+        val subValues = references.map { it.indexComponents(values) }
         if (subValues.any { it.isEmpty() }) {
             return 0
         }

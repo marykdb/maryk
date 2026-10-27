@@ -2,9 +2,8 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.definitions.index.toStorageByteArrayForIndexValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.exceptions.ValidationException
@@ -100,8 +99,8 @@ internal class HistoricStoreIndexValuesWalker(
             fun flushPendingEvents(mapKey: Any?) {
                 if (mapKey == null || pendingEvents.isEmpty()) return
 
-                val indexValueLength = try {
-                    typedIndexable.calculateStorageByteLength(mapKey)
+                val valueAndKey = try {
+                    typedIndexable.toStorageByteArrayForIndexValue(mapKey, key)
                 } catch (_: ValidationException) {
                     pendingEvents.clear()
                     return
@@ -113,13 +112,6 @@ internal class HistoricStoreIndexValuesWalker(
                     return
                 } catch (e: DefNotFoundException) {
                     throw e
-                }
-                val indexValueLengthSize = indexValueLength.calculateVarByteLength()
-                val valueAndKey = ByteArray(indexValueLength + indexValueLengthSize + key.size).also { bytes ->
-                    var writeIndex = 0
-                    typedIndexable.writeStorageBytes(mapKey) { bytes[writeIndex++] = it }
-                    indexValueLength.writeVarBytes { bytes[writeIndex++] = it }
-                    key.copyInto(bytes, writeIndex)
                 }
 
                 var present = false
@@ -224,14 +216,7 @@ internal class HistoricStoreIndexValuesWalker(
                     val reversedVersion = qualifier.readReversedVersionBytes(
                         offset = qualifier.size - VERSION_BYTE_SIZE
                     ).toReversedVersionBytes()
-                    val indexValueLength = indexable.calculateStorageByteLength(setItem)
-                    val indexValueLengthSize = indexValueLength.calculateVarByteLength()
-                    val valueAndKey = ByteArray(indexValueLength + indexValueLengthSize + key.size).also { valueBytes ->
-                        var writeIndex = 0
-                        indexable.writeStorageBytes(setItem) { valueBytes[writeIndex++] = it }
-                        indexValueLength.writeVarBytes { valueBytes[writeIndex++] = it }
-                        key.copyInto(valueBytes, writeIndex)
-                    }
+                    val valueAndKey = indexable.toStorageByteArrayForIndexValue(setItem, key)
 
                     handleIndexReference(createHistoricIndexKey(indexable.referenceStorageByteArray.bytes, valueAndKey, reversedVersion))
                 } catch (_: ValidationException) {

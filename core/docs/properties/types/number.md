@@ -91,9 +91,30 @@ val def = NumberDefinition(
 
 ## Storage Byte representation
 All numbers are encoded to a fixed length byte format fitting their type.
-For example 4 bytes for Int32 and 1 for Int8. All numbers are encoded in
-an order fitting their natural order. For signed numbers this means that
-the sign byte is switched so negative numbers come before positive ones.
+For example 4 bytes for Int32 and 1 for Int8. Integer storage bytes follow
+natural numeric order. Signed integers switch the sign bit so negative
+numbers come before positive ones.
+
+`Float32` and `Float64` use the same reversible ordered representation for
+ordinary values and index components: complement negative IEEE bits and switch
+the sign bit for nonnegative values, then write unsigned big-endian bytes. This
+orders negatives, signed zeros, positives and infinities numerically. Ordinary
+storage preserves raw NaN payload bits; indexes normalize NaNs for Kotlin numeric
+comparison. Index writers encode directly from numeric values.
+
+Persistent stores perform one opening migration from the released, unversioned
+layout (legacy format 1) to storage format 2. The migration converts affected
+current/historical values, collection qualifiers, packed value objects, unique
+lookups and indexes. Unchanged cells and fixed-width non-floating indexes are
+kept. Record IDs, references and timestamps remain unchanged under the supported
+index/field-only upgrade. Existing primary keys whose bytes change require an
+explicit key/reference migration and fail preflight. Completion is recorded in
+store metadata; later opens skip conversion, with no per-record versions.
+
+Float/Double Protobuf scalar encoding stays unchanged. Packed value objects
+containing floating-point fields use the new bytes in serialization too; old
+IndexedDB logs are converted at opening, backup format 3 rejects older backups,
+and affected remote models require a matching value-object format.
 
 Examples:
 

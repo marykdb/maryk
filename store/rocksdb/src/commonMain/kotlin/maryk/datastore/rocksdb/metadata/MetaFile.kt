@@ -27,7 +27,7 @@ data class StoreMeta(
 }
 
 private const val META_FILE_NAME = "MARYK_META.yml"
-private const val CURRENT_VERSION = 1
+private const val CURRENT_VERSION = 2
 private const val MAX_META_FILE_BYTES = 4 * 1024 * 1024
 internal const val LEGACY_INDEX_KEY_FORMAT_VERSION = 1
 internal const val CURRENT_INDEX_KEY_FORMAT_VERSION = 2

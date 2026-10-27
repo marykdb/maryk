@@ -9,6 +9,7 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.migration.convertLegacyFloatingPointBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitionType.Value
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
@@ -25,6 +26,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -62,6 +64,13 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
         }
 
         return this.dataModel.Serializer.readFromBytes(reader)
+    }
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?, earlierValue: DO?): DO {
+        if ((context as? RequestContext)?.legacyValueStorage != true) return readStorageBytes(length, reader)
+        val converted = convertLegacyFloatingPointBytes(ByteArray(length) { reader() })
+        var offset = 0
+        return readStorageBytes(converted.size) { converted[offset++] }
     }
 
     override fun calculateTransportByteLength(value: DO) = this.dataModel.Serializer.byteSize

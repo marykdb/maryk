@@ -67,7 +67,7 @@ data class AnyOf(
     }
 
     override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int?) =
-        toStorageByteArrays(values).maxOfOrNull { valueBytes ->
+        indexComponents(values).maxOfOrNull { valueBytes ->
             val length = valueBytes.size
             length + length.calculateVarByteLength()
         }?.plus(keySize ?: 0) ?: 0

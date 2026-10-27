@@ -1,5 +1,8 @@
 package maryk.datastore.rocksdb
 
+import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
+import maryk.core.models.migration.StorageFormat
+import maryk.datastore.shared.migration.StorageMaintenanceMetadataKey
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
 import kotlinx.coroutines.CancellationException
@@ -115,6 +118,7 @@ import maryk.datastore.rocksdb.model.RocksDBMigrationAuditLogStore
 import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.rocksdb.model.modelHlcWatermarkKey
+import maryk.datastore.rocksdb.model.modelTransactionHlcWatermarkRepairCompleteKey
 import maryk.datastore.rocksdb.model.modelUpdateHistoryBackfillCompleteKey
 import maryk.datastore.rocksdb.model.modelReplicationTombstoneBackfillCompleteKey
 import maryk.datastore.rocksdb.model.storeModelDefinition
@@ -152,7 +156,6 @@ import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfExact
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfPresent
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
-import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
@@ -165,9 +168,12 @@ import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionContext
 import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
+import maryk.datastore.shared.migration.decodeStorageFormat
+import maryk.datastore.shared.migration.StorageFormatMetadataKey
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
 import maryk.datastore.shared.migration.MigrationAdmin
 import maryk.datastore.shared.isSkippableDataError
+import maryk.datastore.shared.mutationKeys
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.updates.Update
@@ -206,6 +212,8 @@ class RocksDBDataStore private constructor(
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     internal val transactionMetadataHandle get() = retainedColumnFamilyHandles.first()
     private var retainedColumnFamilyHandles: List<ColumnFamilyHandle> = emptyList()
+    internal var storageUpgradeHandles: List<ColumnFamilyHandle> = emptyList()
+        private set
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
     private val resourcesClosed = atomic(false)
@@ -333,6 +341,8 @@ class RocksDBDataStore private constructor(
                 }
             }
             retainedColumnFamilyHandles = listOf(handles.first()) + handles.drop(handleIndex)
+            storageUpgradeHandles = handles.toList()
+            decodeStorageFormat(db.get(handles.first(), StorageFormatMetadataKey))
 
             validateStoredModelsBeforeIndexFormatMigration()
         } catch (e: Throwable) {
@@ -367,6 +377,25 @@ class RocksDBDataStore private constructor(
             )
         }
 
+        upgradeRocksStorageFormat(
+            storePath = storePath,
+            storeMeta = storeMeta,
+            preparePublication = { rebuildLegacyIndexes ->
+                if (rebuildLegacyIndexes) {
+                    if (hasRequiredModelMigration || storeMeta.models.keys.any { it !in dataModelsById }) {
+                        throw MigrationException("Open with all compatible source models to upgrade the legacy index layout before changing schemas")
+                    }
+                    migrateStoredIndexKeyFormat()
+                    indexKeyFormatReady.value = true
+                }
+                initializeDurableClockWatermark()
+                if (keepUpdateHistoryIndex) {
+                    for ((index, _) in dataModelsById) {
+                        ensureOpeningHistoryReady(index, getColumnFamilies(index))
+                    }
+                }
+            },
+        )
         initializeDurableClockWatermark()
         // Compatible schemas can convert legacy index bytes before dependency version hooks
         // use the normal request API. Incompatible schemas must still backfill first.
@@ -496,8 +525,7 @@ class RocksDBDataStore private constructor(
                     if (index !in pendingMigrationModelIds.value) {
                         if (keepUpdateHistoryIndex) {
                             val columnFamilies = getColumnFamilies(index)
-                            ensureUpdateHistoryIndexReady(index, columnFamilies)
-                            backfillReplicationTombstones(columnFamilies)
+                            ensureOpeningHistoryReady(index, columnFamilies)
                         }
                         migrateStoredIndexKeyFormatIfReady(index)
                         pendingMigrationReasons.update { it - index }
@@ -523,8 +551,7 @@ class RocksDBDataStore private constructor(
                     index !in pendingMigrationModelIds.value &&
                     index !in dependencyWaitingMigrationModelIds.value
                 ) {
-                    ensureUpdateHistoryIndexReady(index, getColumnFamilies(index))
-                    backfillReplicationTombstones(getColumnFamilies(index))
+                    ensureOpeningHistoryReady(index, getColumnFamilies(index))
                 }
             }
         }
@@ -894,6 +921,18 @@ class RocksDBDataStore private constructor(
     internal fun canUseUpdateHistoryIndex(dbIndex: UInt) =
         keepUpdateHistoryIndex && dbIndex in updateHistoryReadyModelIds.value
 
+    private fun ensureOpeningHistoryReady(dbIndex: UInt, families: TableColumnFamilies) {
+        if (!keepUpdateHistoryIndex || families.updateHistory == null) return
+        val completed = db.get(families.model, StorageMaintenanceMetadataKey)
+        if (completed?.getOrNull(0) == StorageFormat.CURRENT.toByte() && completed.getOrNull(1)?.toInt()?.and(2) == 2) {
+            updateHistoryReadyModelIds.value += dbIndex
+            return
+        }
+        ensureUpdateHistoryIndexReady(dbIndex, families)
+        backfillReplicationTombstones(families)
+        db.put(families.model, StorageMaintenanceMetadataKey, byteArrayOf(StorageFormat.CURRENT.toByte(), ((completed?.getOrNull(1)?.toInt() ?: 0) or 2).toByte()))
+    }
+
     private fun ensureUpdateHistoryIndexReady(
         dbIndex: UInt,
         tableColumnFamilies: TableColumnFamilies,
@@ -1023,10 +1062,17 @@ class RocksDBDataStore private constructor(
         for (columnFamilies in columnFamilyHandlesByDataModelIndex.values) {
             val storedWatermark = db.get(columnFamilies.model, defaultReadOptions, modelHlcWatermarkKey)
                 ?.readVersionBytesIfExact()
-            val modelWatermark = storedWatermark ?: findMaximumStoredVersion(columnFamilies).also { version ->
-                if (version > 0uL) {
+            val maintenance = db.get(columnFamilies.model, defaultReadOptions, StorageMaintenanceMetadataKey)
+            val needsTransactionWatermarkRepair = maintenance?.firstOrNull() != StorageFormat.CURRENT.toByte() ||
+                maintenance.getOrNull(1)?.toInt()?.and(1) != 1
+            val modelWatermark = if (storedWatermark == null || needsTransactionWatermarkRepair) {
+                maxOf(storedWatermark ?: 0uL, findMaximumStoredVersion(columnFamilies)).also { version ->
                     db.put(columnFamilies.model, modelHlcWatermarkKey, HLC.toStorageBytes(HLC(version)))
+                    db.put(columnFamilies.model, modelTransactionHlcWatermarkRepairCompleteKey, byteArrayOf(1))
+                    db.put(columnFamilies.model, StorageMaintenanceMetadataKey, byteArrayOf(StorageFormat.CURRENT.toByte(), ((maintenance?.getOrNull(1)?.toInt() ?: 0) or 1).toByte()))
                 }
+            } else {
+                storedWatermark
             }
             storeWatermark = maxOf(storeWatermark, modelWatermark)
         }
@@ -1328,12 +1374,21 @@ class RocksDBDataStore private constructor(
             val receipt = codec.transactionReceipt(fingerprint, result)
             if (request.commit) {
                 transaction.put(transactionMetadataHandle, receiptKey, receipt)
+                val committedVersion = requireNotNull(result.version)
+                for ((model, keys) in request.mutationKeys()) {
+                    if (keys.isEmpty()) continue
+                    transaction.put(
+                        getColumnFamilies(getDataModelId(model)).model,
+                        modelHlcWatermarkKey,
+                        HLC.toStorageBytes(HLC(committedVersion)),
+                    )
+                }
                 transaction.atomicOwner = false
                 transaction.commit()
                 committed = true
                 val affectedIds = request.requests.map { getDataModelId(it.dataModel) }.toSet()
                 uniqueIndicesByDataModelIndex.update { it - affectedIds }
-                observeCommittedVersion(requireNotNull(result.version))
+                observeCommittedVersion(committedVersion)
                 publishCommittedTransactionUpdates { atomic.updates.forEach { emitFlowUpdate(it) } }
             }
             return result

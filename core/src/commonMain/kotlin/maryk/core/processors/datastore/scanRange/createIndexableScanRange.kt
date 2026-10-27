@@ -17,7 +17,13 @@ import maryk.lib.extensions.compare.nextByteInSameLength
 fun IsIndexable.createScanRange(filter: IsFilter?, keyScanRange: KeyScanRanges, startIndexKey: ByteArray? = null): IndexableScanRanges {
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     convertFilterToIndexPartsToMatch(this, keyScanRange.keySize, null, filter, listOfKeyParts)
-    listOfKeyParts.sortBy { it.indexableIndex }
+    listOfKeyParts.sortWith(compareBy<IsIndexPartialToMatch> { it.indexableIndex }.thenBy {
+        when (it) {
+            is IndexPartialToMatch -> 0
+            is IndexPartialToBeOneOf -> 1
+            else -> 2
+        }
+    })
     return createScanRangeFromParts(listOfKeyParts, keyScanRange, startIndexKey, this is AnyOf)
 }
 
@@ -49,6 +55,13 @@ private fun createScanRangeFromParts(
     val toRemove = mutableListOf<IsIndexPartialToMatch>()
 
     for (keyPart in listOfParts) {
+        if (keyPart.indexableIndex in anchoredIndexParts) {
+            if (isAnyOf && keyPart is IndexPartialToMatch) {
+                valueMatches += IndexValueMatch(keyPart.toMatch, keyPart.partialMatch)
+                toRemove += keyPart
+            }
+            continue
+        }
         // A range part ends the contiguous prefix. Later index fields remain
         // residual predicates; the opposite bound may still use this same part.
         if (rangePartIndex?.let { keyPart.indexableIndex > it } == true) break
@@ -65,12 +78,6 @@ private fun createScanRangeFromParts(
 
         when (keyPart) {
             is IndexPartialToMatch -> {
-                if (isAnyOf && keyPart.indexableIndex in anchoredIndexParts) {
-                    valueMatches += IndexValueMatch(keyPart.toMatch, keyPart.partialMatch)
-                    toRemove += keyPart
-                    continue
-                }
-
                 val appliedToRange = startShouldContinue || endShouldContinue
                 keyPart.toMatch.forEach { byte ->
                     if (startShouldContinue) addByte(start, byte)
@@ -132,6 +139,7 @@ private fun createScanRangeFromParts(
                 }
             }
             is IndexPartialToBeOneOf -> {
+                anchoredIndexParts += keyPart.indexableIndex
                 if (keyPart.toBeOneOf.isEmpty()) {
                     return IndexableScanRanges(
                         ranges = emptyList(),

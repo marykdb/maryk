@@ -1637,7 +1637,7 @@ class IndexedDbDataStoreTest {
             val models = byteStore.get("meta", byteArrayOf(2))?.decodeToString()
 
             assertEquals(
-                "schemaVersion=2\nkeepAllVersions=true\nkeepUpdateHistoryIndex=true\n",
+                "schemaVersion=3\nkeepAllVersions=true\nkeepUpdateHistoryIndex=true\n",
                 options,
             )
             assertEquals(true, models?.contains("TestMarykModel") == true)
@@ -1766,6 +1766,64 @@ class IndexedDbDataStoreTest {
         } finally {
             dataStore.close()
         }
+    }
+
+    @Test
+    fun versionHookCanReadExistingRowsAfterJournalCompaction() = runTest {
+        installIndexedDbForTests()
+        val databaseName = "maryk-indexeddb-migration-journal-hook-${Random.nextInt()}"
+        val original = IndexedDbDataStore.open(databaseName, mapOf(1u to ModelV1))
+        try {
+            assertIs<AddSuccess<ModelV1>>(original.execute(
+                ModelV1.add(ModelV1.create { value with "ha existing" }),
+            ).statuses.single())
+        } finally {
+            original.close()
+        }
+        var hookCalled = false
+        IndexedDbDataStore.open(
+            databaseName,
+            mapOf(1u to ModelV1_1),
+            versionUpdateHandler = { store, _, _ ->
+                hookCalled = true
+                assertEquals(listOf("ha existing"), store.execute(
+                    ModelV1_1.scan(allowTableScan = true),
+                ).values.map { it.values { value } })
+                assertIs<AddSuccess<ModelV1_1>>(store.execute(
+                    ModelV1_1.add(ModelV1_1.create { value with "ha added from hook" }),
+                ).statuses.single())
+            },
+        ).close()
+        assertTrue(hookCalled)
+    }
+
+    @Test
+    fun unsafeMigrationBackfillsIndexesBeforeVersionHook() = runTest {
+        installIndexedDbForTests()
+        val databaseName = "maryk-indexeddb-migration-index-hook-${Random.nextInt()}"
+        val original = IndexedDbDataStore.open(databaseName, mapOf(1u to ModelV1_1))
+        try {
+            original.execute(ModelV1_1.add(
+                ModelV1_1.create { value with "ha first"; newNumber with 20 },
+                ModelV1_1.create { value with "ha second"; newNumber with 10 },
+            )).statuses.forEach { assertIs<AddSuccess<ModelV1_1>>(it) }
+        } finally {
+            original.close()
+        }
+        var hookCalled = false
+        IndexedDbDataStore.open(
+            databaseName,
+            mapOf(1u to ModelV2ExtraIndex),
+            migrationConfiguration = MigrationConfiguration(migrationHandler = { MigrationOutcome.Success }),
+            versionUpdateHandler = { store, _, _ ->
+                hookCalled = true
+                val values = store.execute(ModelV2ExtraIndex.scan(
+                    order = ModelV2ExtraIndex.ref { newNumber }.ascending(),
+                )).values
+                assertEquals(listOf(10, 20), values.map { it.values { newNumber } })
+            },
+        ).close()
+        assertTrue(hookCalled)
     }
 
     @Test

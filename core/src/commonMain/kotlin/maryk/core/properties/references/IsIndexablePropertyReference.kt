@@ -2,6 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.definitions.index.encodeIndexValue
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.exceptions.RequiredException
@@ -29,14 +30,15 @@ interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsStorageBytesEnc
 
     override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int?): Int {
         val value = this.getValue(values)
-        val length = this.calculateStorageByteLength(value)
+        val length = encodeIndexValue(value).size
         return length + length.calculateVarByteLength() + (keySize ?: 0)
     }
 
     override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray?, writer: (byte: Byte) -> Unit) {
         val value = this.getValue(values)
-        this.writeStorageBytes(value, writer)
-        this.calculateStorageByteLength(value).writeVarBytes(writer) // write value length
+        val component = encodeIndexValue(value)
+        component.forEach(writer)
+        component.size.writeVarBytes(writer) // write value length
         key?.forEach(writer) // write key to end
     }
 
@@ -55,10 +57,11 @@ interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsStorageBytesEnc
 
     override fun toStorageByteArraysForIndex(values: IsValuesGetter, key: ByteArray?): List<ByteArray> {
         val value = this.getValueOrNull(values) ?: return emptyList()
-        val valueLength = this.calculateStorageByteLength(value)
+        val component = encodeIndexValue(value)
+        val valueLength = component.size
         return listOf(ByteArray(valueLength + valueLength.calculateVarByteLength() + (key?.size ?: 0)).also { output ->
-            var index = 0
-            this.writeStorageBytes(value) { output[index++] = it }
+            component.copyInto(output)
+            var index = valueLength
             valueLength.writeVarBytes { output[index++] = it }
             key?.copyInto(output, index)
         })

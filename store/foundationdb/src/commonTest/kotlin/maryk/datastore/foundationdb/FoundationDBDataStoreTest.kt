@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDateTime
+import maryk.datastore.shared.migration.StorageMaintenanceMetadataKey
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
@@ -87,6 +88,7 @@ class FoundationDBDataStoreTest {
                 }
                 // Legacy records can still have the old key width before migration finalizes.
                 store.runTransaction { transaction ->
+                    transaction.clear(packKey(store.getTableDirs(1u).modelPrefix, StorageMaintenanceMetadataKey))
                     transaction.set(packKey(prefix, byteArrayOf(42)), HLC.toStorageBytes(future))
                     transaction.clear(Range.startsWith(packKey(dirs.modelPrefix, modelHlcWatermarkPrefix)))
                 }
@@ -118,6 +120,7 @@ class FoundationDBDataStoreTest {
             ).key.also { key ->
                 val future = HLC(HLC().toPhysicalUnixTime() + 60_000uL, 0u)
                 store.runTransaction { transaction ->
+                    transaction.clear(packKey(store.getTableDirs(1u).modelPrefix, StorageMaintenanceMetadataKey))
                     transaction.set(
                         packKey(store.getTableDirs(SimpleMarykModel).tablePrefix, key.bytes),
                         HLC.toStorageBytes(future),

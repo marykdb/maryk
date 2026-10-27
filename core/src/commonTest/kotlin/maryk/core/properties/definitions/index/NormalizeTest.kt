@@ -188,7 +188,7 @@ internal class NormalizeTest {
         index.forEachStorageByteArrayForIndex(values) { entries += it }
 
         expect(listOf("berg", "der", "jose", "maria", "van")) {
-            entries.map { entry -> entry.copyOf(entry.size - 1).decodeToString() }.sorted()
+            entries.map { entry -> decodeIndexString(entry, 0, entry.size - 1) }.sorted()
         }
         assertEquals(
             index.toStorageByteArraysForIndex(values).map { it.toHexString() },
@@ -237,7 +237,7 @@ internal class NormalizeTest {
 
         expect(listOf("garcia")) {
             index.queryToStorageByteArrays("garcia")
-                .map { it.decodeToString() }
+                .map { decodeIndexString(it, 0, it.size) }
         }
     }
 

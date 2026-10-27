@@ -1,6 +1,7 @@
 package maryk.datastore.indexeddb.processors
 
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.migration.readLegacyValueStorage
 import maryk.core.exceptions.StorageException
 import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -25,7 +26,7 @@ internal fun <DM : IsRootDataModel> encodeVersionedChange(
     dataModel: DM,
     change: DataObjectVersionedChange<DM>,
 ): ByteArray {
-    val requestContext = DataObjectVersionedChange.Serializer.transformContext(requestContextFor(dataModel))
+    val requestContext = requireNotNull(DataObjectVersionedChange.Serializer.transformContext(requestContextFor(dataModel)))
     val cache = WriteCache()
     val byteLength = DataObjectVersionedChange.Serializer.calculateObjectProtoBufLength(change, cache, requestContext)
     val bytes = ByteArray(byteLength)
@@ -37,12 +38,13 @@ internal fun <DM : IsRootDataModel> encodeVersionedChange(
 internal fun <DM : IsRootDataModel> decodeVersionedChange(
     dataModel: DM,
     bytes: ByteArray,
+    legacyValueStorage: Boolean = false,
 ): DataObjectVersionedChange<DM> {
-    val requestContext = DataObjectVersionedChange.Serializer.transformContext(requestContextFor(dataModel))
+    val requestContext = requireNotNull(DataObjectVersionedChange.Serializer.transformContext(requestContextFor(dataModel)))
     var index = 0
     @Suppress("UNCHECKED_CAST")
-    return DataObjectVersionedChange.Serializer.readProtoBuf(bytes.size, { bytes[index++] }, requestContext).toDataObject()
-        as DataObjectVersionedChange<DM>
+    val read = { DataObjectVersionedChange.Serializer.readProtoBuf(bytes.size, { bytes[index++] }, requestContext).toDataObject() as DataObjectVersionedChange<DM> }
+    return if (legacyValueStorage) requestContext.readLegacyValueStorage(read) else read()
 }
 
 /** Stored log rows represent exactly one revision of their key and version. */

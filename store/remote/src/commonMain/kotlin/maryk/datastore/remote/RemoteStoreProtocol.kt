@@ -1,6 +1,7 @@
 package maryk.datastore.remote
 
 internal object RemoteStoreProtocol {
+    const val valueStorageFormatHeader = "X-Maryk-Value-Storage-Format"
     const val contentType = "application/x-maryk-protobuf"
     const val streamContentType = "application/x-maryk-protobuf-stream"
     const val executeProtocolHeader = "X-Maryk-Execute-Protocol"

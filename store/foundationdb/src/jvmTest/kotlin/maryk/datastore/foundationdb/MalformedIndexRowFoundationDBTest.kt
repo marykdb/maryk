@@ -155,7 +155,7 @@ class MalformedIndexRowFoundationDBTest {
 
             store.runTransaction { tr ->
                 val currentSurname = tr.get(surnameValueKey).awaitResult()!!
-                tr.set(surnameValueKey, currentSurname + byteArrayOf(1))
+                tr.set(surnameValueKey, currentSurname.copyOf(8) + byteArrayOf(0xff.toByte()))
             }
 
             val scanResponse = store.execute(
@@ -205,8 +205,7 @@ class MalformedIndexRowFoundationDBTest {
             )
 
             store.runTransaction { tr ->
-                val currentHistoricSurname = tr.get(historicSurnameKey).awaitResult()!!
-                tr.set(historicSurnameKey, currentHistoricSurname + byteArrayOf(1))
+                tr.set(historicSurnameKey, byteArrayOf(0xff.toByte()))
             }
 
             val scanResponse = store.execute(

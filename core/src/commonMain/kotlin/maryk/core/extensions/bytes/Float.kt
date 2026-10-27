@@ -1,19 +1,17 @@
 package maryk.core.extensions.bytes
 
-/** Write the bytes of this Float to a [writer] */
+/** Lossless, numerically ordered storage bytes (raw NaN payloads are retained). */
 internal fun Float.writeBytes(writer: (byte: Byte) -> Unit) {
-    var f = this.toRawBits()
-    // To make order correct
-    f = (f xor (f shr 32 - 1 or Int.MIN_VALUE)) + 1
-    return f.writeBytes(writer)
+    val bits = toRawBits()
+    val ordered = if (bits < 0) bits.inv() else bits xor Int.MIN_VALUE
+    ordered.toUInt().writeBytes(writer)
 }
 
-/** Reads [reader] with bytes to Float */
+/** Decode the common value/key representation. */
 internal fun initFloat(reader: () -> Byte): Float {
-    var f = initInt(reader) - 1
-    // To make order correct
-    f = f xor (f.inv() shr 32 - 1 or Int.MIN_VALUE)
-    return Float.fromBits(f)
+    val ordered = initUInt(reader = reader).toInt()
+    val bits = if (ordered < 0) ordered xor Int.MIN_VALUE else ordered.inv()
+    return Float.fromBits(bits)
 }
 
 /** Write the bytes of this Float to a [writer] in little endian order */
@@ -26,3 +24,7 @@ internal fun initFloatFromTransport(reader: () -> Byte) =
     Float.fromBits(
         initIntLittleEndian(reader)
     )
+
+/** Index comparisons treat all NaNs alike; all other values use the ordinary codec. */
+internal fun Float.writeOrderedBytes(writer: (Byte) -> Unit) =
+    Float.fromBits(toBits()).writeBytes(writer)

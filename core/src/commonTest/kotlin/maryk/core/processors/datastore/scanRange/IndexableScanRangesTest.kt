@@ -5,6 +5,7 @@ import kotlinx.datetime.LocalTime
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.key
 import maryk.core.processors.datastore.matchers.IndexPartialToMatch
+import maryk.core.properties.definitions.index.indexComponents
 import maryk.core.properties.definitions.index.Normalize
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.types.invoke
@@ -35,6 +36,35 @@ import kotlin.test.expect
 
 class IndexableScanRangesTest {
     @Test
+    fun repeatedPredicatesAnchorEachIndexPartOnlyOnce() {
+        val reference = number.ref()
+        val cases = listOf(
+            listOf(Equals(reference with 5u), Equals(reference with 5u)) to listOf(5u),
+            listOf(Equals(reference with 5u), GreaterThan(reference with 2u)) to listOf(5u),
+            listOf(GreaterThan(reference with 1u), GreaterThan(reference with 2u)) to listOf(5u, 9u),
+            listOf(GreaterThan(reference with 1u), LessThan(reference with 10u), LessThan(reference with 9u)) to listOf(2u, 5u),
+            listOf(ValueIn(reference with setOf(2u, 5u)), ValueIn(reference with setOf(5u, 9u))) to listOf(5u),
+            listOf(Equals(reference with 5u), Equals(reference with 9u)) to emptyList(),
+            listOf(Equals(reference with 5u), ValueIn(reference with emptySet())) to emptyList(),
+            listOf(GreaterThanEquals(reference with 5u), Equals(time.ref() with LocalTime(11, 10, 9))) to listOf(5u),
+        )
+        for ((predicates, expected) in cases) {
+            for (ordered in listOf(predicates, predicates.reversed())) {
+                val ranges = indexable.createScanRange(And(*ordered.toTypedArray()), keyScanRange)
+                val actual = listOf(2u to earlierDO, 5u to matchDO, 9u to laterDO).filter { (_, values) ->
+                    val row = indexable.toStorageByteArrayForIndex(values, CompleteMarykModel.key(values).bytes)!!
+                    val valueSize = indexable.indexComponents(values).sumOf { it.size }
+                    ranges.matchesPartials(row, length = valueSize) && ranges.ranges.any { range ->
+                        val length = ranges.rangeLength(range, valueSize)
+                        !range.keyBeforeStart(row, length = length) && !range.keyOutOfRange(row, length = length)
+                    }
+                }.map { it.first }
+                assertEquals(expected, actual, ordered.toString())
+            }
+        }
+    }
+
+    @Test
     fun equalityPrefixRemainsAnchoredWithMembershipAfterAnUnfilteredPart() {
         val composite = Multiple(number.ref(), time.ref(), string.ref(), CompleteMarykModel.booleanForKey.ref())
         val ranges = composite.createScanRange(And(
@@ -42,7 +72,7 @@ class IndexableScanRangesTest {
             ValueIn(CompleteMarykModel.booleanForKey.ref() with setOf(true)),
         ), keyScanRange)
         val row = composite.toStorageByteArrayForIndex(matchDO, matchKey.bytes)!!
-        val valueSize = composite.toStorageByteArrays(matchDO).single().size
+        val valueSize = composite.indexComponents(matchDO).sumOf { it.size }
         val range = ranges.ranges.single()
 
         assertTrue(ranges.matchesPartials(row, length = valueSize))
@@ -58,7 +88,7 @@ class IndexableScanRangesTest {
             time.ref() with LocalTime(11, 10, 9),
         ), keyScanRange)
         val row = composite.toStorageByteArrayForIndex(matchDO, matchKey.bytes)!!
-        val valueSize = composite.toStorageByteArrays(matchDO).single().size
+        val valueSize = composite.indexComponents(matchDO).sumOf { it.size }
         val range = ranges.ranges.single()
 
         assertTrue(ranges.matchesPartials(row, length = valueSize))
@@ -74,7 +104,7 @@ class IndexableScanRangesTest {
             Equals(number.ref() with 5u),
         ), keyScanRange)
         val row = composite.toStorageByteArrayForIndex(matchDO, matchKey.bytes)!!
-        val valueSize = composite.toStorageByteArrays(matchDO).single().size
+        val valueSize = composite.indexComponents(matchDO).sumOf { it.size }
         val range = ranges.ranges.single { row.matchesRangePart(0, it.start, sourceLength = valueSize) }
         assertTrue(ranges.matchesPartials(row, length = valueSize))
         assertEquals(range.start.size, ranges.rangeLength(range, valueSize))
@@ -99,8 +129,11 @@ class IndexableScanRangesTest {
             enumEmbedded with E1
         }
         val row = composite.toStorageByteArrayForIndex(wrongValues, CompleteMarykModel.key(wrongValues).bytes)!!
-        val valueSize = composite.toStorageByteArrays(wrongValues).single().size
-        assertFalse(ranges.matchesPartials(row, length = valueSize))
+        val valueSize = composite.indexComponents(wrongValues).sumOf { it.size }
+        assertFalse(ranges.matchesPartials(row, length = valueSize) && ranges.ranges.any { range ->
+            val length = ranges.rangeLength(range, valueSize)
+            !range.keyBeforeStart(row, length = length) && !range.keyOutOfRange(row, length = length)
+        })
     }
 
     @Test
@@ -152,7 +185,7 @@ class IndexableScanRangesTest {
     private val earlierStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
         earlierDO, earlierKey.bytes
     )!!
-    private val earlierStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(earlierDO).single().size
+    private val earlierStringValueSize = CompleteMarykModel.string.ref().indexComponents(earlierDO).sumOf { it.size }
 
     private val matchDO = CompleteMarykModel.create {
         string with "Jannes"
@@ -170,17 +203,17 @@ class IndexableScanRangesTest {
     private val matchCompositeIndexValue = indexable.toStorageByteArrayForIndex(
         matchDO, matchKey.bytes
     )!!
-    private val matchCompositeValueSize = indexable.toStorageByteArrays(matchDO).single().size
-    private val numberValueSize = number.ref().toStorageByteArrays(matchDO).single().size
+    private val matchCompositeValueSize = indexable.indexComponents(matchDO).sumOf { it.size }
+    private val numberValueSize = number.ref().indexComponents(matchDO).sumOf { it.size }
     private val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
         matchDO, matchKey.bytes
     )!!
-    private val matchStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(matchDO).single().size
+    private val matchStringValueSize = CompleteMarykModel.string.ref().indexComponents(matchDO).sumOf { it.size }
     private val normalizedStringIndexable = Normalize(CompleteMarykModel.string.ref())
     private val matchNormalizedStringIndexValue = normalizedStringIndexable.toStorageByteArrayForIndex(
         matchDO, matchKey.bytes
     )!!
-    private val matchNormalizedStringValueSize = normalizedStringIndexable.toStorageByteArrays(matchDO).single().size
+    private val matchNormalizedStringValueSize = normalizedStringIndexable.indexComponents(matchDO).sumOf { it.size }
 
     private val laterDO = CompleteMarykModel.create {
         string with "Karel"
@@ -201,7 +234,7 @@ class IndexableScanRangesTest {
     private val laterStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
         laterDO, laterKey.bytes
     )!!
-    private val laterStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(laterDO).single().size
+    private val laterStringValueSize = CompleteMarykModel.string.ref().indexComponents(laterDO).sumOf { it.size }
 
     @Test
     fun convertSimpleEqualFilterToScanRange() {
@@ -553,8 +586,8 @@ class IndexableScanRangesTest {
 
         val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
 
-        expect("4a616e") { scanRange.ranges.first().start.toHexString() }
-        expect("4a616e") { scanRange.ranges.first().end?.toHexString() }
+        expect("00ff4a00ff6100ff6e") { scanRange.ranges.first().start.toHexString() }
+        expect("00ff4a00ff6100ff6e") { scanRange.ranges.first().end?.toHexString() }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue, 0, matchStringValueSize) }
         assertTrue { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue, 0, matchStringValueSize) }
@@ -577,8 +610,8 @@ class IndexableScanRangesTest {
 
         val scanRange = normalizedStringIndexable.createScanRange(filter, keyScanRange)
 
-        expect("6a616e") { scanRange.ranges.first().start.toHexString() }
-        expect("6a616e") { scanRange.ranges.first().end?.toHexString() }
+        expect("00ff6a00ff6100ff6e") { scanRange.ranges.first().start.toHexString() }
+        expect("00ff6a00ff6100ff6e") { scanRange.ranges.first().end?.toHexString() }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchNormalizedStringIndexValue, 0, matchNormalizedStringValueSize) }
         assertTrue { scanRange.ranges.first().keyOutOfRange(matchNormalizedStringIndexValue, 0, matchNormalizedStringValueSize) }
@@ -595,7 +628,7 @@ class IndexableScanRangesTest {
         val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes
         )!!
-        val matchStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(matchDO).single().size
+        val matchStringValueSize = CompleteMarykModel.string.ref().indexComponents(matchDO).sumOf { it.size }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue, 0, matchStringValueSize) }
         assertFalse { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue, 0, matchStringValueSize) }
@@ -611,7 +644,7 @@ class IndexableScanRangesTest {
         val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes
         )!!
-        val matchStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(matchDO).single().size
+        val matchStringValueSize = CompleteMarykModel.string.ref().indexComponents(matchDO).sumOf { it.size }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue, 0, matchStringValueSize) }
         assertFalse { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue, 0, matchStringValueSize) }
@@ -627,10 +660,10 @@ class IndexableScanRangesTest {
         val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes
         )!!
-        val matchStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(matchDO).single().size
+        val matchStringValueSize = CompleteMarykModel.string.ref().indexComponents(matchDO).sumOf { it.size }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue, 0, matchStringValueSize) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue, 0, matchStringValueSize) }
+        assertTrue { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue, 0, matchStringValueSize) }
         assertFalse { scanRange.matchesPartials(matchStringIndexValue, 0, matchStringValueSize, matchStringIndexValue.size) }
     }
 

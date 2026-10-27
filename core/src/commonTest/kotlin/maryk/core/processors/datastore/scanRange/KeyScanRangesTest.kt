@@ -46,6 +46,36 @@ class KeyScanRangesTest {
     )
 
     @Test
+    fun repeatedPredicatesAnchorEachKeyPartOnlyOnce() {
+        val reference = Log.ref { timestamp }
+        fun day(day: Int) = LocalDateTime(2026, 1, day, 12, 0)
+        val cases = listOf(
+            listOf(Equals(reference with day(3)), Equals(reference with day(3))) to listOf(3),
+            listOf(Equals(reference with day(3)), GreaterThan(reference with day(1))) to listOf(3),
+            listOf(GreaterThan(reference with day(1)), GreaterThan(reference with day(2))) to listOf(3, 4, 5),
+            listOf(GreaterThan(reference with day(1)), LessThan(reference with day(5)), LessThan(reference with day(4))) to listOf(2, 3),
+            listOf(ValueIn(reference with setOf(day(1), day(3))), ValueIn(reference with setOf(day(3), day(5)))) to listOf(3),
+            listOf(Equals(reference with day(3)), Equals(reference with day(4))) to emptyList(),
+            listOf(Equals(reference with day(3)), ValueIn(reference with emptySet())) to emptyList(),
+            listOf(GreaterThanEquals(reference with day(3)), Equals(Log.ref { severity } with ERROR)) to listOf(3, 4, 5),
+        )
+        for ((predicates, expected) in cases) {
+            for (ordered in listOf(predicates, predicates.reversed())) {
+                val ranges = Log.createScanRange(And(*ordered.toTypedArray()), null)
+                for (range in ranges.ranges) {
+                    assertEquals(Log.Meta.keyByteSize, range.start.size)
+                    assertEquals(Log.Meta.keyByteSize, range.end?.size)
+                }
+                val actual = (1..5).filter { value ->
+                    val key = Log.key(Log("message", ERROR, day(value))).bytes
+                    ranges.keyWithinRanges(key) && ranges.matchesPartials(key)
+                }
+                assertEquals(expected, actual, ordered.toString())
+            }
+        }
+    }
+
+    @Test
     fun keyOutOfRange() {
         assertFalse { scanRange.ranges.first().keyOutOfRange(byteArrayOf(3, 4, 5, 6, 7)) }
         assertTrue { scanRange.ranges.first().keyOutOfRange(byteArrayOf(9, 9, 8, 7, 6)) }

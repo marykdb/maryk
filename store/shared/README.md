@@ -70,7 +70,7 @@ cross-store transaction.
 snapshot version, and models; each chunk contains complete versioned changes for
 one model. It is not a filesystem or engine-level backup.
 
-The current portable format is version `2` (`DATA_STORE_BACKUP_FORMAT_VERSION`).
+The current portable format is version `3` (`DATA_STORE_BACKUP_FORMAT_VERSION`).
 Restore accepts only that exact manifest version; it never guesses how to read an
 older or newer format. A format change must increment the version, update both
 writer and reader, and document whether a compatibility reader is supplied.
@@ -130,3 +130,15 @@ Use through concrete engines:
 - [Memory store](../memory/README.md)
 - [RocksDB store](../rocksdb/README.md)
 - [FoundationDB store](../foundationdb/README.md)
+
+Storage format 2 unifies ordinary Float/Double and ordered index bytes. It has one
+opening migration from the released, unversioned layout, separate from model
+schema versions. Backups use
+format 3 because packed value objects can contain the changed bytes; restore
+rejects earlier formats instead of guessing or wrapping legacy backup payloads.
+
+Opening conversion leaves unaffected ciphertext and sensitive unique tokens
+byte-for-byte intact. Encryption providers are required for affected encrypted
+values or qualifiers and for encrypted logs that contain changed value objects;
+retained models with unaffected sensitive fields do not require their keys merely
+to convert another plaintext Float/Double field.

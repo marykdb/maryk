@@ -281,8 +281,8 @@ class MultipleTest {
         assertEquals(2, entries.size)
         assertEquals(
             listOf(
-                "70726566697866697273740506",
-                "7072656669787365636f6e640606",
+                "00ff7000ff7200ff6500ff6600ff6900ff78000000ff6600ff6900ff7200ff7300ff7400001114",
+                "00ff7000ff7200ff6500ff6600ff6900ff78000000ff7300ff6500ff6300ff6f00ff6e00ff6400001414",
             ),
             entries.map { it.toHexString() },
         )
@@ -306,12 +306,12 @@ class MultipleTest {
 
         assertEquals(
             listOf(
-                "6162636162637a0103030a0b",
-                "6162636162636c6f6e6765720603030a0b",
-                "6162637a7a0101030a0b",
-                "6162637a6c6f6e6765720601030a0b",
-                "6162636c6f6e6765727a0106030a0b",
-                "6162636c6f6e6765726c6f6e6765720606030a0b",
+                "00ff6100ff6200ff63000000ff6100ff6200ff63000000ff7a0000050b0b0a0b",
+                "00ff6100ff6200ff63000000ff6100ff6200ff63000000ff6c00ff6f00ff6e00ff6700ff6500ff720000140b0b0a0b",
+                "00ff6100ff6200ff63000000ff7a000000ff7a000005050b0a0b",
+                "00ff6100ff6200ff63000000ff7a000000ff6c00ff6f00ff6e00ff6700ff6500ff72000014050b0a0b",
+                "00ff6100ff6200ff63000000ff6c00ff6f00ff6e00ff6700ff6500ff72000000ff7a000005140b0a0b",
+                "00ff6100ff6200ff63000000ff6c00ff6f00ff6e00ff6700ff6500ff72000000ff6c00ff6f00ff6e00ff6700ff6500ff72000014140b0a0b",
             ),
             streamed.map { it.toHexString() },
         )
@@ -329,7 +329,7 @@ class MultipleTest {
         index.forEachStorageByteArrayForIndex(values) { streamed += it }
 
         assertEquals(
-            listOf("61626303", "61626303"),
+            listOf("00ff6100ff6200ff6300000b", "00ff6100ff6200ff6300000b"),
             streamed.map { it.toHexString() },
         )
         assertStreamedEntriesMatchLegacy(index, values)

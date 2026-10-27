@@ -310,3 +310,9 @@ windows, joined mutations, correlated queries and complex map/collection expansi
 use the common SQL engine over this store's public requests. See the [SQL guide](../../sql/README.md) for supported
 syntax, execution strategies, transaction tooling and resource limits. The shared
 SQL conformance contract verifies these features through this adapter.
+
+Models with floating-point fields inside packed value objects require matching
+value-object storage formats on the client and server. Store info advertises the
+format, and requests send `X-Maryk-Value-Storage-Format`; incompatible clients are
+rejected before decoding or applying requests. Ordinary Float/Double Protobuf
+scalar fields retain their wire format.

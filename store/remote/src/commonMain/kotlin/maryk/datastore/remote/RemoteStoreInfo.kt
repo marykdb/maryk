@@ -41,6 +41,7 @@ internal data class RemoteStoreInfo(
     val supportsAtomicRequests: Boolean = false,
     val atomicCapabilities: AtomicCapabilities? = null,
     val transactionCapabilities: TransactionCapabilities? = null,
+    val valueStorageFormat: UInt = 1u,
 ) {
     init {
         require(!supportsAtomicRequests || atomicCapabilities != null) { "Atomic support requires capability metadata" }
@@ -86,6 +87,11 @@ internal data class RemoteStoreInfo(
 
         val transactionCapabilities by embedObject(10u, RemoteStoreInfo::transactionCapabilities, dataModel = { TransactionCapabilities }, required = false)
 
+        val valueStorageFormat by number(
+            12u, RemoteStoreInfo::valueStorageFormat, type = UInt32, default = 1u,
+            toSerializable = { value: UInt?, _: ContainsDefinitionsContext? -> value?.takeIf { it != 1u } },
+        )
+
         override fun invoke(values: ObjectValues<RemoteStoreInfo, IsObjectDataModel<RemoteStoreInfo>>) = RemoteStoreInfo(
             definitions = values(definitions.index),
             modelIds = values(modelIds.index),
@@ -97,6 +103,7 @@ internal data class RemoteStoreInfo(
             supportsAtomicRequests = values(supportsAtomicRequests.index),
             atomicCapabilities = values(atomicCapabilities.index),
             transactionCapabilities = values(transactionCapabilities.index),
+            valueStorageFormat = values(valueStorageFormat.index),
         )
     }
 }

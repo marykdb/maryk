@@ -9,13 +9,13 @@ fun IsRootDataModel.namedSearchIndex(name: String) =
         ?.filterIsInstance<AnyOf>()
         ?.firstOrNull { it.name == name }
 
-internal fun AnyOf.queryToStorageByteArrays(value: String): List<ByteArray> =
+internal fun AnyOf.queryToStorageByteArrays(value: String, partial: Boolean = false): List<ByteArray> =
     references.flatMap { reference ->
         reference.toQueryStrings(value).map { queryValue ->
             ByteArray(reference.calculateStorageByteLength(queryValue)).also { byteArray ->
                 var writeIndex = 0
                 reference.writeStorageBytes(queryValue) { byteArray[writeIndex++] = it }
-            }
+            }.let { reference.encodeIndexComponent(it, partial) }
         }
     }.distinctByContent()
 

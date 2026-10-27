@@ -196,8 +196,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![0].referenceStorageByteArray.bytes,
-            startKey = "garcialopez".encodeToByteArray(),
-            stopKey = "garcialope{".encodeToByteArray(),
+            startKey = "00ff6700ff6100ff7200ff6300ff6900ff6100ff6c00ff6f00ff7000ff6500ff7a0000".hexToByteArray(),
+            stopKey = "00ff6700ff6100ff7200ff6300ff6900ff6100ff6c00ff6f00ff7000ff6500ff7a0001".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -219,8 +219,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![0].referenceStorageByteArray.bytes,
-            startKey = "vander".encodeToByteArray(),
-            stopKey = "vandes".encodeToByteArray(),
+            startKey = "00ff7600ff6100ff6e00ff6400ff6500ff72".hexToByteArray(),
+            stopKey = "00ff7600ff6100ff6e00ff6400ff6500ff73".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -259,7 +259,7 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![0].referenceStorageByteArray.bytes,
-            startKey = "garcia".encodeToByteArray(),
+            startKey = "00ff6700ff6100ff7200ff6300ff6900ff610000".hexToByteArray(),
             stopKey = byteArrayOf(),
         )) { scanResponse.dataFetchType }
     }
@@ -286,7 +286,7 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![0].referenceStorageByteArray.bytes,
-            startKey = "garcia".encodeToByteArray(),
+            startKey = "00ff6700ff6100ff7200ff6300ff6900ff610000".hexToByteArray(),
             stopKey = byteArrayOf(),
         )) { scanResponse.dataFetchType }
     }
@@ -338,8 +338,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "garcia".encodeToByteArray(),
-            stopKey = "garcib".encodeToByteArray(),
+            startKey = "00ff6700ff6100ff7200ff6300ff6900ff610000".hexToByteArray(),
+            stopKey = "00ff6700ff6100ff7200ff6300ff6900ff610001".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -452,8 +452,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "van".encodeToByteArray(),
-            stopKey = "vao".encodeToByteArray(),
+            startKey = "00ff7600ff6100ff6e0000".hexToByteArray(),
+            stopKey = "00ff7600ff6100ff6e0001".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -471,8 +471,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "gar".encodeToByteArray(),
-            stopKey = "gas".encodeToByteArray(),
+            startKey = "00ff6700ff6100ff72".hexToByteArray(),
+            stopKey = "00ff6700ff6100ff73".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -490,8 +490,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "mila".encodeToByteArray(),
-            stopKey = "milb".encodeToByteArray(),
+            startKey = "00ff6d00ff6900ff6c00ff61".hexToByteArray(),
+            stopKey = "00ff6d00ff6900ff6c00ff62".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -508,8 +508,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "mila".encodeToByteArray(),
-            stopKey = "milb".encodeToByteArray(),
+            startKey = "00ff6d00ff6900ff6c00ff61".hexToByteArray(),
+            stopKey = "00ff6d00ff6900ff6c00ff62".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -532,8 +532,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "mila".encodeToByteArray(),
-            stopKey = "milb".encodeToByteArray(),
+            startKey = "00ff6d00ff6900ff6c00ff61".hexToByteArray(),
+            stopKey = "00ff6d00ff6900ff6c00ff62".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -555,8 +555,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "van".encodeToByteArray(),
-            stopKey = "vao".encodeToByteArray(),
+            startKey = "00ff7600ff6100ff6e0000".hexToByteArray(),
+            stopKey = "00ff7600ff6100ff6e0001".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -578,8 +578,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "mila".encodeToByteArray(),
-            stopKey = "milb".encodeToByteArray(),
+            startKey = "00ff6d00ff6900ff6c00ff61".hexToByteArray(),
+            stopKey = "00ff6d00ff6900ff6c00ff62".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -606,8 +606,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "mila".encodeToByteArray(),
-            stopKey = "milb".encodeToByteArray(),
+            startKey = "00ff6d00ff6900ff6c00ff61".hexToByteArray(),
+            stopKey = "00ff6d00ff6900ff6c00ff62".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -658,8 +658,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "mila".encodeToByteArray(),
-            stopKey = "milb".encodeToByteArray(),
+            startKey = "00ff6d00ff6900ff6c00ff61".hexToByteArray(),
+            stopKey = "00ff6d00ff6900ff6c00ff62".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 
@@ -688,8 +688,8 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "mila".encodeToByteArray(),
-            stopKey = "milb".encodeToByteArray(),
+            startKey = "00ff6d00ff6900ff6c00ff61".hexToByteArray(),
+            stopKey = "00ff6d00ff6900ff6c00ff62".hexToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 

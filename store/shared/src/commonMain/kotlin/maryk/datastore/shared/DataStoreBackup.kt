@@ -16,7 +16,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.updates.InitialChangesUpdate
 
-const val DATA_STORE_BACKUP_FORMAT_VERSION = 2u
+const val DATA_STORE_BACKUP_FORMAT_VERSION = 3u
 /** Maximum complete version history retained for one record during backup or export. */
 const val DEFAULT_HISTORY_VERSIONS_PER_RECORD = 10_000u
 

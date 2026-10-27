@@ -26,13 +26,39 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
+import maryk.datastore.shared.migration.StorageFormatMetadataKey
+import maryk.datastore.shared.migration.StorageFormatUpgradeStateKey
 
-private const val IndexedDbStoreSchemaVersion = 2
-private val OptionsMetadataKey = byteArrayOf(1)
+private const val IndexedDbStoreSchemaVersion = 3
+internal val OptionsMetadataKey = byteArrayOf(1)
 private val ModelsMetadataKey = byteArrayOf(2)
 private val ModelDefinitionMetadataPrefix = byteArrayOf(3)
 private val ModelDependentsMetadataPrefix = byteArrayOf(4)
 private val MigrationStateMetadataPrefix = byteArrayOf(5)
+
+/** Successful-open schema baseline; checking it requires the same fence as the following mutation. */
+internal class IndexedDbSchemaSnapshot(
+    private val definitionKeys: List<ByteArray>,
+    private val definitions: List<ByteArray?>,
+    private val migrationStateKeys: List<ByteArray>,
+) {
+    suspend fun matches(store: IndexedDbByteStore): Boolean {
+        val current = store.getBatch("meta", definitionKeys + migrationStateKeys)
+        return definitions.indices.all { current[it].contentEquals(definitions[it]) } &&
+            current.drop(definitions.size).all { it == null }
+    }
+}
+
+internal suspend fun IndexedDbByteStore.captureSchemaSnapshot(modelIds: Set<UInt>): IndexedDbSchemaSnapshot {
+    val definitionKeys = listOf(OptionsMetadataKey, StorageFormatMetadataKey) + modelIds.flatMap { modelId ->
+        listOf(modelDefinitionMetadataKey(modelId), modelDependentsMetadataKey(modelId))
+    }
+    return IndexedDbSchemaSnapshot(
+        definitionKeys,
+        getBatch("meta", definitionKeys).map { it?.copyOf() },
+        listOf(StorageFormatUpgradeStateKey) + modelIds.map(::migrationStateMetadataKey),
+    )
+}
 
 internal suspend fun IndexedDbByteStore.migrateStoreMetadata(
     dataStore: IndexedDbDataStore,
@@ -42,17 +68,7 @@ internal suspend fun IndexedDbByteStore.migrateStoreMetadata(
     migrationConfiguration: MigrationConfiguration<IndexedDbDataStore>,
     versionUpdateHandler: VersionUpdateHandler<IndexedDbDataStore>?,
 ) {
-    val optionsSummary = buildString {
-        append("schemaVersion=")
-        append(IndexedDbStoreSchemaVersion)
-        append('\n')
-        append("keepAllVersions=")
-        append(keepAllVersions)
-        append('\n')
-        append("keepUpdateHistoryIndex=")
-        append(keepUpdateHistoryIndex)
-        append('\n')
-    }
+    val optionsSummary = indexedDbOptionsSummary(keepAllVersions, keepUpdateHistoryIndex)
     val modelSummary = dataModelsById.entries
         .sortedBy { it.key }
         .joinToString(separator = "\n") { (modelId, model) -> "$modelId=${model.toIndexedDbModelSignature()}" }
@@ -64,6 +80,31 @@ internal suspend fun IndexedDbByteStore.migrateStoreMetadata(
             )
         }
     }
+    migrateIndexedDbModelDefinitions(dataStore, dataModelsById, migrationConfiguration, versionUpdateHandler)
+    writeBatch(listOf(
+        IndexedDbWriteOperation.Put("meta", OptionsMetadataKey, optionsSummary.encodeToByteArray()),
+        IndexedDbWriteOperation.Put("meta", ModelsMetadataKey, modelSummary.encodeToByteArray()),
+    ))
+}
+
+internal fun indexedDbOptionsSummary(keepAllVersions: Boolean, keepUpdateHistoryIndex: Boolean) = buildString {
+        append("schemaVersion=")
+        append(IndexedDbStoreSchemaVersion)
+        append('\n')
+        append("keepAllVersions=")
+        append(keepAllVersions)
+        append('\n')
+        append("keepUpdateHistoryIndex=")
+        append(keepUpdateHistoryIndex)
+        append('\n')
+}
+
+private suspend fun IndexedDbByteStore.migrateIndexedDbModelDefinitions(
+    dataStore: IndexedDbDataStore,
+    dataModelsById: Map<UInt, IsRootDataModel>,
+    migrationConfiguration: MigrationConfiguration<IndexedDbDataStore>,
+    versionUpdateHandler: VersionUpdateHandler<IndexedDbDataStore>?,
+) {
     get("meta", ModelsMetadataKey)?.decodeToString()
         ?.lineSequence()
         ?.filter { it.isNotBlank() }
@@ -77,8 +118,28 @@ internal suspend fun IndexedDbByteStore.migrateStoreMetadata(
         .orEmpty()
         .let { legacySignatures ->
             val conversionContext = DefinitionsConversionContext()
+            val storedModels = dataModelsById.mapValues { (modelId, _) ->
+                readStoredModelDefinition(modelId, conversionContext)
+            }
+            // Check every pending target before any callback can write through the startup bypass.
             for ((modelId, dataModel) in dataModelsById) {
-                val storedModel = readStoredModelDefinition(modelId, conversionContext)
+                val state = readMigrationState(modelId) ?: continue
+                val storedModel = storedModels[modelId]
+                if (storedModel == null ||
+                    storedModel.Meta.name != dataModel.Meta.name ||
+                    state.fromVersion != storedModel.Meta.version.toString() ||
+                    state.toVersion != dataModel.Meta.version.toString() ||
+                    state.migrationId != "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}" ||
+                    dataModel.isMigrationNeeded(storedModel) !is MigrationStatus.NeedsMigration
+                ) {
+                    throw RequestException(
+                        "IndexedDB model ${dataModel.Meta.name} has pending migration ${state.migrationId}; " +
+                            "reopen with its target schema to resume before writing"
+                    )
+                }
+            }
+            for ((modelId, dataModel) in dataModelsById) {
+                val storedModel = storedModels[modelId]
                 if (storedModel == null) {
                     val legacySignature = legacySignatures[modelId]
                     if (legacySignature != null && legacySignature != dataModel.toIndexedDbModelSignature()) {
@@ -122,20 +183,14 @@ internal suspend fun IndexedDbByteStore.migrateStoreMetadata(
                             status = status,
                             migrationConfiguration = migrationConfiguration,
                         )
-                        versionUpdateHandler?.invoke(dataStore, storedModel, dataModel)
                         status.indexesToIndex?.let { dataStore.backfillIndexRows(dataModel, it) }
+                        versionUpdateHandler?.invoke(dataStore, storedModel, dataModel)
                         storeModelDefinition(modelId, dataModel, completeMigration = true)
                     }
                 }
             }
         }
 
-    writeBatch(
-        listOf(
-            IndexedDbWriteOperation.Put("meta", OptionsMetadataKey, optionsSummary.encodeToByteArray()),
-            IndexedDbWriteOperation.Put("meta", ModelsMetadataKey, modelSummary.encodeToByteArray()),
-        )
-    )
 }
 
 private suspend fun IndexedDbByteStore.runMigration(
@@ -315,7 +370,7 @@ private suspend fun IndexedDbByteStore.runMigration(
     }
 }
 
-private suspend fun IndexedDbByteStore.readStoredModelDefinition(
+internal suspend fun IndexedDbByteStore.readStoredModelDefinition(
     modelId: UInt,
     conversionContext: DefinitionsConversionContext,
 ): RootDataModel<*>? {
@@ -383,7 +438,7 @@ private fun modelDefinitionMetadataKey(modelId: UInt): ByteArray =
 private fun modelDependentsMetadataKey(modelId: UInt): ByteArray =
     ModelDependentsMetadataPrefix + modelId.toBigEndianBytes()
 
-private fun migrationStateMetadataKey(modelId: UInt): ByteArray =
+internal fun migrationStateMetadataKey(modelId: UInt): ByteArray =
     MigrationStateMetadataPrefix + modelId.toBigEndianBytes()
 
 private suspend fun IndexedDbByteStore.readMigrationState(modelId: UInt): MigrationState? {

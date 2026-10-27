@@ -78,10 +78,10 @@ class FindKeyIndexByPartIndexKtTest {
         val indexBytes = CaseInsensitivePerson.Meta.indexes!![0].toStorageByteArrayForIndex(person, key)
             ?: error("Expected index bytes")
 
-        expect(0 to "garcialopez".encodeToByteArray().size) {
+        expect(0 to 35) {
             findByteIndexAndSizeByPartIndex(0, indexBytes, key.size, indexPartCount = 2)
         }
-        expect("garcialopez".encodeToByteArray().size to "José".encodeToByteArray().size) {
+        expect(35 to 14) {
             findByteIndexAndSizeByPartIndex(1, indexBytes, key.size, indexPartCount = 2)
         }
     }

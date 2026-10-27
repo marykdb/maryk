@@ -1,6 +1,8 @@
 package maryk.datastore.foundationdb.clusterlog
 
 import maryk.core.clock.HLC
+import maryk.core.models.migration.hasFloatingPointValueObjects
+import maryk.core.models.migration.readLegacyValueStorage
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -48,6 +50,7 @@ internal class ClusterUpdateLog(
     private val allowDeletedAdditions: Boolean = false,
 ) {
     private val originBytes = originId.encodeToByteArray()
+    private val orderedValueObjectModels = dataModelsById.filterValues { it.hasFloatingPointValueObjects() }.keys
 
     init {
         require(shardCount > 0) { "shardCount should be positive" }
@@ -326,7 +329,8 @@ internal class ClusterUpdateLog(
         out[o++] = ((mid ushr 8) and 0xFF).toByte()
         out[o++] = (mid and 0xFF).toByte()
 
-        out[o++] = update.type
+        // Reuse a reserved type bit; no per-record or extra log-envelope bytes.
+        out[o++] = (update.type.toInt() or if (modelId in orderedValueObjectModels && update.type != ClusterLogUpdate.TYPE_DELETION) 0x40 else 0).toByte()
 
         val v = update.version
         out[o++] = ((v shr 56) and 0xFFu).toByte()
@@ -373,7 +377,9 @@ internal class ClusterUpdateLog(
         val dataModel = dataModelsById[modelId] ?: return null
         val ctx = RequestContext(definitionsContext, dataModel = dataModel)
 
-        val type = value[o++]
+        val encodedType = value[o++].toInt() and 255
+        val type = (encodedType and 0x40.inv()).toByte()
+        val legacyValueObjects = modelId in orderedValueObjectModels && encodedType and 0x40 == 0
         if (value.size < o + 8 + 2 + 4) return null
 
         val version =
@@ -409,23 +415,27 @@ internal class ClusterUpdateLog(
                 else -> return null
             }
         }
-        val decodedUpdate = when (type) {
-            ClusterLogUpdate.TYPE_ADDITION -> {
-                val valuesDecoded = decodeValuesBytes(ctx, dataModel, value, o, payloadLen)
-                    ?: return null
-                ClusterLogAddition(keyBytes = keyBytes, version = version, values = valuesDecoded, isDeleted = isDeletedAddition)
+        fun readPayload(): ClusterLogUpdate? {
+            return when (type) {
+                ClusterLogUpdate.TYPE_ADDITION -> {
+                    val valuesDecoded = decodeValuesBytes(ctx, dataModel, value, o, payloadLen)
+                        ?: return null
+                    ClusterLogAddition(keyBytes = keyBytes, version = version, values = valuesDecoded, isDeleted = isDeletedAddition)
+                }
+                ClusterLogUpdate.TYPE_CHANGE -> {
+                    val changes = decodeChangesBytes(ctx, value, o, payloadLen) ?: return null
+                    ClusterLogChange(keyBytes = keyBytes, version = version, changes = changes)
+                }
+                ClusterLogUpdate.TYPE_DELETION -> {
+                    if (payloadLen != 1) return null
+                    ClusterLogDeletion(keyBytes = keyBytes, version = version, hardDelete = value[o].toInt() != 0)
+                }
+                else -> return null
             }
-            ClusterLogUpdate.TYPE_CHANGE -> {
-                val changes = decodeChangesBytes(ctx, value, o, payloadLen) ?: return null
-                ClusterLogChange(keyBytes = keyBytes, version = version, changes = changes)
-            }
-            ClusterLogUpdate.TYPE_DELETION -> {
-                if (payloadLen != 1) return null
-                ClusterLogDeletion(keyBytes = keyBytes, version = version, hardDelete = value[o].toInt() != 0)
-            }
-            else -> return null
         }
 
+        val decodedUpdate = if (legacyValueObjects) ctx.readLegacyValueStorage(::readPayload) else readPayload()
+        if (decodedUpdate == null) return null
         return DecodedUpdate(
             header = ClusterLogHeader(origin = origin, modelId = modelId),
             update = decodedUpdate

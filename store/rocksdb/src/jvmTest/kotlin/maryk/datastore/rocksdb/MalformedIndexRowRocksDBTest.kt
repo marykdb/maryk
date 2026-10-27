@@ -208,8 +208,9 @@ class MalformedIndexRowRocksDBTest {
 
             val columnFamilies = store.getColumnFamilies(Person)
             val surnameValueKey = second.bytes + Person.ref { surname }.toStorageByteArray()
+            // A truncated type varint is malformed; appending a control character is a valid string.
             val currentSurname = store.db.get(columnFamilies.table, surnameValueKey)!!
-            store.db.put(columnFamilies.table, surnameValueKey, currentSurname + byteArrayOf(1))
+            store.db.put(columnFamilies.table, surnameValueKey, currentSurname.copyOf(8) + byteArrayOf(0xff.toByte()))
 
             val scanResponse = store.execute(
                 Person.scan(
@@ -256,8 +257,9 @@ class MalformedIndexRowRocksDBTest {
 
             val columnFamilies = store.getColumnFamilies(Person)
             val surnameValueKey = second.bytes + Person.ref { surname }.toStorageByteArray()
+            // A truncated type varint is malformed; appending a control character is a valid string.
             val currentSurname = store.db.get(columnFamilies.table, surnameValueKey)!!
-            store.db.put(columnFamilies.table, surnameValueKey, currentSurname + byteArrayOf(1))
+            store.db.put(columnFamilies.table, surnameValueKey, currentSurname.copyOf(8) + byteArrayOf(0xff.toByte()))
 
             val updatesResponse = store.execute(
                 Person.scanUpdates(
@@ -317,8 +319,7 @@ class MalformedIndexRowRocksDBTest {
             ).apply {
                 invert(size - versionBytes.size)
             }
-            val currentHistoricSurname = store.db.get(columnFamilies.historic.table, historicSurnameKey)!!
-            store.db.put(columnFamilies.historic.table, historicSurnameKey, currentHistoricSurname + byteArrayOf(1))
+            store.db.put(columnFamilies.historic.table, historicSurnameKey, byteArrayOf(0xff.toByte()))
 
             val scanResponse = store.execute(
                 Person.scan(

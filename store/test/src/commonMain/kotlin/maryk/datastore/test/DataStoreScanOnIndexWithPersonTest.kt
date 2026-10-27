@@ -120,8 +120,8 @@ class DataStoreScanOnIndexWithPersonTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = byteArrayOf(4, 2, 10, 17, 2, 10, 9),
-            startKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115),
-            stopKey = byteArrayOf(75, 97, 115, 116, 101, 110, 116),
+            startKey = "00ff4b00ff6100ff7300ff7400ff6500ff6e00ff730000".hexToByteArray(),
+            stopKey = "00ff4b00ff6100ff7300ff7400ff6500ff6e00ff730001".hexToByteArray(),
         )) { scanResponse.dataFetchType }
 
         // Sorted on name
@@ -149,8 +149,8 @@ class DataStoreScanOnIndexWithPersonTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = byteArrayOf(4, 2, 10, 17, 2, 10, 9),
-            startKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115, 75, 97, 114, 101, 108),
-            stopKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115, 75, 97, 114, 101, 109),
+            startKey = "00ff4b00ff6100ff7300ff7400ff6500ff6e00ff73000000ff4b00ff6100ff7200ff6500ff6c0000".hexToByteArray(),
+            stopKey = "00ff4b00ff6100ff7300ff7400ff6500ff6e00ff73000000ff4b00ff6100ff7200ff6500ff6c0001".hexToByteArray(),
         )) { scanResponse.dataFetchType }
 
         // Sorted on name
@@ -177,8 +177,8 @@ class DataStoreScanOnIndexWithPersonTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = byteArrayOf(4, 2, 10, 17, 2, 10, 9),
-            startKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115, 75, 97, 114, 101, 108),
-            stopKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115, 75, 97, 114, 101, 109),
+            startKey = "00ff4b00ff6100ff7300ff7400ff6500ff6e00ff73000000ff4b00ff6100ff7200ff6500ff6c0000".hexToByteArray(),
+            stopKey = "00ff4b00ff6100ff7300ff7400ff6500ff6e00ff73000000ff4b00ff6100ff7200ff6500ff6c0001".hexToByteArray(),
         )) { scanResponse.dataFetchType }
 
         scanResponse.values[0].let {

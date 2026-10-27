@@ -5,6 +5,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with
+import maryk.datastore.test.StorageUpgradeFixture
+import maryk.datastore.test.StorageUpgradeRecord
 import maryk.datastore.shared.updates.Update
 import maryk.foundationdb.tuple.Tuple
 import maryk.foundationdb.tuple.Versionstamp
@@ -22,6 +24,29 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
 class ClusterUpdateLogCodecTest {
+    @Test
+    fun distinguishesLegacyAndCurrentPackedFloatingValuePayloadsWithoutRewritingTheLog() {
+        val log = newLog(mapOf(1u to StorageUpgradeRecord))
+        val fixture = StorageUpgradeFixture()
+        val values = fixture.records.first()
+        val key = Bytes(ByteArray(16) { 7 })
+        val typeOffset = 2 + "node-a".encodeToByteArray().size + 4
+        val updates = listOf(
+            ClusterLogAddition(key, 1uL, values),
+            ClusterLogAddition(key, 2uL, values, isDeleted = true),
+            ClusterLogChange(key, 3uL, listOf(Change(StorageUpgradeRecord.ref { packed } with values { StorageUpgradeRecord.packed }!!))),
+        )
+        for (update in updates) {
+            val current = log.encodeValue(1u, update, StorageUpgradeRecord)
+            assertTrue(current[typeOffset].toInt() and 0x40 != 0)
+            assertEquals(update, assertNotNull(log.decodeValue(current)).update)
+            val legacy = fixture.legacyChangeLog(current)
+            legacy[typeOffset] = update.type
+            assertEquals(update, assertNotNull(log.decodeValue(legacy)).update)
+            assertEquals(current.size, legacy.size)
+        }
+    }
+
     @Test
     fun cutoffTimestampSaturatesAtUnixEpochWhenRetentionPredatesClock() {
         assertEquals(

@@ -1,19 +1,17 @@
 package maryk.core.extensions.bytes
 
-/** Write the bytes of this Double to a [writer] */
+/** Lossless, numerically ordered storage bytes (raw NaN payloads are retained). */
 internal fun Double.writeBytes(writer: (byte: Byte) -> Unit) {
-    var l = this.toRawBits()
-    // To make order correct
-    l = (l xor ((l shr 64 - 1) or Long.MIN_VALUE)) + 1
-    return l.writeBytes(writer)
+    val bits = toRawBits()
+    val ordered = if (bits < 0) bits.inv() else bits xor Long.MIN_VALUE
+    ordered.toULong().writeBytes(writer)
 }
 
-/** Converts [reader] with bytes to Double */
+/** Decode the common value/key representation. */
 internal fun initDouble(reader: () -> Byte): Double {
-    var l = initLong(reader) - 1
-    // To make order correct
-    l = l xor (l.inv() shr 64 - 1 or Long.MIN_VALUE)
-    return Double.fromBits(l)
+    val ordered = initULong(reader = reader).toLong()
+    val bits = if (ordered < 0) ordered xor Long.MIN_VALUE else ordered.inv()
+    return Double.fromBits(bits)
 }
 
 /** Write the bytes of this Double in little endian order to a [writer] */
@@ -25,3 +23,7 @@ internal fun initDoubleFromTransport(reader: () -> Byte) =
     Double.fromBits(
         initLongLittleEndian(reader)
     )
+
+/** Index comparisons treat all NaNs alike; all other values use the ordinary codec. */
+internal fun Double.writeOrderedBytes(writer: (Byte) -> Unit) =
+    Double.fromBits(toBits()).writeBytes(writer)

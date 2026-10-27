@@ -1,5 +1,6 @@
 package maryk.datastore.indexeddb
 
+import maryk.datastore.indexeddb.processors.put
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,6 +16,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
+import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
@@ -63,7 +65,6 @@ import maryk.datastore.indexeddb.processors.processScanRequest
 import maryk.datastore.indexeddb.processors.processScanUpdateHistoryRequest
 import maryk.datastore.indexeddb.processors.processScanUpdatesRequest
 import maryk.datastore.indexeddb.processors.processUpdateResponse
-import maryk.datastore.indexeddb.processors.put
 import maryk.datastore.indexeddb.processors.isHardDeleteTombstone
 import maryk.datastore.indexeddb.processors.isUnserializableChangeLogMarker
 import maryk.datastore.indexeddb.processors.isUpdateHistoryRowKey
@@ -85,6 +86,8 @@ import maryk.datastore.shared.asTransactionResponse
 import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
+import maryk.core.query.responses.AtomicFailure
+import maryk.core.query.responses.AtomicFailureCode
 import maryk.core.query.responses.IsDataModelResponse
 import maryk.core.query.responses.IsResponse
 import maryk.datastore.shared.TransactionAbort
@@ -120,6 +123,11 @@ class IndexedDbDataStore private constructor(
 
     private val nativeByteStore = byteStore
     internal val byteStore: IndexedDbByteStore = AtomicAwareIndexedDbByteStore(byteStore, this)
+    // Startup callbacks run under the startup fence before this successful-open baseline is captured.
+    private var schemaSnapshot: IndexedDbSchemaSnapshot? = null
+
+    private suspend fun isSchemaCurrent(): Boolean = schemaSnapshot?.matches(nativeByteStore) != false
+
     override val atomicCapabilities: AtomicCapabilities? = if (nativeByteStore is AtomicIndexedDbByteStore)
         AtomicCapabilities(maxWorkBytes = MAX_ATOMIC_WORK_BYTES.toUInt(), maxScanRows = MAX_ATOMIC_SCAN_ROWS.toUInt()) else null
     override val supportsAtomicRequests: Boolean get() = nativeByteStore is AtomicIndexedDbByteStore
@@ -138,6 +146,13 @@ class IndexedDbDataStore private constructor(
                 val fingerprint = codec.transactionFingerprint(request)
                 val receiptKey = "maryk.transaction/".encodeToByteArray() + request.transactionId.encodeToByteArray()
                 nativeByteStore.get("meta", receiptKey)?.let { return@withLock codec.replayTransaction(it, fingerprint, request) }
+                if (request.hasMutations && !isSchemaCurrent()) {
+                    return@withLock TransactionResponse(
+                        TransactionStatus.Aborted,
+                        message = StaleSchemaMessage,
+                        failure = AtomicFailure(AtomicFailureCode.InvalidState),
+                    )
+                }
                 drainExternalCommitsLocked()
                 validateJournalConsumersLocked()
                 val persistedClock = nativeByteStore.get("meta", CommitClockMetadataKey)?.readBigEndianULong() ?: 0uL
@@ -193,7 +208,15 @@ class IndexedDbDataStore private constructor(
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
-    override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
+    override suspend fun captureSnapshotVersion(): ULong = reserveSnapshotVersion { localVersion ->
+        byteStore.transaction(setOf("meta"), IndexedDbTransactionMode.READWRITE) { store ->
+            val persistedVersion = store.get("meta", CommitClockMetadataKey)?.readBigEndianULong() ?: 0uL
+            val latestVersion = maxOf(localVersion, persistedVersion)
+            val snapshotVersion = if (latestVersion == ULong.MAX_VALUE) latestVersion else latestVersion + 1uL
+            store.put("meta", CommitClockMetadataKey, snapshotVersion.toBigEndianBytes())
+            snapshotVersion
+        }
+    }
 
     override suspend fun onBeforeFlowSnapshotBoundary() = pollExternalCommits()
 
@@ -351,6 +374,13 @@ class IndexedDbDataStore private constructor(
         if (operations.isNotEmpty()) byteStore.writeBatch(operations)
     }
 
+    /** Called under the writer fence before callbacks or listener registration can process updates. */
+    private suspend fun initializeJournalCursor() {
+        lastJournalKey = byteStore.scan(CommitJournalStoreName, reverse = true, limit = 1u).firstOrNull()?.first
+            ?: byteStore.get("meta", CommitJournalFloorMetadataKey)
+            ?: CommitJournalStartCursor
+    }
+
     private suspend fun startExternalCommitListener() {
         byteStore.transaction(
             setOf("meta", CommitJournalStoreName, CommitConsumerStoreName),
@@ -376,14 +406,7 @@ class IndexedDbDataStore private constructor(
                         externalCommitPending = true
                     }
                 }
-                val latest = byteStore.scan(
-                    CommitJournalStoreName,
-                    reverse = true,
-                    limit = 1u,
-                ).firstOrNull()?.first
-                lastJournalKey = latest
-                    ?: byteStore.get("meta", CommitJournalFloorMetadataKey)
-                    ?: CommitJournalStartCursor
+                initializeJournalCursor()
                 byteStore.writeBatch(listOf(journalConsumerOperation(lastJournalKey)))
                 externalCommitListenerReady = true
             }
@@ -549,6 +572,7 @@ class IndexedDbDataStore private constructor(
                                 setOf("meta", CommitJournalStoreName),
                                 IndexedDbTransactionMode.READWRITE,
                             ) {
+                                if (!isSchemaCurrent()) throw RequestException(StaleSchemaMessage)
                                 val persistedClock = byteStore.get("meta", CommitClockMetadataKey)
                                     ?.readBigEndianULong()
                                 clock = nextMutationClock(
@@ -715,6 +739,9 @@ class IndexedDbDataStore private constructor(
     }
 
     override suspend fun compactReplicationTombstones(upToVersionInclusive: ULong) {
+        byteStore.transaction(setOf("meta"), IndexedDbTransactionMode.READWRITE) {
+            if (!isSchemaCurrent()) throw RequestException(StaleSchemaMessage)
+        }
         for (modelId in dataModelsById.keys) {
             val storeName = "hd:$modelId"
             var nextStart: ByteArray? = null
@@ -727,7 +754,8 @@ class IndexedDbDataStore private constructor(
                 )
                 if (rows.isEmpty()) break
                 replicationTombstoneCompactionAfterScan?.invoke(modelId)
-                byteStore.transaction(setOf(storeName), IndexedDbTransactionMode.READWRITE) { store ->
+                byteStore.transaction(setOf("meta", storeName), IndexedDbTransactionMode.READWRITE) { store ->
+                    if (!isSchemaCurrent()) throw RequestException(StaleSchemaMessage)
                     val operations = mutableListOf<IndexedDbWriteOperation>()
                     for ((key, _) in rows) {
                         val currentValue = store.get(storeName, key) ?: continue
@@ -832,6 +860,16 @@ class IndexedDbDataStore private constructor(
             return try {
                 byteStore.withStartupWriteLock {
                     try {
+                        byteStore.upgradeIndexedDbStorageFormat(
+                            keepAllVersions,
+                            keepUpdateHistoryIndex,
+                            fieldEncryptionProvider,
+                            preparePublication = {
+                                dataStore.migrateHardDeleteTombstones()
+                                dataStore.migrateSensitiveChangeLogs()
+                            },
+                        )
+                        dataStore.initializeJournalCursor()
                         byteStore.migrateStoreMetadata(
                             dataStore = dataStore,
                             keepAllVersions = keepAllVersions,
@@ -840,8 +878,7 @@ class IndexedDbDataStore private constructor(
                             migrationConfiguration = migrationConfiguration,
                             versionUpdateHandler = versionUpdateHandler,
                         )
-                        dataStore.migrateHardDeleteTombstones()
-                        dataStore.migrateSensitiveChangeLogs()
+                        dataStore.schemaSnapshot = byteStore.captureSchemaSnapshot(dataModelsById.keys)
                     } catch (error: Throwable) {
                         withContext(NonCancellable) {
                             dataStore.stopFailedStartupWork()
@@ -863,6 +900,7 @@ class IndexedDbDataStore private constructor(
 }
 
 private const val SensitiveChangeLogMigrationBatchSize = 256
+private const val StaleSchemaMessage = "IndexedDB schema changed or a migration is pending; reopen this datastore with the current models before writing"
 private val SensitiveChangeLogMigrationMetadataPrefix = "sensitive-change-log-v1:".encodeToByteArray()
 
 private fun sensitiveChangeLogMigrationMarker(modelId: UInt, storeGroup: String): ByteArray =

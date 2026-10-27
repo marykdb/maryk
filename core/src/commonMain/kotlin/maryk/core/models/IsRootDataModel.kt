@@ -5,6 +5,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.models.definitions.IsRootDataModelDefinition
 import maryk.core.properties.definitions.index.GeoHash
+import maryk.core.properties.definitions.index.encodeIndexValue
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Normalize
@@ -14,6 +15,7 @@ import maryk.core.properties.definitions.index.normalizeStringForIndex
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.geoHashBits
@@ -102,13 +104,16 @@ private fun IsIndexable.toKeyStorageBytes(
         }
     }
     is Reversed<*> -> encodeKeyBytes(expectedByteSize) { writer ->
-        writeStorageBytes(values, writer)
+        writeKeyComponent(values, writer)
     }
     is IsFixedBytesPropertyReference<*> -> encodeKeyBytes(expectedByteSize) { writer ->
-        writeStorageBytes(values, writer)
+        writeKeyComponent(values, writer)
     }
     else -> throw TypeException("Unknown root key IsIndexable type: $this")
 }
+
+private fun <T : Any> IsIndexablePropertyReference<T>.writeKeyComponent(values: IsValuesGetter, writer: (Byte) -> Unit) =
+    encodeIndexValue(getValue(values)).forEach(writer)
 
 private fun encodeKeyBytes(
     expectedByteSize: Int,

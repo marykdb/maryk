@@ -4,6 +4,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.index.encodeIndexComponent
 import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.properties.definitions.index.GeoHash
 import maryk.core.properties.definitions.index.IsIndexable
@@ -162,7 +163,7 @@ private fun handleMatchesPrefix(
     for ((name, value) in filter.nameValuePairs) {
         if (indexable.name != name) continue
 
-        val matchBytes = indexable.queryToStorageByteArrays(value)
+        val matchBytes = indexable.queryToStorageByteArrays(value, partial = true)
         if (matchBytes.isEmpty()) continue
 
         listOfIndexParts += matchBytes.map { bytes ->
@@ -200,9 +201,10 @@ private fun handleEquals(
     listOfUniqueFilters: MutableList<UniqueToMatch>?
 ) {
     listOfEqualPairs?.addAll(filter.referenceValuePairs)
-    walkFilterReferencesAndValues(filter, indexable, listOfUniqueFilters) { index, _, byteArray ->
+    walkFilterReferencesAndValues(filter, indexable, listOfUniqueFilters) { index, definition, byteArray ->
         val keyIndex = convertIndex?.invoke(index)
-        listOfIndexParts.add(IndexPartialToMatch(index, keyIndex, keySize, indexPartCount, byteArray))
+        val component = definition.encodeIndexComponent(byteArray)
+        listOfIndexParts.add(IndexPartialToMatch(index, keyIndex, keySize, indexPartCount, component))
     }
 }
 
@@ -215,9 +217,10 @@ private fun handlePrefix(
     listOfIndexParts: MutableList<IsIndexPartialToMatch>
 ) {
     // A prefix may identify several unique values, so it cannot use an exact lookup.
-    walkFilterReferencesAndValues(filter, indexable) { index, _, byteArray ->
+    walkFilterReferencesAndValues(filter, indexable) { index, definition, byteArray ->
         val keyIndex = convertIndex?.invoke(index)
-        listOfIndexParts.add(IndexPartialToMatch(index, keyIndex, keySize, indexPartCount, byteArray, partialMatch = true))
+        val component = definition.encodeIndexComponent(byteArray, partial = true)
+        listOfIndexParts.add(IndexPartialToMatch(index, keyIndex, keySize, indexPartCount, component, partialMatch = true))
     }
 }
 
@@ -241,7 +244,7 @@ private fun handleComparison(
                 keyIndex,
                 keySize,
                 indexPartCount,
-                byteArray,
+                keyDefinition.encodeIndexComponent(byteArray),
                 isInclusive
             )
         )
@@ -352,11 +355,12 @@ private fun indexPartialWithDirection(
 
 private fun convertValueToIndexableBytes(
     indexableRef: IsIndexablePropertyReference<Any>,
-    value: Any
+    value: Any,
+    forIndex: Boolean = true,
 ): ByteArray = ByteArray(indexableRef.calculateStorageByteLength(value)).also { byteArray ->
     var byteReadIndex = 0
     indexableRef.writeStorageBytes(value) { byteArray[byteReadIndex++] = it }
-}
+}.let { if (forIndex) indexableRef.encodeIndexComponent(it) else it }
 
 /** Walk [referenceValuePairs] using [indexable] into [handleKeyBytes] */
 private fun <T : Any> walkFilterReferencesAndValues(
@@ -367,7 +371,7 @@ private fun <T : Any> walkFilterReferencesAndValues(
 ) {
     for ((reference, value) in referenceValuePairs.referenceValuePairs) {
         getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
-            handleKeyBytes(index, keyDefinition, convertValueToIndexableBytes(keyDefinition, value))
+            handleKeyBytes(index, keyDefinition, convertValueToIndexableBytes(keyDefinition, value, forIndex = false))
         }
 
         listOfUniqueFilters?.let {

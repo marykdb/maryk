@@ -1,5 +1,8 @@
 package maryk.datastore.foundationdb
 
+import maryk.datastore.foundationdb.metadata.transactionRevisionMetadataSuffix
+import maryk.core.models.migration.StorageFormat
+import maryk.datastore.shared.migration.StorageMaintenanceMetadataKey
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
 import kotlinx.coroutines.CancellationException
@@ -203,7 +206,7 @@ class FoundationDBDataStore private constructor(
     val migrationLeaseConfiguration: FoundationDBMigrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(),
     val versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
     private val clusterUpdateLogConfiguration: FoundationDBClusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(),
-    private val fieldEncryptionProvider: FieldEncryptionProvider? = null,
+    internal val fieldEncryptionProvider: FieldEncryptionProvider? = null,
     maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
 ) : AbstractDataStore(
     dataModelsById = dataModelsById,
@@ -238,7 +241,9 @@ class FoundationDBDataStore private constructor(
     internal val migrationMetricsByModelId = atomic(mapOf<UInt, MigrationMetrics>())
     internal var migrationAuditLogStore: MigrationAuditLogStore? = null
 
-    private lateinit var rootDirectory: DirectorySubspace
+    internal lateinit var rootDirectory: DirectorySubspace
+    internal lateinit var storageFormatPrefix: ByteArray
+    internal var storageFormatTransactionGuard: ((Transaction) -> Unit)? = null
     private lateinit var metadataDirectory: DirectorySubspace
     private val atomicTransactions = atomic<Set<Transaction>>(emptySet())
     private lateinit var atomicReceiptsPrefix: ByteArray
@@ -279,7 +284,7 @@ class FoundationDBDataStore private constructor(
     private val declaredUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
         dataModelsById.mapValues { (_, model) -> collectUniqueReferences(model) }
 
-    internal val transactionRevisionKey get() = packKey(metadataPrefix, "transaction/revision".encodeToByteArray())
+    internal val transactionRevisionKey get() = packKey(metadataPrefix, transactionRevisionMetadataSuffix)
 
     @OptIn(ExperimentalUuidApi::class)
     internal fun advanceTransactionRevision(transaction: Transaction) {
@@ -292,6 +297,7 @@ class FoundationDBDataStore private constructor(
     ): T {
         if (isClosing.value) throw CancellationException("Datastore closing")
         return tc.run { tr ->
+            storageFormatTransactionGuard?.invoke(tr)
             dataModelId?.let { requireModelSchemaReady(tr, it) }
             block(tr).also { if (dataModelId != null) advanceTransactionRevision(tr) }
         }
@@ -399,9 +405,20 @@ class FoundationDBDataStore private constructor(
         atomicReceiptsPrefix = runTransaction { tr ->
             rootDirectory.createOrOpen(tr, listOf("__meta__", "atomic_receipts")).awaitResult().pack()
         }
+        storageFormatPrefix = runTransaction { tr ->
+            rootDirectory.createOrOpen(tr, listOf("__meta__", "storage_format")).awaitResult().pack()
+        }
 
         for ((index, dataModel) in dataModelsById) {
             directoriesByDataModelIndex[index] = openTableDirs(index, dataModel.Meta.name, historic = keepAllVersions)
+        }
+        upgradeFoundationDBStorageFormat {
+            initializeDurableClockWatermark()
+            if (keepUpdateHistoryIndex) {
+                for ((id, dirs) in directoriesByDataModelIndex) {
+                    ensureOpeningHistoryReady(id, dirs, storageFormatTransactionGuard)
+                }
+            }
         }
         expectedSchemaEpochs.value = tc.run { transaction ->
             directoriesByDataModelIndex.mapValues { (_, tableDirectories) ->
@@ -577,8 +594,7 @@ class FoundationDBDataStore private constructor(
             }
             if (index !in pendingMigrationModelIds.value) {
                 if (keepUpdateHistoryIndex) {
-                    ensureUpdateHistoryIndexReady(index, getTableDirs(index))
-                    backfillReplicationTombstones(index, getTableDirs(index))
+                    ensureOpeningHistoryReady(index, getTableDirs(index))
                 }
                 dependencyWaitingMigrationModelIds.update { it - index }
                 pendingMigrationReasons.update { it - index }
@@ -641,8 +657,7 @@ class FoundationDBDataStore private constructor(
         if (keepUpdateHistoryIndex) {
             for ((index, _) in dataModelsById) {
                 if (index !in pendingMigrationModelIds.value && index !in dependencyWaitingMigrationModelIds.value) {
-                    ensureUpdateHistoryIndexReady(index, getTableDirs(index))
-                    backfillReplicationTombstones(index, getTableDirs(index))
+                    ensureOpeningHistoryReady(index, getTableDirs(index))
                 }
             }
         }
@@ -975,7 +990,7 @@ class FoundationDBDataStore private constructor(
         }
     }
 
-    private fun openTableDirs(
+    internal fun openTableDirs(
         modelId: UInt,
         modelName: String,
         historic: Boolean = false
@@ -1204,6 +1219,29 @@ class FoundationDBDataStore private constructor(
 
     internal fun canUseUpdateHistoryIndex(dbIndex: UInt) =
         keepUpdateHistoryIndex && dbIndex in updateHistoryReadyModelIds.value
+
+    private fun ensureOpeningHistoryReady(
+        dbIndex: UInt,
+        dirs: IsTableDirectories,
+        transactionGuard: ((Transaction) -> Unit)? = null,
+    ) {
+        if (!keepUpdateHistoryIndex || dirs.updateHistoryPrefix == null) return
+        val key = packKey(dirs.modelPrefix, StorageMaintenanceMetadataKey)
+        val completed = runTransaction { transaction ->
+            transactionGuard?.invoke(transaction)
+            transaction.get(key).awaitResult()
+        }
+        if (completed?.getOrNull(0) == StorageFormat.CURRENT.toByte() && completed.getOrNull(1)?.toInt()?.and(2) == 2) {
+            updateHistoryReadyModelIds.update { it + dbIndex }
+            return
+        }
+        ensureUpdateHistoryIndexReady(dbIndex, dirs, transactionGuard)
+        backfillReplicationTombstones(dbIndex, dirs)
+        runTransaction { transaction ->
+            transactionGuard?.invoke(transaction)
+            transaction.set(key, byteArrayOf(StorageFormat.CURRENT.toByte(), ((completed?.getOrNull(1)?.toInt() ?: 0) or 2).toByte()))
+        }
+    }
 
     private fun ensureUpdateHistoryIndexReady(
         dbIndex: UInt,
@@ -1573,18 +1611,23 @@ class FoundationDBDataStore private constructor(
         // Ordinary requests remain protected by their schema readiness guards.
         var storeWatermark = 0uL
         for (tableDirectories in directoriesByDataModelIndex.values) {
-            val watermark = runTransaction { transaction ->
-                readMaximumStoredWatermark(transaction, tableDirectories)
-            }.takeIf { it > 0uL } ?: recoverMaximumStoredVersion(tableDirectories).let { recovered ->
-                if (recovered > 0uL) {
-                    runTransaction { transaction ->
-                        val recoveryKey = packKey(tableDirectories.modelPrefix, modelHlcRecoveryWatermarkKey)
-                        val previous = transaction.get(recoveryKey).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
-                        val maximum = maxOf(previous, recovered)
-                        transaction.set(recoveryKey, HLC.toStorageBytes(HLC(maximum)))
-                        maximum
-                    }
-                } else recovered
+            val (storedWatermark, repaired) = runTransaction { transaction ->
+                readMaximumStoredWatermark(transaction, tableDirectories) to
+                    transaction.get(packKey(tableDirectories.modelPrefix, StorageMaintenanceMetadataKey)).awaitResult()
+                        .let { it?.firstOrNull() == StorageFormat.CURRENT.toByte() && it.getOrNull(1)?.toInt()?.and(1) == 1 }
+            }
+            val watermark = if (repaired) storedWatermark else {
+                val recovered = maxOf(storedWatermark, recoverMaximumStoredVersion(tableDirectories))
+                runTransaction { transaction ->
+                    val recoveryKey = packKey(tableDirectories.modelPrefix, modelHlcRecoveryWatermarkKey)
+                    val previous = transaction.get(recoveryKey).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
+                    val maximum = maxOf(previous, recovered)
+                    transaction.set(recoveryKey, HLC.toStorageBytes(HLC(maximum)))
+                    val maintenanceKey = packKey(tableDirectories.modelPrefix, StorageMaintenanceMetadataKey)
+                    val completed = transaction.get(maintenanceKey).awaitResult()
+                    transaction.set(maintenanceKey, byteArrayOf(StorageFormat.CURRENT.toByte(), ((completed?.getOrNull(1)?.toInt() ?: 0) or 1).toByte()))
+                    maximum
+                }
             }
             storeWatermark = maxOf(storeWatermark, watermark)
         }

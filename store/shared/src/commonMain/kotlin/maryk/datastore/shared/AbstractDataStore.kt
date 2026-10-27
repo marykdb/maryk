@@ -100,9 +100,13 @@ abstract class AbstractDataStore(
     protected val storeChannel = Channel<StoreAction<*, *, *>>(capacity = 64)
 
     /** Reserve the exclusive upper boundary used by historic-change reads. */
-    protected suspend fun captureLocalSnapshotVersion(): ULong = mutationBarrier.withLock {
-        committedVersion.update { current -> if (current == ULong.MAX_VALUE) current else current + 1uL }
-        committedVersion.value
+    protected suspend fun captureLocalSnapshotVersion(): ULong = reserveSnapshotVersion { current ->
+        if (current == ULong.MAX_VALUE) current else current + 1uL
+    }
+
+    /** Keep the local mutation barrier outside backend writer locks when reserving a durable boundary. */
+    protected suspend fun reserveSnapshotVersion(reserve: suspend (ULong) -> ULong): ULong = mutationBarrier.withLock {
+        reserve(committedVersion.value).also(::observeCommittedVersion)
     }
 
     /** Publish an upper mutation boundary before processing so snapshot capture cannot lag its response. */

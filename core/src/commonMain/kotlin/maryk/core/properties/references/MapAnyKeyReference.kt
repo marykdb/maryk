@@ -15,6 +15,7 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.SubListDefinition
+import maryk.core.properties.definitions.index.encodeIndexValue
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.toReferenceStorageByteArray
 import maryk.core.properties.exceptions.RequiredException
@@ -103,7 +104,7 @@ class MapAnyKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal cons
     }
 
     override fun toStorageByteArraysForIndex(values: IsValuesGetter, key: ByteArray?): List<ByteArray> =
-        this.toStorageByteArrays(values).map { valueBytes ->
+        getValuesOrNull(values).orEmpty().map { encodeIndexValue(it) }.distinctBy { Bytes(it) }.map { valueBytes ->
             val length = valueBytes.size
             ByteArray(length + length.calculateVarByteLength() + (key?.size ?: 0)).also { output ->
                 var index = 0
@@ -114,13 +115,19 @@ class MapAnyKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal cons
             }
         }
 
-    override fun forEachStorageByteArray(values: IsValuesGetter, emit: (ByteArray) -> Unit) {
+    override fun forEachStorageByteArray(values: IsValuesGetter, emit: (ByteArray) -> Unit) =
+        forEachValueBytes(values, forIndex = false, emit)
+
+    internal fun forEachEncodedIndexComponent(values: IsValuesGetter, emit: (ByteArray) -> Unit) =
+        forEachValueBytes(values, forIndex = true, emit)
+
+    private fun forEachValueBytes(values: IsValuesGetter, forIndex: Boolean, emit: (ByteArray) -> Unit) {
         @Suppress("UNCHECKED_CAST")
         val parent = parentReference as? AnyPropertyReference
         val streamingGetter = values as? IsStreamingValuesGetter
         if (parent != null && streamingGetter?.streamMapKeys(parent) { value ->
                 @Suppress("UNCHECKED_CAST")
-                emitStorageBytes(value as K, emit)
+                emitValueBytes(value as K, forIndex, emit)
             } == true
         ) {
             return
@@ -128,21 +135,13 @@ class MapAnyKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal cons
 
         val valueBytes = LinkedHashSet<Bytes>()
         for (value in getValuesOrNull(values) ?: return) {
-            val length = bytesDefinition.calculateStorageByteLength(value)
-            val output = ByteArray(length)
-            var index = 0
-            bytesDefinition.writeStorageBytes(value) { output[index++] = it }
-            valueBytes += Bytes(output)
+            valueBytes += Bytes(if (forIndex) encodeIndexValue(value) else toStorageBytes(value))
         }
         valueBytes.forEach { emit(it.bytes) }
     }
 
-    private fun emitStorageBytes(value: K, emit: (ByteArray) -> Unit) {
-        val length = bytesDefinition.calculateStorageByteLength(value)
-        emit(ByteArray(length).also { output ->
-            var index = 0
-            bytesDefinition.writeStorageBytes(value) { output[index++] = it }
-        })
+    private fun emitValueBytes(value: K, forIndex: Boolean, emit: (ByteArray) -> Unit) {
+        emit(if (forIndex) encodeIndexValue(value) else toStorageBytes(value))
     }
 
     override fun forEachStorageByteArrayForIndex(
@@ -150,7 +149,7 @@ class MapAnyKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal cons
         key: ByteArray?,
         emit: (ByteArray) -> Unit
     ) {
-        forEachStorageByteArray(values) { valueBytes ->
+        forEachEncodedIndexComponent(values) { valueBytes ->
             val length = valueBytes.size
             emit(ByteArray(length + length.calculateVarByteLength() + (key?.size ?: 0)).also { output ->
                 var index = 0

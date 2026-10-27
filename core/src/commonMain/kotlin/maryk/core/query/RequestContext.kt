@@ -31,6 +31,7 @@ class RequestContext(
     var reference: IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>? = null
 ) : ContainsDataModelContext<IsDataModel>, ContainsDefinitionsContext by definitionsContext {
     internal var filterNestingDepth = 0
+    internal var legacyValueStorage = false
 
     /** For test use */
     internal constructor(

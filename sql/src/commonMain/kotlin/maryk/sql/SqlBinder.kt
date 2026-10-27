@@ -701,6 +701,11 @@ internal class SqlBinder(
         if (boundKey(expression) in keys || expression is SqlExpr.Call && expression.name.normalized in aggregateNames) return
         if (expression is SqlExpr.Column && references[expression]?.sourceId !in sources.map { it.id }) return
         if (expression is SqlExpr.Column) fail("Column must appear in GROUP BY or an aggregate", expression)
+        subqueries[expression]?.externalColumns()?.forEach { column ->
+            if (sources.any { it.id == column.sourceId } && "column:${column.sourceId}:${column.column.name}" !in keys) {
+                fail("Correlated column must appear in GROUP BY or an aggregate", expression)
+            }
+        }
         children(expression).forEach { checkGrouped(it, keys) }
     }
 

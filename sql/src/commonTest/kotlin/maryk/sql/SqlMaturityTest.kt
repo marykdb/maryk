@@ -163,6 +163,33 @@ class SqlMaturityTest {
     }
 
     @Test
+    fun groupedQueriesValidateCorrelatedDependenciesAcrossSubqueryScopes() = sqlTest {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SqlTestModel))
+        try {
+            val sql = MarykSql.create(store)
+            val source = "(VALUES (1, 10), (1, 20)) v"
+            val invalidQueries = listOf(
+                "SELECT COUNT(*), (SELECT v.column2) FROM $source GROUP BY v.column1",
+                "SELECT COUNT(*) FROM $source GROUP BY v.column1 HAVING EXISTS (SELECT 1 WHERE v.column2 = 10)",
+                "SELECT COUNT(*) FROM $source GROUP BY v.column1 ORDER BY (SELECT v.column2)",
+                "SELECT 10 IN (SELECT v.column2), COUNT(*) FROM $source GROUP BY v.column1",
+                "SELECT (SELECT (SELECT v.column2)), COUNT(*) FROM $source GROUP BY v.column1",
+                "SELECT (WITH c AS (SELECT v.column2 AS value) SELECT value FROM c), COUNT(*) FROM $source GROUP BY v.column1",
+                "SELECT (SELECT v.column2 UNION SELECT v.column2), COUNT(*) FROM $source GROUP BY v.column1",
+            )
+            invalidQueries.forEach { query ->
+                assertEquals(SqlErrorCode.BINDING, assertFailsWith<SqlException>(query) { sql.prepare(query) }.code)
+            }
+            assertEquals(
+                listOf("2", "1", "3"),
+                sql.query("SELECT COUNT(*), (SELECT (SELECT v.column1)), (SELECT 3) FROM $source GROUP BY v.column1").rows.single().values.map { it.display() },
+            )
+            assertEquals("1", sql.query("SELECT (WITH c AS (SELECT v.column1 AS value) SELECT value FROM c) FROM $source GROUP BY v.column1").rows.single()[0].display())
+            assertEquals("2", sql.query("SELECT SUM((SELECT v.column1)) FROM $source").rows.single()[0].display())
+        } finally { store.close() }
+    }
+
+    @Test
     fun correlatedCtesKeepTheEnclosingRow() = sqlTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SqlTestModel))
         try {

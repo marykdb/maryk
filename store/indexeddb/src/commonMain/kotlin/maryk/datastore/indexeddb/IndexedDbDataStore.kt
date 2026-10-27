@@ -1,6 +1,14 @@
 package maryk.datastore.indexeddb
 
+import maryk.datastore.shared.RestoreVersionRequest
+import maryk.datastore.shared.applyRestoreVersion
+import maryk.datastore.indexeddb.processors.createUniqueRowKey
+import maryk.datastore.indexeddb.processors.addHistoricUniqueRows
+import maryk.datastore.indexeddb.processors.IndexedDbUniqueRow
 import maryk.datastore.indexeddb.processors.put
+import maryk.core.query.requests.get
+import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.ProcessResponse
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -133,6 +141,66 @@ class IndexedDbDataStore private constructor(
     override val supportsAtomicRequests: Boolean get() = nativeByteStore is AtomicIndexedDbByteStore
 
     override val transactionCapabilities = atomicCapabilities?.let(::TransactionCapabilities)
+
+    override val supportsVersionedRestore get() = supportsAtomicRequests
+
+    @OptIn(ExperimentalUuidApi::class)
+    override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) {
+        nativeByteStore.transaction(setOf("meta", CommitJournalStoreName), IndexedDbTransactionMode.READWRITE) {
+            journalCursorMutex.withLock {
+                if (!isSchemaCurrent()) throw RequestException(StaleSchemaMessage)
+                drainExternalCommitsLocked()
+                validateJournalConsumersLocked()
+                val persisted = nativeByteStore.get("meta", CommitClockMetadataKey)?.readBigEndianULong() ?: 0uL
+                mutationClock = nextMutationClock(HLC(), maxOf(persisted, request.version))
+                journalSequence = 0u
+                val staged = StagedIndexedDbByteStore(nativeByteStore)
+                val atomic = AtomicMutationContext(this@IndexedDbDataStore, staged)
+                withContext(atomic) {
+                    applyRestoreVersion(request,
+                        read = { model, key ->
+                            val response = CompletableDeferred<ValuesResponse<IsRootDataModel>>()
+                            processGetRequest(StoreAction(model.get(key, filterSoftDeleted = false), response))
+                            response.await().values.singleOrNull()
+                        },
+                        clearUnique = { claims -> claims.forEach { claim ->
+                            val id = getDataModelId(claim.model)
+                            for (value in sensitiveFields.mapUniqueValueByteCandidates(id, claim.qualifier, claim.encodedValue)) {
+                                val key = createUniqueRowKey(claim.qualifier, value)
+                                if (byteStore.get("u:$id", key)?.contentEquals(claim.key.bytes) == true) byteStore.delete("u:$id", key)
+                            }
+                        } },
+                        apply = { update ->
+                            val response = CompletableDeferred<ProcessResponse<IsRootDataModel>>()
+                            processUpdateResponse(StoreAction(update, response))
+                            response.await()
+                        },
+                        installUnique = { claims -> claims.forEach { claim ->
+                            val id = getDataModelId(claim.model)
+                            val candidates = sensitiveFields.mapUniqueValueByteCandidates(id, claim.qualifier, claim.encodedValue)
+                                .map { createUniqueRowKey(claim.qualifier, it) }
+                            for (key in candidates) {
+                                val existing = byteStore.get("u:$id", key)
+                                if (existing != null && !existing.contentEquals(claim.key.bytes)) throw RequestException("Restore conflicts with existing unique ownership")
+                            }
+                            byteStore.put("u:$id", candidates.first(), claim.key.bytes)
+                            if (keepAllVersions) {
+                                val operations = mutableListOf<IndexedDbWriteOperation>()
+                                operations.addHistoricUniqueRows("hu:$id", "huk:$id", listOf(IndexedDbUniqueRow(candidates.first(), claim.key.bytes, claim.qualifier, candidates)), request.version, active = true)
+                                byteStore.writeBatch(operations)
+                            }
+                        } },
+                    )
+                }
+                staged.put("meta", TransactionRevisionKey, Uuid.random().toByteArray())
+                nativeByteStore.writeBatch(staged.operations)
+                staged.journalKey?.let { lastJournalKey = it }
+                observeCommittedVersion(mutationClock.timestamp)
+                publishCommittedTransactionUpdates { atomic.updates.forEach { emitFlowUpdate(it) } }
+                nativeByteStore.signalCommittedUpdate()
+            }
+        }
+    }
 
     override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
         processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,

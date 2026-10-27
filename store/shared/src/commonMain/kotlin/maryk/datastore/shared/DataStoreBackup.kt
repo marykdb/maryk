@@ -5,8 +5,10 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.requests.ScanCursor
+import maryk.core.query.requests.MAX_ATOMIC_OPERATIONS
 import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.scan
@@ -207,6 +209,9 @@ suspend fun IsDataStore.restore(
         }
     }
 
+    val target = (this as? VersionedRestoreDataStore)?.takeIf { it.restoreCapabilities != null }
+        ?: throw RequestException("This datastore does not support atomic version-group restore")
+
     if (requireEmpty) {
         for ((name, model) in models) {
             if (execute(model.scan(limit = 1u, filterSoftDeleted = false, allowTableScan = true)).values.isNotEmpty()) {
@@ -227,27 +232,28 @@ suspend fun IsDataStore.restore(
             for (change in record.changes) {
                 val size = codec.replaySize(chunk.modelName, manifest.snapshotVersion, listOf(record.copy(changes = listOf(change))))
                 if (size < 0 || size > options.maxReplayBytes) {
-                    throw RequestException("One backup version exceeds maxReplayBytes; a single atomic version cannot be split")
+                    throw RequestException("One backup record version exceeds maxReplayBytes; a record version cannot be split")
                 }
             }
             staged.add(chunk.modelName, record)
             restored++
         }
     }
-    for (event in staged.orderedEvents()) {
-        val response = processUpdate(
-            UpdateResponse(models.getValue(event.modelName), InitialChangesUpdate(manifest.snapshotVersion, listOf(event.record)))
-        )
-        val result = response.result as? AddOrChangeResponse<*>
-            ?: throw RequestException("Could not restore `${event.modelName}`: unexpected ${response.result::class.simpleName} response")
-        if (result.statuses.size != 1) {
-            throw RequestException("Could not restore `${event.modelName}`: expected one status, received ${result.statuses.size}")
+    val groups = staged.orderedEvents().groupBy { it.version }.values.map { events ->
+        val updates = events.groupBy { it.modelName }.map { (name, records) ->
+            UpdateResponse(models.getValue(name), InitialChangesUpdate(manifest.snapshotVersion, records.map { it.record }))
         }
-        val failures = result.statuses.filterNot { it is AddSuccess<*> || it is ChangeSuccess<*> }
-        if (failures.isNotEmpty()) {
-            throw RequestException("Could not restore `${event.modelName}`: ${failures.joinToString()}")
+        val bytes = updates.sumOf { update ->
+            codec.replaySize(update.dataModel.Meta.name, manifest.snapshotVersion, (update.update as InitialChangesUpdate).changes).toLong()
         }
+        val records = events.size.toUInt()
+        val capabilities = requireNotNull(target.restoreCapabilities)
+        if (bytes > minOf(options.maxReplayBytes.toLong(), capabilities.maxRequestBytes.toLong(), MAX_ATOMIC_BYTES.toLong()) || records > minOf(capabilities.maxMutations, MAX_ATOMIC_OPERATIONS)) {
+            throw RequestException("One source version exceeds atomic restore limits; a version group cannot be split")
+        }
+        updates
     }
+    for (group in groups) target.restoreVersion(RestoreVersionRequest(group))
 
     return DataStoreRestoreResult(models.size, restored)
 }
@@ -319,17 +325,21 @@ private suspend fun IsDataStore.readCompleteChanges(
         throw RequestException("Backup cannot represent hard-deleted and recreated records")
     }
     if (creationVersion != null) {
-        val values = execute(
+        val creation = execute(
             model.get(
                 key,
                 toVersion = creationVersion,
                 filterSoftDeleted = false,
             )
-        ).values.singleOrNull()?.values
+        ).values.singleOrNull()
             ?: throw RequestException("Could not read creation values for backup record")
         changesByVersion[creationVersion] = VersionedChanges(
             creationVersion,
-            listOf(ObjectCreate, *values.toChanges()),
+            buildList {
+                add(ObjectCreate)
+                addAll(creation.values.toChanges())
+                if (creation.isDeleted) add(ObjectSoftDeleteChange(true))
+            },
         )
     }
 

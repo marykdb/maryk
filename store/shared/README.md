@@ -39,7 +39,7 @@ Not intended as a standalone store.
 - Portable point-in-time operations:
   - `captureSnapshotVersion`, `backup`, and `restore`
   - Versioned manifests, opaque cursor paging, bounded streaming chunks, and
-    restore through Maryk's normal replication path.
+    atomic replay of complete source-version groups.
   - Snapshot capture waits for an in-flight mutation before fixing the read
     boundary. A backup is valid only after its writer completes successfully.
   - Restore replays bounded requests in source-version order and is not globally
@@ -105,12 +105,23 @@ Requirements and operation:
   records by default. Exceeding either bound fails before changing the target.
   `restore(reader, requireEmpty, DataStoreRestoreOptions(...))` adjusts these bounds.
 - Restore stages every reader once before replay. This avoids repeated scans for every
-  atomic version while preserving global source-version order.
-- Replay emits one atomic version per request, bounded to 8 MiB by default and
-  preserving source-version order even when models are interleaved. A version
-  cannot be split atomically; one exceeding `maxReplayBytes` fails explicitly.
-  Existing format version 2 and the original `restore(reader, requireEmpty)`
-  signature remain supported.
+  record version while preserving global source-version order.
+- Replay groups all records with the same source version, including across models
+  and backup chunks. The group commits atomically and preserves original creation,
+  change and deletion versions. Its old unique claims are released inside the
+  transaction; final ownership is validated and installed before publication.
+  Transfers and cyclic swaps do not depend on backup record/key order.
+- Every group's serialized size and record count are checked before any replay.
+  `maxReplayBytes` remains 8 MiB by default for API compatibility; the effective
+  ceiling also includes the backend's advertised limits and the common replay
+  limits of 1 MiB and 1,000 record versions per group. A group cannot be split.
+  Native transaction/work limits can still reject a group atomically at execution.
+- The backup format is version 3, and the original restore overload remains.
+  No extra application-record metadata or live-store opening migration is needed.
+- Built-in local stores advertise `VersionedRestoreDataStore`. Custom stores and
+  decorators must explicitly implement/forward this capability and its atomicity
+  contract. Unsupported targets fail before replay; there is no sequential fallback.
+  Remote clients negotiate the capability with their server.
 - Replay is not globally transactional: backend or later replay failures can leave
   earlier requests applied. Restore into a disposable store, validate it, then
   publish or switch to it only after success.

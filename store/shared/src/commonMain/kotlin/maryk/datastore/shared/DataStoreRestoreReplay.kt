@@ -3,6 +3,7 @@ package maryk.datastore.shared
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
@@ -10,7 +11,7 @@ import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.InitialChangesUpdate
 
-/** Resource bounds for serialized input staging and replaying an atomic version. */
+/** Resource bounds for serialized input staging and replaying one complete source-version group. */
 data class DataStoreRestoreOptions(
     val maxStagedBytes: Int = 64 * 1024 * 1024,
     val maxStagedRecords: Int = 100_000,
@@ -34,7 +35,7 @@ internal class RestoreCodec(private val models: Map<String, IsRootDataModel>) {
         val cache = WriteCache()
         val size = DataObjectVersionedChange.Serializer.calculateObjectProtoBufLength(record, cache, context)
         if (size < 0 || size > remainingBytes) {
-            throw RequestException("Backup exceeds restore staging limit; increase maxStagedBytes")
+            throw RequestException("Serialized restore input exceeds the configured byte limit")
         }
         var index = 0
         return ByteArray(size).also { bytes ->
@@ -72,10 +73,14 @@ internal class StagedBackupReader(
 ) {
     private val records = mutableListOf<Pair<String, ByteArray>>()
     private var bytes = 0
+    private val identities = mutableSetOf<Pair<String, Bytes>>()
 
     fun add(modelName: String, record: DataObjectVersionedChange<IsRootDataModel>) {
         if (records.size >= options.maxStagedRecords) {
             throw RequestException("Backup exceeds restore staging record limit; increase maxStagedRecords")
+        }
+        if (!identities.add(modelName to Bytes(record.key.bytes.copyOf()))) {
+            throw RequestException("Backup contains duplicate record identities")
         }
         val encoded = codec.encode(modelName, record, options.maxStagedBytes - bytes)
         records += modelName to encoded

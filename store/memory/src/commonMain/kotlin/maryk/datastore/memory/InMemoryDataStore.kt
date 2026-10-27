@@ -1,5 +1,10 @@
 package maryk.datastore.memory
 
+import maryk.datastore.shared.RestoreVersionRequest
+import maryk.datastore.shared.applyRestoreVersion
+import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.ProcessResponse
+import maryk.core.query.requests.get
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,6 +59,7 @@ import maryk.datastore.memory.processors.processScanChangesRequest
 import maryk.datastore.memory.processors.processScanRequest
 import maryk.datastore.memory.processors.processScanUpdateHistoryRequest
 import maryk.datastore.memory.processors.processScanUpdatesRequest
+import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.core.query.requests.AtomicCapabilities
 import maryk.core.query.requests.TransactionCapabilities
@@ -115,6 +121,53 @@ class InMemoryDataStore private constructor(
 
     override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
     private var transactionRevision = freshTransactionRevision()
+
+    override val supportsVersionedRestore = true
+
+    override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) {
+        var nodes = 0L
+        val budget: (Int) -> Unit = { count ->
+            nodes += count
+            if (nodes > MAX_ATOMIC_STAGED_NODES) rejectAtomicLimit("stagedNodes", MAX_ATOMIC_STAGED_NODES.toULong(), nodes.toULong())
+        }
+        val staged = request.targets.map { (model, keys) ->
+            val id = getDataModelId(model)
+            @Suppress("UNCHECKED_CAST")
+            val original = atomicDataStores[id] as? DataStore<IsRootDataModel>
+            id to (original?.copyForAtomic(keys.map { Bytes(it.bytes) }.toSet(), budget)
+                ?: DataStore<IsRootDataModel>(keepAllVersions, keepUpdateHistoryIndex))
+        }.toMap()
+        val fetcher: (IsRootDataModel) -> DataStore<IsRootDataModel> = { staged.getValue(getDataModelId(it)) }
+        val updates = mutableListOf<Update<*>>()
+        val version = HLC(request.version)
+        applyRestoreVersion(request,
+            read = { model, key ->
+                val response = CompletableDeferred<ValuesResponse<IsRootDataModel>>()
+                processGetRequest(StoreAction(model.get(key, filterSoftDeleted = false), response), fetcher)
+                response.await().values.singleOrNull()
+            },
+            clearUnique = { claims -> claims.forEach { claim ->
+                val data = fetcher(claim.model)
+                data.getByKey(claim.key.bytes)?.let { data.removeFromUniqueIndex(it, claim.qualifier, claim.value, version) }
+            } },
+            apply = { update ->
+                val response = CompletableDeferred<ProcessResponse<IsRootDataModel>>()
+                processInitialChangesUpdate(StoreAction(update, response), fetcher) { updates += it }
+                response.await()
+            },
+            installUnique = { claims -> claims.forEach { claim ->
+                val data = fetcher(claim.model)
+                val record = requireNotNull(data.getByKey(claim.key.bytes))
+                data.validateUniqueNotExists(DataRecordValue(claim.qualifier, claim.value, version), record)
+                data.addToUniqueIndex(record, claim.qualifier, claim.value, version)
+            } },
+        )
+        staged.values.forEach { it.finishAtomicCopy() }
+        atomicDataStores.putAll(staged)
+        transactionRevision = freshTransactionRevision()
+        observeCommittedVersion(request.version)
+        publishCommittedTransactionUpdates { updates.forEach { emitFlowUpdate(it) } }
+    }
 
     override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
         processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,

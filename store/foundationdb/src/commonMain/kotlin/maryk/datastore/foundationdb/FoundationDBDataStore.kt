@@ -1,5 +1,11 @@
 package maryk.datastore.foundationdb
 
+import maryk.datastore.shared.RestoreVersionRequest
+import maryk.datastore.shared.applyRestoreVersion
+import maryk.datastore.foundationdb.processors.helpers.setUniqueIndexValue
+import maryk.core.query.requests.get
+import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.foundationdb.metadata.transactionRevisionMetadataSuffix
 import maryk.core.models.migration.StorageFormat
 import maryk.datastore.shared.migration.StorageMaintenanceMetadataKey
@@ -1459,6 +1465,67 @@ class FoundationDBDataStore private constructor(
     override val supportsAtomicRequests: Boolean = true
 
     override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
+
+    override val supportsVersionedRestore = true
+
+    override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) = withContext(Dispatchers.IO) {
+        val parentJob = requireNotNull(currentCoroutineContext()[Job])
+        var updates: List<Update<*>> = emptyList()
+        tc.run { transaction ->
+            transaction.options().setTimeout(FOUNDATION_DB_TRANSACTION_TIMEOUT_MS)
+            transaction.options().setRetryLimit(10)
+            transaction.options().setSizeLimit(4_194_304)
+            request.targets.keys.forEach { requireModelSchemaReady(transaction, getDataModelId(it)) }
+            val atomic = AtomicMutationContext(this@FoundationDBDataStore, transaction)
+            val readContext = FoundationDBReadContext(transaction.getReadVersion().awaitResult(), transaction)
+            atomicTransactions.update { it + transaction }
+            try {
+                runBlocking(parentJob + atomic) {
+                    applyRestoreVersion(request,
+                        read = { model, key ->
+                            val response = CompletableDeferred<ValuesResponse<IsRootDataModel>>()
+                            processGetRequest(StoreAction(model.get(key, filterSoftDeleted = false), response), Cache(), readContext)
+                            response.await().values.singleOrNull()
+                        },
+                        clearUnique = { claims -> claims.forEach { claim ->
+                            val id = getDataModelId(claim.model)
+                            val dirs = getTableDirs(id)
+                            for (value in mapUniqueValueByteCandidates(id, claim.qualifier, claim.encodedValue)) {
+                                val key = packKey(dirs.uniquePrefix, claim.qualifier, value)
+                                val existing = transaction.get(key).awaitResult()
+                                if (existing?.size == 8 + claim.key.size && existing.copyOfRange(8, existing.size).contentEquals(claim.key.bytes)) {
+                                    transaction.clear(key)
+                                }
+                            }
+                        } },
+                        apply = { update ->
+                            val response = CompletableDeferred<ProcessResponse<IsRootDataModel>>()
+                            processInitialChangesUpdate(StoreAction(update, response))
+                            response.await()
+                        },
+                        installUnique = { claims -> claims.forEach { claim ->
+                            val id = getDataModelId(claim.model)
+                            val dirs = getTableDirs(id)
+                            val candidates = mapUniqueValueByteCandidates(id, claim.qualifier, claim.encodedValue)
+                            for (value in candidates) {
+                                val existing = transaction.get(packKey(dirs.uniquePrefix, claim.qualifier, value)).awaitResult()
+                                if (existing != null && (existing.size != 8 + claim.key.size || !existing.copyOfRange(8, existing.size).contentEquals(claim.key.bytes))) {
+                                    throw RequestException("Restore conflicts with existing unique ownership")
+                                }
+                            }
+                            setUniqueIndexValue(transaction, dirs, claim.qualifier + candidates.first(), HLC.toStorageBytes(HLC(request.version)), claim.key.bytes)
+                        } },
+                    )
+                }
+                advanceTransactionRevision(transaction)
+                updates = atomic.updates.toList()
+            } finally {
+                atomicTransactions.update { it - transaction }
+            }
+        }
+        observeCommittedVersion(request.version)
+        publishCommittedTransactionUpdates { updates.forEach { emitFlowUpdate(it) } }
+    }
 
     override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
         processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,

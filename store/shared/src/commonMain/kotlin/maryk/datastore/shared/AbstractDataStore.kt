@@ -74,7 +74,7 @@ abstract class AbstractDataStore(
     coroutineContext: CoroutineContext,
     protected val maxConcurrentReads: Int = 1,
     readWorkerCoroutineContext: CoroutineContext = coroutineContext,
-): IsDataStore, CoroutineScope, AtomicDataStore, TransactionalDataStore {
+): IsDataStore, CoroutineScope, AtomicDataStore, TransactionalDataStore, VersionedRestoreDataStore {
     init {
         require(maxConcurrentReads > 0) { "maxConcurrentReads must be greater than zero" }
     }
@@ -166,6 +166,25 @@ abstract class AbstractDataStore(
 
     protected open suspend fun processTransactionRequest(request: TransactionRequest, version: HLC): TransactionResponse =
         TransactionResponse(TransactionStatus.Unsupported)
+
+    open val supportsVersionedRestore: Boolean get() = false
+
+    override val restoreCapabilities get() = atomicCapabilities.takeIf { supportsVersionedRestore }
+
+    override suspend fun restoreVersion(request: RestoreVersionRequest) {
+        waitForInit()
+        check(currentTransaction(this) == null) { "Restore is not a transaction operation" }
+        validateRestoreVersion(request, restoreCapabilities ?: throw RequestException("Atomic version-group restore is unsupported"))
+        for (update in request.updates) {
+            assertRequestModelReady(getDataModelId(update.dataModel))
+            requireSafeUpdateVersion(update.update)
+        }
+        execute(request)
+    }
+
+    protected open suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) {
+        throw RequestException("This datastore does not support atomic version-group restore")
+    }
 
     override suspend fun executeAtomic(request: AtomicRequest): AtomicResponse {
         currentTransaction(this)?.let { return it.executeAtomic(request) }
@@ -515,9 +534,19 @@ abstract class AbstractDataStore(
                     drainReads()
                 }
                 mutationBarrier.withLock {
+                    val restore = action.request as? RestoreVersionRequest
                     val transaction = action.request as? TransactionStoreRequest
                     val atomic = action.request as? AtomicStoreRequest
-                    if (transaction != null) {
+                    if (restore != null) {
+                        try {
+                            processRestoreVersionRequest(restore)
+                            @Suppress("UNCHECKED_CAST")
+                            (action.response as CompletableDeferred<RestoreVersionResponse>).complete(RestoreVersionResponse)
+                        } catch (error: Throwable) {
+                            error.rethrowIfFatal()
+                            action.response.completeExceptionally(error)
+                        }
+                    } else if (transaction != null) {
                         @Suppress("UNCHECKED_CAST")
                         val response = action.response as CompletableDeferred<TransactionResponse>
                         try { response.complete(processTransactionRequest(transaction.transaction, nextMutationClock(HLC()))) }

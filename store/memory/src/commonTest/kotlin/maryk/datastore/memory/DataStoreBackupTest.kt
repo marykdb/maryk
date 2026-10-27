@@ -18,7 +18,10 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ProcessResponse
+import maryk.datastore.shared.VersionedRestoreDataStore
+import maryk.datastore.shared.RestoreVersionRequest
 import maryk.datastore.shared.DataStoreBackupChunk
 import maryk.datastore.shared.DataStoreBackupManifest
 import maryk.datastore.shared.DataStoreBackupReader
@@ -43,6 +46,34 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DataStoreBackupTest {
+    @Test
+    fun backupPreservesDeletionAtCreation() = runTest {
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        try {
+            val values = SimpleMarykModel.create { value with "ha deleted at creation" }
+            val key = SimpleMarykModel.key(values)
+            source.processUpdate(UpdateResponse(SimpleMarykModel, AdditionUpdate(
+                key = key,
+                version = 100uL,
+                firstVersion = 100uL,
+                insertionIndex = 0,
+                isDeleted = true,
+                values = values,
+            )))
+            assertTrue(source.execute(SimpleMarykModel.get(key, filterSoftDeleted = false)).values.single().isDeleted)
+            val backup = CollectingBackup()
+            source.backup(backup)
+            target.restore(backup)
+            assertTrue(target.execute(SimpleMarykModel.get(key)).values.isEmpty())
+            assertTrue(target.execute(SimpleMarykModel.get(key, filterSoftDeleted = false)).values.single().isDeleted)
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
     @Test
     fun oversizedLateVersionIsRejectedBeforeAnyReplay() = runTest {
         val models = mapOf(1u to SimpleMarykModel)
@@ -76,15 +107,16 @@ class DataStoreBackupTest {
         val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
         var requests = 0
         var passes = 0
-        val boundedTarget = object : IsDataStore by target {
-            override suspend fun <DM : IsRootDataModel> processUpdate(updateResponse: UpdateResponse<DM>): ProcessResponse<DM> {
+        val boundedTarget = object : IsDataStore by target, VersionedRestoreDataStore by target {
+            override suspend fun restoreVersion(request: RestoreVersionRequest) {
+                val updateResponse = request.updates.single()
                 val size = UpdateResponse.Serializer.calculateObjectProtoBufLength(
                     updateResponse, WriteCache(),
                     RequestContext(DefinitionsContext(mutableMapOf(SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel))), SimpleMarykModel),
                 )
                 assertTrue(size <= 1024, "Restore exceeded transport bound: $size")
                 requests++
-                return target.processUpdate(updateResponse)
+                target.restoreVersion(request)
             }
         }
         try {
@@ -139,12 +171,12 @@ class DataStoreBackupTest {
         val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
         val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
         var requests = 0
-        val boundedTarget = object : IsDataStore by target {
-            override suspend fun <DM : IsRootDataModel> processUpdate(updateResponse: UpdateResponse<DM>): ProcessResponse<DM> {
-                val update = updateResponse.update as InitialChangesUpdate<DM>
+        val boundedTarget = object : IsDataStore by target, VersionedRestoreDataStore by target {
+            override suspend fun restoreVersion(request: RestoreVersionRequest) {
+                val update = request.updates.single().update as InitialChangesUpdate
                 assertTrue(update.changes.size <= 128, "Restore accumulated a whole model in one request")
                 requests++
-                return target.processUpdate(updateResponse)
+                target.restoreVersion(request)
             }
         }
         try {
@@ -300,18 +332,11 @@ class DataStoreBackupTest {
     }
 
     @Test
-    fun restoreRejectsUnexpectedProcessResponse() = runTest {
+    fun restoreRejectsStoreWithoutAtomicReplaySupport() = runTest {
         val models = mapOf(1u to SimpleMarykModel)
         val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
         val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
-        val invalidTarget = object : IsDataStore by target {
-            override suspend fun <DM : IsRootDataModel> processUpdate(
-                updateResponse: UpdateResponse<DM>,
-            ) = ProcessResponse(
-                updateResponse.update.version,
-                ValuesResponse(updateResponse.dataModel, emptyList()),
-            )
-        }
+        val invalidTarget = object : IsDataStore by target {}
         try {
             source.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha" }))
             val writer = CollectingBackup()

@@ -1,6 +1,11 @@
 package maryk.datastore.rocksdb
 
+import maryk.datastore.shared.RestoreVersionRequest
+import maryk.datastore.shared.applyRestoreVersion
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
+import maryk.core.query.requests.get
+import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.models.migration.StorageFormat
 import maryk.datastore.shared.migration.StorageMaintenanceMetadataKey
 import kotlinx.atomicfu.atomic
@@ -1335,6 +1340,67 @@ class RocksDBDataStore private constructor(
     override val supportsAtomicRequests: Boolean = true
 
     override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
+
+    override val supportsVersionedRestore = true
+
+    override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) {
+        val transaction = Transaction(this).also { it.atomicOwner = true }
+        val atomic = AtomicMutationContext(this, transaction)
+        val versionBytes = HLC.toStorageBytes(HLC(request.version))
+        try {
+            RocksDBReadContext.create(db, transaction).use { readContext ->
+                withContext(atomic) {
+                    applyRestoreVersion(request,
+                        read = { model, key ->
+                            val response = CompletableDeferred<ValuesResponse<IsRootDataModel>>()
+                            processGetRequest(StoreAction(model.get(key, filterSoftDeleted = false), response), Cache(), readContext)
+                            response.await().values.singleOrNull()
+                        },
+                        clearUnique = { claims -> claims.forEach { claim ->
+                            val id = getDataModelId(claim.model)
+                            val families = getColumnFamilies(id)
+                            for (value in mapUniqueValueByteCandidates(id, claim.qualifier, claim.encodedValue)) {
+                                val reference = claim.qualifier + value
+                                val existing = transaction.get(families.unique, defaultReadOptions, reference)
+                                if (existing?.size == 8 + claim.key.size && existing.copyOfRange(8, existing.size).contentEquals(claim.key.bytes)) {
+                                    transaction.delete(families.unique, reference)
+                                }
+                            }
+                        } },
+                        apply = { update ->
+                            val response = CompletableDeferred<ProcessResponse<IsRootDataModel>>()
+                            processInitialChangesUpdate(StoreAction(update, response))
+                            response.await()
+                        },
+                        installUnique = { claims -> claims.forEach { claim ->
+                            val id = getDataModelId(claim.model)
+                            val families = getColumnFamilies(id)
+                            val candidates = mapUniqueValueByteCandidates(id, claim.qualifier, claim.encodedValue)
+                            for (value in candidates) {
+                                val existing = transaction.get(families.unique, defaultReadOptions, claim.qualifier + value)
+                                if (existing != null && (existing.size != 8 + claim.key.size || !existing.copyOfRange(8, existing.size).contentEquals(claim.key.bytes))) {
+                                    throw RequestException("Restore conflicts with existing unique ownership")
+                                }
+                            }
+                            setUniqueIndexValue(families, transaction, claim.qualifier + candidates.first(), versionBytes, claim.key)
+                        } },
+                    )
+                }
+            }
+            for (model in request.targets.keys) {
+                val family = getColumnFamilies(getDataModelId(model)).model
+                val current = transaction.get(family, defaultReadOptions, modelHlcWatermarkKey)?.readVersionBytesIfExact() ?: 0uL
+                if (request.version > current) transaction.put(family, modelHlcWatermarkKey, versionBytes)
+            }
+            transaction.atomicOwner = false
+            transaction.commit()
+            observeCommittedVersion(request.version)
+            publishCommittedTransactionUpdates { atomic.updates.forEach { emitFlowUpdate(it) } }
+        } finally {
+            uniqueIndicesByDataModelIndex.update { it - request.targets.keys.map(::getDataModelId).toSet() }
+            transaction.close()
+        }
+    }
 
     override suspend fun processAtomicRequest(request: AtomicRequest, version: HLC): AtomicResponse =
         processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,

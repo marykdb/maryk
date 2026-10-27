@@ -33,6 +33,11 @@ model.generateKotlin("package.name") { kotlinCode ->
 }
 ```
 
+When generating several models into one package, pass the same `GenerationContext`
+to each call. Inline enums, including those inside collections and maps, are emitted
+once. Conflicting definitions with the same enum name fail generation. The Gradle
+plugin shares this context automatically across its input schemas.
+
 ## Generate Proto3 schema
 
 Use a generation context to avoid duplicate enum/submodel output.
@@ -44,6 +49,12 @@ model.generateProto3Schema(generationContext) { protoSchema ->
     // write protoSchema
 }
 ```
+
+Nanosecond `Time` fields use `uint64` to preserve the full time of day; second and
+millisecond fields use `uint32`. Regenerate older Proto3 schemas before exchanging
+nanosecond time values beyond the first few seconds of the day. Nanosecond
+`DateTime` fields use a message with `seconds` and `nanos`; maps with these keys
+use repeated entry messages. Generated helper names are checked for collisions.
 
 The library APIs remain useful when the caller owns file discovery or output.
 The Gradle integration uses the same parser and Kotlin generator.

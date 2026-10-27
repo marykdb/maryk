@@ -15,6 +15,7 @@ import maryk.core.models.migration.MigrationStatus
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlModelReader
+import maryk.generator.kotlin.GenerationContext
 import maryk.generator.kotlin.generateKotlin
 import maryk.generator.kotlin.kotlinIdentifier
 import maryk.json.JsonReader
@@ -125,10 +126,11 @@ object SchemaBuildEngine {
                         collisions.joinToString { (_, fileName) -> fileName },
                 )
             }
+        val generationContext = GenerationContext()
         val generated = generatedFileNames.associate { (schema, fileName) ->
             var source = ""
             try {
-                schema.model.generateKotlin(packageName) { source = it }
+                schema.model.generateKotlin(packageName, generationContext) { source = it }
             } catch (exception: IllegalArgumentException) {
                 throw SchemaBuildException(
                     "Could not generate Kotlin for model ${schema.model.Meta.name}: ${exception.message}",

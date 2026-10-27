@@ -4,11 +4,16 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.IsTypedDataModel
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
+import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
+import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsIndexedEnumDefinition
+import maryk.core.properties.enum.MultiTypeEnumDefinition
 
 internal fun IsTypedDataModel<*>.generateKotlin(
     addImport: (String) -> Unit,
@@ -16,6 +21,8 @@ internal fun IsTypedDataModel<*>.generateKotlin(
     addEnumDefinition: ((String) -> Unit)? = null
 ): List<KotlinForProperty> {
     val propertiesKotlin = mutableListOf<KotlinForProperty>()
+    val context = generationContext ?: GenerationContext()
+    val activeTypeEnums = mutableSetOf<String>()
     for (propertyDefinitionWrapper in this) {
         @Suppress("UNCHECKED_CAST")
         val definition = propertyDefinitionWrapper.definition as? IsTransportablePropertyDefinitionType<Any>
@@ -24,28 +31,8 @@ internal fun IsTypedDataModel<*>.generateKotlin(
         val kotlinDescriptor =
             definition.getKotlinDescriptor()
 
-        if (definition.propertyDefinitionType == PropertyDefinitionType.Enum) {
-            (definition as EnumDefinition<*>).enum.let { enumDefinition ->
-                if (generationContext?.enums?.any { it.name == enumDefinition.name && it == enumDefinition } != true) {
-                    addEnumDefinition?.invoke(
-                        enumDefinition.generateKotlinClass(addImport)
-                    )
-                    if (addEnumDefinition != null) {
-                        generationContext?.enums?.add(enumDefinition)
-                    }
-                }
-            }
-        } else if (definition.propertyDefinitionType == PropertyDefinitionType.MultiType) {
-            (definition as MultiTypeDefinition<*, *>).typeEnum.let { typeEnumDefinition ->
-                if (generationContext?.enums?.contains(typeEnumDefinition) != true) {
-                    addEnumDefinition?.invoke(
-                        typeEnumDefinition.generateKotlinClass(addImport)
-                    )
-                    if (addEnumDefinition != null) {
-                        generationContext?.enums?.add(typeEnumDefinition)
-                    }
-                }
-            }
+        if (addEnumDefinition != null) {
+            propertyDefinitionWrapper.definition.collectKotlinEnums(context, addImport, addEnumDefinition, activeTypeEnums)
         }
 
         val default = if (definition is HasDefaultValueDefinition<*> && definition.default != null) {
@@ -82,4 +69,54 @@ internal fun IsTypedDataModel<*>.generateKotlin(
         )
     }
     return propertiesKotlin
+}
+
+private fun IsSerializablePropertyDefinition<*, *>.collectKotlinEnums(
+    context: GenerationContext,
+    addImport: (String) -> Unit,
+    addEnumDefinition: (String) -> Unit,
+    activeTypeEnums: MutableSet<String>,
+) {
+    fun addEnum(enum: IsIndexedEnumDefinition<*>) {
+        val existing = context.enums.firstOrNull { it.name == enum.name }
+        if (existing != null) {
+            require(existing.kotlinEnumSource {} == enum.kotlinEnumSource {}) {
+                "Conflicting definitions for enum ${enum.name}"
+            }
+        } else {
+            addEnumDefinition(enum.kotlinEnumSource(addImport))
+            context.enums.add(enum)
+        }
+    }
+
+    when (this) {
+        is EnumDefinition<*> -> addEnum(enum)
+        is MultiTypeDefinition<*, *> -> {
+            addEnum(typeEnum)
+            if (activeTypeEnums.add(typeEnum.name)) {
+                try {
+                    typeEnum.cases().forEach { case ->
+                        (case.definition as? IsSerializablePropertyDefinition<*, *>)?.collectKotlinEnums(
+                            context, addImport, addEnumDefinition, activeTypeEnums,
+                        )
+                    }
+                } finally {
+                    activeTypeEnums.remove(typeEnum.name)
+                }
+            }
+        }
+        is IsCollectionDefinition<*, *, *, *> -> valueDefinition.collectKotlinEnums(
+            context, addImport, addEnumDefinition, activeTypeEnums,
+        )
+        is IsMapDefinition<*, *, *> -> {
+            keyDefinition.collectKotlinEnums(context, addImport, addEnumDefinition, activeTypeEnums)
+            valueDefinition.collectKotlinEnums(context, addImport, addEnumDefinition, activeTypeEnums)
+        }
+    }
+}
+
+private fun IsIndexedEnumDefinition<*>.kotlinEnumSource(addImport: (String) -> Unit): String = when (this) {
+    is IndexedEnumDefinition<*> -> generateKotlinClass(addImport)
+    is MultiTypeEnumDefinition<*> -> generateKotlinClass(addImport)
+    else -> throw TypeException("Enum definition is not supported: $name")
 }

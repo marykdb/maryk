@@ -16,6 +16,53 @@ import maryk.core.properties.definitions.ReferenceDefinition
 
 class SchemaBuildEngineTest {
     @Test
+    fun rejectsConflictingEnumsNestedInRepeatedTypeEnums() {
+        val schema = createTempDirectory().resolve("nested.yaml")
+        val properties = listOf("A", "B").mapIndexed { index, case ->
+            """
+            ? ${index + 1}: choice${index + 1}
+            : !MultiType
+              typeEnum:
+                name: Choice
+                cases:
+                  ? 1: Value
+                  : !Enum
+                    enum:
+                      name: Status
+                      cases:
+                        1: $case
+            """.trimIndent()
+        }
+        schema.writeText("name: NestedConflicts\n" + properties.joinToString("\n"))
+        val error = assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.generate(listOf(schema), "example.generated", createTempDirectory().resolve("generated"))
+        }
+        assertTrue(error.message.orEmpty().contains("Conflicting definitions for enum Status"), error.message)
+    }
+
+    @Test
+    fun rejectsConflictingSharedEnumDefinitionsWithoutReplacingOutput() {
+        for (difference in listOf("cases:\n      1: B", "cases:\n      1: A\n    reservedIndices: [2]")) {
+            val schemas = createTempDirectory()
+            val first = schemas.resolve("first.yaml").also {
+                it.writeText("name: First\n? 1: kind\n: !Enum\n  enum:\n    name: SharedKind\n    cases:\n      1: A")
+            }
+            val second = schemas.resolve("second.yaml").also {
+                it.writeText("name: Second\n? 1: kind\n: !Enum\n  enum:\n    name: SharedKind\n    $difference")
+            }
+            val output = createTempDirectory().resolve("generated")
+            SchemaBuildEngine.generate(listOf(first), "example.generated", output)
+            val previous = output.resolve("First.kt").readText()
+            val error = assertFailsWith<SchemaBuildException> {
+                SchemaBuildEngine.generate(listOf(first, second), "example.generated", output)
+            }
+            assertTrue(error.message.orEmpty().contains("Conflicting definitions for enum SharedKind"), error.message)
+            assertEquals(previous, output.resolve("First.kt").readText())
+            assertFalse(Files.exists(output.resolve("Second.kt")))
+        }
+    }
+
+    @Test
     fun discoversYamlAndJsonSchemasInPathOrder() {
         val directory = createTempDirectory()
         directory.resolve("z.yml").writeText(schema("Zed"))

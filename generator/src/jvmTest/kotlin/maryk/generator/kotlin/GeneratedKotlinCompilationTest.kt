@@ -3,6 +3,7 @@ package maryk.generator.kotlin
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.io.path.createTempDirectory
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,6 +22,7 @@ import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlModelReader
+import maryk.generator.build.SchemaBuildEngine
 import maryk.test.models.ValueMarykObject
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
@@ -91,6 +93,150 @@ private object SimpleTypedIndexes : RootDataModel<SimpleTypedIndexes>(
 }
 
 class GeneratedKotlinCompilationTest {
+    @Test
+    fun compilesSchemaBuildWithSharedAndNestedEnums() {
+        val schemaDirectory = createTempDirectory()
+        val schemas = listOf("FirstEnumModel", "SecondEnumModel").map { name ->
+            schemaDirectory.resolve("$name.yaml").also {
+                it.writeText(
+                    """
+                    name: $name
+                    ? 1: kind
+                    : !Enum
+                      enum:
+                        name: SharedKind
+                        cases:
+                          1: A
+                    ? 2: kinds
+                    : !List
+                      valueDefinition: !Enum
+                        enum:
+                          name: SharedKind
+                          cases:
+                            1: A
+                    ? 3: flags
+                    : !Set
+                      valueDefinition: !Enum
+                        enum:
+                          name: FlagKind
+                          cases:
+                            1: Enabled
+                    ? 4: mapping
+                    : !Map
+                      keyDefinition: !Enum
+                        enum:
+                          name: KeyKind
+                          cases:
+                            1: Key
+                      valueDefinition: !List
+                        valueDefinition: !Enum
+                          enum:
+                            name: ValueKind
+                            cases:
+                              1: Value
+                    """.trimIndent(),
+                )
+            }
+        }
+        val generated = SchemaBuildEngine.generate(
+            schemas, "example.generated", createTempDirectory().resolve("generated"),
+        )
+        val sources = generated.files.joinToString("\n") { it.readText() }
+        for (name in listOf("SharedKind", "FlagKind", "KeyKind", "ValueKind")) {
+            assertEquals(1, Regex("sealed class $name").findAll(sources).count(), name)
+        }
+        val compilerOutput = ByteArrayOutputStream()
+        val result = K2JVMCompiler().exec(
+            PrintStream(compilerOutput),
+            "-classpath", System.getProperty("java.class.path"),
+            "-no-stdlib", "-no-reflect",
+            "-d", createTempDirectory().toString(),
+            "-jvm-target", "17",
+            *generated.files.map { it.toString() }.toTypedArray(),
+        )
+        assertEquals(ExitCode.OK, result, compilerOutput.toString())
+    }
+
+    @Test
+    fun compilesGeneratedLongMinimumValues() {
+        val model = RootDataModel.Model.Serializer.readJson(
+            MarykYamlModelReader(
+                """
+                name: LongMinimumValues
+                ? 1: number
+                : !Number
+                  type: SInt64
+                  minValue: -9223372036854775808
+                  maxValue: -9223372036854775808
+                  default: -9223372036854775808
+                ? 2: numbers
+                : !List
+                  valueDefinition: !Number { type: SInt64 }
+                  default: [-9223372036854775808]
+                """.trimIndent(),
+            ),
+            DefinitionsConversionContext(),
+        ).toDataObject()
+        assertEquals(
+            "Long.MIN_VALUE",
+            generateKotlinValue(model["number"]!!.definition, Long.MIN_VALUE, {}),
+        )
+        val source = buildString {
+            model.generateKotlin("example.generated") { append(it) }
+        }
+        val sourceDirectory = createTempDirectory()
+        val outputDirectory = createTempDirectory()
+        val sourceFile = sourceDirectory.resolve("LongMinimumValues.kt").also { it.writeText(source) }
+        val compilerOutput = ByteArrayOutputStream()
+
+        val result = K2JVMCompiler().exec(
+            PrintStream(compilerOutput),
+            "-classpath", System.getProperty("java.class.path"),
+            "-no-stdlib", "-no-reflect",
+            "-d", outputDirectory.toString(),
+            "-jvm-target", "17",
+            sourceFile.toString(),
+        )
+
+        assertEquals(ExitCode.OK, result, compilerOutput.toString())
+    }
+
+    @Test
+    fun compilesGeneratedWholeHourDateTimes() {
+        val model = RootDataModel.Model.Serializer.readJson(
+            MarykYamlModelReader(
+                """
+                name: WholeHourDateTimes
+                ? 1: time
+                : !DateTime
+                  precision: SECONDS
+                  minValue: 2000-01-01T00:00
+                  maxValue: 2100-01-01T11:00
+                  default: 2026-01-01T00:00
+                """.trimIndent(),
+            ),
+            DefinitionsConversionContext(),
+        ).toDataObject()
+        val source = buildString {
+            model.generateKotlin("example.generated") { append(it) }
+        }
+        val sourceDirectory = createTempDirectory()
+        val outputDirectory = createTempDirectory()
+        val sourceFile = sourceDirectory.resolve("WholeHourDateTimes.kt").also { it.writeText(source) }
+        val compilerOutput = ByteArrayOutputStream()
+
+        val result = K2JVMCompiler().exec(
+            PrintStream(compilerOutput),
+            "-classpath", System.getProperty("java.class.path"),
+            "-no-stdlib", "-no-reflect",
+            "-d", outputDirectory.toString(),
+            "-jvm-target", "17",
+            sourceFile.toString(),
+        )
+
+        assertEquals(ExitCode.OK, result, compilerOutput.toString())
+    }
+
     @Test
     fun compilesGeneratedTopLevelAndNestedSimpleTypedIndexes() {
         val packageName = "example.generated"

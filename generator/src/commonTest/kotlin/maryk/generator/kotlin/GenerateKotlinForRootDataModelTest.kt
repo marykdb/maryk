@@ -150,6 +150,27 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.set
+import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumImpl
+
+sealed class Option(
+    index: UInt,
+    alternativeNames: Set<String>? = null
+) : IndexedEnumImpl<Option>(index, alternativeNames) {
+    object V1: Option(1u)
+    object V2: Option(2u, setOf("VERSION2"))
+    object V3: Option(3u, setOf("VERSION3"))
+
+    class UnknownOption(index: UInt, override val name: String): Option(index)
+
+    companion object : IndexedEnumDefinition<Option>(
+        Option::class,
+        values = { listOf(V1, V2, V3) },
+        reservedIndices = listOf(4u),
+        reservedNames = listOf("V4"),
+        unknownCreator = ::UnknownOption
+    )
+}
 
 object NestedCollectionDefaults : RootDataModel<NestedCollectionDefaults>() {
     val optionList by list(
@@ -348,7 +369,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         final = true,
         unique = true,
         precision = TimePrecision.MILLIS,
-        minValue = LocalDateTime(1981, 12, 5, 11),
+        minValue = LocalDateTime(1981, 12, 5, 11, 0),
         maxValue = LocalDateTime(2200, 12, 31, 23, 59, 59),
         default = LocalDateTime(2018, 5, 2, 10, 11, 12)
     )

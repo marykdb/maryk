@@ -73,6 +73,7 @@ internal fun generateKotlinValue(
     is ULong -> {
         "${value}uL"
     }
+    is Long -> if (value == Long.MIN_VALUE) "Long.MIN_VALUE" else value.toString()
     is Float -> value.kotlinLiteral()
     is Double -> value.kotlinLiteral()
     is LocalTime -> {
@@ -86,9 +87,7 @@ internal fun generateKotlinValue(
         when {
             value.nanosecond != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
             value.second != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second})"
-            value.minute != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute})"
-            value.hour != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour})"
-            else -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day})"
+            else -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute})"
         }
     }
     is LocalDate -> "LocalDate(${value.year}, ${value.month.number}, ${value.day})"
@@ -217,7 +216,7 @@ internal fun generateKotlinValue(
 internal fun generateKotlinNumberValue(definition: NumberDefinition<*>, value: Any): String = when (definition.type) {
     Float32 -> (value as Float).kotlinLiteral()
     Float64 -> (value as Double).kotlinLiteral()
-    SInt64 -> "${value}L"
+    SInt64 -> if (value == Long.MIN_VALUE) "Long.MIN_VALUE" else "${value}L"
     UInt8 -> "${value}.toUByte()"
     UInt16 -> "${value}.toUShort()"
     UInt32 -> "${value}u"

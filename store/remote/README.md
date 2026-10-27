@@ -21,6 +21,22 @@ backing store must retain values and a ready update-history index. An older
 server does not gain the new request type through a client upgrade. See
 [history paging](../../core/docs/query.md#getscan-update-history).
 
+## Atomic backup restore
+
+The client negotiates version-group restore support through store information.
+Current clients send each complete source-version group to `/v1/restore-version`.
+The server checks every affected model and add/change/delete permission using the
+existing `ProcessUpdate` authorization operation before replaying the group.
+The backing store validates final unique ownership and commits the whole group
+atomically, preserving source versions. Old servers without this capability are
+rejected before replay instead of receiving individual updates. Upgrade both
+peers for this restore path; the portable backup format is version 3.
+
+Restore staging, group ceilings and disposable-target publication follow the
+[shared backup/restore contract](../shared/README.md#point-in-time-backup-and-restore).
+An interrupted HTTP response can leave the commit outcome uncertain; publish the
+target only after the complete restore succeeds.
+
 ## Start a server
 
 CLI (recommended for local serving):

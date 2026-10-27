@@ -41,6 +41,7 @@ internal data class RemoteStoreInfo(
     val supportsAtomicRequests: Boolean = false,
     val atomicCapabilities: AtomicCapabilities? = null,
     val transactionCapabilities: TransactionCapabilities? = null,
+    val supportsVersionedRestore: Boolean = false,
     val valueStorageFormat: UInt = 1u,
 ) {
     init {
@@ -87,6 +88,11 @@ internal data class RemoteStoreInfo(
 
         val transactionCapabilities by embedObject(10u, RemoteStoreInfo::transactionCapabilities, dataModel = { TransactionCapabilities }, required = false)
 
+        val supportsVersionedRestore by boolean(
+            11u, RemoteStoreInfo::supportsVersionedRestore, default = false,
+            toSerializable = { value: Boolean?, _: ContainsDefinitionsContext? -> value?.takeIf { it } },
+        )
+
         val valueStorageFormat by number(
             12u, RemoteStoreInfo::valueStorageFormat, type = UInt32, default = 1u,
             toSerializable = { value: UInt?, _: ContainsDefinitionsContext? -> value?.takeIf { it != 1u } },
@@ -103,6 +109,7 @@ internal data class RemoteStoreInfo(
             supportsAtomicRequests = values(supportsAtomicRequests.index),
             atomicCapabilities = values(atomicCapabilities.index),
             transactionCapabilities = values(transactionCapabilities.index),
+            supportsVersionedRestore = values(supportsVersionedRestore.index),
             valueStorageFormat = values(valueStorageFormat.index),
         )
     }

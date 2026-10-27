@@ -1,5 +1,9 @@
 package maryk.datastore.remote
 
+import maryk.core.exceptions.RequestException
+import maryk.datastore.shared.VersionedRestoreDataStore
+import maryk.datastore.shared.RestoreVersionRequest
+import maryk.datastore.shared.validateRestoreVersion
 import io.ktor.client.HttpClient
 import io.ktor.client.request.headers
 import io.ktor.client.request.prepareGet
@@ -147,7 +151,8 @@ class RemoteDataStore private constructor(
     override val supportsAtomicRequests: Boolean,
     override val atomicCapabilities: AtomicCapabilities?,
     override val transactionCapabilities: TransactionCapabilities?,
-) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider, AtomicDataStore, TransactionalDataStore {
+    override val restoreCapabilities: AtomicCapabilities? = null,
+) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider, AtomicDataStore, TransactionalDataStore, VersionedRestoreDataStore {
     private val definitionsMutex = Mutex()
     private val sshTunnelMutex = Mutex()
     private val lifecycleMutex = Mutex()
@@ -249,6 +254,7 @@ class RemoteDataStore private constructor(
                     atomicCapabilities = if (infoResult.info.supportsAtomicRequests)
                         requireNotNull(infoResult.info.atomicCapabilities) else null,
                     transactionCapabilities = infoResult.info.transactionCapabilities,
+                    restoreCapabilities = infoResult.info.atomicCapabilities.takeIf { infoResult.info.supportsVersionedRestore },
                 )
             } catch (error: Throwable) {
                 if (ownsClient) {
@@ -813,6 +819,28 @@ class RemoteDataStore private constructor(
         sshTunnelMutex.withLock {
             val tunnel = sshTunnel ?: return
             sshTunnel = sshTunnelReconnect?.reopenIfInactive(tunnel) ?: tunnel
+        }
+    }
+
+    override suspend fun restoreVersion(request: RestoreVersionRequest) {
+        check(currentTransaction(this) == null) { "Restore is not a transaction operation" }
+        requireOpen()
+        val capabilities = restoreCapabilities ?: throw RequestException("Remote store does not support atomic version-group restore")
+        validateRestoreVersion(request, capabilities)
+        registerLocalDataModels(request.updates.map { it.dataModel })
+        val payload = RemoteStoreCodec.encode(RemoteRestoreVersion.Serializer, RemoteRestoreVersion(request.updates), requestContext(request.dataModel, request.updates.map { it.dataModel }), MAX_REQUEST_BODY_BYTES)
+        val response = readNonFlowResponseBytes("restore-version") {
+            httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.restoreVersionPath)) {
+                headers {
+                    append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                    append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                    appendStoreHeaders(bearerToken)
+                }
+                setBody(payload)
+            }
+        }
+        if (!response.contentEquals(RemoteStoreProtocol.restoreVersionAcknowledgement)) {
+            throw RequestException("Remote restore returned an invalid commit acknowledgement")
         }
     }
 

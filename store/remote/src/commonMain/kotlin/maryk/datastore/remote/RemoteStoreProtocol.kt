@@ -14,6 +14,9 @@ internal object RemoteStoreProtocol {
     const val infoPath = "/v1/info"
     const val executePath = "/v1/execute"
     const val flowPath = "/v1/flow"
+    const val restoreVersionPath = "/v1/restore-version"
+    // Protobuf acknowledgement: bool committed = 1.
+    val restoreVersionAcknowledgement = byteArrayOf(8, 1)
     const val processUpdatePath = "/v1/process-update"
     const val snapshotVersionPath = "/v1/snapshot-version"
     const val migrationsPath = "/v1/admin/migrations"

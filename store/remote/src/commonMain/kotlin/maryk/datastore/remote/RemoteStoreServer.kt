@@ -1,9 +1,8 @@
 package maryk.datastore.remote
 
-import io.ktor.server.request.path
-import maryk.core.models.migration.StorageFormat
-import maryk.core.models.migration.hasFloatingPointValueObjects
-
+import maryk.datastore.shared.VersionedRestoreDataStore
+import maryk.datastore.shared.RestoreVersionRequest
+import maryk.datastore.shared.validateRestoreVersion
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -20,6 +19,7 @@ import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondBytesWriter
 import io.ktor.server.response.header
 import io.ktor.server.response.respondText
+import io.ktor.server.request.path
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
@@ -38,6 +38,8 @@ import io.ktor.utils.io.readRemaining
 import io.ktor.utils.io.writeFully
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.migration.StorageFormat
+import maryk.core.models.migration.hasFloatingPointValueObjects
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.asValues
 import maryk.core.models.serializers.IsObjectDataModelSerializer
@@ -535,6 +537,32 @@ internal fun Application.remoteStoreModule(
                 }
             } finally {
                 flowPermit.releaseUnlessDeferred()
+            }
+        }
+
+        post(RemoteStoreProtocol.restoreVersionPath) {
+            val principal = call.authenticate(config) ?: return@post
+            call.respondValidationErrors {
+                val target = dataStore as? VersionedRestoreDataStore
+                val capabilities = target?.restoreCapabilities ?: throw RequestValidationException(HttpStatusCode.NotImplemented, "Atomic version-group restore is unsupported")
+                requireRequestContentType(call, RemoteStoreProtocol.contentType)
+                val bytes = readRequestBytes(call, "restore-version", limits)
+                val context = createRequestContext(dataStore)
+                val request = decodeRequest("restore-version") {
+                    val wire = RemoteStoreCodec.decode(RemoteRestoreVersion.Serializer, bytes, context)
+                    @Suppress("UNCHECKED_CAST")
+                    RestoreVersionRequest(wire.updates as List<UpdateResponse<IsRootDataModel>>).also { validateRestoreVersion(it, capabilities) }
+                }
+                for (update in request.updates) {
+                    val types = (update.update as InitialChangesUpdate).changes.flatMap { it.changes }
+                        .flatMapTo(mutableSetOf()) { authorizationRequestTypes(it.changes) }
+                    val authorized = if (types.isEmpty()) config.authorizer == null else types.all { type ->
+                        call.authorize(config, principal, RemoteStoreOperation.ProcessUpdate, type, update.dataModel.Meta.name, respondOnFailure = false)
+                    }
+                    if (!authorized) throw RequestValidationException(HttpStatusCode.Forbidden, "Remote restore operation is not authorized")
+                }
+                target.restoreVersion(request)
+                call.respondBytes(RemoteStoreProtocol.restoreVersionAcknowledgement, ContentType.parse(RemoteStoreProtocol.contentType))
             }
         }
 
@@ -1066,8 +1094,9 @@ private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
         supportsSubReferenceFiltering = dataStore.supportsSubReferenceFiltering,
         supportsSnapshotVersion = dataStore.supportsSnapshotVersion,
         supportsAtomicRequests = dataStore.supportsAtomicRequests,
-        atomicCapabilities = dataStore.atomicCapabilities,
+        atomicCapabilities = dataStore.atomicCapabilities ?: (dataStore as? VersionedRestoreDataStore)?.restoreCapabilities,
         transactionCapabilities = dataStore.transactionCapabilities,
+        supportsVersionedRestore = (dataStore as? VersionedRestoreDataStore)?.restoreCapabilities != null,
         valueStorageFormat = if (dataStore.dataModelsById.values.any { it.hasFloatingPointValueObjects() }) StorageFormat.CURRENT.toUInt() else 1u,
     )
 }

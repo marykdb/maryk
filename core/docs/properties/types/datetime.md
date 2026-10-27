@@ -65,7 +65,11 @@ The bytes are transported in a different way depending on the precision of time.
 
 - `SECONDS` - VarInt integer counting the seconds from midnight January 1st 1970
 - `MILLIS` - VarInt integer counting the milliseconds from midnight January 1st 1970
-- `NANOS` - two consecutive VarInts: epoch seconds, then nanoseconds within that second
+- `NANOS` - a length-delimited message with `int64 seconds = 1` and
+  `uint32 nanos = 2`, using UTC epoch seconds and 0..999,999,999 nanoseconds.
+  Readers also accept the legacy scalar VAR_INT seconds/nanos pair when the
+  NANOS definition is known; writers always use the framed message. See
+  [ProtoBuf compatibility](../../serialization/protobuf.md#nanos-datetime-compatibility).
 
 ## String representation
 ISO8601 String YYYY-MM-DDTHH:MM:SS.SSSSSSSSS

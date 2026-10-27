@@ -13,6 +13,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
@@ -27,6 +28,7 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
+import maryk.json.IsJsonLikeReader
 import maryk.lib.exceptions.ParseException
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -99,8 +101,8 @@ data class TimeDefinition(
     }
 
     override fun fromNativeType(value: Any) = when (value) {
-        is Long -> LocalTime.fromSecondOfDay(value.toInt())
-        is Int -> LocalTime.fromSecondOfDay(value)
+        is Long -> value.takeIf { it in 0L..86399L }?.let { LocalTime.fromSecondOfDay(it.toInt()) }
+        is Int -> value.takeIf { it in 0..86399 }?.let(LocalTime::fromSecondOfDay)
         is LocalTime -> value.atPrecision(precision)
         else -> null
     }
@@ -108,6 +110,19 @@ data class TimeDefinition(
     object Model : ContextualDataModel<TimeDefinition, Model, ContainsDefinitionsContext, TimeDefinitionContext>(
         contextTransformer = { TimeDefinitionContext() },
     ) {
+        override val Serializer = object : ObjectDataModelSerializer<TimeDefinition, Model, ContainsDefinitionsContext, TimeDefinitionContext>(this) {
+            override fun readJson(reader: IsJsonLikeReader, context: TimeDefinitionContext?): ObjectValues<TimeDefinition, Model> {
+                val actualContext = context ?: TimeDefinitionContext()
+                val wasReadingJson = actualContext.readingJson
+                actualContext.readingJson = true
+                return try {
+                    super.readJson(reader, actualContext)
+                } finally {
+                    actualContext.readingJson = wasReadingJson
+                }
+            }
+        }
+
         val required by boolean(1u, TimeDefinition::required, default = true)
         val final by boolean(2u, TimeDefinition::final, default = false)
         val unique by boolean(3u, TimeDefinition::unique, default = false)
@@ -147,15 +162,18 @@ data class TimeDefinition(
             )
         )
 
-        override fun invoke(values: ObjectValues<TimeDefinition, Model>) = TimeDefinition(
-            required = values(required.index),
-            final = values(final.index),
-            unique = values(unique.index),
-            precision = values(precision.index),
-            minValue = values(minValue.index),
-            maxValue = values(maxValue.index),
-            default = values(default.index)
-        )
+        override fun invoke(values: ObjectValues<TimeDefinition, Model>): TimeDefinition {
+            val resolvedPrecision: TimePrecision = values(precision.index)
+            return TimeDefinition(
+                required = values(required.index),
+                final = values(final.index),
+                unique = values(unique.index),
+                precision = resolvedPrecision,
+                minValue = values<LocalTime?>(minValue.index)?.atPrecision(resolvedPrecision),
+                maxValue = values<LocalTime?>(maxValue.index)?.atPrecision(resolvedPrecision),
+                default = values<LocalTime?>(default.index)?.atPrecision(resolvedPrecision)
+            )
+        }
     }
 
     companion object {
@@ -175,11 +193,10 @@ private fun LocalTime.atPrecision(precision: TimePrecision) = when (precision) {
 }
 
 class TimeDefinitionContext : TimePrecisionContext() {
-    val timeDefinition by lazy {
-        TimeDefinition(
-            precision = precision ?: throw ContextNotFoundException()
-        )
-    }
+    val timeDefinition get() = TimeDefinition(
+        // Text fields can precede precision. Normalize after the complete definition has been read.
+        precision = if (readingJson) TimePrecision.NANOS else precision ?: throw ContextNotFoundException()
+    )
 }
 
 fun IsValuesDataModel.time(

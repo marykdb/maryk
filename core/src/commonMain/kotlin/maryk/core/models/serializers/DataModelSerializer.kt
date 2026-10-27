@@ -1,5 +1,8 @@
 package maryk.core.models.serializers
 
+import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.types.TimePrecision
+
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsObjectDataModel
@@ -469,6 +472,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
     }
 
     private fun IsPropertyDefinition<*>.acceptsProtoBufWireType(wireType: WireType): Boolean = when (this) {
+        is DateTimeDefinition -> wireType == this.wireType || precision == TimePrecision.NANOS && wireType == VAR_INT
         is IsCollectionDefinition<*, *, *, *> -> when (val valueDefinition = valueDefinition) {
             is IsMultiTypeDefinition<*, *, *> -> true
             is IsContextualEncodable<*, *> -> true

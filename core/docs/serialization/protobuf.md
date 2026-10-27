@@ -44,8 +44,34 @@ val values = User.Serializer.readProtoBuf(byteLength, byteSource::read)
 ```
 
 ## Compatibility and Versioning
-- Stable property indexes let decoders skip unknown fields safely, enabling forward/backward compatibility. See [Versioning](../versioning.md).
+- Stable property indexes let decoders skip standard wire fields safely, enabling forward/backward compatibility. See [Versioning](../versioning.md) and the NANOS DateTime compatibility notes below.
 - Keep indexes stable across versions; add new fields with new indexes instead of renaming/reusing.
+
+### NANOS DateTime compatibility
+
+`DateTimeDefinition(precision = NANOS)` writes a length-delimited message with
+`int64 seconds = 1` and `uint32 nanos = 2`. Proto3 generation emits this nested
+message too. Unknown-field readers can skip it without consuming following
+fields. Seconds use the existing UTC convention; nanos must be 0..999,999,999.
+Ordinary fixed-width DateTime storage, JSON/YAML and SECONDS/MILLIS transport are
+unchanged.
+
+For a known NANOS scalar, the reader distinguishes the legacy VAR_INT tag from
+the new LENGTH_DELIMITED tag. It reads the old seconds/nanos pair, then always
+writes the new message. No per-value version field or database payload rewrite
+is needed for this scalar compatibility path. Old writers/readers must be
+upgraded before exchanging the new representation.
+
+Legacy packed NANOS lists/sets are ambiguous with the new message framing and
+are not covered by this automatic compatibility path. Convert such inputs with
+their known old schema/codec before upgrading; do not guess a format from their
+contents. Legacy unknown NANOS fields also cannot be skipped reliably because
+the old writer put two varints under one scalar tag.
+
+Protobuf is also used for persisted model definitions, IndexedDB journals,
+FoundationDB cluster update logs and restore staging. Stop old writers during
+the upgrade, restart subscribers from a fresh snapshot, and create backups with
+the upgraded library. There is no added legacy log, encryption or backup wrapper.
 
 ### Complete collection values and empty presence
 

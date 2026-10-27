@@ -8,6 +8,9 @@ import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.TimePrecision
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
+import maryk.yaml.YamlReader
+import maryk.json.JsonReader
+import kotlin.test.assertNull
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -54,6 +57,51 @@ internal class TimeDefinitionTest {
         precision = TimePrecision.MILLIS,
         default = LocalTime(12, 13, 14)
     )
+
+    @Test
+    fun rejectsNumericTimesOutsideTheDayWithoutNarrowing() {
+        for (invalid in listOf(-1L, 86400L, 4294967296L, Long.MIN_VALUE, Long.MAX_VALUE)) {
+            assertNull(def.fromNativeType(invalid))
+            val reader = JsonReader(invalid.toString())
+            reader.nextToken()
+            assertFailsWith<ParseException> { def.readJson(reader) }
+        }
+        assertNull(def.fromNativeType(-1))
+        assertNull(def.fromNativeType(86400))
+        expect(LocalTime(0, 0)) { def.fromNativeType(0L) }
+        expect(LocalTime(23, 59, 59)) { def.fromNativeType(86399L) }
+    }
+
+    @Test
+    fun readsBoundsWithDefaultOrReorderedPrecision() {
+        val bound = "12:13:14.123456789"
+        val cases = listOf(
+            "" to LocalTime(12, 13, 14),
+            "SECONDS" to LocalTime(12, 13, 14),
+            "MILLIS" to LocalTime(12, 13, 14, 123_000_000),
+            "NANOS" to LocalTime(12, 13, 14, 123_456_789),
+        )
+        for ((precision, expected) in cases) {
+            for (precisionFirst in listOf(true, false)) {
+                val bounds = listOf("minValue", "maxValue", "default").map { it to bound }
+                val precisionField = if (precision.isEmpty()) emptyList() else listOf("precision" to precision)
+                val fields = if (precisionFirst) precisionField + bounds else bounds + precisionField
+                val json = fields.joinToString(",", "{", "}") { (key, value) -> "\"$key\":\"$value\"" }
+                val yaml = fields.joinToString("\n", postfix = "\n") { (key, value) -> "$key: '$value'" }
+                var offset = 0
+                val definitions = listOf(
+                    TimeDefinition.Model.Serializer.readJson(json).toDataObject(),
+                    TimeDefinition.Model.Serializer.readJson(YamlReader { yaml.getOrNull(offset++) }).toDataObject(),
+                )
+                for (definition in definitions) {
+                    expect(expected) { definition.minValue }
+                    expect(expected) { definition.maxValue }
+                    expect(expected) { definition.default }
+                    expect(if (precision.isEmpty()) TimePrecision.SECONDS else TimePrecision.values().first { it.name == precision }) { definition.precision }
+                }
+            }
+        }
+    }
 
     @OptIn(ExperimentalTime::class)
     @Test

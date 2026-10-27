@@ -2,10 +2,19 @@ package maryk.test.proto
 
 import com.google.protobuf.ByteString
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import maryk.MarykTestProtos
 import maryk.core.definitions.Definitions
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.dateTime
+import maryk.core.properties.definitions.time
+import maryk.core.properties.types.TimePrecision.NANOS
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.invoke
@@ -23,11 +32,49 @@ import maryk.test.models.TestMarykModel
 import maryk.test.models.ValueMarykObject
 import maryk.generator.proto3.generateProto3
 import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 import kotlin.test.Test
 import kotlin.test.expect
 import kotlin.time.ExperimentalTime
 
+private object NanosTimeModel : RootDataModel<NanosTimeModel>() {
+    val time by time(index = 1u, precision = NANOS)
+}
+
+private object NanosDateTimeModel : RootDataModel<NanosDateTimeModel>() {
+    val dateTime by dateTime(index = 1u, precision = NANOS)
+}
+
+private object NanosDateTimeKeyModel : RootDataModel<NanosDateTimeKeyModel>() {
+    val events by map(1u, keyDefinition = DateTimeDefinition(precision = NANOS), valueDefinition = StringDefinition())
+}
+
 class Proto3ConversionTest {
+    @Test
+    fun nanosecondDateTimeMapKeysRoundTripThroughStandardProto() {
+        for (dateTime in listOf(LocalDateTime(1969, 12, 31, 23, 59, 59, 999_999_999), LocalDateTime(2026, 10, 27, 12, 0, 0, 123_456_789))) {
+            val values = NanosDateTimeKeyModel.create { events with mapOf(dateTime to "event") }
+            val bytes = ByteCollector()
+            val cache = WriteCache()
+            bytes.reserve(NanosDateTimeKeyModel.Serializer.calculateProtoBufLength(values, cache))
+            NanosDateTimeKeyModel.Serializer.writeProtoBuf(values, cache, bytes::write)
+            val instant = dateTime.toInstant(TimeZone.UTC)
+            val standard = MarykTestProtos.NanosDateTimeKeyModel.parseFrom(bytes.bytes!!).eventsList.single()
+            assertEquals(instant.epochSeconds, standard.key.seconds)
+            assertEquals(instant.nanosecondsOfSecond, standard.key.nanos)
+            assertEquals("event", standard.value)
+            val standardBytes = MarykTestProtos.NanosDateTimeKeyModel.newBuilder().addEvents(
+                MarykTestProtos.NanosDateTimeKeyModel.EventsEntry.newBuilder().setKey(
+                    MarykTestProtos.NanosDateTimeKeyModel.EventsNanosDateTime.newBuilder()
+                        .setSeconds(instant.epochSeconds).setNanos(instant.nanosecondsOfSecond)
+                ).setValue("event")
+            ).build().toByteArray()
+            var offset = 0
+            val decoded = NanosDateTimeKeyModel.Serializer.readProtoBuf(standardBytes.size, { standardBytes[offset++] })
+            assertEquals(mapOf(dateTime to "event"), decoded { events })
+        }
+    }
+
     @Test
     fun compiledFixtureContainsCurrentGeneratedProtoGraph() {
         val generated = mutableMapOf<String, StringBuilder>()
@@ -39,6 +86,9 @@ class Proto3ConversionTest {
             TestMarykModel,
             EmbeddedMarykModel,
             CompleteMarykModel,
+            NanosTimeModel,
+            NanosDateTimeModel,
+            NanosDateTimeKeyModel,
         ).generateProto3 { name ->
             generated.getOrPut(name, ::StringBuilder)::append
         }
@@ -51,6 +101,49 @@ class Proto3ConversionTest {
                 compiledFixture.contains(schema.toString().canonicalProto()),
                 "Compiled fixture is stale for generated $name schema",
             )
+        }
+    }
+
+    @Test
+    fun nanosecondTimesRoundTripThroughStandardProto() {
+        for (nanos in listOf(4_294_967_296L, 86_399_999_999_999L)) {
+            val time = LocalTime.fromNanosecondOfDay(nanos)
+            val values = NanosTimeModel.create { this.time with time }
+            val bytes = ByteCollector()
+            val cache = WriteCache()
+            bytes.reserve(NanosTimeModel.Serializer.calculateProtoBufLength(values, cache))
+            NanosTimeModel.Serializer.writeProtoBuf(values, cache, bytes::write)
+            assertEquals(nanos, MarykTestProtos.NanosTimeModel.parseFrom(bytes.bytes!!).time)
+
+            val standardBytes = MarykTestProtos.NanosTimeModel.newBuilder().setTime(nanos).build().toByteArray()
+            var index = 0
+            val decoded = NanosTimeModel.Serializer.readProtoBuf(standardBytes.size, { standardBytes[index++] })
+            assertEquals(time, decoded { this.time })
+        }
+    }
+
+    @Test
+    fun nanosecondDateTimesRoundTripThroughStandardProto() {
+        for (dateTime in listOf(
+            LocalDateTime(1969, 12, 31, 23, 59, 59, 999_999_999),
+            LocalDateTime(2026, 10, 27, 12, 0, 0, 123_456_789),
+        )) {
+            val values = NanosDateTimeModel.create { this.dateTime with dateTime }
+            val bytes = ByteCollector()
+            val cache = WriteCache()
+            bytes.reserve(NanosDateTimeModel.Serializer.calculateProtoBufLength(values, cache))
+            NanosDateTimeModel.Serializer.writeProtoBuf(values, cache, bytes::write)
+            val instant = dateTime.toInstant(TimeZone.UTC)
+            val standard = MarykTestProtos.NanosDateTimeModel.parseFrom(bytes.bytes!!).dateTime
+            assertEquals(instant.epochSeconds, standard.seconds)
+            assertEquals(instant.nanosecondsOfSecond, standard.nanos)
+            val standardBytes = MarykTestProtos.NanosDateTimeModel.newBuilder().setDateTime(
+                MarykTestProtos.NanosDateTimeModel.DateTimeNanosDateTime.newBuilder()
+                    .setSeconds(instant.epochSeconds).setNanos(instant.nanosecondsOfSecond)
+            ).build().toByteArray()
+            var index = 0
+            val decoded = NanosDateTimeModel.Serializer.readProtoBuf(standardBytes.size, { standardBytes[index++] })
+            assertEquals(dateTime, decoded { this.dateTime })
         }
     }
 

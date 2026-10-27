@@ -26,8 +26,7 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
-import maryk.core.properties.types.numeric.Float32
-import maryk.core.properties.types.numeric.Float64
+import maryk.core.properties.types.TimePrecision.NANOS
 import maryk.core.properties.types.numeric.NumberType.Float32Type
 import maryk.core.properties.types.numeric.NumberType.Float64Type
 import maryk.core.properties.types.numeric.NumberType.SInt16Type
@@ -104,9 +103,13 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is FlexBytesDefinition,
         is ValueObjectDefinition<*, *>,
         is ReferenceDefinition<*> -> "bytes"
-        is TimeDefinition -> "uint32"
+        is TimeDefinition -> if (precision == NANOS) "uint64" else "uint32"
         is DateDefinition -> "sint32"
-        is DateTimeDefinition -> "int64"
+        is DateTimeDefinition -> if (precision == NANOS) {
+            val messageName = "${name.replaceFirstChar { it.uppercase() }}NanosDateTime".requireProto3Identifier()
+            messageAdder("message $messageName {\n  int64 seconds = 1;\n  uint32 nanos = 2;\n}")
+            messageName
+        } else "int64"
         is GeoPointDefinition -> "fixed64"
         is NumberDefinition<*> -> when (this.type.type) {
             SInt8Type,
@@ -142,47 +145,13 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             messageAdder
         )}"
         is IsMapDefinition<*, *, *> -> {
-            // The following types are not supported as key so should be an embedded map model
-            when (val keyDefinition = this.keyDefinition) {
-                is EnumDefinition<*>,
-                is FlexBytesDefinition,
-                is FixedBytesDefinition,
-                is ReferenceDefinition<*> -> return createEmbeddedMapModel(
-                    name,
-                    keyDefinition,
-                    valueDefinition,
-                    generationContext,
-                    messageAdder
-                )
-                is NumberDefinition<*> -> when (keyDefinition.type) {
-                    is Float32,
-                    is Float64 -> return createEmbeddedMapModel(
-                        name,
-                        keyDefinition,
-                        valueDefinition,
-                        generationContext,
-                        messageAdder
-                    )
-                }
-                else -> {
-                    //continue
-                }
-            }
-
-            // The following types are not supported as value so should be an embedded map model
-            when (val valueDefinition = this.valueDefinition) {
-                is IsMapDefinition<*, *, *>,
-                is IsCollectionDefinition<*, *, *, *> -> return createEmbeddedMapModel(
-                    name,
-                    keyDefinition,
-                    valueDefinition,
-                    generationContext,
-                    messageAdder
-                )
-                else -> {
-                    //continue
-                }
-            }
+            if (requiresEmbeddedProto3MapEntry()) return createEmbeddedMapModel(
+                name,
+                keyDefinition,
+                valueDefinition,
+                generationContext,
+                messageAdder
+            )
 
             // Separate object
             "map<${this.keyDefinition.toProtoBufType(name, generationContext, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}>"

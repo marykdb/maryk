@@ -181,6 +181,18 @@ message CompleteMarykModel {
 
 class GenerateProto3ForDataModelTest {
     @Test
+    fun timePrecisionUsesACompatibleProtoIntegerWidth() {
+        for ((precision, type) in listOf("SECONDS" to "uint32", "MILLIS" to "uint32", "NANOS" to "uint64")) {
+            val model = RootDataModel.Model.Serializer.readJson(
+                MarykYamlModelReader("name: TimeModel\n? 1: time\n: !Time\n  precision: $precision"),
+                DefinitionsConversionContext(),
+            ).toDataObject()
+            val schema = buildString { model.generateProto3Schema(GenerationContext(), ::append) }
+            assertEquals("message TimeModel {\n  $type time = 1;\n}", schema)
+        }
+    }
+
+    @Test
     fun rejectsModelNamesThatAreInvalidProtoIdentifiers() {
         val exception = assertFailsWith<IllegalArgumentException> {
             buildString {

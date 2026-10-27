@@ -14,6 +14,7 @@ import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.roundToDateUnit
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
+import maryk.yaml.YamlReader
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -62,6 +63,37 @@ internal class DateTimeDefinitionTest {
         maxValue = DateTimeDefinition.MAX_IN_MILLIS,
         default = LocalDateTime(1971, 1, 12, 13, 34, 22)
     )
+
+    @Test
+    fun readsBoundsWithDefaultOrReorderedPrecision() {
+        val bound = "2026-01-02T12:13:14.123456789"
+        val cases = listOf(
+            "" to LocalDateTime(2026, 1, 2, 12, 13, 14),
+            "SECONDS" to LocalDateTime(2026, 1, 2, 12, 13, 14),
+            "MILLIS" to LocalDateTime(2026, 1, 2, 12, 13, 14, 123_000_000),
+            "NANOS" to LocalDateTime(2026, 1, 2, 12, 13, 14, 123_456_789),
+        )
+        for ((precision, expected) in cases) {
+            for (precisionFirst in listOf(true, false)) {
+                val bounds = listOf("minValue", "maxValue", "default").map { it to bound }
+                val precisionField = if (precision.isEmpty()) emptyList() else listOf("precision" to precision)
+                val fields = if (precisionFirst) precisionField + bounds else bounds + precisionField
+                val json = fields.joinToString(",", "{", "}") { (key, value) -> "\"$key\":\"$value\"" }
+                val yaml = fields.joinToString("\n", postfix = "\n") { (key, value) -> "$key: '$value'" }
+                var offset = 0
+                val definitions = listOf(
+                    DateTimeDefinition.Model.Serializer.readJson(json).toDataObject(),
+                    DateTimeDefinition.Model.Serializer.readJson(YamlReader { yaml.getOrNull(offset++) }).toDataObject(),
+                )
+                for (definition in definitions) {
+                    expect(expected) { definition.minValue }
+                    expect(expected) { definition.maxValue }
+                    expect(expected) { definition.default }
+                    expect(if (precision.isEmpty()) TimePrecision.SECONDS else TimePrecision.values().first { it.name == precision }) { definition.precision }
+                }
+            }
+        }
+    }
 
     @Test
     fun createNowDateTime() {

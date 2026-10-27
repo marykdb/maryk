@@ -13,6 +13,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
@@ -24,9 +25,12 @@ import maryk.core.properties.types.byteSize
 import maryk.core.properties.types.fromByteReader
 import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType.VAR_INT
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
+import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.yaml.YamlWriter
 import maryk.lib.exceptions.ParseException
@@ -51,7 +55,7 @@ data class DateTimeDefinition(
     IsTransportablePropertyDefinitionType<LocalDateTime>,
     HasDefaultValueDefinition<LocalDateTime> {
     override val propertyDefinitionType = PropertyDefinitionType.DateTime
-    override val wireType = VAR_INT
+    override val wireType = if (precision == TimePrecision.NANOS) LENGTH_DELIMITED else VAR_INT
     override val byteSize = DateTimeDefinition.byteSize(precision)
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): LocalDateTime {
@@ -73,7 +77,15 @@ data class DateTimeDefinition(
         when (this.precision) {
             TimePrecision.SECONDS -> Instant.fromEpochSeconds(initLongByVar(reader))
             TimePrecision.MILLIS -> Instant.fromEpochMilliseconds(initLongByVar(reader))
-            TimePrecision.NANOS -> Instant.fromEpochSeconds(initLongByVar(reader), initIntByVar(reader))
+            TimePrecision.NANOS -> if (length == -1) {
+                // A known scalar legacy field used a VAR_INT tag followed by two varints.
+                val seconds = initLongByVar(reader)
+                val nanos = initIntByVar(reader)
+                requireValidNanos(nanos)
+                Instant.fromEpochSeconds(seconds, nanos)
+            } else {
+                readNanosMessage(length, reader)
+            }
         }.toLocalDateTime(UTC)
 
     override fun calculateTransportByteLength(value: LocalDateTime): Int {
@@ -81,7 +93,7 @@ data class DateTimeDefinition(
         return when (this.precision) {
             TimePrecision.SECONDS -> utcValue.epochSeconds.calculateVarByteLength()
             TimePrecision.MILLIS -> utcValue.toEpochMilliseconds().calculateVarByteLength()
-            TimePrecision.NANOS -> utcValue.epochSeconds.calculateVarByteLength() + utcValue.nanosecondsOfSecond.calculateVarByteLength()
+            TimePrecision.NANOS -> 2 + utcValue.epochSeconds.calculateVarByteLength() + utcValue.nanosecondsOfSecond.calculateVarByteLength()
         }
     }
 
@@ -96,7 +108,9 @@ data class DateTimeDefinition(
             TimePrecision.SECONDS -> utcValue.epochSeconds.writeVarBytes(writer)
             TimePrecision.MILLIS -> utcValue.toEpochMilliseconds().writeVarBytes(writer)
             TimePrecision.NANOS -> {
+                ProtoBuf.writeKey(1u, VAR_INT, writer)
                 utcValue.epochSeconds.writeVarBytes(writer)
+                ProtoBuf.writeKey(2u, VAR_INT, writer)
                 utcValue.nanosecondsOfSecond.writeVarBytes(writer)
             }
         }
@@ -124,6 +138,19 @@ data class DateTimeDefinition(
     object Model : ContextualDataModel<DateTimeDefinition, Model, ContainsDefinitionsContext, DateTimeDefinitionContext>(
         contextTransformer = { DateTimeDefinitionContext() },
     ) {
+        override val Serializer = object : ObjectDataModelSerializer<DateTimeDefinition, Model, ContainsDefinitionsContext, DateTimeDefinitionContext>(this) {
+            override fun readJson(reader: IsJsonLikeReader, context: DateTimeDefinitionContext?): ObjectValues<DateTimeDefinition, Model> {
+                val actualContext = context ?: DateTimeDefinitionContext()
+                val wasReadingJson = actualContext.readingJson
+                actualContext.readingJson = true
+                return try {
+                    super.readJson(reader, actualContext)
+                } finally {
+                    actualContext.readingJson = wasReadingJson
+                }
+            }
+        }
+
         val required by boolean(1u, DateTimeDefinition::required, default = true)
         val final by boolean(2u, DateTimeDefinition::final, default = false)
         val unique by boolean(3u, DateTimeDefinition::unique, default = false)
@@ -163,15 +190,18 @@ data class DateTimeDefinition(
             )
         )
 
-        override fun invoke(values: ObjectValues<DateTimeDefinition, Model>) = DateTimeDefinition(
-            required = values(1u),
-            final = values(2u),
-            unique = values(3u),
-            precision = values(4u),
-            minValue = values(5u),
-            maxValue = values(6u),
-            default = values(7u)
-        )
+        override fun invoke(values: ObjectValues<DateTimeDefinition, Model>): DateTimeDefinition {
+            val resolvedPrecision: TimePrecision = values(precision.index)
+            return DateTimeDefinition(
+                required = values(required.index),
+                final = values(final.index),
+                unique = values(unique.index),
+                precision = resolvedPrecision,
+                minValue = values<LocalDateTime?>(minValue.index)?.atPrecision(resolvedPrecision),
+                maxValue = values<LocalDateTime?>(maxValue.index)?.atPrecision(resolvedPrecision),
+                default = values<LocalDateTime?>(default.index)?.atPrecision(resolvedPrecision)
+            )
+        }
     }
 
     companion object {
@@ -184,6 +214,35 @@ data class DateTimeDefinition(
     }
 }
 
+private fun requireValidNanos(nanos: Int) {
+    if (nanos !in 0..999_999_999) throw ParseException("DateTime nanoseconds must be between 0 and 999999999")
+}
+
+@OptIn(ExperimentalTime::class)
+private fun readNanosMessage(length: Int, reader: () -> Byte): Instant {
+    if (length < 0) throw ParseException("Invalid NANOS DateTime message length")
+    var remaining = length
+    val boundedReader = {
+        if (remaining == 0) throw ParseException("NANOS DateTime exceeds its declared length")
+        remaining--
+        reader()
+    }
+    var seconds = 0L
+    var nanos = 0
+    while (remaining > 0) {
+        val key = ProtoBuf.readKey(boundedReader)
+        when (key.tag) {
+            1u, 2u -> {
+                if (key.wireType != VAR_INT) throw ParseException("Invalid NANOS DateTime field wire type")
+                if (key.tag == 1u) seconds = initLongByVar(boundedReader) else nanos = initIntByVar(boundedReader)
+            }
+            else -> ProtoBuf.skipField(key, boundedReader)
+        }
+    }
+    requireValidNanos(nanos)
+    return Instant.fromEpochSeconds(seconds, nanos)
+}
+
 private fun LocalDateTime.atPrecision(precision: TimePrecision) = when (precision) {
     TimePrecision.SECONDS -> LocalDateTime(year, month, day, hour, minute, second)
     TimePrecision.MILLIS -> LocalDateTime(year, month, day, hour, minute, second, nanosecond / 1_000_000 * 1_000_000)
@@ -191,11 +250,10 @@ private fun LocalDateTime.atPrecision(precision: TimePrecision) = when (precisio
 }
 
 class DateTimeDefinitionContext : TimePrecisionContext() {
-    val dateTimeDefinition by lazy {
-        DateTimeDefinition(
-            precision = precision ?: throw ContextNotFoundException()
-        )
-    }
+    val dateTimeDefinition get() = DateTimeDefinition(
+        // Text fields can precede precision. Normalize after the complete definition has been read.
+        precision = if (readingJson) TimePrecision.NANOS else precision ?: throw ContextNotFoundException()
+    )
 }
 
 fun IsValuesDataModel.dateTime(

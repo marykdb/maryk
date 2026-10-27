@@ -2,6 +2,10 @@ syntax = "proto3";
 
 option java_package = "maryk";
 
+message NanosTimeModel {
+    uint64 time = 1;
+}
+
 enum MarykEnum {
     UNKNOWN = 0;
     O1 = 1;
@@ -151,4 +155,24 @@ message CompleteMarykModel {
     repeated MapWithMapEntry mapWithMap = 24;
     map<uint64, EmbeddedMarykModel> incMap = 25;
     fixed64 location = 26;
+}
+
+message NanosDateTimeModel {
+    message DateTimeNanosDateTime {
+        int64 seconds = 1;
+        uint32 nanos = 2;
+    }
+    DateTimeNanosDateTime dateTime = 1;
+}
+
+message NanosDateTimeKeyModel {
+    message EventsNanosDateTime {
+        int64 seconds = 1;
+        uint32 nanos = 2;
+    }
+    message EventsEntry {
+        EventsNanosDateTime key = 1;
+        string value = 2;
+    }
+    repeated EventsEntry events = 1;
 }

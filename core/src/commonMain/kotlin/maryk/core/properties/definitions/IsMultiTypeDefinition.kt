@@ -27,6 +27,7 @@ import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.references.SimpleTypedValueReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.TypedValueReference
+import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -461,6 +462,7 @@ internal fun IsSubDefinition<*, *>.acceptsProtoBufWireType(
     }
 
     return when (this) {
+        is DateTimeDefinition -> wireType == this.wireType || precision == TimePrecision.NANOS && wireType == VAR_INT
         is IsCollectionDefinition<*, *, *, *> -> when (val valueDefinition = valueDefinition) {
             is IsMultiTypeDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
             is IsContextualEncodable<*, *> ->
@@ -487,7 +489,7 @@ internal fun IsContextualEncodable<*, *>.acceptsContextualProtoBufWireType(
     is ContextualValueDefinition<*, *, *, *> ->
         (this as ContextualValueDefinition<IsPropertyContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>)
             .contextualResolver(context)
-            .wireType == wireType
+            .acceptsProtoBufWireType(wireType, this.contextTransformer(context))
     is ContextualNumberDefinition<*> ->
         (this as ContextualNumberDefinition<IsPropertyContext>)
             .contextualResolver(context)

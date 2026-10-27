@@ -2,6 +2,8 @@ package maryk.generator.proto3
 
 import maryk.core.models.IsStorableDataModel
 import maryk.core.models.definitions.IsValuesDataModelDefinition
+import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.types.TimePrecision.NANOS
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
@@ -85,7 +87,7 @@ private data class Proto3NestedSymbol(
     val definition: Any,
 ) {
     fun isEquivalentTo(other: Proto3NestedSymbol): Boolean =
-        kind.startsWith("enum") && other.kind == kind && definition == other.definition
+        (kind.startsWith("enum") || kind == "nanos datetime") && other.kind == kind && definition == other.definition
 }
 
 private fun IsSerializablePropertyDefinition<*, *>.collectNestedProto3Symbols(
@@ -94,6 +96,12 @@ private fun IsSerializablePropertyDefinition<*, *>.collectNestedProto3Symbols(
     output: MutableList<Proto3NestedSymbol>,
 ) {
     when (this) {
+        is DateTimeDefinition -> if (precision == NANOS) {
+            output += Proto3NestedSymbol(
+                "${propertyName.proto3Titlecase()}NanosDateTime".requireProto3Identifier(),
+                propertyName, "nanos datetime", NANOS,
+            )
+        }
         is EnumDefinition<*> -> if (!generationContext.enums.contains(enum)) {
             val enumName = enum.name.requireProto3Identifier()
             output += Proto3NestedSymbol(
@@ -147,12 +155,13 @@ private fun IsSerializablePropertyDefinition<*, *>.collectNestedProto3Symbols(
     }
 }
 
-private fun IsMapDefinition<*, *, *>.requiresEmbeddedProto3MapEntry(): Boolean =
+internal fun IsMapDefinition<*, *, *>.requiresEmbeddedProto3MapEntry(): Boolean =
     when (val key = keyDefinition) {
         is EnumDefinition<*>,
         is FlexBytesDefinition,
         is FixedBytesDefinition,
         is ReferenceDefinition<*> -> true
+        is DateTimeDefinition -> key.precision == NANOS
         is NumberDefinition<*> -> key.type is Float32 || key.type is Float64
         else -> false
     } || valueDefinition is IsMapDefinition<*, *, *> ||

@@ -31,4 +31,5 @@ interface IsTimeDefinition<T : Comparable<T>> :
 
 open class TimePrecisionContext : IsPropertyContext {
     var precision: TimePrecision? = null
+    internal var readingJson = false
 }

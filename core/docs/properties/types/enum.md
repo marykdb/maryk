@@ -81,6 +81,11 @@ val def = EnumDefinition(
 ## Storage Byte representation
 The enum index value as two bytes. It is encoded as unsigned short.
 
+Indexes above 65,535 are rejected in declarations, value validation, resolution
+and binary encoding, including unknown enum cases. Existing supported indexes
+keep the same bytes; no data migration is needed. Previously truncated indexes
+cannot be recovered from their stored bytes alone.
+
 ## Transport Byte representation
 The enum index value as a VarInt.
 

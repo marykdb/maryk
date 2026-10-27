@@ -41,7 +41,10 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
 
     override val cases get() = optionalCases!!
 
-    override fun resolve(index: UInt) = valueByIndex[index] ?: unknownCreator?.invoke(index, "%Unknown")
+    override fun resolve(index: UInt): E? {
+        checkEnumIndex(index, name)
+        return valueByIndex[index] ?: unknownCreator?.invoke(index, "%Unknown")
+    }
 
     /** Get Enum value by [name] */
     override fun resolve(name: String): E? =
@@ -59,6 +62,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
 
             val index = name.substring(openIndex + 1, closeIndex).toUIntOrNull()
                 ?: throw ParseException("Not a correct number between brackets in type $name")
+            checkEnumIndex(index, this.name)
             val valueName = name.substring(0, openIndex)
 
             val typeByName = valueByString[valueName]

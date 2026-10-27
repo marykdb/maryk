@@ -16,6 +16,11 @@ import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.MAX_ENUM_INDEX
+import maryk.core.properties.exceptions.OutOfRangeException
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MapKeyReference
+import maryk.core.properties.references.SetItemReference
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
@@ -42,6 +47,23 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
     init {
         // Check enum
         enum.check()
+    }
+
+    override fun validateWithRef(
+        previousValue: E?,
+        newValue: E?,
+        refGetter: () -> IsPropertyReference<E, IsPropertyDefinition<E>, *>?
+    ) {
+        if (newValue != null && newValue.index > MAX_ENUM_INDEX) {
+            // An invalid key/item cannot itself be encoded in the error's reference.
+            val reference = when (val reference = refGetter()) {
+                is MapKeyReference<*, *, *> -> reference.parentReference
+                is SetItemReference<*, *> -> reference.parentReference
+                else -> reference
+            }
+            throw OutOfRangeException(reference, newValue.index.toString(), "0", MAX_ENUM_INDEX.toString())
+        }
+        super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
     }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =

@@ -87,7 +87,8 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
             getter = IndexedEnumDefinition<*>::cases,
             keyDefinition = NumberDefinition(
                 type = UInt32,
-                minValue = 1u
+                minValue = 1u,
+                maxValue = MAX_ENUM_INDEX
             ),
             valueDefinition = SingleOrListDefinition(
                 valueDefinition = StringDefinition()

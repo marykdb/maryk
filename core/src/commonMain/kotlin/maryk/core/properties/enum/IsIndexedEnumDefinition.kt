@@ -14,6 +14,14 @@ import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.lib.exceptions.ParseException
 
+internal const val MAX_ENUM_INDEX = 65535u
+
+internal fun checkEnumIndex(index: UInt, name: String) {
+    require(index <= MAX_ENUM_INDEX) {
+        "Enum $name index $index exceeds the maximum storage index $MAX_ENUM_INDEX"
+    }
+}
+
 interface IsIndexedEnumDefinition<E: IndexedEnum>:
     MarykPrimitive,
     IsPropertyDefinition<E>,
@@ -38,6 +46,7 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
         val indices = mutableSetOf<UInt>()
         val names = mutableSetOf<String>()
         cases.forEach { case ->
+            checkEnumIndex(case.index, name)
             require(indices.add(case.index)) {
                 "Enum $name has duplicate index ${case.index} for option ${case.name}"
             }
@@ -77,8 +86,10 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
     @Suppress("UNCHECKED_CAST")
     override fun fromNativeType(value: Any): E? = value as? E
 
-    override fun calculateTransportByteLength(value: E) = //calculateStorageByteLength(value)
-         value.index.calculateVarByteLength()
+    override fun calculateTransportByteLength(value: E): Int {
+        checkEnumIndex(value.index, name)
+        return value.index.calculateVarByteLength()
+    }
 
     override fun writeTransportBytes(
         value: E,
@@ -86,14 +97,18 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
+        checkEnumIndex(value.index, name)
         value.index.writeVarBytes(writer)
     }
 
-    override fun calculateStorageByteLength(value: E) =
-        super.calculateStorageByteLength(value)
+    override fun calculateStorageByteLength(value: E): Int {
+        checkEnumIndex(value.index, name)
+        return super.calculateStorageByteLength(value)
+    }
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?, earlierValue: E?): E {
         val index = initUIntByVar(reader)
+        checkEnumIndex(index, name)
         return resolve(index)
             ?: throw DefNotFoundException("Unknown index $index for $name")
     }
@@ -115,6 +130,7 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
     }
 
     override fun writeStorageBytes(value: E, writer: (byte: Byte) -> Unit) {
+        checkEnumIndex(value.index, name)
         value.index.writeBytes(writer, 2)
     }
 }

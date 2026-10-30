@@ -15,6 +15,7 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.FetchByUniqueKey
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -26,6 +27,7 @@ import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import kotlin.test.assertTrue
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanUniqueTest(
@@ -225,14 +227,15 @@ class DataStoreScanUniqueTest(
                     CompleteMarykModel.string.ref() with "haas"
                 ),
                 toVersion = deleteVersion,
-                filterSoftDeleted = false
+                filterSoftDeleted = false,
+                allowTableScan = true
             )
         )
 
         expect(1) { scanResponse.values.size }
         assertTrue { scanResponse.values.single().isDeleted }
         expect(keys[0]) { scanResponse.values.single().key }
-        expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
+        assertIs<FetchByTableScan>(scanResponse.dataFetchType)
     }
 
     private suspend fun executeHistoricalUniqueCanIncludeObjectSoftDeletedByChange() {
@@ -262,13 +265,14 @@ class DataStoreScanUniqueTest(
                     CompleteMarykModel.string.ref() with "haas"
                 ),
                 toVersion = deleteVersion,
-                filterSoftDeleted = false
+                filterSoftDeleted = false,
+                allowTableScan = true
             )
         )
 
         expect(1) { scanResponse.values.size }
         assertTrue { scanResponse.values.single().isDeleted }
         expect(keys[0]) { scanResponse.values.single().key }
-        expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
+        assertIs<FetchByTableScan>(scanResponse.dataFetchType)
     }
 }

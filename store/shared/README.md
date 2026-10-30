@@ -95,6 +95,12 @@ Requirements and operation:
   Coordinate hard deletion with backup creation, or use soft deletion until the
   backup completes. Protect backups as sensitive production data and retain
   them according to the same policy.
+- Backup history paging preserves frequently changed fields even when another
+  field has much older sparse revisions. A scanned record without its creation
+  history, or history outside the exclusive snapshot boundary, stops publication.
+  Creation reads must match that record and creation version. Duplicate or
+  unordered page revisions, or conflicting copies of a complete revision across
+  pages, also stop publication rather than silently selecting one copy.
 - Restore requires matching registered model names and major model versions.
   Review minor/patch schema compatibility before restoring. By default it
   refuses non-empty target models. The target must retain all versions so the
@@ -148,8 +154,80 @@ schema versions. Backups use
 format 3 because packed value objects can contain the changed bytes; restore
 rejects earlier formats instead of guessing or wrapping legacy backup payloads.
 
+The same opening boundary selects the released Protobuf codec for NANOS DateTime
+collections in persisted logs and schema defaults. Source model/dependency
+definitions are re-encoded together with a per-model codec marker before final
+publication, so interruption cannot mix legacy and current default encodings.
+Property references containing packed floating value objects retain that legacy
+context while their map keys and set items are decoded.
+
+Persisted schema definitions retain each reference's key width using the existing
+`Name(width)` representation. This metadata context leaves ordinary request and
+receipt encodings unchanged. Source roots are loaded before compatibility checks;
+each stored pair keeps its own recursive dependencies and decoder. A parent
+definition's explicit source width remains authoritative across a separate target
+migration, and source value reads consume that width.
+
+Older Protobuf definitions stored reference target names without widths. Registered
+source roots supply those widths during opening, including references to later
+models and reference-based primary keys. An old external target absent from the
+persisted source catalogue has no recoverable width. Opening reports that an
+authoritative source schema is required; it does not trust the configured target's
+possibly changed width. New persisted definitions retain external widths directly.
+The released-layout opening conversion persists these widths before application
+migration callbacks run. An intermediate, unreleased format-2 definition without
+widths cannot establish an old parent's width after a referenced target has already
+been re-keyed and published. Resume that state only with an authoritative source
+schema snapshot; the surviving target catalogue is not proof of the old width.
+
+This boundary supports the released legacy layout. Intermediate development
+layouts that mixed new transport bytes with missing format markers cannot be
+identified from the payload safely. Do not remove a current format stamp to
+rerun legacy conversion; recover those stores from a known source snapshot.
+
+Resuming an opening conversion validates its phase cursor, staged entries and
+target ownership inventory before applying further writes. A current format
+stamp with an unfinished checkpoint is also rejected. Missing or inconsistent
+upgrade metadata requires recovery from authoritative checkpoint and staging
+data; opening does not skip the missing work or publish a completed stamp.
+
+Opening conversion also tags retained transaction receipts with their source
+codec. Identical retries are checked against an exact released request encoding
+before their original response is returned; they never execute the mutation
+again. Requests whose released encoding lost collection element boundaries or
+typed-empty identity cannot be proven from the receipt digest. They return an
+explicit invalid-state response and require resolution in the original
+source-format environment. Changing the transaction ID would bypass that
+protection and must not be used as a recovery procedure.
+Current receipts retain only the request digest and response metadata. Generated
+incrementing-map values are restored from their exact original request operation
+when replaying the receipt, rather than persisting sensitive request values.
+
 Opening conversion leaves unaffected ciphertext and sensitive unique tokens
 byte-for-byte intact. Encryption providers are required for affected encrypted
-values or qualifiers and for encrypted logs that contain changed value objects;
+values or qualifiers and for encrypted logs containing changed value objects or
+legacy NANOS DateTime framing;
 retained models with unaffected sensitive fields do not require their keys merely
 to convert another plaintext Float/Double field.
+
+## Structural query reads
+
+`Exists` distinguishes a present empty collection or embedded value from an
+absent or deleted property. Exact structural comparisons decode the requested
+subtree at the query's version. List and set comparisons retain their existing
+membership rules; map and embedded-value comparisons retain value equality.
+These rules also apply to concrete map entries and list positions.
+
+Persistent stores inspect sensitive scalar presence without decrypting its
+payload. Structural comparisons read their selected subtree and required parent
+markers, without fetching unrelated sensitive fields. Ancestor collection
+projection is temporary and does not rewrite stored counts or qualifiers.
+
+Live indexed scans retain their original ordering boundary when a start record is
+changed or deleted. Refills use bounded pages and choose a new record against that
+fixed boundary, so another index entry for an already visible record cannot fill
+the slot. Records with index entries on both sides of the boundary retain their
+eligible position. This can require scanning an earlier index prefix; scanning
+stops when later entries cannot improve the refill candidate. Projected cursor
+requests retain their validated boundary while internal reads fetch the complete
+values needed for ordering.

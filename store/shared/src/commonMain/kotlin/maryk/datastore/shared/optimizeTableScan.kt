@@ -80,6 +80,15 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
         }
     }
 
+    return checkTableScanAllowed(tableScan, keyScanRanges, allowTableScan)
+}
+
+/** Validate an explicitly required table scan without promoting it to an active-only index. */
+fun IsRootDataModel.checkTableScanAllowed(
+    tableScan: TableScan,
+    keyScanRanges: KeyScanRanges,
+    allowTableScan: Boolean = false,
+): TableScan {
     val minimumKeyScanByteRange = this.Meta.minimumKeyScanByteRange ?: this.Meta.keyByteSize.toUInt()
 
     if (!allowTableScan && keyScanRanges.equalBytes < minimumKeyScanByteRange) {

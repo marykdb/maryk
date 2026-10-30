@@ -115,7 +115,7 @@ class DataStoreBackupRoundTripTest(
  * Test transport which forces backup records through the same protobuf model encoding used by
  * portable consumers. This prevents the contract test from accidentally restoring object refs.
  */
-private class SerializedBackup(
+internal class SerializedBackup(
     private val source: IsDataStore,
 ) : DataStoreBackupWriter, DataStoreBackupReader {
     private lateinit var storedManifest: DataStoreBackupManifest

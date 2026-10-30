@@ -51,6 +51,12 @@ Use `IncMapChange` with `addValues` to append values under generated keys.
 Use `Change` on an `at(key)` reference to replace or remove an existing entry,
 and a separate `Check` to compare values before changing them.
 
+Automatic allocation supports `SInt8`, `SInt16`, `SInt32`, `SInt64`, `UInt8`,
+`UInt16`, `UInt32`, and `UInt64`. Unsigned allocation starts at `1`. Signed
+allocation starts at the descriptor's minimum value plus one, preserving the
+existing reversed-storage ordering. Floating-point key definitions remain readable
+and accept explicit keys; automatic allocation with `Float32` or `Float64` is rejected.
+
 Example on a model with a map containing integers mapped to strings:
 ```kotlin
 

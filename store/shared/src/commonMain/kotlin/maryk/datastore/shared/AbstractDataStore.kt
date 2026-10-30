@@ -38,11 +38,15 @@ import maryk.core.query.responses.AtomicStatus
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.createScanRange
+import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.ScanCursor
+import maryk.core.query.requests.createCursor
+import maryk.core.query.requests.resolveCursor
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
@@ -673,9 +677,14 @@ private fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> IsFlowRequest<DM, RP>.
 ) =
     when (this) {
         is IsScanRequest<DM, RP> -> {
+            val continuation = (this as? ScanRequest<DM>)?.resolveCursor()
             UpdateListenerForScan(
                 request = this,
-                scanRange = this.dataModel.createScanRange(this.where, this.startKey?.bytes, this.includeStart),
+                scanRange = this.dataModel.createScanRange(
+                    this.where,
+                    continuation?.key?.bytes ?: this.startKey?.bytes,
+                    continuation == null && this.includeStart,
+                ),
                 response = response
             )
         }
@@ -696,7 +705,8 @@ private fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> IsFlowRequest<DM, RP>.
 private fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> RQ.withFullValuesForListener(): RQ =
     when (this) {
         is ScanRequest<*> -> (this as ScanRequest<DM>).let { request ->
-            request.dataModel.scan(
+            val continuation = request.resolveCursor()
+            fun fullScan(cursor: ScanCursor?) = request.dataModel.scan(
                 startKey = request.startKey,
                 select = null,
                 where = request.where,
@@ -707,8 +717,12 @@ private fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataRespon
                 filterSoftDeleted = request.filterSoftDeleted,
                 aggregations = request.aggregations,
                 allowTableScan = request.allowTableScan,
-                cursor = request.cursor,
-            ) as RQ
+                cursor = cursor,
+            )
+            val cursor = continuation?.let {
+                fullScan(null).createCursor(Key(it.key.bytes), it.orderKey?.bytes)
+            }
+            fullScan(cursor) as RQ
         }
         else -> this
     }

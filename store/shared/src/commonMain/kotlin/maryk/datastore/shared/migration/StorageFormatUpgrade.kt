@@ -37,7 +37,14 @@ interface StorageFormatUpgradeStore {
 
 /** Read before decoding any format-sensitive model data. */
 suspend fun StorageFormatUpgradeStore.readStorageFormat(): Int {
-    return decodeStorageFormat(get(0, StorageFormatMetadataKey))
+    return decodeStorageFormat(get(0, StorageFormatMetadataKey), get(0, StorageFormatUpgradeStateKey))
+}
+
+/** A completed publication atomically removes its checkpoint. Conflicting metadata is unsafe to open. */
+fun decodeStorageFormat(bytes: ByteArray?, upgradeState: ByteArray?): Int = decodeStorageFormat(bytes).also { format ->
+    if (format == StorageFormat.CURRENT && upgradeState != null) {
+        throw MigrationException("Current storage format has an unfinished upgrade checkpoint; restore consistent upgrade metadata before reopening")
+    }
 }
 
 fun decodeStorageFormat(bytes: ByteArray?): Int {
@@ -58,9 +65,11 @@ fun decodeStorageFormat(bytes: ByteArray?): Int {
 suspend fun StorageFormatUpgradeStore.upgradeStorageFormat() {
     if (readStorageFormat() == StorageFormat.CURRENT) return
     val migrationId = "storage:${StorageFormat.LEGACY}->${StorageFormat.CURRENT}:$identity"
-    var state = get(0, StorageFormatUpgradeStateKey)?.let(MigrationState::requireFromPersistedBytes)
+    val persistedState = get(0, StorageFormatUpgradeStateKey)
+    var state = persistedState?.let(MigrationState::requireFromPersistedBytes)
         ?: MigrationState(migrationId, MigrationPhase.Expand, MigrationStateStatus.Running, 1u, StorageFormat.LEGACY.toString(), StorageFormat.CURRENT.toString())
     state.requireMatchingMigration(migrationId, StorageFormat.LEGACY.toString(), StorageFormat.CURRENT.toString())
+    if (persistedState != null) validateResumeState(state)
     suspend fun checkpoint(next: MigrationState, writes: List<StorageFormatWrite> = emptyList()) {
         commit(writes + StorageFormatWrite(0, StorageFormatUpgradeStateKey, next.toPersistedBytes()))
         state = next
@@ -149,6 +158,77 @@ suspend fun StorageFormatUpgradeStore.upgradeStorageFormat() {
 
 private suspend fun StorageFormatUpgradeStore.stagedRows(after: ByteArray?) =
     scan(0, after ?: StagePrefix, BatchSize).takeWhile { it.key.startsWith(StagePrefix) }
+
+/** Validate the durable work inventory before a resumed migration can delete any more source rows. */
+private suspend fun StorageFormatUpgradeStore.validateResumeState(state: MigrationState) {
+    val stateCursor = state.cursor
+    val cleanup = state.phase == MigrationPhase.Contract && state.message == "cleanup"
+    if (state.message == "cleanup" && !cleanup || cleanup && state.cursor != null) {
+        throw malformedUpgrade("invalid cleanup checkpoint")
+    }
+    val expand = if (state.phase == MigrationPhase.Expand) try {
+        decodeCursor(state.cursor)
+    } catch (_: IllegalArgumentException) {
+        throw malformedUpgrade("invalid expansion cursor")
+    } else null
+    if (expand != null && (expand.namespace.toLong() > namespaceCount.toLong() + 1 ||
+            expand.namespace == namespaceCount + 1 && expand.key != null)) {
+        throw malformedUpgrade("expansion cursor is outside the namespace inventory")
+    }
+    if (expand == null && stateCursor != null) stageSequence(stateCursor)
+    if (get(0, StagePrefix) != null) throw malformedUpgrade("invalid staging key")
+
+    var after: ByteArray = StagePrefix
+    var sequence = 0uL
+    var foundCursor = state.cursor == null || expand != null
+    while (true) {
+        val rows = stagedRows(after)
+        if (rows.isEmpty()) break
+        for (row in rows) {
+            val next = stageSequence(row.key)
+            if ((!cleanup || sequence != 0uL) && next != sequence + 1uL) {
+                throw malformedUpgrade("missing or reordered staged entry")
+            }
+            sequence = next
+            val entry = try {
+                decodeEntry(row.value)
+            } catch (_: IllegalArgumentException) {
+                throw malformedUpgrade("invalid staged entry")
+            }
+            if (entry.namespace !in 1..namespaceCount) throw malformedUpgrade("invalid staged namespace")
+            if (!cleanup && get(0, targetKey(entry.namespace, entry.row.key))?.contentEquals(entry.oldKey) != true) {
+                throw malformedUpgrade("missing or inconsistent staged target ownership")
+            }
+            if (row.key.contentEquals(state.cursor)) foundCursor = true
+        }
+        after = rows.last().key
+    }
+    if (expand != null && expand.sequence != sequence) throw malformedUpgrade("staged entry count differs from its checkpoint")
+    if (!foundCursor) throw malformedUpgrade("checkpoint refers to a missing staged entry")
+    if (!cleanup) {
+        var targetCount = 0uL
+        var targetAfter = TargetPrefix
+        while (true) {
+            val rows = scan(0, targetAfter, BatchSize).takeWhile { it.key.startsWith(TargetPrefix) }
+            if (rows.isEmpty()) break
+            targetCount += rows.size.toULong()
+            targetAfter = rows.last().key
+        }
+        if (targetCount != sequence || get(0, TargetPrefix) != null) {
+            throw malformedUpgrade("staging inventory differs from its target ownership inventory")
+        }
+    }
+}
+
+private fun stageSequence(key: ByteArray): ULong {
+    if (key.size != StagePrefix.size + 8 || !key.startsWith(StagePrefix)) throw malformedUpgrade("invalid staging cursor or key")
+    var index = StagePrefix.size
+    return initULong(reader = { key[index++] }).also { if (it == 0uL) throw malformedUpgrade("invalid staging sequence") }
+}
+
+private fun malformedUpgrade(reason: String) = MigrationException(
+    "Malformed storage upgrade state: $reason; no further migration writes were applied. Restore authoritative checkpoint and staging data before reopening"
+)
 
 private data class Cursor(val namespace: Int, val key: ByteArray?, var sequence: ULong) {
     fun encode(): ByteArray = namespace.toUInt().bytes() + sequence.bytes() + (key ?: byteArrayOf())

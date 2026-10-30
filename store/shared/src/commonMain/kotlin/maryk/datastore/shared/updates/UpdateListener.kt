@@ -36,6 +36,21 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     val matchingKeys: AtomicRef<List<Key<DM>>>
     internal val responseVersion: ULong
 
+    // A follow-up read can overtake queued commits. Its complete row already
+    // includes those revisions, so their deltas must not be applied a second time.
+    private val snapshotVersions = mutableMapOf<Key<DM>, ULong>()
+
+    internal fun includesInSnapshot(update: Update<DM>): Boolean {
+        val snapshotVersion = snapshotVersions[update.key] ?: return false
+        if (update.version <= snapshotVersion) return true
+        snapshotVersions.remove(update.key)
+        return false
+    }
+
+    internal fun includeSnapshot(key: Key<DM>, version: ULong) {
+        snapshotVersions[key] = maxOf(snapshotVersions[key] ?: 0uL, version)
+    }
+
     init {
         when (response) {
             is UpdatesResponse<DM> -> {
@@ -70,11 +85,15 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     /** Add [values] at [key] and return sort index or null if it should not be added */
     abstract fun addValues(key: Key<DM>, values: Values<DM>): Int?
 
+    /** Add a complete row whose [version] also determines update-history ordering. */
+    open fun addValues(key: Key<DM>, values: Values<DM>, version: ULong): Int? = addValues(key, values)
+
     /** Remove [key] from local index */
     open fun removeKey(key: Key<DM>): Int {
         val index = matchingKeys.value.indexOf(key)
 
         if (index >= 0) {
+            snapshotVersions.remove(key)
             matchingKeys.value = matchingKeys.value.filterIndexed { i, _ -> i != index }
         }
         return index

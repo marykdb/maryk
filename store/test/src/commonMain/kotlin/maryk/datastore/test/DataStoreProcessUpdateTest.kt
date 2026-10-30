@@ -9,7 +9,9 @@ import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.AddOrChangeResponse
@@ -52,6 +54,8 @@ class DataStoreProcessUpdateTest(
         "executeProcessAddInChangeRequest" to ::executeProcessAddInChangeRequest,
         "executeProcessRemovalRequest" to ::executeProcessRemovalRequest,
         "executeProcessInitialChangesRequest" to ::executeProcessInitialChangesRequest,
+        "rejectInitialChangesAboveEnvelopeVersion" to ::rejectInitialChangesAboveEnvelopeVersion,
+        "rejectUnorderedInitialChangesBeforeApplyingPrefix" to ::rejectUnorderedInitialChangesBeforeApplyingPrefix,
         "failOnInitialValuesRequest" to ::failOnInitialValuesUpdateRequest,
         "failOnOrderedKeysUpdateRequest" to ::failOnOrderedKeysUpdateRequest
     )
@@ -590,6 +594,63 @@ class DataStoreProcessUpdateTest(
         expect(2) { getResponse.values.size }
         expect(editedMessage) { getResponse.values[0].values { message } }
         expect(newMessage) { getResponse.values[1].values { message } }
+    }
+
+    private suspend fun rejectInitialChangesAboveEnvelopeVersion() {
+        val currentKey = keys[0]
+        val futureKey = keys[1]
+        keysToDelete.add(currentKey)
+        dataStore.processUpdate(UpdateResponse(Log, AdditionUpdate(currentKey, 10uL, 10uL, 0, false, logs[0])))
+        val before = dataStore.execute(Log.get(currentKey)).values.single()
+        val futureVersion = ULong.MAX_VALUE / 2u
+        assertFailsWith<RequestException> {
+            dataStore.processUpdate(UpdateResponse(Log, InitialChangesUpdate(20uL, listOf(
+                DataObjectVersionedChange(key = currentKey, changes = listOf(VersionedChanges(20uL,
+                    listOf(Change(Log.ref { message } with "must not publish"))))),
+                DataObjectVersionedChange(key = futureKey, changes = listOf(VersionedChanges(futureVersion,
+                    listOf(ObjectCreate, Change(Log.ref { message } with "future creation"),
+                        Change(Log.ref { severity } with INFO),
+                        Change(Log.ref { timestamp } with logs[1] { timestamp }))))),
+            ))))
+        }
+        assertEquals(before, dataStore.execute(Log.get(currentKey)).values.single())
+        assertTrue(dataStore.execute(Log.get(futureKey)).values.isEmpty())
+        val local = assertIs<ChangeSuccess<Log>>(dataStore.execute(Log.change(currentKey.change(
+            Change(Log.ref { message } with "valid local change")
+        ))).statuses.single())
+        assertTrue(local.version > before.lastVersion)
+        assertTrue(local.version < futureVersion, "Rejected contents must not advance the clock")
+        assertEquals(local.version, dataStore.execute(Log.get(currentKey)).values.single().lastVersion)
+    }
+
+    private suspend fun rejectUnorderedInitialChangesBeforeApplyingPrefix() {
+        val key = keys[0]
+        keysToDelete.add(key)
+        dataStore.processUpdate(UpdateResponse(Log, AdditionUpdate(key, 10uL, 10uL, 0, false, logs[0])))
+        val before = dataStore.execute(Log.get(key)).values.single()
+        for (later in listOf(19uL, 20uL)) {
+            for (splitGroups in listOf(false, true)) {
+                val first = VersionedChanges(20uL, listOf(Change(Log.ref { message } with "must not publish")))
+                val second = VersionedChanges(later, listOf(Change(Log.ref { message } with "cannot discard")))
+                val records = if (splitGroups) listOf(
+                    DataObjectVersionedChange(key = key, changes = listOf(first)),
+                    DataObjectVersionedChange(key = key, changes = listOf(second)),
+                ) else listOf(DataObjectVersionedChange(key = key, changes = listOf(first, second)))
+                assertFailsWith<RequestException> {
+                    dataStore.processUpdate(UpdateResponse(Log, InitialChangesUpdate(30uL, records)))
+                }
+                assertEquals(before, dataStore.execute(Log.get(key)).values.single())
+            }
+        }
+        dataStore.processUpdate(UpdateResponse(Log, InitialChangesUpdate(30uL, listOf(
+            DataObjectVersionedChange(key = key, changes = listOf(VersionedChanges(20uL,
+                listOf(Change(Log.ref { message } with "first"))))),
+            DataObjectVersionedChange(key = key, changes = listOf(VersionedChanges(30uL,
+                listOf(Change(Log.ref { message } with "second"))))),
+        ))))
+        val after = dataStore.execute(Log.get(key)).values.single()
+        assertEquals("second", after.values { message })
+        assertEquals(30uL, after.lastVersion)
     }
 
     private suspend fun failOnInitialValuesUpdateRequest() {

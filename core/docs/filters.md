@@ -41,7 +41,12 @@ Prefix(
 
 ### Exists
 
-Checks whether a value exists.
+Checks whether a value exists. Empty lists, sets, maps and embedded values still
+exist; an absent or deleted property does not.
+
+Storage integrations can use `matchesFilterWithPresence` to test stored existence
+markers separately from decoding comparison values. `matchesFilter` retains its
+value-based presence behavior.
 
 ```kotlin
 Exists(
@@ -54,6 +59,11 @@ Exists(
 ### Equals
 
 Matches when a property equals the provided value.
+
+Float/Double equality follows ordinary storage identity, including signed zero
+and distinct NaN payloads. NaNs used as map keys or set members use canonical
+qualifier identity. JavaScript can canonicalize NaN inputs before query
+construction; see the [IndexedDB runtime limits](../../store/indexeddb/README.md).
 
 ```kotlin
 Equals(

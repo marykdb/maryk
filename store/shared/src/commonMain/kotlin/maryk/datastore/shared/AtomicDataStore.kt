@@ -12,6 +12,16 @@ import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.IncMapAddition
+import maryk.core.models.migration.ReleasedTransportFingerprintException
+import maryk.core.models.migration.readLegacyTransportStorage
+import maryk.core.models.migration.writeReleasedTransportForFingerprint
+import maryk.core.models.migration.toReleasedReferenceStorageByteArray
+import maryk.core.models.migration.requiresKeyStorageFormatUpgrade
+import maryk.core.models.migration.convertLegacyIndexBytes
+import maryk.core.properties.types.Bytes
+import maryk.core.query.changes.IndexChange
+import maryk.core.query.changes.IndexUpdate
+import maryk.core.query.changes.IndexDelete
 import maryk.core.query.changes.change
 import maryk.core.query.requests.change
 import maryk.core.query.requests.AtomicCapabilities
@@ -160,19 +170,35 @@ class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
         dataModels = models.values.associate { it.Meta.name to DataModelReference(it) }.toMutableMap(),
     ))
 
-    private fun <T : Any> encode(model: IsTypedObjectDataModel<T, *, RequestContext, RequestContext>, value: T, limit: String): ByteArray {
-        val cache = WriteCache()
+    private fun <T : Any> encode(model: IsTypedObjectDataModel<T, *, RequestContext, RequestContext>, value: T, limit: String, released: Boolean = false): ByteArray {
         val context = context()
-        val length = model.Serializer.calculateObjectProtoBufLength(value, cache, context)
-        if (length > MAX_ATOMIC_BYTES) rejectAtomicLimit(limit, MAX_ATOMIC_BYTES.toULong(), length.toULong())
-        val result = ByteArray(length)
-        var offset = 0
-        model.Serializer.writeObjectProtoBuf(value, cache, { result[offset++] = it }, context)
-        return result
+        fun write(): ByteArray {
+            val cache = WriteCache()
+            val length = model.Serializer.calculateObjectProtoBufLength(value, cache, context)
+            if (length > MAX_ATOMIC_BYTES) rejectAtomicLimit(limit, MAX_ATOMIC_BYTES.toULong(), length.toULong())
+            val result = ByteArray(length)
+            var offset = 0
+            model.Serializer.writeObjectProtoBuf(value, cache, { result[offset++] = it }, context)
+            return result
+        }
+        return if (released) context.writeReleasedTransportForFingerprint(::write) else write()
     }
 
     suspend fun transactionFingerprint(request: TransactionRequest): ByteArray =
         CryptographyProvider.Default.get(SHA256).hasher().hash(encode(TransactionRequest, request, "requestBytes"))
+
+    suspend fun transactionFingerprints(request: TransactionRequest): TransactionFingerprints {
+        val currentBytes = encode(TransactionRequest, request, "requestBytes")
+        val hasher = CryptographyProvider.Default.get(SHA256).hasher()
+        val current = hasher.hash(currentBytes)
+        val releasedBytes = try {
+            encode(TransactionRequest, request, "requestBytes", released = true)
+        } catch (unsupported: ReleasedTransportFingerprintException) {
+            return TransactionFingerprints(current, null, unsupported.message)
+        }
+        return TransactionFingerprints(current,
+            if (currentBytes.contentEquals(releasedBytes)) current else hasher.hash(releasedBytes))
+    }
 
     /** Own the submitted values, keys and predicates independently of caller-owned collections. */
     internal fun snapshotTransactionRequest(request: TransactionRequest): TransactionRequest {
@@ -182,7 +208,7 @@ class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
     }
 
     fun transactionReceipt(fingerprint: ByteArray, response: TransactionResponse): ByteArray =
-        fingerprint + encode(TransactionResponse, withoutGeneratedRequestValues(response), "responseBytes")
+        tagCurrentTransactionReceipt(fingerprint + encode(TransactionResponse, withoutGeneratedRequestValues(response), "responseBytes"))
 
     private fun withoutGeneratedRequestValues(response: TransactionResponse) = response.copy(
         responses = response.responses.map { member ->
@@ -204,14 +230,67 @@ class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
     )
 
     fun replayTransaction(receipt: ByteArray, fingerprint: ByteArray, request: TransactionRequest): TransactionResponse {
-        if (receipt.size < fingerprint.size || !receipt.copyOfRange(0, fingerprint.size).contentEquals(fingerprint)) {
+        return replayTransaction(receipt, TransactionFingerprints(fingerprint, null,
+            "Released request fingerprint was not supplied"), request)
+    }
+
+    fun replayTransaction(receipt: ByteArray, fingerprints: TransactionFingerprints, request: TransactionRequest): TransactionResponse {
+        fun matches(offset: Int, fingerprint: ByteArray?) = fingerprint != null && receipt.size - offset >= fingerprint.size &&
+            fingerprint.indices.all { receipt[offset + it] == fingerprint[it] }
+        // Retain the original public raw-receipt reader, including a digest that
+        // happens to start with the envelope magic. Full digest equality is decisive.
+        val rawCurrent = matches(0, fingerprints.current)
+        val version = if (rawCurrent) null else transactionReceiptVersion(receipt)
+        if (version != null && version !in ReleasedReceiptVersion..CurrentReceiptVersion) {
+            throw RequestException("Unsupported transaction receipt format $version")
+        }
+        val start = if (version == null) 0 else TransactionReceiptHeaderSize
+        if (version == ReleasedReceiptVersion && fingerprints.released == null) {
+            return TransactionResponse(TransactionStatus.Aborted,
+                message = "Cannot prove this legacy transaction identity: ${fingerprints.releasedUnavailableReason ?: "Released request encoding unavailable"}. " +
+                    "Resolve it with the original source-format environment; do not retry with a new transaction ID",
+                failure = AtomicFailure(AtomicFailureCode.InvalidState))
+        }
+        val expected = if (version == ReleasedReceiptVersion) fingerprints.released else fingerprints.current
+        if (!matches(start, expected)) {
             return TransactionResponse(TransactionStatus.Aborted, message = "Transaction ID was committed with different contents",
                 failure = AtomicFailure(AtomicFailureCode.ChangeSetMismatch))
         }
-        var offset = fingerprint.size
-        val response = TransactionResponse.Serializer.readProtoBuf(receipt.size - offset, { receipt[offset++] }, context()).toDataObject()
+        var offset = start + fingerprints.current.size
+        val context = context()
+        fun read() = TransactionResponse.Serializer.readProtoBuf(receipt.size - offset, { receipt[offset++] }, context).toDataObject()
+        val response = if (version == ReleasedReceiptVersion) convertReleasedIndexMetadata(context.readLegacyTransportStorage(::read)) else read()
         return restoreTransactionGeneratedValues(response, request)
     }
+
+    private fun convertReleasedIndexMetadata(response: TransactionResponse) = response.copy(
+        responses = response.responses.map { member ->
+            if (member !is ChangeResponse<*>) member else {
+                @Suppress("UNCHECKED_CAST")
+                val typed = member as ChangeResponse<IsRootDataModel>
+                typed.copy(statuses = typed.statuses.map { status ->
+                    if (status !is ChangeSuccess<*>) status else ChangeSuccess<IsRootDataModel>(status.version,
+                        status.changes?.map { change ->
+                            if (change !is IndexChange) change else IndexChange(change.changes.map { update ->
+                                val index = typed.dataModel.Meta.indexes.orEmpty().firstOrNull {
+                                    it.toReleasedReferenceStorageByteArray().contentEquals(update.index.bytes)
+                                }
+                                if (index == null) update else {
+                                    fun convert(key: Bytes) = if (index.requiresKeyStorageFormatUpgrade()) {
+                                        Bytes(index.convertLegacyIndexBytes(key.bytes, typed.dataModel.Meta.keyByteSize))
+                                    } else key
+                                    when (update) {
+                                        is IndexUpdate -> IndexUpdate(index.referenceStorageByteArray, convert(update.indexKey), update.previousIndexKey?.let(::convert))
+                                        is IndexDelete -> IndexDelete(index.referenceStorageByteArray, convert(update.indexKey))
+                                        else -> update
+                                    }
+                                }
+                            })
+                        })
+                })
+            }
+        },
+    )
 
 
 }

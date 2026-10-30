@@ -144,9 +144,10 @@ suspend fun IsDataStore.backup(
                     value.key,
                     effectiveSnapshotVersion,
                     maxHistoryVersionsPerRecord,
-                )?.let(records::add)
+                ).let(records::add)
             }
             if (records.isNotEmpty()) {
+                validateBackupRecords(model.Meta.name, records, effectiveSnapshotVersion)
                 writer.write(DataStoreBackupChunk(model.Meta.name, records))
             }
             cursor = page.nextCursor ?: break
@@ -286,9 +287,10 @@ private suspend fun IsDataStore.readCompleteChanges(
     key: Key<IsRootDataModel>,
     snapshotVersion: ULong,
     maxHistoryVersions: UInt,
-): DataObjectVersionedChange<IsRootDataModel>? {
+): DataObjectVersionedChange<IsRootDataModel> {
     val changesByVersion = mutableMapOf<ULong, VersionedChanges>()
     var toVersion = snapshotVersion
+    val codec by lazy { RestoreCodec(dataModelsById.values.associateBy { it.Meta.name }) }
 
     while (true) {
         val response = execute(
@@ -300,20 +302,50 @@ private suspend fun IsDataStore.readCompleteChanges(
             )
         )
         val record = response.changes.firstOrNull() ?: break
+        if (response.changes.size != 1 || record.key != key) {
+            throw RequestException("Unexpected history identity for backup record")
+        }
         if (record.changes.isEmpty()) break
+        if (record.changes.zipWithNext().any { (previous, next) -> previous.version >= next.version }) {
+            throw RequestException("Backup history response has unordered or duplicate versions")
+        }
+        if (record.changes.any { it.version > toVersion || it.version >= snapshotVersion }) {
+            throw RequestException("Backup history response exceeds its requested version boundary")
+        }
+        val nonCreationChanges = record.changes.filterNot { ObjectCreate in it.changes }
+        // Only the newest window is complete when the source limits each qualifier independently.
+        // Older sparse versions may be returned without the dense fields belonging to that version.
+        val oldestCompleteVersion = if (nonCreationChanges.size >= BACKUP_HISTORY_PAGE_SIZE.toInt()) {
+            nonCreationChanges[nonCreationChanges.size - BACKUP_HISTORY_PAGE_SIZE.toInt()].version
+        } else null
         val previousSize = changesByVersion.size
-        record.changes.forEach {
-            changesByVersion[it.version] = it
+        record.changes.forEach { change ->
+            val isCreation = ObjectCreate in change.changes
+            if (!isCreation && oldestCompleteVersion != null && change.version < oldestCompleteVersion) return@forEach
+            val previous = changesByVersion[change.version]
+            if (previous != null && !isCreation) {
+                val before = codec.encode(model.Meta.name,
+                    DataObjectVersionedChange(key, changes = listOf(previous)), Int.MAX_VALUE)
+                val after = codec.encode(model.Meta.name,
+                    DataObjectVersionedChange(key, changes = listOf(change)), Int.MAX_VALUE)
+                if (!before.contentEquals(after)) {
+                    throw RequestException("Backup history changed between pages at version ${change.version}")
+                }
+            }
+            changesByVersion[change.version] = change
             if (changesByVersion.size.toUInt() > maxHistoryVersions) {
                 throw RequestException(
                     "Backup record history exceeds the configured limit of $maxHistoryVersions versions"
                 )
             }
         }
-        val nonCreationChanges = record.changes.filterNot { ObjectCreate in it.changes }
         if (nonCreationChanges.size < BACKUP_HISTORY_PAGE_SIZE.toInt()) break
 
-        val oldestVersion = nonCreationChanges.first().version
+        // Persistent engines cap history per qualifier. A sparse property's older
+        // change can coexist with a full page from another property, whose older
+        // versions are still hidden. Advance through only the newest complete
+        // page of distinct record versions, rather than skipping to that sparse row.
+        val oldestVersion = requireNotNull(oldestCompleteVersion)
         if (oldestVersion >= toVersion && changesByVersion.size == previousSize) break
         toVersion = oldestVersion
     }
@@ -324,7 +356,9 @@ private suspend fun IsDataStore.readCompleteChanges(
     if (changesByVersion.values.count { ObjectCreate in it.changes } > 1) {
         throw RequestException("Backup cannot represent hard-deleted and recreated records")
     }
-    if (creationVersion != null) {
+    if (creationVersion == null) {
+        throw RequestException("Backup record is missing its creation history")
+    } else {
         val creation = execute(
             model.get(
                 key,
@@ -333,6 +367,9 @@ private suspend fun IsDataStore.readCompleteChanges(
             )
         ).values.singleOrNull()
             ?: throw RequestException("Could not read creation values for backup record")
+        if (creation.key != key || creation.firstVersion != creationVersion || creation.lastVersion != creationVersion) {
+            throw RequestException("Creation values do not match the backup history identity and version")
+        }
         changesByVersion[creationVersion] = VersionedChanges(
             creationVersion,
             buildList {
@@ -343,9 +380,7 @@ private suspend fun IsDataStore.readCompleteChanges(
         )
     }
 
-    return changesByVersion.values.sortedBy { it.version }.takeIf { it.isNotEmpty() }?.let {
-        DataObjectVersionedChange(key = key, changes = it)
-    }
+    return DataObjectVersionedChange(key = key, changes = changesByVersion.values.sortedBy { it.version })
 }
 
 private const val BACKUP_HISTORY_PAGE_SIZE = 1000u

@@ -4,6 +4,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IsChange
 import maryk.core.values.Values
+import maryk.core.values.copyWithOwnedValues
 
 /** Describes an update on an object with [key] in [dataModel] with [version] */
 sealed class Update<DM: IsRootDataModel>(
@@ -15,9 +16,11 @@ sealed class Update<DM: IsRootDataModel>(
         dataModel: DM,
         key: Key<DM>,
         version: ULong,
-        val values: Values<DM>,
+        values: Values<DM>,
         val isDeleted: Boolean,
     ): Update<DM>(dataModel, key, version) {
+        val values = values.copyWithOwnedValues()
+
         constructor(
             dataModel: DM,
             key: Key<DM>,
@@ -37,6 +40,8 @@ sealed class Update<DM: IsRootDataModel>(
         dataModel: DM,
         key: Key<DM>,
         version: ULong,
-        val changes: List<IsChange>
-    ): Update<DM>(dataModel, key, version)
+        changes: List<IsChange>
+    ): Update<DM>(dataModel, key, version) {
+        val changes = changes.map { it.copyWithOwnedValues() }
+    }
 }

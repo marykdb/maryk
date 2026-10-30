@@ -3,6 +3,7 @@ package maryk.datastore.shared.updates
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.StorageException
+import maryk.core.extensions.bytes.toULong
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
@@ -24,6 +25,8 @@ import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.AdditionUpdate
+import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
@@ -78,9 +81,36 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         else -> null
     }?.takeUnless { it.isEmpty() }
 
+    // Source versions determine history order even when listener reads overtake
+    // queued commits or independent writers commit in a different HLC order.
+    private val historyVersions = mutableMapOf<Key<DM>, ULong>().apply {
+        if (usesUpdateHistoryIndex && response is UpdatesResponse<DM>) {
+            val ordered = response.updates.firstOrNull() as? OrderedKeysUpdate<DM>
+            val versions = ordered?.sortingKeys
+            if (versions != null) {
+                if (versions.size != ordered.keys.size || versions.any { it.size != ULong.SIZE_BYTES }) {
+                    throw StorageException("Update-history ordering metadata does not match its keys")
+                }
+                ordered.keys.forEachIndexed { index, key -> put(key, versions[index].bytes.toULong()) }
+            } else {
+                // Retain support for manually supplied responses from older callers.
+                for (update in response.updates) {
+                    val key = when (update) {
+                        is AdditionUpdate<DM> -> update.key
+                        is ChangeUpdate<DM> -> update.key
+                        else -> null
+                    }
+                    if (key != null && key in matchingKeys.value) {
+                        put(key, maxOf(get(key) ?: 0uL, update.version))
+                    }
+                }
+            }
+        }
+    }
+
     internal val sortedValues: AtomicRef<List<ByteArray>>? = when(response) {
         is UpdatesResponse<DM> -> {
-            (response.updates.firstOrNull() as? OrderedKeysUpdate<DM>)?.sortingKeys?.let { sortingKeys ->
+            if (usesUpdateHistoryIndex) null else (response.updates.firstOrNull() as? OrderedKeysUpdate<DM>)?.sortingKeys?.let { sortingKeys ->
                 atomic(sortingKeys.map { it.bytes }.toList())
             }
         }
@@ -202,6 +232,26 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         }
     }
 
+    override fun addValues(key: Key<DM>, values: Values<DM>, version: ULong): Int? =
+        if (usesUpdateHistoryIndex) addHistoryKey(key, version) else addValues(key, values)
+
+    private fun addHistoryKey(key: Key<DM>, version: ULong): Int? {
+        val currentKeys = matchingKeys.value.filterNot { it == key }
+        val latestVersion = maxOf(historyVersions[key] ?: 0uL, version)
+        // Match ScanUpdates' newest-first order, including deterministic ties
+        // from a batch whose records share the same revision.
+        val position = currentKeys.indexOfFirst {
+            val otherVersion = historyVersions[it] ?: 0uL
+            otherVersion < latestVersion ||
+                otherVersion == latestVersion && (it.bytes compareTo key.bytes) < 0
+        }
+            .takeIf { it >= 0 } ?: currentKeys.size
+        if (position.toUInt() >= request.limit) return null
+        historyVersions[key] = latestVersion
+        matchingKeys.value = currentKeys.toMutableList().apply { add(position, key) }
+        return position
+    }
+
     private fun findSortedKeyIndex(indexKey: ByteArray) =
         sortedValues?.value?.binarySearch {
             when (scanType.direction) {
@@ -212,17 +262,20 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
 
     /** [values] at [key] are known to be at end of sorted range so add it specifically there */
     fun addValuesAtEnd(key: Key<DM>, values: Values<DM>) {
+        val indexKey = if (scanType is IndexScan && sortedValues != null) {
+            resolveIndexKey(values, key.bytes)
+                ?: throw StorageException("Unexpected null at indexed value")
+        } else null
         matchingKeys.value = matchingKeys.value + key
-
-        // Add sort key also to the end
-        if (scanType is IndexScan && sortedValues != null) {
-            resolveIndexKey(values, key.bytes)?.also {
-                sortedValues.value = sortedValues.value + it
-            } ?: throw StorageException("Unexpected null at indexed value")
-        }
+        indexKey?.let { sortedValues!!.value = sortedValues.value + it }
     }
 
-    private fun resolveIndexKey(values: Values<DM>, keyBytes: ByteArray): ByteArray? {
+    /** Return the actual insertion position when a refill read is newer than queued updates. */
+    fun addValuesAtEnd(key: Key<DM>, values: Values<DM>, version: ULong): Int =
+        addValues(key, values, version)
+            ?: throw StorageException("Live scan refill did not fit the available result slot")
+
+    internal fun resolveIndexKey(values: Values<DM>, keyBytes: ByteArray): ByteArray? {
         val indexScan = scanType as? IndexScan ?: return null
 
         val matchingIndexKeys = visibleIndexKeys(indexScan.index.toStorageByteArraysForIndex(values, keyBytes))
@@ -235,10 +288,16 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         }
     }
 
+    internal fun compareIndexKeys(first: ByteArray, second: ByteArray): Int = when ((scanType as IndexScan).direction) {
+        ASC -> first compareTo second
+        DESC -> second compareTo first
+    }
+
     override fun removeKey(key: Key<DM>): Int {
         val index = super.removeKey(key)
 
         if (index >= 0) {
+            historyVersions.remove(key)
             sortedValues?.value = sortedValues.value.filterIndexed { i, _ -> i != index }
         }
         return index
@@ -263,17 +322,8 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
             }
             is UpdateHistoryScan -> {
                 val existingIndex = matchingKeys.value.indexOf(change.key)
-                when {
-                    existingIndex == 0 -> changedHandler(0, false)
-                    existingIndex > 0 -> {
-                        matchingKeys.value = buildList {
-                            add(change.key)
-                            addAll(matchingKeys.value.filterIndexed { i, _ -> i != existingIndex })
-                        }
-                        changedHandler(0, true)
-                    }
-                    else -> changedHandler(0, true)
-                }
+                val newIndex = addHistoryKey(change.key, change.version)
+                changedHandler(newIndex, newIndex != existingIndex)
             }
             is IndexScan -> {
                 // Should always exist since earlier was checked if matchingKeys contains this key

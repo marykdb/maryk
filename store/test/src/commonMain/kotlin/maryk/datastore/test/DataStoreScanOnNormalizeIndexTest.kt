@@ -21,6 +21,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.FetchByIndexScan
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -678,19 +679,15 @@ class DataStoreScanOnNormalizeIndexTest(
                     "name" with "mila verh"
                 ),
                 toVersion = deleteVersion,
-                filterSoftDeleted = false
+                filterSoftDeleted = false,
+                allowTableScan = true
             )
         )
 
         expect(1) { scanResponse.values.size }
         expect(persons[6]) { scanResponse.values.first().values }
         expect(keys[6]) { scanResponse.values.first().key }
-        expect(FetchByIndexScan(
-            direction = Direction.ASC,
-            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "00ff6d00ff6900ff6c00ff61".hexToByteArray(),
-            stopKey = "00ff6d00ff6900ff6c00ff62".hexToByteArray(),
-        )) { scanResponse.dataFetchType }
+        assertIs<FetchByTableScan>(scanResponse.dataFetchType)
     }
 
     private suspend fun executeNamedAnyOfMatchesRegexWithoutOrder() {

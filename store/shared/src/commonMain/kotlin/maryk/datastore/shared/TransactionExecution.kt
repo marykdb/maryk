@@ -79,6 +79,11 @@ suspend fun applyTransactionMembers(
     apply: suspend (IsStoreRequest<IsRootDataModel, IsResponse>, HLC) -> IsDataModelResponse<*>,
 ): TransactionResponse {
     checkTransactionRevision(request, revision)
+    if (!request.initialStateChecks && version.timestamp > ULong.MAX_VALUE - request.requests.size.toULong()) {
+        throw TransactionAbort(TransactionResponse(TransactionStatus.Aborted,
+            message = "Transaction operation versions would overflow the store clock",
+            failure = AtomicFailure(AtomicFailureCode.InvalidState)))
+    }
     val count = request.requests.sumOf {
         when (it) {
             is AddRequest<*> -> it.objects.size

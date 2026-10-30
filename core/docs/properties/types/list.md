@@ -49,6 +49,12 @@ indexed insertions, then appends. Insertion indexes refer to the list after
 removals and any preceding insertion. Use a separate `Check` to compare the
 complete current list before changing it.
 
+Each requested `deleteValues` entry removes its first remaining occurrence.
+For example, deleting `"one"` once from `["one", "one", "two"]` leaves
+`["one", "two"]`. Repeat the requested value to remove another occurrence.
+Embedded and typed list items retain their complete contents when insertions or
+deletions shift their positions.
+
 ```kotlin
 ListChange(
     Model.ref { listOfStrings }.change(

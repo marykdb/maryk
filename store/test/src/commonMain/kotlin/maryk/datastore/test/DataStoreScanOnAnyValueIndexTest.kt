@@ -7,7 +7,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.withTimeoutOrNull
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.IndexChange
@@ -526,10 +525,6 @@ class DataStoreScanOnAnyValueIndexTest(
             withTimeout(5000) { responses.receive() }
         }
 
-        suspend fun receiveRealTimeResponseOrNull(timeoutMs: Long) = withContext(Dispatchers.Default.limitedParallelism(1)) {
-            withTimeoutOrNull(timeoutMs) { responses.receive() }
-        }
-
         try {
             assertIs<InitialValuesUpdate<AnyValueMapIndexModel>>(receiveRealTimeResponse()).apply {
                 expect(listOf(mapKeys[0], mapKeys[1])) { values.map { it.key } }
@@ -547,6 +542,13 @@ class DataStoreScanOnAnyValueIndexTest(
                 assertStatusIs<ChangeSuccess<AnyValueMapIndexModel>>(it)
             }
 
+            // Observe each revision before committing the next one. This test
+            // checks unchanged-position deltas; delayed snapshot coalescing has
+            // separate full-image coverage in LaggedSnapshotFlowConformance.
+            val changeUpdates = mutableListOf(
+                assertIs<ChangeUpdate<AnyValueMapIndexModel>>(receiveRealTimeResponse())
+            )
+
             dataStore.execute(
                 AnyValueMapIndexModel.change(
                     mapKeys[1].change(
@@ -559,11 +561,7 @@ class DataStoreScanOnAnyValueIndexTest(
                 assertStatusIs<ChangeSuccess<AnyValueMapIndexModel>>(it)
             }
 
-            val changeUpdates = mutableListOf<ChangeUpdate<AnyValueMapIndexModel>>()
-            while (true) {
-                val update = receiveRealTimeResponseOrNull(250) ?: break
-                changeUpdates += assertIs<ChangeUpdate<AnyValueMapIndexModel>>(update)
-            }
+            changeUpdates += assertIs<ChangeUpdate<AnyValueMapIndexModel>>(receiveRealTimeResponse())
 
             expect(true) {
                 changeUpdates.any {

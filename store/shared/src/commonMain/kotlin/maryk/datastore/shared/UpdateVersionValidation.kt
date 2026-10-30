@@ -1,6 +1,7 @@
 package maryk.datastore.shared
 
 import maryk.core.exceptions.RequestException
+import maryk.core.properties.types.Key
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
@@ -17,9 +18,20 @@ fun requireSafeUpdateVersion(update: IsUpdateResponse<*>) {
     requireSafeUpdateVersion(update.version)
     when (update) {
         is AdditionUpdate<*> -> requireSafeUpdateVersion(update.firstVersion)
-        is InitialChangesUpdate<*> -> update.changes.forEach { objectChanges ->
-            objectChanges.changes.forEach { versionedChanges ->
-                requireSafeUpdateVersion(versionedChanges.version)
+        is InitialChangesUpdate<*> -> {
+            val lastVersionByKey = mutableMapOf<Key<*>, ULong>()
+            update.changes.forEach { objectChanges ->
+                objectChanges.changes.forEach { versionedChanges ->
+                    val version = versionedChanges.version
+                    requireSafeUpdateVersion(version)
+                    if (version > update.version) {
+                        throw RequestException("Initial change version $version exceeds update version ${update.version}")
+                    }
+                    val previousVersion = lastVersionByKey.put(objectChanges.key, version)
+                    if (previousVersion != null && version <= previousVersion) {
+                        throw RequestException("Initial change versions for a record must be strictly increasing")
+                    }
+                }
             }
         }
     }

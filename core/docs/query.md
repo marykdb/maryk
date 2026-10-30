@@ -116,6 +116,15 @@ with a status on each change.
 Refer to [property operations](properties/operations.md) to see how to apply
 changes to properties.
 
+`Values.toChanges()` preserves empty embedded values as well as populated ones.
+For creation replay, `RootDataModel.fromChanges(context, changes)` reconstructs
+missing embedded and map parents from the explicit references, in operation
+order, without inserting defaults or allocating incrementing-map keys. Ordinary
+`Values.change` and local mutation requests still require their parent values
+to exist before a child can be changed.
+Copying partial value items preserves unrelated fields. Changed typed values
+retain the same value equality as newly created typed values, including no-ops.
+
 **Example:**
 
 ```kotlin
@@ -282,6 +291,13 @@ Independent reads may straddle a commit, and existing record-level update
 streams and replication retain their existing delivery boundaries. Notifications
 are published only after commit, but they are not a grouped cross-model stream.
 
+Replication's `InitialChangesUpdate` carries each record's complete revisions in
+strictly increasing version order, with each version present once even when the
+record appears in multiple groups. Every revision must be at or below the update
+envelope's version. Stores reject violations of these version constraints before
+applying any prefix or advancing their clock. Independently delivered stale
+updates retain their existing no-op behavior.
+
 ### Get
 
 With [`GetRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetRequest.kt),
@@ -336,6 +352,13 @@ multiple objects can be queried by passing a `startKey` to scan from and filters
 To select a subset of values in the query, use `select` with a [graph](reference-graphs.md).
 It is possible to filter the results with [filters](filters.md), order, or limit the results (default= 100).
 You can also include soft-deleted results by passing `filterSoftDeleted=false`.
+
+Deleted-inclusive scans use primary-key table order, since deleted records no
+longer own current unique or secondary-index entries and several deleted records
+can retain the same unique value. Set `allowTableScan=true` when the primary-key
+filter does not meet the model's minimum scan range. Explicit secondary-index
+ordering with `filterSoftDeleted=false` is rejected rather than returning an
+incomplete page. Normal scans that filter deleted records retain indexed ordering.
 
 Additionally, you can view the objects at a certain version with `toVersion` if the store supports historical views.
 
@@ -538,6 +561,34 @@ reflecting the initial ordering of keys.
 
 This request type can also be used inside `executeFlow` to listen to updates as they happen in the data store.
 
+A live view may fetch a complete current row when a record enters its filter or
+refills its window. If that read includes newer queued commits, the addition uses
+the row's actual last version and already-included deltas are suppressed. This
+keeps list operations and other non-idempotent changes from being applied twice.
+If the removed key already matches again at a newer revision when the refill
+reads it, the listener emits a removal followed by that complete addition,
+preserving intervening edits. A refill at the change's exact revision retains
+the usual delta response.
+Ordering is derived from the same fetched values. Use finite history queries when
+every retained revision is needed instead of a current live view.
+
+When `FetchByUpdateHistoryIndex` supplies newest-first ordering, the initial
+`OrderedKeysUpdate.sortingKeys` contains each corresponding key's complete source
+version as eight unsigned big-endian bytes. These versions remain available when
+`select` omits the latest changed property. Live history windows compare source
+versions when adding or moving records, so an older queued event cannot displace
+a newer row already fetched by a listener. This uses the existing optional
+sorting field and does not change stored records.
+
+Live scans retain their original cursor boundary for additions and refills,
+including when deletion leaves the visible window empty. The public projection
+also remains unchanged while internal reads obtain values needed for ordering.
+
+When `ScanUpdates` uses the update-history index, rows are ordered by descending
+revision, then descending record key for tied revisions, including live updates.
+The separate finite `ScanUpdateHistory` cursor API retains its existing ascending
+key order within a tied revision.
+
 Optionally, you can pass an `orderedKeys` parameter to a `ScanUpdatesRequest`. This allows you to receive any changes to
 that list as well. This way, you are assured to receive hard-deleted values or added values that had their values
 changed,
@@ -648,6 +699,8 @@ notifications are emitted in journal order after publication. Staged responses,
 including SQL RETURNING versions, must not be treated as committed receipts.
 The callback value can retain provisional metadata after commit; use the commit
 responses when durable mutation versions are needed.
+The ordered version range is checked before applying journal members. If it
+would overflow the store clock, the transaction aborts without publishing writes.
 The scoped callback runs on the shared datastore dispatcher. Ordinary store
 `execute` calls inside it join that scope. Replication and subscriptions belong
 outside the transaction.

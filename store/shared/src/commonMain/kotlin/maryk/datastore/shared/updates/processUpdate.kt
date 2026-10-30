@@ -3,6 +3,8 @@ package maryk.datastore.shared.updates
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.yield
 import maryk.core.models.IsRootDataModel
+import maryk.core.exceptions.StorageException
+import maryk.core.query.ValuesWithMetaData
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
@@ -11,6 +13,10 @@ import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.ScanCursor
+import maryk.core.query.requests.createCursor
+import maryk.core.query.requests.resolveCursor
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
@@ -18,6 +24,7 @@ import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
+import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalReason.NotInRange
@@ -35,6 +42,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
     dataStore: IsDataStore,
     sharedFlow: SendChannel<IsUpdateResponse<DM>>
 ) {
+    if (updateListener.includesInSnapshot(this)) return
     val request = updateListener.request
     val currentKeys = updateListener.matchingKeys.value
     // Only process object requests or change requests if the version is after or equal to from version
@@ -43,7 +51,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
             is Addition<DM> -> {
                 if (!isDeleted || !request.filterSoftDeleted) {
                     if (values.matches(request.where)) {
-                        val insertIndex = updateListener.addValues(key, values)
+                        val insertIndex = updateListener.addValues(key, values, version)
                         if (insertIndex != null) {
                             sharedFlow.send(
                                 AdditionUpdate(
@@ -139,13 +147,14 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                     )
                     val addition = response.values.firstOrNull()
                     if (addition != null) {
-                        updateListener.addValues(addition.key, addition.values)?.let { insertionIndex ->
+                        updateListener.addValues(addition.key, addition.values, addition.lastVersion)?.let { insertionIndex ->
+                            updateListener.includeSnapshot(addition.key, addition.lastVersion)
                             sharedFlow.send(
                                 AdditionUpdate(
                                     key = addition.key,
                                     values = addition.values.filterWithSelect(request.select),
                                     insertionIndex = insertionIndex,
-                                    version = version,
+                                    version = addition.lastVersion,
                                     firstVersion = addition.firstVersion,
                                     isDeleted = addition.isDeleted
                                 )
@@ -173,62 +182,35 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                     updateListener.request.limit > 0u &&
                     (updateListener.indexScanRange != null || updateListener.usesUpdateHistoryIndex)
                 ) {
-                    val currentSortedValues = updateListener.sortedValues?.value
-
-                    // Only process further if order has changed to move this value into range
-                    updateListener.changeOrder(this@process) { newIndex, _ ->
-                        if (newIndex != null) {
-                            // Let single-threaded stores finish the outer write before doing a follow-up fetch.
-                            yield()
-
-                            // Check if object matches the filter
-                            val response = dataStore.execute(
-                                request.dataModel.get(
-                                    key,
-                                    select = null,
-                                    where = request.where,
-                                    filterSoftDeleted = request.filterSoftDeleted
+                    // Membership and ordering must describe the same snapshot.
+                    // An older queued index delta can disagree with a newer read.
+                    yield()
+                    val addition = dataStore.execute(
+                        request.dataModel.get(
+                            key,
+                            select = null,
+                            where = request.where,
+                            filterSoftDeleted = request.filterSoftDeleted,
+                        )
+                    ).values.firstOrNull()
+                    if (addition != null) {
+                        updateListener.addValues(addition.key, addition.values, addition.lastVersion)?.let { newIndex ->
+                            if (updateListener.matchingKeys.value.size.toUInt() > updateListener.request.limit) {
+                                val lastKey = updateListener.getLast()
+                                updateListener.removeKey(lastKey)
+                                sharedFlow.send(RemovalUpdate(key = lastKey, version = version, reason = NotInRange))
+                            }
+                            updateListener.includeSnapshot(addition.key, addition.lastVersion)
+                            sharedFlow.send(
+                                AdditionUpdate(
+                                    key = addition.key,
+                                    values = addition.values.filterWithSelect(request.select),
+                                    insertionIndex = newIndex,
+                                    version = addition.lastVersion,
+                                    firstVersion = addition.firstVersion,
+                                    isDeleted = addition.isDeleted,
                                 )
                             )
-
-                            // Only handle change if it matches against key
-                            if (response.values.isNotEmpty()) {
-                                if (updateListener.usesUpdateHistoryIndex && key !in updateListener.matchingKeys.value) {
-                                    updateListener.matchingKeys.value = buildList {
-                                        add(key)
-                                        addAll(updateListener.matchingKeys.value)
-                                    }
-                                }
-
-                                if (updateListener.matchingKeys.value.size.toUInt() > updateListener.request.limit) {
-                                    val lastKey = updateListener.getLast()
-                                    updateListener.removeKey(lastKey)
-
-                                    sharedFlow.send(
-                                        RemovalUpdate(
-                                            key = lastKey,
-                                            version = this.version,
-                                            reason = NotInRange
-                                        )
-                                    )
-                                }
-
-                                val addition = response.values.first()
-                                sharedFlow.send(
-                                    AdditionUpdate(
-                                        key = addition.key,
-                                        values = addition.values.filterWithSelect(request.select),
-                                        insertionIndex = newIndex,
-                                        version = this.version,
-                                        firstVersion = addition.firstVersion,
-                                        isDeleted = addition.isDeleted
-                                    )
-                                )
-                            } else {
-                                // Add back removed values since filter does not match
-                                updateListener.matchingKeys.value = currentKeys
-                                currentSortedValues?.let { updateListener.sortedValues.value = it }
-                            }
                         }
                     }
                 }
@@ -321,30 +303,31 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDelet
         updateListener.request.limit - 1u == updateListener.matchingKeys.value.size.toUInt()
     ) {
         val nextValue = dataStore.requestNextValues(
-            updateListener.request,
-            updateListener.matchingKeys.value
+            updateListener,
+            updateListener.matchingKeys.value,
         )
         nextValue?.also { additionUpdate ->
-            // Always at the end so no need to order
-            updateListener.addValuesAtEnd(additionUpdate.key, additionUpdate.values)
+            val insertionIndex = updateListener.addValuesAtEnd(
+                additionUpdate.key, additionUpdate.values, additionUpdate.version,
+            )
             val selectedAddition = additionUpdate.copy(
-                values = additionUpdate.values.filterWithSelect(updateListener.request.select)
+                insertionIndex = insertionIndex,
+                values = additionUpdate.values.filterWithSelect(updateListener.request.select),
             )
 
-            if (change is Change<DM>) {
-                if (additionUpdate.key != change.key) { // if not same key, remove old & add new
-                    sendRemoval()
-                    sharedFlow.send(selectedAddition)
-                } else if (originalIndex != additionUpdate.insertionIndex) {
-                    // If same key send an order change
-                    change.createChangeUpdate(
-                        updateListener.request.select,
-                        orderChanged = true,
-                        newIndex = additionUpdate.insertionIndex
-                    )?.also { sharedFlow.send(it) }
-                } // else no change because still the last
+            if (change is Change<DM> && additionUpdate.key == change.key && additionUpdate.version == change.version) {
+                // The original delta still describes this exact row revision.
+                change.createChangeUpdate(
+                    updateListener.request.select,
+                    orderChanged = originalIndex != insertionIndex,
+                    newIndex = insertionIndex,
+                )?.also { sharedFlow.send(it) }
             } else {
+                // Even the same key can now represent a newer snapshot (for example,
+                // a queued soft delete followed by an undelete). Replace the client
+                // image and cover its revision instead of dropping intervening edits.
                 sendRemoval()
+                updateListener.includeSnapshot(additionUpdate.key, additionUpdate.version)
                 sharedFlow.send(selectedAddition)
             }
         } ?: sendRemoval()
@@ -355,39 +338,63 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDelet
 
 /** Requests next values object after last key in [currentKeys] */
 private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
-    request: IsScanRequest<DM, *>,
-    currentKeys: List<Key<DM>>
+    listener: UpdateListenerForScan<DM, *>,
+    currentKeys: List<Key<DM>>,
 ): AdditionUpdate<DM>? {
+    val request = listener.request
+    if (listener.usesIndexScan) return requestNextIndexedValues(listener, currentKeys)
     if (request is ScanUpdatesRequest<DM>) {
-        val nextResults = execute(
-            request.dataModel.scanUpdates(
-                startKey = request.startKey,
-                select = null,
-                where = request.where,
-                filterSoftDeleted = request.filterSoftDeleted,
-                limit = request.limit,
-                includeStart = request.includeStart,
-                order = request.order,
-                fromVersion = request.fromVersion,
-                maxVersions = request.maxVersions,
-                orderedKeys = currentKeys
+        // History additions can be creation-time snapshots. Use the result's
+        // current key order, then fetch the complete row and its own revision.
+        repeat(4) {
+            val nextResults = execute(
+                request.dataModel.scanUpdates(
+                    startKey = request.startKey,
+                    select = null,
+                    where = request.where,
+                    filterSoftDeleted = request.filterSoftDeleted,
+                    limit = request.limit,
+                    includeStart = request.includeStart,
+                    order = request.order,
+                    fromVersion = request.fromVersion,
+                    toVersion = request.toVersion,
+                    maxVersions = request.maxVersions,
+                    orderedKeys = currentKeys,
+                )
             )
-        )
-
-        return nextResults.updates
-            .filterIsInstance<AdditionUpdate<DM>>()
-            .firstOrNull { it.key !in currentKeys }
+            val candidate = nextResults.updates.filterIsInstance<OrderedKeysUpdate<DM>>()
+                .firstOrNull()?.keys?.firstOrNull { it !in currentKeys } ?: return null
+            val values = execute(request.dataModel.get(
+                candidate, select = null, where = request.where,
+                filterSoftDeleted = request.filterSoftDeleted, toVersion = request.toVersion,
+            )).values.singleOrNull()
+            if (values != null) {
+                return AdditionUpdate(
+                    key = values.key,
+                    version = values.lastVersion,
+                    firstVersion = values.firstVersion,
+                    insertionIndex = currentKeys.size,
+                    values = values.values,
+                    isDeleted = values.isDeleted,
+                )
+            }
+            // The candidate disappeared between the two reads. Re-evaluate the
+            // window rather than silently leaving a slot permanently empty.
+            yield()
+        }
+        throw StorageException("Live scan refill could not obtain a stable matching record")
     }
 
+    val continuation = (request as? ScanRequest<DM>)?.resolveCursor()
     val nextResults = if (currentKeys.isEmpty()) {
         execute(
             request.dataModel.scan(
-                startKey = request.startKey,
+                startKey = continuation?.key?.let { Key(it.bytes) } ?: request.startKey,
                 select = null,
                 where = request.where,
                 order = request.order,
                 limit = 1u,
-                includeStart = request.includeStart,
+                includeStart = continuation == null && request.includeStart,
                 toVersion = request.toVersion,
                 filterSoftDeleted = request.filterSoftDeleted,
                 allowTableScan = request.allowTableScan
@@ -409,9 +416,7 @@ private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
         )
     }
 
-    return if (nextResults.values.isNotEmpty()) {
-        val nextValues = nextResults.values.first()
-
+    return nextResults.values.firstOrNull { it.key !in currentKeys }?.let { nextValues ->
         AdditionUpdate(
             key = nextValues.key,
             version = nextValues.lastVersion,
@@ -420,7 +425,67 @@ private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
             values = nextValues.values,
             isDeleted = nextValues.isDeleted
         )
-    } else null
+    }
+}
+
+/** Select a refill against the listener's frozen index boundary, independently of mutable start records. */
+private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextIndexedValues(
+    listener: UpdateListenerForScan<DM, *>,
+    currentKeys: List<Key<DM>>,
+): AdditionUpdate<DM>? {
+    val request = listener.request
+    fun scanPage(cursor: ScanCursor? = null) = request.dataModel.scan(
+        cursor = cursor,
+        select = null,
+        where = request.where,
+        order = request.order,
+        limit = 256u,
+        toVersion = request.toVersion,
+        filterSoftDeleted = request.filterSoftDeleted,
+        allowTableScan = request.allowTableScan,
+    )
+    val fullScan = scanPage()
+    // The public projection participates in the cursor fingerprint. Validate it
+    // against the original query, then retain its boundary for our full-value reads.
+    val originalContinuation = (request as? ScanRequest<DM>)?.resolveCursor()
+    var cursor = originalContinuation?.let {
+        fullScan.createCursor(Key(it.key.bytes), it.orderKey?.bytes)
+    }
+    val visibleKeys = currentKeys.toHashSet()
+    var best: ValuesWithMetaData<DM>? = null
+    var bestIndexKey: ByteArray? = null
+    while (true) {
+        val pageRequest = scanPage(cursor)
+        val page = execute(pageRequest)
+        for (value in page.values) {
+            if (value.key in visibleKeys) continue
+            val indexKey = listener.resolveIndexKey(value.values, value.key.bytes) ?: continue
+            val previous = bestIndexKey
+            if (previous == null || listener.compareIndexKeys(indexKey, previous) < 0) {
+                best = value
+                bestIndexKey = indexKey
+            }
+        }
+        val nextCursor = page.nextCursor ?: break
+        if (nextCursor == cursor) throw StorageException("Index refill scan did not advance its cursor")
+        // A record can straddle the original boundary with multiple entries. Its
+        // physical canonical entry may precede the entry visible to this listener.
+        // Stop only once later physical entries cannot improve the best candidate.
+        val physicalKey = scanPage(nextCursor).resolveCursor()?.orderKey?.bytes
+        val bestKey = bestIndexKey
+        if (physicalKey != null && bestKey != null && listener.compareIndexKeys(physicalKey, bestKey) >= 0) break
+        cursor = nextCursor
+    }
+    return best?.let {
+        AdditionUpdate(
+            key = it.key,
+            version = it.lastVersion,
+            firstVersion = it.firstVersion,
+            insertionIndex = currentKeys.size,
+            values = it.values,
+            isDeleted = it.isDeleted,
+        )
+    }
 }
 
 /** Filters a list of changes to only have changes to properties defined in [select] */

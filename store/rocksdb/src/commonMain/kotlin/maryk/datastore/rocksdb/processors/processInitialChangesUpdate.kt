@@ -2,7 +2,6 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.fromChanges
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.responses.AddOrChangeResponse
@@ -14,6 +13,8 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.fromReplicationChanges
+import maryk.datastore.shared.normalizeReplicationChanges
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 
@@ -35,8 +36,9 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
     withTransaction { transaction ->
         for (change in update.changes) {
             for (versionedChange in change.changes) {
-                if (versionedChange.changes.contains(ObjectCreate)) {
-                    val addedValues = dataModel.fromChanges(null, versionedChange.changes)
+                val changes = normalizeReplicationChanges(versionedChange.changes)
+                if (changes.contains(ObjectCreate)) {
+                    val addedValues = dataModel.fromReplicationChanges(null, changes)
 
                     changeStatuses += try {
                         var updateToEmit: Update<DM>? = null
@@ -48,7 +50,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
                             key = change.key,
                             version = HLC(versionedChange.version),
                             objectToAdd = addedValues,
-                            isDeleted = versionedChange.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
+                            isDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
                             ignoreIfVersionNotNewer = true,
                         ) { updateToEmit = it }
                         transaction.commit()
@@ -68,7 +70,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
                             columnFamilies,
                             change.key,
                             null,
-                            versionedChange.changes,
+                            changes,
                             transaction,
                             dbIndex,
                             HLC(versionedChange.version),

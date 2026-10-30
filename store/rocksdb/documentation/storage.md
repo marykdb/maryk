@@ -46,6 +46,17 @@ A record is stored with the following structure within the `Table` family.
 - `KEY || SOFT_DELETE_INDICATOR(0x00)` → `VERSION || Boolean` – Object‑level soft delete flag.
 - `KEY || LAST_VERSION_INDICATOR(0b1000)` → `VERSION` – Last write version; updated on any add/change/delete.
 - `KEY || QUALIFIER` → `VERSION || VALUE` – Property values. The qualifier encodes the property reference (and collection item, where applicable).
+
+Current property tombstones use an exact two-byte `00 00` payload. This is
+distinct from the canonical one-byte zero count of a present empty collection.
+Incrementing-map tombstones retain allocated keys; allocation ignores anonymous
+collection markers and child qualifiers when advancing the numeric key.
+
+Multi-type discriminators define which child case is active. Mutations and
+checks consult the current staged discriminator before reading child cells;
+inactive writes reject and inactive deletions leave retained cells untouched.
+Simple case values are stored inline on the multi-type parent. Replace that
+parent with a `TypedValue` rather than writing an extra typed child qualifier.
   
 ## Index (latest)
 `INDEX_REF || VALUE_BYTES || KEY` → `VERSION`

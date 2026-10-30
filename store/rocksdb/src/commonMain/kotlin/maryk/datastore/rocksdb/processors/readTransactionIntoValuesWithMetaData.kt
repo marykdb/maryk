@@ -2,7 +2,6 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.emptyValues
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -32,6 +31,8 @@ import maryk.datastore.rocksdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.readValue
+import maryk.datastore.shared.readStoredCount
+import maryk.datastore.shared.hasStoredValuePayload
 import maryk.datastore.shared.rethrowIfFatal
 
 /**
@@ -119,7 +120,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                         index = VERSION_BYTE_SIZE
 
                         cachedRead(reference, currentVersion) {
-                            initIntByVar { valueBytes[index++] }
+                            readStoredCount(valueBytes, VERSION_BYTE_SIZE, valueBytes.size - VERSION_BYTE_SIZE)
                         }
                     }
                     SetSize -> {
@@ -129,7 +130,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                         index = VERSION_BYTE_SIZE
 
                         cachedRead(reference, currentVersion) {
-                            initIntByVar { valueBytes[index++] }
+                            readStoredCount(valueBytes, VERSION_BYTE_SIZE, valueBytes.size - VERSION_BYTE_SIZE)
                         }
                     }
                     MapSize -> {
@@ -138,12 +139,13 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
 
                         index = VERSION_BYTE_SIZE
                         cachedRead(reference, currentVersion) {
-                            initIntByVar { valueBytes[index++] }
+                            readStoredCount(valueBytes, VERSION_BYTE_SIZE, valueBytes.size - VERSION_BYTE_SIZE)
                         }
                     }
                     Embed -> {
                         val valueBytes = iterator.value()
                         currentVersion = valueBytes.readVersionBytes()
+                        if (hasStoredValuePayload(reference.propertyDefinition, valueBytes, VERSION_BYTE_SIZE, valueBytes.size - VERSION_BYTE_SIZE)) Unit else null
                     }
                     TypeValue -> throw StorageException("Not used in direct encoding")
                 }.also {
@@ -223,7 +225,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                     return@cachedRead null
                                 }
                                 index = 0
-                                initIntByVar { valueBytes[index++] }
+                                readStoredCount(valueBytes)
                             }
                             SetSize -> {
                                 val valueBytes = iterator.value()
@@ -231,7 +233,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                     return@cachedRead null
                                 }
                                 index = 0
-                                initIntByVar { valueBytes[index++] }
+                                readStoredCount(valueBytes)
                             }
                             MapSize -> {
                                 val valueBytes = iterator.value()
@@ -239,9 +241,9 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                     return@cachedRead null
                                 }
                                 index = 0
-                                initIntByVar { valueBytes[index++] }
+                                readStoredCount(valueBytes)
                             }
-                            Embed -> if (iterator.value().isHistoricDeleteMarker()) null else Unit
+                            Embed -> if (iterator.value().isHistoricDeleteMarker(allowLegacyMarker = true)) null else Unit
                             TypeValue -> throw StorageException("Not used in direct encoding")
                             ObjectDelete -> null
                         }

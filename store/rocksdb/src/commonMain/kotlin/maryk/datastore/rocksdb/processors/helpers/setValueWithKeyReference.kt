@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.invert
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
-import maryk.datastore.shared.TypeIndicator
+import maryk.datastore.shared.StoredPropertyDeleteMarker
 
 /** Set [keyAndReference] = [value] (ByteArray) at [version] for object at [keyAndReference] */
 internal fun setValue(
@@ -16,6 +16,10 @@ internal fun setValue(
     valueOffset: Int = 0,
     valueLength: Int = value.size - valueOffset
 ) {
+    rememberIncrementingMapKeys(transaction, columnFamilies,
+        keyAndReference.copyOfRange(0, columnFamilies.keyByteSize),
+        keyAndReference.copyOfRange(columnFamilies.keyByteSize, keyAndReference.size),
+        value, valueOffset, valueLength)
     val valueWithVersion = ByteArray(version.size + valueLength)
     version.copyInto(valueWithVersion)
     value.copyInto(valueWithVersion, VERSION_BYTE_SIZE, valueOffset, valueOffset + valueLength)
@@ -55,7 +59,7 @@ internal fun setDeletedValue(
     transaction.put(
         columnFamilies.table,
         keyAndReference,
-        version + TypeIndicator.DeletedIndicator.byteArray,
+        version + StoredPropertyDeleteMarker,
     )
 
     if (columnFamilies is HistoricTableColumnFamilies) {

@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.shared.isStoredPropertyDeleteMarker
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareToRange
 
@@ -18,7 +19,8 @@ internal fun unsetNonChangedValues(
     var minIndex = 0
     var deleted = false
 
-    for ((qualifier, _) in currentValues) {
+    for ((qualifier, storedValue) in currentValues) {
+        if (isStoredPropertyDeleteMarker(storedValue, VERSION_BYTE_SIZE, storedValue.size - VERSION_BYTE_SIZE)) continue
         val index = sortedQualifiersToKeep.binarySearch(fromIndex = minIndex) {
             it.compareToRange(qualifier, key.bytes.size, qualifier.size - key.bytes.size)
         }

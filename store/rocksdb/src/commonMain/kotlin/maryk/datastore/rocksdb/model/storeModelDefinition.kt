@@ -4,8 +4,9 @@ import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.migration.StorageFormat
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DefinitionsConversionContext
+import maryk.core.query.StorageDefinitionsConversionContext
 import maryk.datastore.rocksdb.metadata.ModelMeta
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDB
@@ -19,7 +20,45 @@ fun storeModelDefinition(
     modelColumnFamily: ColumnFamilyHandle,
     dataModel: IsRootDataModel,
 ) {
-    val context = DefinitionsConversionContext()
+    val (modelBytes, dependentBytes) = encodeStoredModelDefinition(dataModel)
+
+    WriteBatch().use { batch ->
+        batch.put(modelColumnFamily, modelNameKey, dataModel.Meta.name.encodeToByteArray())
+        batch.put(modelColumnFamily, modelVersionKey, dataModel.Meta.version.toByteArray())
+        batch.put(modelColumnFamily, modelDefinitionKey, modelBytes)
+        if (dependentBytes != null) {
+            batch.put(modelColumnFamily, modelDependentsDefinitionKey, dependentBytes)
+        } else batch.delete(modelColumnFamily, modelDependentsDefinitionKey)
+        batch.put(modelColumnFamily, modelStorageFormatKey, StorageFormat.CURRENT.toString().encodeToByteArray())
+        WriteOptions().use { writeOptions ->
+            rocksDB.write(writeOptions, batch)
+        }
+    }
+
+    modelMetas[modelId] = ModelMeta(
+        name = dataModel.Meta.name,
+        keySize = dataModel.Meta.keyByteSize
+    )
+}
+
+/** Rewrite source schemas without publishing application schema changes. */
+internal fun rewriteStoredModelDefinition(
+    rocksDB: RocksDB,
+    modelColumnFamily: ColumnFamilyHandle,
+    dataModel: IsRootDataModel,
+) {
+    val (modelBytes, dependentBytes) = encodeStoredModelDefinition(dataModel)
+    WriteBatch().use { batch ->
+        batch.put(modelColumnFamily, modelDefinitionKey, modelBytes)
+        if (dependentBytes != null) batch.put(modelColumnFamily, modelDependentsDefinitionKey, dependentBytes)
+        else batch.delete(modelColumnFamily, modelDependentsDefinitionKey)
+        batch.put(modelColumnFamily, modelStorageFormatKey, StorageFormat.CURRENT.toString().encodeToByteArray())
+        WriteOptions().use { writeOptions -> rocksDB.write(writeOptions, batch) }
+    }
+}
+
+private fun encodeStoredModelDefinition(dataModel: IsRootDataModel): Pair<ByteArray, ByteArray?> {
+    val context = StorageDefinitionsConversionContext()
 
     val modelCache = WriteCache()
     val modelByteSize = RootDataModel.Model.Serializer.calculateObjectProtoBufLength(dataModel as RootDataModel<*>, modelCache, context)
@@ -41,20 +80,5 @@ fun storeModelDefinition(
         dependentBytes
     } else null
 
-    WriteBatch().use { batch ->
-        batch.put(modelColumnFamily, modelNameKey, dataModel.Meta.name.encodeToByteArray())
-        batch.put(modelColumnFamily, modelVersionKey, dataModel.Meta.version.toByteArray())
-        batch.put(modelColumnFamily, modelDefinitionKey, modelBytes)
-        if (dependentBytes != null) {
-            batch.put(modelColumnFamily, modelDependentsDefinitionKey, dependentBytes)
-        }
-        WriteOptions().use { writeOptions ->
-            rocksDB.write(writeOptions, batch)
-        }
-    }
-
-    modelMetas[modelId] = ModelMeta(
-        name = dataModel.Meta.name,
-        keySize = dataModel.Meta.keyByteSize
-    )
+    return modelBytes to dependentBytes
 }

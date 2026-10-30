@@ -7,7 +7,6 @@ import maryk.createTestDBFolder
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
-import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.test.dataModelsForTests
 import maryk.deleteFolder
 import maryk.test.models.CompleteMarykModel
@@ -163,7 +162,7 @@ class IterateValuesTest {
             store.db.put(
                 columnFamilies.historic.table,
                 (reference + deleteVersionBytes).also { it.invert(it.size - deleteVersionBytes.size) },
-                TypeIndicator.DeletedIndicator.byteArray
+                HISTORIC_DELETE_MARKER
             )
 
             DBAccessor(store).use { dbAccessor ->

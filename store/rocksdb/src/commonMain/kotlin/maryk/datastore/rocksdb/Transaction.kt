@@ -17,7 +17,9 @@ import maryk.rocksdb.getRequiredSize
 import maryk.rocksdb.getStatus
 import maryk.rocksdb.rocksDBNotFound
 
-internal val TransactionRevisionKey = "maryk.transaction/revision".encodeToByteArray()
+internal val TransactionRevisionKey = "maryk.storage/transaction-revision".encodeToByteArray()
+internal val LegacyTransactionRevisionKey = "maryk.transaction/revision".encodeToByteArray()
+internal val TransactionReceiptPrefix = "maryk.transaction/".encodeToByteArray()
 private const val DELETE_RANGE_BATCH_SIZE = 1024
 
 class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDataStore) {

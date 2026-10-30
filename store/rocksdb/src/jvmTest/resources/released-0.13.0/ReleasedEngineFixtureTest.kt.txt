@@ -1,0 +1,148 @@
+package maryk.datastore.rocksdb
+
+import java.io.File
+import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDateTime
+import maryk.core.models.DataModel
+import maryk.core.models.RootDataModel
+import maryk.core.models.ValueDataModel
+import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.dateTime
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.set
+import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.valueObject
+import maryk.core.properties.types.Key
+import maryk.core.properties.types.TimePrecision.NANOS
+import maryk.core.properties.types.ValueDataObject
+import maryk.core.properties.types.Version
+import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.Float64
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
+import maryk.core.query.pairs.with
+import maryk.core.query.requests.add
+import maryk.core.query.requests.change
+import maryk.core.query.requests.get
+import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.values.ObjectValues
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+
+val ReleasedNanosDefault = listOf(LocalDateTime(1970, 1, 1, 0, 0, 8, 1))
+
+object ReleasedFixtureDependent : DataModel<ReleasedFixtureDependent>() {
+    val stamps by list(1u, valueDefinition = DateTimeDefinition(precision = NANOS), default = ReleasedNanosDefault)
+    val number by number(2u, type = Float64, default = -0.0)
+}
+
+data class ReleasedPacked(val float: Float, val double: Double) : ValueDataObject(toBytes(float, double)) {
+    companion object : ValueDataModel<ReleasedPacked, Companion>(ReleasedPacked::class) {
+        val float by number(1u, ReleasedPacked::float, type = Float32)
+        val double by number(2u, ReleasedPacked::double, type = Float64)
+        override fun invoke(values: ObjectValues<ReleasedPacked, Companion>) = ReleasedPacked(values(1u), values(2u))
+    }
+}
+
+object ReleasedFixtureRoot : RootDataModel<ReleasedFixtureRoot>(
+    version = Version(3, 1, 2),
+    indexes = { listOf(Multiple(ReleasedFixtureRoot.label.ref(), ReleasedFixtureRoot.double.ref()), ReleasedFixtureRoot.packed.ref()) },
+) {
+    val label by string(1u)
+    val float by number(2u, type = Float32)
+    val double by number(3u, type = Float64)
+    val packed by valueObject(4u, dataModel = ReleasedPacked)
+    val stamp by dateTime(5u, precision = NANOS)
+    val stamps by list(6u, valueDefinition = DateTimeDefinition(precision = NANOS), default = ReleasedNanosDefault)
+    val child by embed(7u, dataModel = { ReleasedFixtureDependent })
+    val emptyList by list(8u, valueDefinition = StringDefinition())
+    val emptySet by set(9u, valueDefinition = StringDefinition())
+    val emptyMap by map(10u, keyDefinition = StringDefinition(), valueDefinition = StringDefinition())
+}
+
+class ReleasedEngineFixtureTest {
+    @Test
+    fun writeReleasedFixture() = runTest {
+        val destination = File("/tmp/maryk-released-engine-fixture")
+        check(!destination.exists()) { "Refusing to replace existing fixture at $destination" }
+        val manifest = File("/tmp/maryk-released-engine-fixture.tsv")
+        val edgeBits = listOf(
+            0x00000000u to 0x0000000000000000uL,
+            0x80000000u to 0x8000000000000000uL,
+            0xbf800000u to 0xbff0000000000000uL,
+            0x00000001u to 0x0000000000000001uL,
+            0x80000001u to 0x8000000000000001uL,
+            0x7f7fffffu to 0x7fefffffffffffffuL,
+            0x7f800000u to 0x7ff0000000000000uL,
+            0xff800000u to 0xfff0000000000000uL,
+            0x7fc00001u to 0x7ff8000000000001uL,
+            0x7fc00002u to 0x7ff8000000000002uL,
+            0xffc00001u to 0xfff8000000000001uL,
+        )
+        val labels = listOf("", "a", "a\u0000b", "a\u0000", "aa", "\ue000", "\ud800\udc00", "z", "nan-one", "nan-two", "negative-nan")
+        val lines = mutableListOf("row\tkeyHex\taddVersion\tchangeVersion\tfloatBitsHex\tdoubleBitsHex\tlabelUtf16Hex\tstamp\tcollections")
+        val store = RocksDBDataStore.open(
+            relativePath = destination.absolutePath,
+            dataModelsById = mapOf(1u to ReleasedFixtureRoot),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        )
+        try {
+            edgeBits.forEachIndexed { row, (floatBits, doubleBits) ->
+                val key = Key<ReleasedFixtureRoot>(ByteArray(16) { (row + 1).toByte() })
+                val valueFloat = Float.fromBits(floatBits.toInt())
+                val valueDouble = Double.fromBits(doubleBits.toLong())
+                val timestamp = LocalDateTime(1970, 1, 1, 0, 0, 8, row + 1)
+                val status = assertIs<AddSuccess<ReleasedFixtureRoot>>(
+                    store.execute(ReleasedFixtureRoot.add(key to ReleasedFixtureRoot.create {
+                        label with labels[row]
+                        float with valueFloat
+                        double with valueDouble
+                        packed with ReleasedPacked(valueFloat, valueDouble)
+                        stamp with timestamp
+                        stamps with ReleasedNanosDefault
+                        child with ReleasedFixtureDependent.create {
+                            stamps with ReleasedNanosDefault
+                            number with -0.0
+                        }
+                        emptyList with emptyList()
+                        emptySet with emptySet()
+                        emptyMap with emptyMap()
+                    })).statuses.single()
+                )
+                val read = store.execute(ReleasedFixtureRoot.get(key)).values.single().values
+                assertEquals(floatBits.toInt(), read { float }!!.toRawBits())
+                assertEquals(doubleBits.toLong(), read { double }!!.toRawBits())
+                assertContentEquals(ReleasedPacked(valueFloat, valueDouble).toByteArray(), read { packed }!!.toByteArray())
+                assertEquals(timestamp, read { stamp })
+                assertEquals(emptyList(), read { emptyList })
+                assertEquals(emptySet(), read { emptySet })
+                assertEquals(emptyMap(), read { emptyMap })
+                var changeVersion = ""
+                if (row == 0) {
+                    val changed = assertIs<ChangeSuccess<ReleasedFixtureRoot>>(store.execute(
+                        ReleasedFixtureRoot.change(key.change(Change(ReleasedFixtureRoot.ref { label } with "changed\u0000label")))
+                    ).statuses.single())
+                    changeVersion = changed.version.toString()
+                }
+                lines += listOf(
+                    row.toString(), key.bytes.joinToString("") { it.toUByte().toString(16).padStart(2, '0') },
+                    status.version.toString(), changeVersion,
+                    floatBits.toString(16).padStart(8, '0'), doubleBits.toString(16).padStart(16, '0'),
+                    labels[row].map { it.code.toString(16).padStart(4, '0') }.joinToString(""), timestamp.toString(), "list=[],set=[],map={}",
+                ).joinToString("\t")
+            }
+        } finally {
+            store.close()
+        }
+        manifest.writeText(lines.joinToString("\n", postfix = "\n"))
+    }
+}

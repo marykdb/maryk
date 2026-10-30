@@ -1,19 +1,13 @@
 package maryk.datastore.rocksdb.processors.helpers
 
-import maryk.core.extensions.bytes.toVarBytes
-import maryk.core.extensions.bytes.writeBytes
-import maryk.core.properties.definitions.IsStorageBytesEncodable
+import maryk.core.processors.datastore.writeListToStorage
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
-import maryk.datastore.shared.TypeIndicator
+import maryk.datastore.rocksdb.processors.createValueWriter
 
-/**
- * Set a list value in [transaction] for [reference] with a [newList] at new [version].
- * With [originalCount] it is determined if items need to be deleted.
- * Returns true if changed
- */
+/** Rewrite every descendant when list items shift, and remove obsolete descendants. */
 internal fun <T : Any> setListValue(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
@@ -23,40 +17,13 @@ internal fun <T : Any> setListValue(
     originalCount: Int,
     version: ByteArray
 ): Boolean {
-    val keyAndReferenceAsBytes = reference.toStorageByteArray(key.bytes)
-    @Suppress("UNCHECKED_CAST")
-    val valueDefinition = reference.propertyDefinition.valueDefinition as IsStorageBytesEncodable<T>
-
-    // Set the count
-    setValue(transaction, columnFamilies, keyAndReferenceAsBytes, version, newList.size.toVarBytes())
-
-    // Where is last addition
-    var changed = false
-
-    val toDeleteCount = originalCount - newList.size
-    if (toDeleteCount > 0) {
-        for (i in 0 until toDeleteCount) {
-            var byteIndex = keyAndReferenceAsBytes.size
-            val refToDelete = keyAndReferenceAsBytes.copyOf(byteIndex + 4)
-            (i + newList.size).toUInt().writeBytes({
-                refToDelete[byteIndex++] = it
-            })
-            deleteValue(transaction, columnFamilies, refToDelete, version)
-        }
-        changed = true
-    }
-
-    // Walk all new values to store
-    newList.forEachIndexed { index, item ->
-        var byteIndex = keyAndReferenceAsBytes.size
-        val newRef = keyAndReferenceAsBytes.copyOf(byteIndex + 4)
-        index.toUInt().writeBytes({
-            newRef[byteIndex++] = it
-        })
-
-        setValue(transaction, columnFamilies, newRef, version, valueDefinition.toStorageBytes(item, TypeIndicator.NoTypeIndicator.byte))
-        changed = true
-    }
-
-    return changed
+    val current = getCurrentValues(transaction, columnFamilies, key, reference.toStorageByteArray())
+    val keep = mutableListOf<ByteArray>()
+    var changed = originalCount != newList.size
+    val writer = transaction.rocksDBDataStore.createValueWriter(columnFamilies.modelId, transaction,
+        columnFamilies, key, version, qualifiersToKeep = keep,
+        skipCurrentUniqueOwnership = true, onWrite = { changed = true })
+    writeListToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes,
+        writer, reference.propertyDefinition, newList)
+    return unsetNonChangedValues(transaction, columnFamilies, key, current, keep, version) || changed
 }

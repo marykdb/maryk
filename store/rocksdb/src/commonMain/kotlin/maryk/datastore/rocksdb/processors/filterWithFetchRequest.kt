@@ -6,12 +6,13 @@ import maryk.core.properties.definitions.index.matchesNamedSearchIndex
 import maryk.core.properties.definitions.index.matchesNamedSearchIndexPrefix
 import maryk.core.properties.definitions.index.matchesNamedSearchIndexRegex
 import maryk.core.properties.definitions.index.stringIndexTransform
-import maryk.core.query.filters.matchesFilter
+import maryk.core.query.filters.matchesFilterWithPresence
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
+import maryk.datastore.rocksdb.processors.helpers.matchQualifierPresence
 import maryk.datastore.rocksdb.processors.helpers.matchQualifier
 import maryk.rocksdb.ReadOptions
 
@@ -38,13 +39,16 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
     checkSoftDelete && this.filterSoftDeleted &&
         (softDeleteCache?.get(key, keyOffset, keyLength)
             ?: isSoftDeleted(dbAccessor, columnFamilies, readOptions, toVersion, key, keyOffset, keyLength, historicalReader)) -> true
-    else -> !matchesFilter(
+    else -> !matchesFilterWithPresence(
         where,
         valueMatcher = { propertyReference, valueMatcher ->
             dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, historicalReader, valueMatcher)
         },
+        presenceMatcher = { propertyReference ->
+            dbAccessor.matchQualifierPresence(columnFamilies, readOptions, key.copyOfRange(keyOffset, keyOffset + keyLength), propertyReference, toVersion, historicalReader)
+        },
         normalizer = { propertyReference, value ->
-            val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilter value
+            val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilterWithPresence value
             when (value) {
                 is String -> transform.apply(value)
                 else -> value

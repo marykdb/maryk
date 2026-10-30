@@ -197,7 +197,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
                 toVersion = version,
                 maxVersions = 1u,
                 sortingKey = null,
-                cachedRead = cacheReader
+                cachedRead = cacheReader,
+                dataStore = this,
+                dbAccessor = dbAccessor,
+                readOptions = defaultReadOptions,
             )
             val updatedObjectChange = addSoftDeleteChangeIfMissing(
                 dbAccessor = dbAccessor,

@@ -29,6 +29,7 @@ import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import kotlin.time.Duration.Companion.milliseconds
 
 internal class RocksDBMigrationRequestContext(
+    val owner: RocksDBDataStore,
     val modelId: UInt,
 ) : AbstractCoroutineContextElement(RocksDBMigrationRequestContext) {
     companion object : CoroutineContext.Key<RocksDBMigrationRequestContext>
@@ -155,7 +156,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
             previousState = previousState,
             attempt = attempt,
         )
-        val outcome = withContext(RocksDBMigrationRequestContext(index)) {
+        val outcome = withContext(RocksDBMigrationRequestContext(this@handleRequiredMigration, index)) {
             when (phase) {
                 MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
                 MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success

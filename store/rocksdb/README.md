@@ -162,6 +162,37 @@ Notes:
 
 A hard delete permanently removes a record's current and historic values, including when `keepAllVersions` is enabled. An earlier `toVersion` query cannot recover erased values. Use soft deletion when historical recovery is required.
 
+Undeleting a record claims its current unique values, including changes or removals
+made while it was deleted. Older historic claims are not restored. Sensitive
+unique values are checked against every configured token candidate before the
+active token is installed.
+Changes reconcile unique ownership against the final stored values. Removing
+embedded children or collection entries, including embedded leaves within map
+values, also releases their claims in the same transaction; conflicts leave the record and its indexes unchanged. Reconciliation
+reads the affected qualifier ranges, preserving unrelated encrypted cells. Soft
+deletion releases owner-matched claims without decrypting payloads. With history
+enabled, undelete can recover a damaged current cell's claim from its exact source
+version; it never substitutes an older historical value.
+
+An accepted replication change advances the record's source version even when
+the supplied value is unchanged. Older changes and deletions remain rejected
+after reopening the store.
+Replication replays committed values and resolved incrementing-map keys in their
+source operation order. Source checks and derived index/type notifications are
+not executed as new mutations. Missing allocation keys or values reject replay
+before that version is applied.
+
+History exports decrypt sensitive cells with their model, record and property
+context, including after reopening. Portable restore can encrypt those values
+with the target store's provider. Stored collection changes export complete
+selected collection values at each affected version so list resizing and newly
+created nested containers replay without losing unchanged members.
+
+Scans with `filterSoftDeleted = false` use primary-key table scans so multiple
+deleted records with the same formerly unique value remain visible. Table-scan
+permission and minimum key-range bounds still apply. Explicit secondary-index
+ordering with deleted records is rejected; use primary-key ordering.
+
 
 ## Serializable transaction scopes
 
@@ -188,10 +219,13 @@ Float/Double values and index components now share the ordered numeric encoding.
 The upgrade converts affected current/historical fields, collection qualifiers,
 packed value objects and unique lookups, including contextual encryption and
 sensitive unique tokens. Original versions, record IDs and references are kept.
-Unchanged cells and fixed-width non-floating indexes are not rewritten.
+Unchanged cells and indexes whose descriptors and value encodings are unchanged
+are not rewritten.
 Legacy variable-width index entries gain escaped boundaries and UTF-16 string
-ordering. Primary keys whose bytes change require an explicit key/reference
-migration and fail preflight.
+ordering. Index descriptors also convert fixed floating-point or packed-value map
+and set ancestor keys, including indexes whose leaf value is an unchanged integer.
+Primary keys whose bytes change require an explicit key/reference migration and
+fail preflight.
 
 The store metadata records `maryk.storage/format = 2` only after verification.
 Later opens read the stamp and skip the conversion and data scans. A durable
@@ -209,3 +243,13 @@ completion flags and the operational clock watermark, skipping old repair-marker
 checks and scans. Models first opened later and newly enabled history still get
 their required maintenance. This is engine metadata, independent of model schema
 versions, with no extra fields on application records.
+
+Retained transaction receipts keep their original request identity across this
+upgrade. Opening conversion tags released receipts explicitly; new receipts use
+the current request fingerprint. A retry compares against the appropriate codec
+before returning the retained response. If the released request encoding cannot
+be reproduced unambiguously, the store reports that identity cannot be proven
+and keeps the receipt instead of applying the transaction again.
+The transaction revision nonce now uses a separate metadata key from receipt
+IDs. The formerly colliding transaction ID `revision` remains valid. Only an exact
+16-byte legacy nonce is moved; receipt-sized values at that key are preserved.

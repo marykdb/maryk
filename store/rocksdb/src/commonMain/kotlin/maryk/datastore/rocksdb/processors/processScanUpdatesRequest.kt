@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import maryk.core.extensions.bytes.toByteArray
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.createScanRange
@@ -220,7 +221,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                     scanRequest.toVersion,
                     scanRequest.maxVersions,
                     sortingKey,
-                    cacheReader
+                    cacheReader,
+                    dataStore = this,
+                    dbAccessor = dbAccessor,
+                    readOptions = defaultReadOptions,
                 )
                 val updatedObjectChange = if (scanRequest.needsSoftDeleteFallback() && columnFamilies is HistoricTableColumnFamilies) {
                     addSoftDeleteChangeIfMissing(
@@ -552,7 +556,10 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                             scanRequest.toVersion,
                             scanRequest.maxVersions,
                             null,
-                            cacheReader
+                            cacheReader,
+                            dataStore = this,
+                            dbAccessor = dbAccessor,
+                            readOptions = defaultReadOptions,
                         )
                         val updatedObjectChange = if (scanRequest.needsSoftDeleteFallback() && columnFamilies is HistoricTableColumnFamilies) {
                             addSoftDeleteChangeIfMissing(
@@ -633,7 +640,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                     OrderedKeysUpdate(
                         version = lastResponseVersion,
                         keys = matchingKeys,
-                        sortingKeys = null
+                        sortingKeys = matchingKeys.map { Bytes(matchingVersions.getValue(it).toByteArray()) }
                     )
                 )
 

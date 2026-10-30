@@ -1,0 +1,6 @@
+version: 1
+indexKeyFormatVersion: 2
+models:
+  1:
+    name: ReleasedFixtureRoot
+    keySize: 16

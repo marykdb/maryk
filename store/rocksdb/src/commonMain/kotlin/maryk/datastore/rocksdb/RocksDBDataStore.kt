@@ -7,6 +7,7 @@ import maryk.core.query.requests.get
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.models.migration.StorageFormat
+import maryk.datastore.shared.migration.validatePendingModelMigration
 import maryk.datastore.shared.migration.StorageMaintenanceMetadataKey
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
@@ -82,8 +83,8 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.processors.datastore.StorageTypeEnum.Value
-import maryk.core.query.DefinitionsConversionContext
-import maryk.core.query.addDataModelReferences
+import maryk.datastore.shared.StoredModelDefinitionsContext
+import maryk.datastore.shared.loadStoredModelDefinitions
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
@@ -122,6 +123,7 @@ import maryk.datastore.rocksdb.processors.LAST_VERSION_INDICATOR
 import maryk.datastore.rocksdb.model.RocksDBMigrationAuditLogStore
 import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
+import maryk.datastore.rocksdb.model.readStoredModelDefinition
 import maryk.datastore.rocksdb.model.modelHlcWatermarkKey
 import maryk.datastore.rocksdb.model.modelTransactionHlcWatermarkRepairCompleteKey
 import maryk.datastore.rocksdb.model.modelUpdateHistoryBackfillCompleteKey
@@ -276,6 +278,7 @@ class RocksDBDataStore private constructor(
     internal fun createReadContext() = RocksDBReadContext.create(db)
 
     private val scheduledVersionUpdateHandlers = linkedMapOf<UInt, suspend () -> Unit>()
+    private val storedDefinitionsContext = StoredModelDefinitionsContext()
     private val updateHistoryReadyModelIds = atomic(setOf<UInt>())
     internal val pendingMigrationModelIds = atomic(setOf<UInt>())
     internal val dependencyWaitingMigrationModelIds = atomic(setOf<UInt>())
@@ -372,8 +375,16 @@ class RocksDBDataStore private constructor(
         val effectiveMigrationLease = migrationConfiguration.migrationLease ?: defaultMigrationLease
         val migrationStateStore = RocksDBMigrationStateStore(
             db,
-            columnFamilyHandlesByDataModelIndex.mapValues { (_, tableColumnFamilies) -> tableColumnFamilies.model }
+            columnFamilyHandlesByDataModelIndex.mapValues { (_, tableColumnFamilies) -> tableColumnFamilies.model },
+            dataModelsById,
         )
+        for ((index, dataModel) in dataModelsById) {
+            val (state, identity) = migrationStateStore.readProgress(index) ?: continue
+            val storedModel = readStoredModelDefinition(db, getColumnFamilies(index).model, storedDefinitionsContext)
+            if (validatePendingModelMigration(state, storedModel, dataModel, identity)) {
+                migrationStateStore.clear(index)
+            }
+        }
         if (migrationConfiguration.persistMigrationAuditEvents) {
             migrationAuditLogStore = RocksDBMigrationAuditLogStore(
                 rocksDB = db,
@@ -424,9 +435,7 @@ class RocksDBDataStore private constructor(
                         tableColumnFamilies.model,
                         dataModel,
                         onlyCheckModelVersion,
-                        DefinitionsConversionContext().apply {
-                            addDataModelReferences(dataModelsById.values)
-                        }
+                        storedDefinitionsContext
                     )
                 ) {
                     UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
@@ -464,9 +473,7 @@ class RocksDBDataStore private constructor(
                                 modelColumnFamily = tableColumnFamilies.model,
                                 dataModel = dataModel,
                                 onlyCheckVersion = onlyCheckModelVersion,
-                                conversionContext = DefinitionsConversionContext().apply {
-                                    addDataModelReferences(dataModelsById.values)
-                                },
+                                conversionContext = storedDefinitionsContext,
                             )
                         },
                         finalizeMigration = { storedModel ->
@@ -520,7 +527,7 @@ class RocksDBDataStore private constructor(
                 try {
                     pendingDependencies.forEach { dependencyId -> awaitMigration(dependencyId) }
                     storeInitializationReady.await()
-                    withContext(RocksDBMigrationRequestContext(index)) {
+                    withContext(RocksDBMigrationRequestContext(this@RocksDBDataStore, index)) {
                         processModelMigration(index) { finalizer ->
                             finalizer()
                             writeStoreMeta()
@@ -648,8 +655,10 @@ class RocksDBDataStore private constructor(
     }
 
     private fun validateStoredModelsBeforeIndexFormatMigration() {
-        val conversionContext = DefinitionsConversionContext().apply {
-            addDataModelReferences(dataModelsById.values)
+        // Reference protobuf metadata names its target without repeating its schema.
+        // Load every persisted source root before asking a reference for its width.
+        loadStoredModelDefinitions(storageUpgradeHandles.filter { it.getName().firstOrNull() == TableType.Model.byte }) { handle ->
+            readStoredModelDefinition(db, handle, storedDefinitionsContext)
         }
         for (index in orderMigrationModelIds(dataModelsById)) {
             val dataModel = dataModelsById.getValue(index)
@@ -661,7 +670,7 @@ class RocksDBDataStore private constructor(
                 modelColumnFamily = columnFamilies.model,
                 dataModel = dataModel,
                 onlyCheckVersion = onlyCheckModelVersion,
-                conversionContext = conversionContext,
+                conversionContext = storedDefinitionsContext,
             )
             if (migrationStatus is NeedsMigration) hasRequiredModelMigration = true
             if (
@@ -1408,16 +1417,19 @@ class RocksDBDataStore private constructor(
 
     override suspend fun processTransactionRequest(request: TransactionRequest, version: HLC): TransactionResponse {
         val codec = AtomicReceiptCodec(dataModelsById)
-        val fingerprint = codec.transactionFingerprint(request)
-        val receiptKey = "maryk.transaction/".encodeToByteArray() + request.transactionId.encodeToByteArray()
+        val fingerprints = codec.transactionFingerprints(request)
+        val receiptKey = TransactionReceiptPrefix + request.transactionId.encodeToByteArray()
         val transaction = Transaction(this).apply { atomicOwner = true }
         val atomic = AtomicMutationContext(this, transaction)
         var committed = false
         try {
-            transaction.get(transactionMetadataHandle, defaultReadOptions, receiptKey)?.let {
-                return codec.replayTransaction(it, fingerprint, request)
+            transaction.get(transactionMetadataHandle, defaultReadOptions, receiptKey)
+                ?.takeUnless { receiptKey.contentEquals(LegacyTransactionRevisionKey) && it.size == 16 }?.let {
+                return codec.replayTransaction(it, fingerprints, request)
             }
-            val revision = Bytes(transaction.get(transactionMetadataHandle, defaultReadOptions, TransactionRevisionKey) ?: byteArrayOf(0))
+            val revision = Bytes(transaction.get(transactionMetadataHandle, defaultReadOptions, TransactionRevisionKey)
+                ?: transaction.get(transactionMetadataHandle, defaultReadOptions, LegacyTransactionRevisionKey)?.takeIf { it.size == 16 }
+                ?: byteArrayOf(0))
             val executionVersion = if (request.commit) version else HLC(request.stagingVersion ?: version.timestamp)
             val result = RocksDBReadContext.create(db, transaction).use { readContext ->
                 withContext(atomic) {
@@ -1437,7 +1449,7 @@ class RocksDBDataStore private constructor(
                     }
                 }
             }
-            val receipt = codec.transactionReceipt(fingerprint, result)
+            val receipt = codec.transactionReceipt(fingerprints.current, result)
             if (request.commit) {
                 transaction.put(transactionMetadataHandle, receiptKey, receipt)
                 val committedVersion = requireNotNull(result.version)
@@ -1789,7 +1801,7 @@ class RocksDBDataStore private constructor(
 
     override suspend fun assertRequestModelReady(dataModelId: UInt) {
         val migrationRequest = currentCoroutineContext()[RocksDBMigrationRequestContext]
-        if (migrationRequest?.modelId == dataModelId) {
+        if (migrationRequest?.owner === this && migrationRequest.modelId == dataModelId) {
             if (!indexKeyFormatReady.value) {
                 throw MigrationException("RocksDB index key format migration is pending")
             }

@@ -3,11 +3,18 @@ package maryk.datastore.rocksdb.model
 import maryk.core.definitions.Definitions
 import maryk.core.extensions.bytes.decodeVarUInt
 import maryk.core.models.RootDataModel
+import maryk.core.models.migration.StorageFormat
+import maryk.core.models.migration.readLegacyTransportStorage
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.query.StorageDefinitionsConversionContext
 import maryk.datastore.rocksdb.RocksDBBlockCache
 import maryk.datastore.rocksdb.TableType
 import maryk.datastore.rocksdb.metadata.readMetaFile
+import maryk.datastore.shared.migration.StorageFormatMetadataKey
+import maryk.datastore.shared.StoredModelDefinitionsContext
+import maryk.datastore.shared.loadStoredModelDefinitions
+import maryk.datastore.shared.migration.decodeStorageFormat
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.DBOptions
@@ -70,21 +77,16 @@ fun readStoredModelDefinitionsFromPath(
         try {
             val storedNamesById = metas.mapValues { it.value.name }
 
-            val conversionContext = DefinitionsConversionContext()
-            val storedModelsById = mutableMapOf<UInt, RootDataModel<*>>()
-
-            cfNames.forEachIndexed { index, name ->
-                if (name.isEmpty() || name[0] != TableType.Model.byte) return@forEachIndexed
-                val id = name.decodeVarUInt(startIndex = 1) ?: return@forEachIndexed
-                val modelHandle = handles[index]
-                val storedModel = readStoredModelDefinition(db, modelHandle, conversionContext)
-                if (storedModel != null) {
-                    storedModelsById[id] = storedModel
-                } else {
-                    // debug aid: keep blank entry for visibility when debugging issues reading models
-                    // storedModelsById[id] = null intentionally not set
-                }
+            val conversionContext = StoredModelDefinitionsContext()
+            val modelHandles = cfNames.mapIndexedNotNull { index, name ->
+                if (name.isEmpty() || name[0] != TableType.Model.byte) return@mapIndexedNotNull null
+                val id = name.decodeVarUInt(startIndex = 1) ?: return@mapIndexedNotNull null
+                id to handles[index]
             }
+            val storedModelsByHandle = loadStoredModelDefinitions(modelHandles) { (_, handle) ->
+                readStoredModelDefinition(db, handle, conversionContext)
+            }
+            val storedModelsById = storedModelsByHandle.mapKeys { (identity, _) -> identity.first }
 
             // If metadata exists, keep only ids present there (for consistency) but fall back to discovered ones otherwise
             return if (storedNamesById.isNotEmpty()) {
@@ -104,6 +106,27 @@ fun readStoredModelDefinitionsFromPath(
 }
 
 fun readStoredModelDefinition(
+    rocksDB: RocksDB,
+    modelColumnFamily: ColumnFamilyHandle,
+    conversionContext: DefinitionsConversionContext,
+): RootDataModel<*>? {
+    val legacyTransport = decodeStorageFormat(rocksDB.get(StorageFormatMetadataKey)) == StorageFormat.LEGACY &&
+        decodeStorageFormat(rocksDB.get(modelColumnFamily, modelStorageFormatKey)) == StorageFormat.LEGACY
+    // Each persisted pair is self-contained. In particular, recursive dependencies must
+    // resolve within this pair, even when another retained root uses the same names.
+    val sourceContext = (conversionContext as? StoredModelDefinitionsContext)?.newSourcePairContext()
+        ?: StorageDefinitionsConversionContext()
+    val model = if (legacyTransport) sourceContext.readLegacyTransportStorage {
+        readStoredModelDefinitionPayload(rocksDB, modelColumnFamily, sourceContext)
+    } else readStoredModelDefinitionPayload(rocksDB, modelColumnFamily, sourceContext)
+    conversionContext.dataModels.putAll(sourceContext.dataModels)
+    conversionContext.enums.putAll(sourceContext.enums)
+    conversionContext.typeEnums.putAll(sourceContext.typeEnums)
+    if (model != null) (conversionContext as? StoredModelDefinitionsContext)?.registerSourceRoot(model)
+    return model
+}
+
+private fun readStoredModelDefinitionPayload(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,
     conversionContext: DefinitionsConversionContext,

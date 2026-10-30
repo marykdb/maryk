@@ -19,6 +19,7 @@ internal fun <R: Any> DBAccessor.iterateValues(
     keyLength: Int,
     reference: ByteArray,
     historicalTableReader: HistoricalTableReader? = null,
+    decryptValue: Boolean = true,
     handleValue: (ByteArray, Int, Int, ByteArray, Int, Int) -> R?
 ): R? {
     if (toVersion == null) {
@@ -30,7 +31,9 @@ internal fun <R: Any> DBAccessor.iterateValues(
                 if (!referenceBytes.matchesRangePart(0, reference)) break
                 val value = iterator.value()
                 requireVersionedValue(value)
-                this.dataStore.withDecryptedValueIfNeeded(
+                val result = if (!decryptValue) {
+                    handleValue(referenceBytes, keyLength, referenceBytes.size - keyLength, value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
+                } else this.dataStore.withDecryptedValueIfNeeded(
                     columnFamilies.modelId,
                     referenceBytes.copyOfRange(0, keyLength),
                     referenceBytes.copyOfRange(keyLength, referenceBytes.size),
@@ -42,7 +45,8 @@ internal fun <R: Any> DBAccessor.iterateValues(
                         referenceBytes, keyLength, referenceBytes.size - keyLength,
                         payload, offset, length
                     )
-                }?.let { return it }
+                }
+                result?.let { return it }
                 iterator.next()
             }
             return null
@@ -52,21 +56,21 @@ internal fun <R: Any> DBAccessor.iterateValues(
             throw RequestException("Cannot use toVersion on a non historic table")
         }
         return historicalTableReader?.iterateValues(keyLength, reference) { referenceBytes, refOffset, refLength, value, _, _ ->
-            val decrypted = this.dataStore.decryptValueIfNeeded(
+            val decrypted = if (decryptValue) this.dataStore.decryptValueIfNeeded(
                 columnFamilies.modelId,
                 referenceBytes.copyOfRange(0, keyLength),
                 referenceBytes.copyOfRange(keyLength, keyLength + refLength),
                 value
-            )
+            ) else value
             handleValue(referenceBytes, refOffset, refLength, decrypted, 0, decrypted.size)
         } ?: HistoricalTableReader(this, columnFamilies, readOptions, toVersion).use { reader ->
             reader.iterateValues(keyLength, reference) { referenceBytes, refOffset, refLength, value, _, _ ->
-                val decrypted = this.dataStore.decryptValueIfNeeded(
+                val decrypted = if (decryptValue) this.dataStore.decryptValueIfNeeded(
                 columnFamilies.modelId,
                 referenceBytes.copyOfRange(0, keyLength),
                 referenceBytes.copyOfRange(keyLength, keyLength + refLength),
                     value
-                )
+                ) else value
                 handleValue(referenceBytes, refOffset, refLength, decrypted, 0, decrypted.size)
             }
         }

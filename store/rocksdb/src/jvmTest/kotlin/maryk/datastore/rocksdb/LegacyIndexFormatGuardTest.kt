@@ -118,6 +118,7 @@ class LegacyIndexFormatGuardTest {
             val initialIndex = initialStore.getColumnFamilies(1u).index
             initialStore.db.put(initialIndex, sentinelKey, sentinelValue)
             val rowsBefore = readRows(initialStore, initialIndex)
+            val dataRowsBefore = readRows(initialStore, initialStore.getColumnFamilies(1u).table)
             initialStore.close()
 
             val legacyMeta = StoreMeta(
@@ -139,28 +140,49 @@ class LegacyIndexFormatGuardTest {
             }
             assertEquals(metaBefore, File.readText("$folder/MARYK_META.yml"))
 
+            assertFailsWith<MigrationException> {
+                RocksDBDataStore.open(
+                    relativePath = folder,
+                    keepAllVersions = true,
+                    dataModelsById = mapOf(1u to ModelV1),
+                ).close()
+            }
+            assertEquals(metaBefore, File.readText("$folder/MARYK_META.yml"))
+
+            // The fixture contains current-format bytes. Disable conversion so the
+            // matching target can inspect them without rebuilding the sentinel row.
             writeStoreMetaFile(
                 folder,
                 legacyMeta.copy(indexKeyFormatVersion = CURRENT_INDEX_KEY_FORMAT_VERSION),
             )
-            val reopenedStore = RocksDBDataStore.open(
-                relativePath = folder,
-                keepAllVersions = true,
-                dataModelsById = mapOf(1u to ModelV1),
-            )
-            try {
-                val reopenedIndex = reopenedStore.getColumnFamilies(1u).index
-                assertEquals(rowsBefore, readRows(reopenedStore, reopenedIndex))
-                assertContentEquals(sentinelValue, reopenedStore.db.get(reopenedIndex, sentinelKey))
-                assertEquals(
-                    listOf("haha migration"),
-                    reopenedStore.execute(
-                        ModelV1.scan(where = Equals(ModelV1.ref { value } with "haha migration"))
-                    ).values.map { it.values { value } },
-                )
-            } finally {
-                reopenedStore.close()
+            val inspectionMetaBefore = File.readText("$folder/MARYK_META.yml")
+            val inspectionFailure = assertFailsWith<IllegalStateException> {
+                RocksDBDataStore.open(
+                    relativePath = folder,
+                    keepAllVersions = true,
+                    dataModelsById = mapOf(1u to ModelV2),
+                    migrationConfiguration = MigrationConfiguration(
+                        migrationHandler = { context ->
+                            val store = context.store
+                            val columnFamilies = store.getColumnFamilies(1u)
+                            assertEquals(rowsBefore, readRows(store, columnFamilies.index))
+                            assertEquals(dataRowsBefore, readRows(store, columnFamilies.table))
+                            assertContentEquals(sentinelValue, store.db.get(columnFamilies.index, sentinelKey))
+                            assertEquals(
+                                listOf("haha migration"),
+                                store.execute(
+                                    ModelV2.scan(where = Equals(ModelV2.ref { value } with "haha migration"))
+                                ).values.map { it.values { value } },
+                            )
+                            // Leave the migration unfinished: this inspection does not
+                            // populate the target's newly required property.
+                            throw IllegalStateException("preservation inspection complete")
+                        },
+                    ),
+                ).close()
             }
+            assertEquals("preservation inspection complete", inspectionFailure.message)
+            assertEquals(inspectionMetaBefore, File.readText("$folder/MARYK_META.yml"))
         } finally {
             deleteFolder(folder)
         }

@@ -38,7 +38,6 @@ internal fun deleteCurrentUniqueIndexEntryForKeyByScan(
                     hardDelete = false,
                     historicValue = key
                 )
-                break
             }
 
             iterator.next()

@@ -20,7 +20,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
-import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.SetItemReference
@@ -32,9 +31,9 @@ import maryk.core.properties.types.invoke
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.TypeIndicator
+import maryk.datastore.shared.hasStoredValuePayload
 import maryk.datastore.shared.readValue
 import maryk.lib.extensions.compare.matchesRangePart
-import maryk.lib.extensions.compare.prevByteInSameLength
 import maryk.rocksdb.ReadOptions
 
 internal fun <T : Any> deleteByReference(
@@ -47,25 +46,30 @@ internal fun <T : Any> deleteByReference(
     version: ByteArray,
     handlePreviousValue: ((ByteArray, T?) -> Unit)?
 ): Boolean {
+    if (reference is ListItemReference<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        val listReference = reference.parentReference as ListReference<Any, *>
+        val original = getList(transaction, columnFamilies, readOptions, key, listReference)
+        if (reference.index >= original.size.toUInt()) return false
+        val updated = original.toMutableList().apply { removeAt(reference.index.toInt()) }
+        listReference.propertyDefinition.validateWithRef(original, updated) { listReference }
+        return setListValue(transaction, columnFamilies, key, listReference, updated, original.size, version)
+    }
     val referenceToCompareTo = key.bytes + referenceAsBytes
-    var referenceOfParent: ByteArray? = null
-    var toShiftListCount = 0u
 
     var shouldHandlePrevValue = true
 
     // Value to delete
     @Suppress("UNCHECKED_CAST")
     val prevValue: T = transaction.getValue(columnFamilies, readOptions, null, referenceToCompareTo) { b, o, l ->
-        // Root collection counts have no type indicator: zero means present and empty.
-        if (reference !is MapReference<*, *, *> && reference !is ListReference<*, *> && reference !is SetReference<*, *> &&
-            l == 1 && b[o] == TypeIndicator.DeletedIndicator.byte) {
+        if (!hasStoredValuePayload(reference.comparablePropertyDefinition, b, o, l)) {
             // does not exist so nothing to delete
             null
         } else {
             // With delete the prev value for complex types needs to be set to check final and required states
             // Only current values are checked on content
             when (reference) {
-                is MapReference<*, *, *> -> mapOf<Any, Any>() as T
+                is IsMapReference<*, *, *, *> -> mapOf<Any, Any>() as T
                 is ListReference<*, *> -> listOf<Any>() as T
                 is SetReference<*, *> -> setOf<Any>() as T
                 is EmbeddedValuesPropertyRef<*, *> -> reference.propertyDefinition.definition.dataModel.emptyValues() as T
@@ -104,26 +108,6 @@ internal fun <T : Any> deleteByReference(
                         }
                         else -> throw StorageException("Unknown map type")
                     }
-                }
-                is ListItemReference<*, *> -> {
-                    val listReference = reference.parentReference as ListReference<Any, IsPropertyContext>
-                    val listDefinition = listReference.propertyDefinition.definition
-                    createCountUpdater(
-                        transaction,
-                        columnFamilies,
-                        readOptions,
-                        key,
-                        listReference as IsPropertyReference<List<*>, IsPropertyDefinition<List<*>>, out Any>,
-                        version,
-                        -1
-                    ) { newCount ->
-                        toShiftListCount = newCount - reference.index
-                        listDefinition.validateSize(newCount) { listReference }
-                    }
-                    referenceOfParent = listReference.toStorageByteArray(key.bytes)
-                    // Map values can be set to null to be deleted.
-                    shouldHandlePrevValue = false
-                    (listDefinition.valueDefinition as IsStorageBytesEncodable<T>).fromStorageBytes(b, o + 1, l - 1)
                 }
                 is SetItemReference<*, *> -> {
                     val setReference = reference.parentReference as SetReference<Any, IsPropertyContext>
@@ -186,28 +170,13 @@ internal fun <T : Any> deleteByReference(
     // Delete value and complex sub parts below same reference
     transaction.getIterator(readOptions, columnFamilies.table).use { iterator ->
         iterator.seek(referenceToCompareTo)
-        val refOfParent = referenceOfParent
         while (iterator.isValid()) {
             val ref = iterator.key()
 
             if (ref.matchesRangePart(0, referenceToCompareTo)) {
-                // Delete if not a list or no further list items
-                if (toShiftListCount <= 0u) {
-                    if (shouldNotDeleteCompletely) {
-                        setDeletedValue(transaction, columnFamilies, ref, version)
-                    } else {
-                        deleteValue(transaction, columnFamilies, ref, version)
-                    }
-                }
-            } else if (refOfParent != null && ref.matchesRangePart(0, refOfParent)) {
-                // To handle list shifting
-                if (toShiftListCount > 0u) {
-                    val value = iterator.value()
-                    setValue(transaction, columnFamilies, ref.prevByteInSameLength(), version, value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
-                    toShiftListCount--
-                }
-
-                if (toShiftListCount <= 0u) {
+                if (shouldNotDeleteCompletely) {
+                    setDeletedValue(transaction, columnFamilies, ref, version)
+                } else {
                     deleteValue(transaction, columnFamilies, ref, version)
                 }
             } else {

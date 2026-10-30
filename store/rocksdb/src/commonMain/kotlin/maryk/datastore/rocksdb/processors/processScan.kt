@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.models.IsRootDataModel
+import maryk.core.exceptions.RequestException
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
@@ -30,6 +31,7 @@ import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.ScanType.UpdateHistoryScan
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
+import maryk.datastore.shared.checkTableScanAllowed
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 import maryk.lib.extensions.compare.matchesRangePart
@@ -61,6 +63,12 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
         return FetchByTableScan(ASC, null, null)
     }
 
+    val deletedInclusiveScan = if (!scanRequest.filterSoftDeleted) {
+        scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs).also {
+            if (it is ScanType.IndexScan) throw RequestException("Secondary-index ordering cannot include soft-deleted records; use primary-key ordering")
+        }
+    } else null
+
     when {
         // If hard key match then quit with direct record
         keyScanRange.isSingleKey() -> {
@@ -81,7 +89,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
         }
         else -> {
             // Process uniques as a fast path
-            keyScanRange.uniques?.takeIf { it.isNotEmpty() }?.let { uniqueMatchers ->
+            keyScanRange.uniques?.takeIf { scanRequest.filterSoftDeleted && it.isNotEmpty() }?.let { uniqueMatchers ->
                 // Only process the first unique since it has to match every found unique matcher
                 // and if first is set it can go to direct key to match further
                 val firstMatcher = uniqueMatchers.first()
@@ -132,9 +140,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                 return FetchByUniqueKey(firstMatcher.reference)
             }
 
-            val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
+            val scanIndex = deletedInclusiveScan ?: scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
 
-            val processedScanIndex = if (scanIndex is TableScan) {
+            val processedScanIndex = if (!scanRequest.filterSoftDeleted) {
+                scanRequest.dataModel.checkTableScanAllowed(scanIndex as TableScan, keyScanRange, scanRequest.allowTableScan)
+            } else if (scanIndex is TableScan) {
                 scanRequest.dataModel.optimizeTableScan(
                     scanIndex,
                     keyScanRange,

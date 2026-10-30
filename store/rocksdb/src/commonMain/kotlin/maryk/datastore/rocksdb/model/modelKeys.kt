@@ -10,3 +10,7 @@ internal val modelUpdateHistoryBackfillCompleteKey = byteArrayOf(6)
 internal val modelReplicationTombstoneBackfillCompleteKey = byteArrayOf(7)
 internal val modelHlcWatermarkKey = byteArrayOf(8)
 internal val modelTransactionHlcWatermarkRepairCompleteKey = byteArrayOf(9)
+
+internal val modelStorageFormatKey = "maryk.storage/source-schema-format".encodeToByteArray()
+
+internal val modelMigrationTargetKey = "maryk.migration/target-schema".encodeToByteArray()

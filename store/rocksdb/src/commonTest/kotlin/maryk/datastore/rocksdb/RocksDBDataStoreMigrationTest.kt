@@ -133,7 +133,7 @@ class RocksDBDataStoreMigrationTest {
     }
 
     @Test
-    fun backgroundMigrationFailsPromptlyForInvalidPersistedState() = runTest {
+    fun openingRejectsInvalidPersistedStateBeforeBackgroundWork() = runTest {
         val invalidStates = listOf(
             "malformed" to "not migration state".encodeToByteArray(),
             "mismatched" to MigrationState(
@@ -156,33 +156,20 @@ class RocksDBDataStoreMigrationTest {
             initialStore.db.put(initialStore.getColumnFamilies(1u).model, modelMigrationStateKey, state)
             initialStore.close()
 
-            val dataStore = RocksDBDataStore.open(
-                keepAllVersions = true,
-                relativePath = path,
-                dataModelsById = mapOf(1u to ModelV2),
-                migrationConfiguration = MigrationConfiguration(
-                    migrationLease = NoopMigrationLease,
-                    migrationStartupBudgetMs = -1L,
-                    continueMigrationsInBackground = true,
-                    migrationHandler = { MigrationOutcome.Success },
+            assertFailsWith<MigrationException> {
+                RocksDBDataStore.open(
+                    keepAllVersions = true,
+                    relativePath = path,
+                    dataModelsById = mapOf(1u to ModelV2),
+                    migrationConfiguration = MigrationConfiguration(
+                        migrationLease = NoopMigrationLease,
+                        migrationStartupBudgetMs = -1L,
+                        continueMigrationsInBackground = true,
+                        migrationHandler = { MigrationOutcome.Success },
+                    )
                 )
-            )
-
-            try {
-                val failure = runCatching {
-                    withContext(Dispatchers.Default.limitedParallelism(1)) {
-                        withTimeout(1_000.milliseconds) {
-                            dataStore.awaitMigration(1u)
-                        }
-                    }
-                }.exceptionOrNull()
-
-                assertIs<MigrationException>(failure)
-                assertTrue(dataStore.pendingMigrations()[1u]?.contains("Persisted migration state") == true)
-            } finally {
-                dataStore.close()
-                deleteFolder(path)
             }
+            deleteFolder(path)
         }
     }
 

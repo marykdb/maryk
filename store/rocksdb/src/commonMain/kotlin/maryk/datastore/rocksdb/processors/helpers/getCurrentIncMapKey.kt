@@ -5,6 +5,7 @@ import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.shared.incrementingMapAllocationPrefix
 import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.rocksdb.ReadOptions
 
@@ -17,22 +18,23 @@ internal fun getCurrentIncMapKey(
     reference: IncMapReference<Comparable<Any>, Any, IsPropertyContext>
 ): ByteArray {
     val referenceToCompareTo = reference.toStorageByteArray(key.bytes)
+    val maximum = readIncrementingMapMaximum(dbAccessor, columnFamilies, key.bytes, reference)
 
     dbAccessor.getIterator(readOptions, columnFamilies.table).use { iterator ->
         iterator.seek(referenceToCompareTo)
 
         if (iterator.isValid()) {
-            iterator.next()
+            if (iterator.key().contentEquals(referenceToCompareTo)) iterator.next()
 
-            val foundReference = iterator.key()
-            if (referenceToCompareTo.compareDefinedRange(foundReference, 0) == 0) {
-                return foundReference.copyOfRange(key.size, foundReference.size)
+            if (iterator.isValid()) {
+                val foundReference = iterator.key()
+                if (referenceToCompareTo.compareDefinedRange(foundReference, 0) == 0) {
+                    return incrementingMapAllocationPrefix(reference,
+                        foundReference.copyOfRange(key.size, foundReference.size), maximum)
+                }
             }
         }
 
-        val refSize = referenceToCompareTo.size - key.size
-        // If nothing was found create a new reference
-        val mapKeySize = reference.propertyDefinition.definition.keyDefinition.byteSize
-        return ByteArray(mapKeySize + refSize + 1) { if(it < refSize) referenceToCompareTo[it + key.size] else if (it == refSize) mapKeySize.toByte() else 0xFF.toByte() }
+        return incrementingMapAllocationPrefix(reference, null, maximum)
     }
 }

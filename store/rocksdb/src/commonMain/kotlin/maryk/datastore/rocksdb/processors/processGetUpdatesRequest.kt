@@ -158,7 +158,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
                                     getRequest.toVersion,
                                     getRequest.maxVersions,
                                     null,
-                                    cacheReader
+                                    cacheReader,
+                                    dataStore = this,
+                                    dbAccessor = dbAccessor,
+                                    readOptions = defaultReadOptions,
                                 )
                                 val updatedObjectChange = if (getRequest.needsSoftDeleteFallback() && columnFamilies is HistoricTableColumnFamilies) {
                                     addSoftDeleteChangeIfMissing(

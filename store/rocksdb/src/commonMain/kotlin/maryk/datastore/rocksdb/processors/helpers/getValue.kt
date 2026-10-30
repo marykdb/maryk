@@ -4,6 +4,7 @@ import maryk.core.exceptions.RequestException
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.shared.isStoredPropertyDeleteMarker
 import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.recyclableByteArray
@@ -20,6 +21,7 @@ internal fun <T: Any> DBAccessor.getValue(
     toVersion: ULong?,
     keyAndReference: ByteArray,
     historicalTableReader: HistoricalTableReader? = null,
+    decryptValue: Boolean = true,
     handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
     val recordKey = keyAndReference.copyOfRange(0, columnFamilies.keyByteSize)
@@ -32,13 +34,19 @@ internal fun <T: Any> DBAccessor.getValue(
             valueLength > recyclableByteArray.size -> {
                 val valueBytes = this.get(columnFamilies.table, readOptions, keyAndReference)!!
                 requireVersionedValueSize(valueLength)
-                this.dataStore.withDecryptedValueIfNeeded(columnFamilies.modelId, recordKey, reference, valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE) { value, offset, length ->
-                    handleResult(value, offset, length)
+                if (!decryptValue) {
+                    if (isStoredPropertyDeleteMarker(valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE)) null
+                    else handleResult(valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE)
+                } else this.dataStore.withDecryptedValueIfNeeded(columnFamilies.modelId, recordKey, reference, valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE) { value, offset, length ->
+                    if (isStoredPropertyDeleteMarker(value, offset, length)) null else handleResult(value, offset, length)
                 }
             }
             else -> {
                 requireVersionedValueSize(valueLength)
-                this.dataStore.withDecryptedValueIfNeeded(
+                if (!decryptValue) {
+                    if (isStoredPropertyDeleteMarker(recyclableByteArray, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE)) null
+                    else handleResult(recyclableByteArray, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE)
+                } else this.dataStore.withDecryptedValueIfNeeded(
                     columnFamilies.modelId,
                     recordKey,
                     reference,
@@ -46,7 +54,7 @@ internal fun <T: Any> DBAccessor.getValue(
                     VERSION_BYTE_SIZE,
                     valueLength - VERSION_BYTE_SIZE
                 ) { value, offset, length ->
-                    handleResult(value, offset, length)
+                    if (isStoredPropertyDeleteMarker(value, offset, length)) null else handleResult(value, offset, length)
                 }
             }
         }
@@ -56,11 +64,11 @@ internal fun <T: Any> DBAccessor.getValue(
         }
 
         historicalTableReader?.getValue(keyAndReference) { result, _, _ ->
-            val decrypted = this.dataStore.decryptValueIfNeeded(columnFamilies.modelId, recordKey, reference, result)
+            val decrypted = if (decryptValue) this.dataStore.decryptValueIfNeeded(columnFamilies.modelId, recordKey, reference, result) else result
             handleResult(decrypted, 0, decrypted.size)
         } ?: HistoricalTableReader(this, columnFamilies, readOptions, toVersion).use { reader ->
             reader.getValue(keyAndReference) { result, _, _ ->
-                val decrypted = this.dataStore.decryptValueIfNeeded(columnFamilies.modelId, recordKey, reference, result)
+                val decrypted = if (decryptValue) this.dataStore.decryptValueIfNeeded(columnFamilies.modelId, recordKey, reference, result) else result
                 handleResult(decrypted, 0, decrypted.size)
             }
         }

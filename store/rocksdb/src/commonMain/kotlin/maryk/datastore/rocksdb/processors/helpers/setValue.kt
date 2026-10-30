@@ -16,6 +16,7 @@ internal fun setValue(
     version: ByteArray,
     value: ByteArray
 ) {
+    rememberIncrementingMapKeys(transaction, columnFamilies, key.bytes, reference, value)
     transaction.put(
         columnFamilies.table,
         key.bytes + reference,

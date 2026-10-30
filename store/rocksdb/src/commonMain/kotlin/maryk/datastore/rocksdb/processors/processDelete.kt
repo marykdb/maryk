@@ -27,6 +27,8 @@ import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.currentAtomicContext
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.incrementingMapWatermarkPrefix
+import maryk.datastore.shared.migration.legacyIncrementingMapProofKey
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.bytes.combineToByteArray
@@ -217,6 +219,8 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
 
                 if (hardDelete) {
                     transaction.put(columnFamilies.replicationTombstones, key.bytes, versionBytes)
+                    transaction.deletePrefix(columnFamilies.model, incrementingMapWatermarkPrefix(columnFamilies.modelId, key.bytes))
+                    transaction.delete(columnFamilies.model, legacyIncrementingMapProofKey(columnFamilies.modelId, key.bytes))
                     transaction.delete(columnFamilies.keys, key.bytes)
                     transaction.deletePrefix(columnFamilies.table, key.bytes)
                     if (columnFamilies is HistoricTableColumnFamilies) {

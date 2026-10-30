@@ -54,7 +54,7 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.migration.StorageFormat
-import maryk.core.models.migration.hasFloatingPointValueObjects
+import maryk.core.models.migration.hasLegacyTransportStorage
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationRuntimeStatus
@@ -230,8 +230,8 @@ class RemoteDataStore private constructor(
 
                 val infoResult = fetchInfo(client, effectiveUrl, config.bearerToken)
                 val modelMap = buildModelMap(infoResult.info, infoResult.definitionsContext)
-                require(modelMap.values.none { it.hasFloatingPointValueObjects() } || infoResult.info.valueStorageFormat == StorageFormat.CURRENT.toUInt()) {
-                    "Remote value-object storage format differs; upgrade the client and server together"
+                require(modelMap.values.none { it.hasLegacyTransportStorage() } || infoResult.info.valueStorageFormat == StorageFormat.CURRENT.toUInt()) {
+                    "Remote value transport format differs; upgrade the client and server together"
                 }
 
                 RemoteDataStore(

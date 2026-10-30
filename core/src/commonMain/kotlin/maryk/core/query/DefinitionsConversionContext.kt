@@ -12,4 +12,6 @@ open class DefinitionsConversionContext(
 
     // Used to resolve keys in root model
     internal var propertyDefinitions: IsDataModel? = null
-) : IsPropertyContext, ContainsDefinitionsContext by definitionsContext
+) : IsPropertyContext, ContainsDefinitionsContext by definitionsContext {
+    internal var legacyTransportStorage = false
+}

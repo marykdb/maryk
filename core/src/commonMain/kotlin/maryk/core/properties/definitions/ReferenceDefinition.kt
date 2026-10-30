@@ -6,7 +6,6 @@ import maryk.core.models.DefinitionModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -73,7 +72,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
             throw ParseException("Invalid storage byte length for Reference: $length != $byteSize")
         }
 
-        return dataModel.key(reader)
+        return Key<DM>(ByteArray(byteSize) { reader() })
     }
 
     override fun calculateTransportByteLength(value: Key<DM>) = calculateStorageByteLength(value)
@@ -93,14 +92,14 @@ class ReferenceDefinition<DM : IsRootDataModel>(
     }
 
     override fun fromString(string: String) = try {
-        dataModel.key(string)
+        Key<DM>(string).also(::validateByteSize)
     } catch (e: IllegalArgumentException) {
         throw ParseException(string, e)
     }
 
     override fun fromNativeType(value: Any) =
         if (value is ByteArray && value.size == this.byteSize) {
-            dataModel.key(value)
+            Key<DM>(value)
         } else {
             null
         }

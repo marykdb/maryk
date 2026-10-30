@@ -91,6 +91,14 @@ Embedded values and embedded objects support direct property selection. Map
 `at(key)` and `any { ... }`, referenced-model blocks, and multi-type `withType`
 and `atType` blocks also support returning the child property directly.
 
+A typed child mutation requires its case to be active; selecting a case in a
+reference does not activate it. Deleting an inactive child leaves the active case
+unchanged. To switch cases, replace the multi-type parent with a typed value
+first. For portable datastore writes to an inline scalar case, replace the
+parent rather than assigning a direct `atType` case qualifier. Memory, RocksDB
+and FoundationDB reject that qualifier shape because it cannot represent an
+inline value in their cell layout.
+
 ## Creating property references with String notation
 
 When defined in YAML or JSON, property references can use a simple string format without including the model name.
@@ -113,6 +121,10 @@ In string notation this becomes `map.@12:23`. References to the key itself use `
 ### Wildcards for maps
 
 Maps support wildcard references for both values and keys:
+
+`anyValue()` supports scalar, embedded and multi-type value definitions. For maps
+whose values are lists, sets or maps, use an explicit `at(key)` reference to the
+collection. Collection-valued map wildcards are rejected with a request error.
 
 ```kotlin
 // Any key in the map
@@ -161,3 +173,16 @@ In string notation this is `list.@5`.
 
 `list.@<index>` and `list.*` references are usable for filtering and changes.
 They are not valid for `RootDataModel` index definitions.
+
+## Stored reference identity
+
+Storage-reference decoding resolves the complete qualifier, including embedded
+leaves below map entries, list items, and multi-type collection cases. Invalid
+trailing components are rejected instead of silently returning a parent.
+Nested collection references include the anonymous index-zero collection tag
+already present in stored rows. This corrects reference lookup without changing
+cell encodings. The opening format upgrade retains the released descriptor
+encoding when matching and converting existing secondary-index prefixes.
+
+Empty String map keys and set members retain their discriminated text form:
+`map.@`, `map.#`, and `set.#`. Bare property names must remain nonempty.

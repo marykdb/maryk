@@ -21,8 +21,8 @@ class MapKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal constru
     IsPropertyReferenceWithParent<K, IsPropertyDefinition<K>, CanContainMapItemReference<*, *, *>, Map<K, V>> {
     override val completeName by lazy {
         this.parentReference?.let {
-            "${it.completeName}.#${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment()}"
-        } ?: "#${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment()}"
+            "${it.completeName}.#${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment(allowEmpty = true)}"
+        } ?: "#${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment(allowEmpty = true)}"
     }
 
     override fun resolveFromAny(value: Any): Any {

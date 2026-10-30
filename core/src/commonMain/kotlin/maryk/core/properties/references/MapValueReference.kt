@@ -4,7 +4,9 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.writeCollectionQualifierBytes
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -33,8 +35,8 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     HasEmbeddedPropertyReference<V> {
     override val completeName by lazy {
         this.parentReference?.let {
-            "${it.completeName}.@${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment()}"
-        } ?: "@${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment()}"
+            "${it.completeName}.@${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment(allowEmpty = true)}"
+        } ?: "@${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment(allowEmpty = true)}"
     }
 
     /** Convenience infix method to create Reference [value] pairs */
@@ -77,14 +79,15 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
         // Add key byte length
         return keyLength.calculateVarByteLength() +
             // add bytes for map key
-            keyLength
+            keyLength + if (propertyDefinition.anonymousCollectionReferenceType() != null) 1 else 0
     }
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write key length
         this.mapDefinition.keyDefinition.calculateStorageByteLength(this.key).writeVarBytes(writer)
         // Write value bytes
-        this.mapDefinition.keyDefinition.writeStorageBytes(key, writer)
+        this.mapDefinition.keyDefinition.writeCollectionQualifierBytes(key, writer)
+        propertyDefinition.anonymousCollectionReferenceType()?.let { 0u.writeVarIntWithExtraInfo(it.value, writer) }
     }
 
     override fun resolve(values: Map<K, V>): V? {
@@ -95,14 +98,16 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
         when (this.propertyDefinition) {
             is IsEmbeddedDefinition<*> -> this.propertyDefinition.resolveReferenceByName(name, this)
             is IsMultiTypeDefinition<*, *, *> -> this.propertyDefinition.resolveReferenceByName(name, this)
-            else -> throw DefNotFoundException("Map value can not contain embedded name references ($name)")
+            else -> readCollectionReference(name)
+                ?: throw DefNotFoundException("Map value can not contain embedded name references ($name)")
         }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference =
         when (this.propertyDefinition) {
             is IsEmbeddedDefinition<*> -> this.propertyDefinition.resolveReference(reader, this)
             is IsMultiTypeDefinition<*, *, *> -> this.propertyDefinition.resolveReference(reader, this)
-            else -> throw DefNotFoundException("Map value can not contain embedded index references ($key)")
+            else -> readCollectionReference(reader, context)
+                ?: throw DefNotFoundException("Map value can not contain embedded index references ($key)")
         }
 
     override fun getEmbeddedStorageRef(
@@ -114,6 +119,7 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
         when (this.propertyDefinition) {
             is IsEmbeddedDefinition<*> -> this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
             is IsMultiTypeDefinition<*, *, *> -> this.propertyDefinition.resolveReferenceFromStorage(reader, this)
-            else -> throw DefNotFoundException("Map value can not contain embedded index references ($key)")
+            else -> readCollectionStorageReference(reader, isDoneReading)
+                ?: throw DefNotFoundException("Map value can not contain embedded index references ($key)")
         }
 }

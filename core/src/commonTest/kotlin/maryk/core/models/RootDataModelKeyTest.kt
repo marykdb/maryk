@@ -13,6 +13,8 @@ import maryk.core.properties.definitions.index.GeoHash
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.multiType
+import maryk.test.models.MarykTypeEnum
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.GeoPoint
@@ -31,6 +33,11 @@ internal object WrongProperties : DataModel<WrongProperties>() {
     )
     val dateTime by dateTime(2u)
     val string by string(3u)
+    val optionalLocation by geoPoint(4u, required = false, final = true)
+    val mutableLocation by geoPoint(5u)
+    val optionalType by multiType(6u, required = false, typeEnum = MarykTypeEnum)
+    val mutableType by multiType(7u, typeEnum = MarykTypeEnum, typeIsFinal = false)
+    val immutableType by multiType(8u, typeEnum = MarykTypeEnum, typeIsFinal = true)
 }
 
 private object CompositeKeyModel : RootDataModel<CompositeKeyModel>(
@@ -82,6 +89,30 @@ private object FixedBytesKeyModel : RootDataModel<FixedBytesKeyModel>(
 }
 
 class RootDataModelKeyTest {
+    @Test
+    fun rejectsOptionalOrMutableGeoHashPrimaryKeySources() {
+        for (reference in listOf(WrongProperties.optionalLocation.ref(), WrongProperties.mutableLocation.ref())) {
+            assertFailsWith<IllegalArgumentException> {
+                RootDataModelDefinition(name = "UnsafeGeoKey", keyDefinition = GeoHash(reference))
+            }
+        }
+    }
+
+    @Test
+    fun rejectsOptionalOrMutableMultiTypePrimaryKeyTypes() {
+        for (reference in listOf(WrongProperties.optionalType.typeRef(), WrongProperties.mutableType.typeRef())) {
+            assertFailsWith<IllegalArgumentException> {
+                RootDataModelDefinition(name = "UnsafeTypeKey", keyDefinition = reference)
+            }
+        }
+    }
+
+    @Test
+    fun retainsMutableMultiTypeValuesWhenTheirPrimaryKeyTypeIsImmutable() {
+        val metadata = RootDataModelDefinition(name = "SafeTypeKey", keyDefinition = WrongProperties.immutableType.typeRef())
+        assertEquals(2, metadata.keyByteSize)
+    }
+
     @Test
     fun notAcceptNonRequiredDefinitions() {
         assertFailsWith<IllegalArgumentException> {

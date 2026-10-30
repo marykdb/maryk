@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.canonicalCollectionQualifierBytes
 import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
@@ -114,7 +115,7 @@ fun IsValuesDataModel.convertLegacyStorageQualifier(bytes: ByteArray, unique: Bo
         val size = initIntByVar(::read)
         val start = offset
         skip(size)
-        definition.convertLegacyFloatingPointBytes(bytes.copyOfRange(start, offset)).copyInto(result, start)
+        definition.canonicalCollectionQualifierBytes(definition.convertLegacyFloatingPointBytes(bytes.copyOfRange(start, offset))).copyInto(result, start)
     }
     fun unwrap(definition: IsPropertyDefinition<*>): IsPropertyDefinition<*> {
         if (definition is IsSensitiveValueDefinitionWrapper<*, *, *, *> && definition.sensitive) sensitive = true
@@ -126,6 +127,7 @@ fun IsValuesDataModel.convertLegacyStorageQualifier(bytes: ByteArray, unique: Bo
     var definition = unwrap(requireNotNull(model[index]) { "Missing legacy property $index" })
     valueCell = type == 1.toByte()
     while (offset < bytes.size) {
+        val embeddedChild = definition is IsEmbeddedValuesDefinition<*, *>
         definition = when (val current = definition) {
             is IsEmbeddedValuesDefinition<*, *> -> {
                 model = current.dataModel
@@ -160,7 +162,7 @@ fun IsValuesDataModel.convertLegacyStorageQualifier(bytes: ByteArray, unique: Bo
             }
         }
         // Nested collections have an anonymous qualifier tag; embedded models do not.
-        if (offset < bytes.size && (definition is IsListDefinition<*, *> || definition is IsMapDefinition<*, *, *> || definition is IsSetDefinition<*, *>)) {
+        if (!embeddedChild && offset < bytes.size && (definition is IsListDefinition<*, *> || definition is IsMapDefinition<*, *, *> || definition is IsSetDefinition<*, *>)) {
             val (anonymous, _) = tag()
             require(anonymous == 0u) { "Invalid nested legacy collection qualifier" }
             valueCell = false

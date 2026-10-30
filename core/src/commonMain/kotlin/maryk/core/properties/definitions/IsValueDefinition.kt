@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.models.migration.transportWireType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
@@ -36,7 +37,7 @@ interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinitio
     fun asString(value: T, context: CX? = null) = value.toString()
 
     override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?) =
-        calculateKeyAndContentLength(this.wireType, index.toUInt(), cacher) {
+        calculateKeyAndContentLength(transportWireType(context), index.toUInt(), cacher) {
             this.calculateTransportByteLength(value, cacher, context)
         }
 
@@ -53,7 +54,7 @@ interface IsValueDefinition<T : Any, in CX : IsPropertyContext> : IsSubDefinitio
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        writeKeyWithLength(this.wireType, index.toUInt(), writer, cacheGetter)
+        writeKeyWithLength(transportWireType(context), index.toUInt(), writer, cacheGetter)
         this.writeTransportBytes(value, cacheGetter, writer, context)
     }
 

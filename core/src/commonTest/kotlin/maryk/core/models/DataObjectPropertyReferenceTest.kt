@@ -114,17 +114,18 @@ internal class DataObjectPropertyReferenceTest {
         expect("1c040000000209") { ComplexModel.ref { mapIntObject.at(2u) { value } }.toStorageByteArray().toHexString() }
         expect("1c04000000021609") { ComplexModel.ref { mapIntObject.at(2u) { model { value } } }.toStorageByteArray().toHexString() }
 
-        expect("2c016100000017") { ComplexModel.ref { mapWithList.at("a") { at(23u) } }.toStorageByteArray().toHexString() }
+        // Nested collections retain the anonymous collection tag present in their stored rows.
+        expect("2c01610200000017") { ComplexModel.ref { mapWithList.at("a") { at(23u) } }.toStorageByteArray().toHexString() }
 
-        expect("340162026233") { ComplexModel.ref { mapWithSet.at("b") { item("b3") } }.toStorageByteArray().toHexString() }
+        expect("34016203026233") { ComplexModel.ref { mapWithSet.at("b") { item("b3") } }.toStorageByteArray().toHexString() }
 
-        expect("3c01620163") { ComplexModel.ref { mapWithMap.at("b") { at("c") } }.toStorageByteArray().toHexString() }
+        expect("3c0162040163") { ComplexModel.ref { mapWithMap.at("b") { at("c") } }.toStorageByteArray().toHexString() }
 
         expect("2404000000021d") { ComplexModel.ref { mapIntMulti.at(2u) { atType(T3) } }.toStorageByteArray().toHexString() }
         expect("2404000000021d09") { ComplexModel.ref { mapIntMulti.at(2u) { atType(T3) { value } } }.toStorageByteArray().toHexString() }
         expect("2404000000021d1609") { ComplexModel.ref { mapIntMulti.at(2u) { atType(T3) { model { value } } } }.toStorageByteArray().toHexString() }
 
-        expect("2404000000022500000005") { ComplexModel.ref { mapIntMulti.at(2u) { atType(T4) { at(5u) } } }.toStorageByteArray().toHexString() }
-        expect("2404000000022d0576616c7565") { ComplexModel.ref { mapIntMulti.at(2u) { atType(T5) { item("value") } } }.toStorageByteArray().toHexString() }
+        expect("240400000002250200000005") { ComplexModel.ref { mapIntMulti.at(2u) { atType(T4) { at(5u) } } }.toStorageByteArray().toHexString() }
+        expect("2404000000022d030576616c7565") { ComplexModel.ref { mapIntMulti.at(2u) { atType(T5) { item("value") } } }.toStorageByteArray().toHexString() }
     }
 }

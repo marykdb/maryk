@@ -4,10 +4,10 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.set
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.SetReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.query.addReference
@@ -42,7 +42,7 @@ data class SetValueChanges<T : Any> internal constructor(
 @Suppress("UNCHECKED_CAST")
 private val valueDefinition = ContextualValueDefinition(
     contextualResolver = { context: RequestContext? ->
-        (context?.reference as SetReference<Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
+        (context?.reference?.comparablePropertyDefinition as? IsSetDefinition<Any, IsPropertyContext>)?.valueDefinition
             ?: throw ContextNotFoundException()
     }
 )

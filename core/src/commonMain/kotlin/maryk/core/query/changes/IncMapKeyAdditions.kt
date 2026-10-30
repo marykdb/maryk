@@ -6,6 +6,7 @@ import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.SubListDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
+import maryk.core.properties.definitions.contextual.ContextualPropertyValueDefinition
 import maryk.core.properties.definitions.subList
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.references.IncMapReference
@@ -15,6 +16,7 @@ import maryk.core.query.addReference
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
+import maryk.lib.exceptions.ParseException
 
 /** Contains [addedKeys] for incrementing map property of [K] keys and [V] values referred by [reference] */
 data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
@@ -42,7 +44,7 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
                 3u,
                 "addedValues",
                 SubListDefinition(
-                    ContextualSubDefinition(
+                    ContextualPropertyValueDefinition(
                         contextualResolver = { context: RequestContext? ->
                             @Suppress("UNCHECKED_CAST")
                             (context?.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
@@ -50,9 +52,9 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
                         }
                     )
                 ),
-                getter = IncMapKeyAdditions<*, *>::addedValues,
-                toSerializable = { _, _ ->
-                    null // Reset value to null, so it does not get serialized/send.
+                getter = { addition: IncMapKeyAdditions<*, *> ->
+                    validateSizes(addition.addedKeys, addition.addedValues)
+                    addition.addedValues
                 }
             ).also(::addSingle)
 
@@ -94,6 +96,13 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
 
                     foundValueChange != null
                 }
+            }
+            validateSizes(values[addedKeys.index] as? List<*>, values[addedValues.index] as? List<*>)
+        }
+
+        private fun validateSizes(keys: List<*>?, values: List<*>?) {
+            if (keys != null && values != null && keys.size != values.size) {
+                throw ParseException("Incrementing-map added keys and values must have the same size")
             }
         }
     }

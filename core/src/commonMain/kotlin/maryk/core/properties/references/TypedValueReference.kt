@@ -56,15 +56,21 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
     } ?: throw UnexpectedValueException("Expected value to be a TypedValue of type $type but was $value")
 
     override fun getEmbedded(name: String, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
-        return if (this.propertyDefinition is IsEmbeddedDefinition<*>) {
-            this.propertyDefinition.resolveReferenceByName(name, this)
-        } else throw DefNotFoundException("Type reference can not contain embedded name references ($name)")
+        return when (this.propertyDefinition) {
+            is IsEmbeddedDefinition<*> -> this.propertyDefinition.resolveReferenceByName(name, this)
+            is IsMultiTypeDefinition<*, *, *> -> this.propertyDefinition.resolveReferenceByName(name, this)
+            else -> readCollectionReference(name)
+                ?: throw DefNotFoundException("Type reference can not contain embedded name references ($name)")
+        }
     }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
-        if (this.propertyDefinition is IsEmbeddedDefinition<*>) {
-            return this.propertyDefinition.resolveReference(reader, this)
-        } else throw DefNotFoundException("Type reference can only contain embedded references (${type.name})")
+        return when (this.propertyDefinition) {
+            is IsEmbeddedDefinition<*> -> this.propertyDefinition.resolveReference(reader, this)
+            is IsMultiTypeDefinition<*, *, *> -> this.propertyDefinition.resolveReference(reader, this)
+            else -> readCollectionReference(reader, context)
+                ?: throw DefNotFoundException("Type reference can only contain embedded references (${type.name})")
+        }
     }
 
     override fun getEmbeddedStorageRef(
@@ -73,9 +79,12 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
         referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
-        return if (this.propertyDefinition is IsEmbeddedDefinition<*>) {
-            this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
-        } else throw DefNotFoundException("Type reference can only contain embedded references (${type.name})")
+        return when (this.propertyDefinition) {
+            is IsEmbeddedDefinition<*> -> this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
+            is IsMultiTypeDefinition<*, *, *> -> this.propertyDefinition.resolveReferenceFromStorage(reader, this)
+            else -> readCollectionStorageReference(reader, isDoneReading)
+                ?: throw DefNotFoundException("Type reference can only contain embedded references (${type.name})")
+        }
     }
 
     /** Convenience infix method to create reference [value] pairs */
@@ -103,7 +112,8 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
         type.index.writeVarBytes(writer)
     }
 
-    override fun calculateSelfStorageByteLength() = type.index.calculateVarIntWithExtraInfoByteSize()
+    override fun calculateSelfStorageByteLength() = type.index.calculateVarIntWithExtraInfoByteSize() +
+        if (propertyDefinition.anonymousCollectionReferenceType() != null) 1 else 0
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write type index bytes
@@ -111,6 +121,7 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
             TYPE.value,
             writer
         )
+        propertyDefinition.anonymousCollectionReferenceType()?.let { 0u.writeVarIntWithExtraInfo(it.value, writer) }
     }
 
     override fun resolve(values: TypedValue<E, T>): T? = if (values.type == type) values.value else null

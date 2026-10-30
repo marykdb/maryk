@@ -129,7 +129,7 @@ internal class MapItemsReader<out P : IsYamlCharWithIndentsReader>(
 
                 return this.foundMap(tag, extraIndent)?.let {
                     this.yamlReader.pushToken(
-                        this.checkAndCreateFieldName(value, isPlainStringReader)
+                        (this.currentReader as IsYamlCharWithIndentsReader).checkAndCreateFieldName(value, isPlainStringReader)
                     )
                     it
                 } ?: this.checkAndCreateFieldName(value, isPlainStringReader)

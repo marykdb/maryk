@@ -5,6 +5,11 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.exceptions.OutOfRangeException
+import maryk.core.properties.exceptions.InvalidSizeException
+import maryk.core.models.ValueDataModel
+import maryk.core.properties.types.ValueDataObject
+import maryk.core.properties.types.numeric.SInt32
+import maryk.core.values.ObjectValues
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.DateUnit
 import maryk.core.properties.types.roundToDateUnit
@@ -20,7 +25,31 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
+private class RawFixedValueObject(bytes: ByteArray, val value: Int) : ValueDataObject(bytes)
+
+private object RawFixedValueModel : ValueDataModel<RawFixedValueObject, RawFixedValueModel>("RawFixedValue") {
+    val value by number(1u, RawFixedValueObject::value, type = SInt32)
+    override fun invoke(values: ObjectValues<RawFixedValueObject, RawFixedValueModel>): RawFixedValueObject {
+        val value: Int = values(1u)
+        return RawFixedValueObject(Serializer.toBytes(value), value)
+    }
+}
+
 internal class ValueObjectDefinitionTest {
+    @Test
+    fun rawValueObjectWidthsAreRejectedBeforeWriting() {
+        val definition = ValueObjectDefinition(dataModel = RawFixedValueModel)
+        for (size in listOf(0, 3, 5)) {
+            val value = RawFixedValueObject(ByteArray(size), 42)
+            assertFailsWith<InvalidSizeException> { definition.validateWithRef(newValue = value) }
+            assertFailsWith<ParseException> { definition.calculateStorageByteLength(value) }
+            assertFailsWith<ParseException> { definition.calculateTransportByteLength(value) }
+            var written = 0
+            assertFailsWith<ParseException> { definition.writeStorageBytes(value) { written++ } }
+            assertEquals(0, written)
+        }
+    }
+
     private val def = ValueObjectDefinition(
         dataModel = TestValueObject,
     )

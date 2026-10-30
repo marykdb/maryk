@@ -13,6 +13,8 @@ import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegate
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
+import maryk.core.properties.types.numeric.asCanonicalString
+import maryk.core.properties.types.numeric.asTransportString
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt16
@@ -103,6 +105,8 @@ data class NumberDefinition<T : Comparable<T>>(
     ) =
         this.type.writeTransportBytes(value, writer)
 
+    override fun asString(value: T) = type.asCanonicalString(value)
+
     override fun fromString(string: String) = try {
         type.ofString(string)
     } catch (e: IllegalArgumentException) {
@@ -121,7 +125,7 @@ data class NumberDefinition<T : Comparable<T>>(
             }
         }
         Float64, Float32 -> {
-            val stringValue = this.asString(value)
+            val stringValue = type.asTransportString(value)
             if (writer is YamlWriter) {
                 writer.writeValue(stringValue)
             } else {

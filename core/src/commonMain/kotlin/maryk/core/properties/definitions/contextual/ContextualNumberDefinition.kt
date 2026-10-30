@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.fromNativeType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
+import maryk.core.properties.types.numeric.asTransportString
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.UInt64
@@ -92,7 +93,7 @@ class ContextualNumberDefinition<in CX : IsPropertyContext>(
             }
         }
         Float64, Float32 -> {
-            val stringValue = value.toString()
+            val stringValue = contextualResolver(context).asTransportString(value)
             if (writer is YamlWriter) {
                 writer.writeValue(stringValue)
             } else {

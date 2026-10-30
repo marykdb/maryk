@@ -285,7 +285,7 @@ class YamlWriter(
         if (typeStack.isNotEmpty()) {
             val lastTypeBeforeOperation = this.lastType
 
-            if ((lastTypeBeforeOperation == TAG && value != "") || lastTypeBeforeOperation == COMPLEX_FIELD_NAME_END) {
+            if ((lastTypeBeforeOperation == TAG && renderedValue.isNotEmpty()) || lastTypeBeforeOperation == COMPLEX_FIELD_NAME_END) {
                 writer(" ")
             }
 

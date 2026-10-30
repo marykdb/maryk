@@ -49,6 +49,25 @@ See the format pages for end‑to‑end code.
 - [JSON](json.md)
 - [ProtoBuf Transport](protobuf.md)
 
+## Floating-point text identity
+
+JSON and YAML preserve raw NaN bits in ordinary Float32/Float64 values, including
+collection values, query operands and schema defaults. The standard positive
+canonical NaN keeps its existing `NaN` spelling. Other NaNs use `NaN:0x7fc00001`
+for Float32 or `NaN:0x7ff8000000000001` for Float64: exactly 8 or 16 hexadecimal
+digits encoding a NaN at the declared width. Finite nonzero values and infinity
+keep their existing spellings. Negative zero always uses `-0.0`, including on
+JavaScript where the native numeric string conversion drops its sign. This also
+preserves distinct signed-zero map keys and collection reference names. JSON
+quotes floating values as before.
+
+Older text readers do not understand the explicit raw-bit form; update both
+endpoints before exchanging it. Existing text containing only `NaN` cannot
+recover a discarded payload. ProtoBuf and stored numeric bytes are unchanged,
+so this adds no storage migration. Numeric map keys and set-item reference names
+keep canonical NaN identity. JavaScript may canonicalize a NaN before a serializer
+receives it; explicit text cannot recover bits already lost at that boundary.
+
 ## Related Topics
 
 - [Properties](../properties/README.md)

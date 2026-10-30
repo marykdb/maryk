@@ -21,14 +21,18 @@ interface IsStorableDataModel<DO: Any>: IsTypedDataModel<DO> {
         checkedDataModelNames: MutableList<String>? = mutableListOf(),
         migrationReasons: MutableList<String> = mutableListOf(),
     ): MigrationStatus {
-        if (checkedDataModelNames?.contains(this.Meta.name) == true) {
-            return MigrationStatus.AlreadyProcessed
-        }
-        checkedDataModelNames?.add(this.Meta.name)
-
-        if (storedDataModel.Meta.name != this.Meta.name) {
+        val sameModelName = storedDataModel.Meta.name == this.Meta.name
+        if (!sameModelName) {
             migrationReasons += "Names of models did not match: ${storedDataModel.Meta.name} -> ${this.Meta.name}"
         }
+
+        if (checkedDataModelNames?.contains(this.Meta.name) == true) {
+            // A visited target only stops recursion for the same model identity.
+            return if (sameModelName) MigrationStatus.AlreadyProcessed else {
+                MigrationStatus.NeedsMigration(storedDataModel, migrationReasons, null)
+            }
+        }
+        checkedDataModelNames?.add(this.Meta.name)
 
         val hasNewProperties = this.checkProperties(storedDataModel, checkedDataModelNames) {
             migrationReasons += it

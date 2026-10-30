@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.models.QueryModel
-import maryk.core.properties.definitions.contextual.ContextualSubDefinition
+import maryk.core.properties.definitions.contextual.ContextualPropertyValueDefinition
 import maryk.core.properties.definitions.subList
 import maryk.core.properties.references.IncMapReference
 import maryk.core.query.DefinedByReference
@@ -24,13 +24,13 @@ data class IncMapValueChanges<K : Comparable<K>, V : Any> internal constructor(
         val addValues by subList(
             index = 2u,
             name = "addValues",
-            valueDefinition = ContextualSubDefinition(
+            valueDefinition = ContextualPropertyValueDefinition(
                 contextualResolver = { context: RequestContext? ->
                     @Suppress("UNCHECKED_CAST")
                     (context?.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
                         ?: throw ContextNotFoundException()
                 }
-            ),
+            ).apply { rejectAmbiguousLegacyCollectionReads = true },
             getter = IncMapValueChanges<*, *>::addValues
         )
 

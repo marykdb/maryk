@@ -1,5 +1,8 @@
 package maryk.core.properties.definitions
 
+import maryk.core.models.migration.ReleasedTransportFingerprintException
+import maryk.core.models.migration.writesReleasedTransportForFingerprint
+
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.exceptions.TypeException
@@ -59,6 +62,7 @@ import maryk.yaml.YamlWriter
 /** Defines a multi type definition */
 interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> :
     IsValueDefinition<TypedValue<E, T>, CX>,
+    IsChangeableValueDefinition<TypedValue<E, T>, CX>,
     IsSerializablePropertyDefinition<TypedValue<E, T>, CX>,
     IsTransportablePropertyDefinitionType<TypedValue<E, T>>,
     HasDefaultValueDefinition<TypedValue<E, T>>,
@@ -242,7 +246,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             val definition = this.definition(newValue.type)
                 ?: throw DefNotFoundException("No def found for index ${newValue.type}")
 
-            val prevValue = previousValue?.let {
+            val prevValue = previousValue?.takeIf { it.type == newValue.type }?.let {
                 // Convert prev value to a basic value for Unit types
                 // This is done so type changes can be checked in storage situations where actual value is not yet read
                 if (it.value == Unit) {
@@ -279,7 +283,12 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             } else {
                 writer.writeTag("!${value.type.name}")
             }
-            definition.writeJsonValue(value.value, writer, context)
+            if (definition is IsMultiTypeDefinition<*, *, *>) {
+                // YAML permits one tag per node. Give the inner typed value its own node.
+                writer.writeStartArray()
+                definition.writeJsonValue(value.value, writer, context)
+                writer.writeEndArray()
+            } else definition.writeJsonValue(value.value, writer, context)
         } else {
             writer.writeStartArray()
             if (value.type !is IsCoreEnum) {
@@ -313,7 +322,13 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             val definition = this.definition(type)
                 ?: throw DefNotFoundException("No definition for type $type")
 
-            val value = if (definition is IsEmbeddedObjectDefinition<*, *, CX, *> && this.keepAsValues()) {
+            val value = if (definition is IsMultiTypeDefinition<*, *, *>) {
+                if (reader.currentToken !is JsonToken.StartArray) throw ParseException("Nested YAML multi type requires a single-value sequence")
+                reader.nextToken()
+                val nested = definition.readJson(reader, context)
+                if (reader.nextToken() != JsonToken.EndArray) throw ParseException("Nested YAML multi type sequence must contain exactly one value")
+                nested
+            } else if (definition is IsEmbeddedObjectDefinition<*, *, CX, *> && this.keepAsValues()) {
                 @Suppress("UNCHECKED_CAST")
                 definition.readJsonToValues(reader, context) as T
             } else definition.readJson(reader, context)
@@ -361,12 +376,15 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         }
 
         var type: E? = null
+        var emptyMarker = false
 
         while (lengthToGo > 0) {
             // Read the proto buf where the key tag is the type
             val key = ProtoBuf.readKey(wrappedReader)
 
-            val newType = this.typeEnum.resolve(key.tag) ?: throw ParseException("Unknown multi type index ${key.tag}")
+            val isEmptyMarker = key.tag >= EMPTY_MULTI_TYPE_COLLECTION_TAG_OFFSET
+            val typeIndex = if (isEmptyMarker) key.tag - EMPTY_MULTI_TYPE_COLLECTION_TAG_OFFSET else key.tag
+            val newType = this.typeEnum.resolve(typeIndex) ?: throw ParseException("Unknown multi type index $typeIndex")
 
             type = when(type) {
                 null -> newType
@@ -377,6 +395,18 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             val def = this.definition(type)
                 ?: throw ParseException("Unknown multi type ${key.tag}")
 
+            if (isEmptyMarker) {
+                if (key.wireType != LENGTH_DELIMITED || ProtoBuf.getLength(key.wireType, wrappedReader) != 0) {
+                    throw ParseException("Empty multi type collection marker must have zero length")
+                }
+                if (value != null || emptyMarker) throw ParseException("Empty multi type collection marker conflicts with another value")
+                @Suppress("UNCHECKED_CAST")
+                value = def.emptyTransportCollection(context) as? T
+                    ?: throw ParseException("Empty multi type marker does not match a collection definition")
+                emptyMarker = true
+                continue
+            }
+            if (emptyMarker) throw ParseException("Empty multi type collection marker conflicts with another value")
             if (!def.acceptsProtoBufWireType(key.wireType, context)) {
                 throw ParseException("Unexpected wire type ${key.wireType} for multi type '${type.name}'")
             }
@@ -423,7 +453,12 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         val typeIndex = value.type.transportIndex()
         totalByteLength = totalByteLength.addProtoByteLength(
-            def.calculateTransportByteLengthWithKey(
+            if (def.needsEmptyCollectionMarker(value.value, context)) {
+                if (context.writesReleasedTransportForFingerprint()) {
+                    throw ReleasedTransportFingerprintException("Released empty collection multi-type values do not retain their type identity")
+                }
+                ProtoBuf.calculateKeyLength(value.type.index + EMPTY_MULTI_TYPE_COLLECTION_TAG_OFFSET) + 1
+            } else def.calculateTransportByteLengthWithKey(
                 typeIndex,
                 value.value,
                 cacher,
@@ -446,7 +481,13 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     ) {
         val def = this.definition(value.type)
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        def.writeTransportBytesWithKey(value.type.transportIndex(), value.value, cacheGetter, writer, context)
+        if (def.needsEmptyCollectionMarker(value.value, context)) {
+            if (context.writesReleasedTransportForFingerprint()) {
+                throw ReleasedTransportFingerprintException("Released empty collection multi-type values do not retain their type identity")
+            }
+            ProtoBuf.writeKey(value.type.index + EMPTY_MULTI_TYPE_COLLECTION_TAG_OFFSET, LENGTH_DELIMITED, writer)
+            writer(0)
+        } else def.writeTransportBytesWithKey(value.type.transportIndex(), value.value, cacheGetter, writer, context)
     }
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null

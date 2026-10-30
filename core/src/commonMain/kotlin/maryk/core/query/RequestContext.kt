@@ -32,6 +32,8 @@ class RequestContext(
 ) : ContainsDataModelContext<IsDataModel>, ContainsDefinitionsContext by definitionsContext {
     internal var filterNestingDepth = 0
     internal var legacyValueStorage = false
+    internal var legacyNanosDateTime = false
+    internal var releasedTransportForFingerprint = false
 
     /** For test use */
     internal constructor(

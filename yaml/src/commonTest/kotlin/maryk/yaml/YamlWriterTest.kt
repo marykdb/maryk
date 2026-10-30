@@ -10,6 +10,50 @@ import kotlin.test.assertTrue
 
 internal class YamlWriterTest {
     @Test
+    fun separatesTagsFromQuotedEmptyStringsInEveryContainerStyle() {
+        for (compact in listOf(false, true)) {
+            val objectOutput = buildString {
+                YamlWriter(::append).apply {
+                    writeStartObject(compact)
+                    writeFieldName("empty")
+                    writeTag("!!str")
+                    writeString("")
+                    writeFieldName("tail")
+                    writeString("next")
+                    writeEndObject()
+                }
+            }
+            assertTrue(objectOutput.contains("!!str ''"), objectOutput)
+            createYamlReader(objectOutput).apply {
+                assertStartObject()
+                assertFieldName("empty")
+                assertValue("")
+                assertFieldName("tail")
+                assertValue("next")
+                assertEndObject()
+                assertEndDocument()
+            }
+            val arrayOutput = buildString {
+                YamlWriter(::append).apply {
+                    writeStartArray(compact)
+                    writeTag("!!str")
+                    writeString("")
+                    writeString("next")
+                    writeEndArray()
+                }
+            }
+            assertTrue(arrayOutput.contains("!!str ''"), arrayOutput)
+            createYamlReader(arrayOutput).apply {
+                assertStartArray()
+                assertValue("")
+                assertValue("next")
+                assertEndArray()
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
     fun preservesEmptyBlockArraysAtRootAndInObjects() {
         val root = buildString {
             YamlWriter(::append).apply {

@@ -11,6 +11,7 @@ import maryk.core.properties.references.SetReference
 /** Defines a set definition */
 interface IsSetDefinition<T : Any, CX : IsPropertyContext> :
     IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>>,
+    IsChangeableValueDefinition<Set<T>, CX>,
     HasDefaultValueDefinition<Set<T>> {
     /** Get a reference by [value] to a specific set item of set of [setReference] */
     fun itemRef(value: T, setReference: CanContainSetItemReference<*, *, *>?) =
@@ -48,7 +49,7 @@ interface IsSetDefinition<T : Any, CX : IsPropertyContext> :
         checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+        var compatible = super<IsCollectionDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         if (definition is IsSetDefinition<*, *>) {
             compatible = isCompatible(definition, addIncompatibilityReason) && compatible

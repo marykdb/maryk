@@ -24,7 +24,7 @@ object Float32 : NumberDescriptor<Float>(
     override fun readTransportBytes(reader: () -> Byte) = initFloatFromTransport(reader)
     override fun calculateTransportByteLength(value: Float) = size
     override fun writeTransportBytes(value: Float, writer: (byte: Byte) -> Unit) = value.writeTransportBytes(writer)
-    override fun ofString(value: String) = value.toFloat()
+    override fun ofString(value: String) = parseFloat32Text(value)
     override fun ofDouble(double: Double) = double.toFloat()
     override fun toDouble(value: Float) = value.toDouble()
     override fun ofInt(int: Int) = int.toFloat()

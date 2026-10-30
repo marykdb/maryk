@@ -11,6 +11,7 @@ import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Check
+import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.change
 import maryk.core.query.requests.change
 import maryk.core.query.requests.AtomicCapabilities
@@ -181,7 +182,26 @@ class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
     }
 
     fun transactionReceipt(fingerprint: ByteArray, response: TransactionResponse): ByteArray =
-        fingerprint + encode(TransactionResponse, response, "responseBytes")
+        fingerprint + encode(TransactionResponse, withoutGeneratedRequestValues(response), "responseBytes")
+
+    private fun withoutGeneratedRequestValues(response: TransactionResponse) = response.copy(
+        responses = response.responses.map { member ->
+            if (member !is ChangeResponse<*>) member else {
+                @Suppress("UNCHECKED_CAST")
+                val typed = member as ChangeResponse<IsRootDataModel>
+                typed.copy(statuses = typed.statuses.map { status ->
+                    if (status !is ChangeSuccess<*>) status else ChangeSuccess<IsRootDataModel>(
+                        status.version,
+                        status.changes?.map { change ->
+                            if (change !is IncMapAddition) change else change.copy(
+                                additions = change.additions.map { it.copy(addedValues = null) },
+                            )
+                        },
+                    )
+                })
+            }
+        },
+    )
 
     fun replayTransaction(receipt: ByteArray, fingerprint: ByteArray, request: TransactionRequest): TransactionResponse {
         if (receipt.size < fingerprint.size || !receipt.copyOfRange(0, fingerprint.size).contentEquals(fingerprint)) {

@@ -26,7 +26,7 @@ object Float64 : NumberDescriptor<Double>(
     override fun writeTransportBytes(value: Double, writer: (byte: Byte) -> Unit) =
         value.writeTransportableBytes(writer)
 
-    override fun ofString(value: String) = value.toDouble()
+    override fun ofString(value: String) = parseFloat64Text(value)
     override fun ofDouble(double: Double) = double
     override fun toDouble(value: Double) = value
     override fun ofInt(int: Int) = int.toDouble()

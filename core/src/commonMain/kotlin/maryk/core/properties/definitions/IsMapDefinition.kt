@@ -1,12 +1,16 @@
 package maryk.core.properties.definitions
 
+import maryk.core.query.writesMigrationSchemaIdentity
+import maryk.lib.extensions.compare.compareTo
+import maryk.core.models.migration.writesReleasedTransportForFingerprint
+
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.NotEnoughItemsException
+import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
@@ -32,6 +36,7 @@ import maryk.lib.exceptions.ParseException
 /** Interface for a Map definition with key [K], value [V] and context [CX] */
 interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
     IsSubDefinition<Map<K, V>, CX>,
+    IsChangeableValueDefinition<Map<K, V>, CX>,
     HasSizeDefinition {
     val keyDefinition: IsSimpleValueDefinition<K, CX>
     val valueDefinition: IsSubDefinition<V, CX>
@@ -60,7 +65,7 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         newValue: Map<K, V>?,
         refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K, V>>, *>?
     ) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsSubDefinition>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
             val mapSize = newValue.size.toUInt()
@@ -84,6 +89,11 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
                     }
                 }
             }
+            try {
+                validateCollectionStorageIdentities(newValue)
+            } catch (error: ParseException) {
+                throw InvalidValueException(refGetter(), error.message ?: "Collection storage identities collide")
+            }
         }
     }
 
@@ -101,6 +111,7 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
     }
 
     override fun writeJsonValue(value: Map<K, V>, writer: IsJsonLikeWriter, context: CX?) {
+        validateCollectionStorageIdentities(value, context)
         writer.writeStartObject()
         value.forEach { (k, v) ->
             writer.writeFieldName(
@@ -134,14 +145,22 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         return map
     }
 
+    private fun canonicalMigrationEntries(value: Map<K, V>, context: CX?): Iterable<Map.Entry<K, V>> =
+        if (context.writesMigrationSchemaIdentity()) {
+            value.entries.map { it to keyDefinition.toTransportByteArray(it.key, context) }
+                .sortedWith { first, second -> first.second.compareTo(second.second) }
+                .map { it.first }
+        } else value.entries
+
     override fun calculateTransportByteLengthWithKey(
         index: Int,
         value: Map<K, V>,
         cacher: WriteCacheWriter,
         context: CX?
     ): Int {
+        validateCollectionStorageIdentities(value, context)
         var totalByteLength = 0
-        for ((key, item) in value) {
+        for ((key, item) in canonicalMigrationEntries(value, context)) {
             totalByteLength = totalByteLength.addProtoByteLength(ProtoBuf.calculateKeyLength(index.toUInt()))
 
             // Cache length for length delimiter
@@ -153,7 +172,9 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
                 keyDefinition.calculateTransportByteLengthWithKey(1, key, cacher, context)
             )
             fieldLength = fieldLength.addProtoByteLength(
-                valueDefinition.calculateTransportByteLengthWithKey(2, item, cacher, context)
+                if (!context.writesReleasedTransportForFingerprint() && valueDefinition.needsEmptyCollectionMarker(item, context)) {
+                    ProtoBuf.calculateKeyLength(EMPTY_COLLECTION_TAG_OFFSET + 2u) + 1
+                } else valueDefinition.calculateTransportByteLengthWithKey(2, item, cacher, context)
             )
             container.length = fieldLength // set length for value
             fieldLength = fieldLength.addProtoByteLength(fieldLength.calculateVarByteLength()) // Add field length for length delimiter
@@ -170,11 +191,15 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        for ((key, item) in value) {
+        validateCollectionStorageIdentities(value, context)
+        for ((key, item) in canonicalMigrationEntries(value, context)) {
             ProtoBuf.writeKey(index.toUInt(), LENGTH_DELIMITED, writer)
             cacheGetter.nextLengthFromCache().writeVarBytes(writer)
             keyDefinition.writeTransportBytesWithKey(1, key, cacheGetter, writer, context)
-            valueDefinition.writeTransportBytesWithKey(2, item, cacheGetter, writer, context)
+            if (!context.writesReleasedTransportForFingerprint() && valueDefinition.needsEmptyCollectionMarker(item, context)) {
+                ProtoBuf.writeKey(EMPTY_COLLECTION_TAG_OFFSET + 2u, LENGTH_DELIMITED, writer)
+                writer(0)
+            } else valueDefinition.writeTransportBytesWithKey(2, item, cacheGetter, writer, context)
         }
     }
 
@@ -200,12 +225,13 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         val map = earlierValue as MutableMap<K, V>? ?: mutableMapOf()
         var key: K? = null
         var value: V? = null
+        var emptyMarker = false
 
         while (lengthToGo > 0) {
             val entryField = ProtoBuf.readKey(countingReader)
             when (entryField.tag) {
                 1u -> {
-                    if (entryField.wireType != keyDefinition.wireType) {
+                    if (!keyDefinition.acceptsProtoBufWireType(entryField.wireType, context)) {
                         throw ParseException("Map key wire type does not match definition")
                     }
                     val keyLength = ProtoBuf.getLength(entryField.wireType, countingReader)
@@ -219,23 +245,8 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
                     )
                 }
                 2u -> {
-                    val valueWireType = when (val definition = valueDefinition) {
-                        is ContextualValueDefinition<*, *, *, *> -> {
-                            @Suppress("UNCHECKED_CAST")
-                            val contextual = definition as ContextualValueDefinition<
-                                IsPropertyContext,
-                                IsPropertyContext,
-                                *,
-                                IsValueDefinition<*, IsPropertyContext>,
-                            >
-                            contextual.contextualResolver(
-                                contextual.contextTransformer(context) as IsPropertyContext
-                            ).wireType
-                        }
-                        is IsValueDefinition<*, *> -> definition.wireType
-                        else -> LENGTH_DELIMITED
-                    }
-                    if (entryField.wireType != valueWireType) {
+                    if (emptyMarker) throw ParseException("Empty map value marker conflicts with another value")
+                    if (!valueDefinition.acceptsProtoBufWireType(entryField.wireType, context)) {
                         throw ParseException("Map value wire type does not match definition")
                     }
                     val valueLength = ProtoBuf.getLength(entryField.wireType, countingReader)
@@ -246,8 +257,19 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
                         valueLength,
                         countingReader,
                         context,
-                        value ?: key?.let { map[it] }
+                        value
                     )
+                }
+                EMPTY_COLLECTION_TAG_OFFSET + 2u -> {
+                    val empty = valueDefinition.emptyTransportCollection(context)
+                        ?: throw ParseException("Empty map value marker does not match a collection definition")
+                    if (entryField.wireType != LENGTH_DELIMITED || ProtoBuf.getLength(entryField.wireType, countingReader) != 0) {
+                        throw ParseException("Empty map value marker must have zero length")
+                    }
+                    if (value != null) throw ParseException("Empty map value marker conflicts with another value")
+                    @Suppress("UNCHECKED_CAST")
+                    value = empty as V
+                    emptyMarker = true
                 }
                 else -> ProtoBuf.skipField(entryField, countingReader)
             }
@@ -268,7 +290,7 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?,
     ): Boolean {
-        var compatible = super.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+        var compatible = super<IsSubDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         if (definition is IsMapDefinition<*, *, *>) {
             compatible = isCompatible(definition, addIncompatibilityReason) && compatible

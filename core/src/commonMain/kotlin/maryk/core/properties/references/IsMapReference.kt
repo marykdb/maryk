@@ -25,9 +25,6 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
 
         return when (name[0]) {
             '@' -> {
-                if (name.length == 1) {
-                    throw ParseException("Map value reference requires a key")
-                }
                 MapValueReference(
                     propertyDefinition.definition.keyDefinition.fromString(
                         name.substring(1).unescapeReferenceSegment()
@@ -37,9 +34,6 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
                 )
             }
             '#' -> {
-                if (name.length == 1) {
-                    throw ParseException("Map key reference requires a key")
-                }
                 MapKeyReference(
                     propertyDefinition.definition.keyDefinition.fromString(
                         name.substring(1).unescapeReferenceSegment()
@@ -85,6 +79,7 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun getEmbeddedRef(
         reader: () -> Byte,
         context: IsPropertyContext?
@@ -95,7 +90,8 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
             0u -> MapValueReference(
                 this.propertyDefinition.definition.keyDefinition.readTransportBytes(
                     ProtoBuf.getLength(protoKey.wireType, reader),
-                    reader
+                    reader,
+                    context as CX?
                 ),
                 this.propertyDefinition.definition,
                 this
@@ -103,7 +99,8 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
             1u -> MapKeyReference(
                 this.propertyDefinition.definition.keyDefinition.readTransportBytes(
                     ProtoBuf.getLength(protoKey.wireType, reader),
-                    reader
+                    reader,
+                    context as CX?
                 ),
                 this.propertyDefinition.definition,
                 this

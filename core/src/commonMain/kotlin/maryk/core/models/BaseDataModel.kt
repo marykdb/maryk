@@ -157,17 +157,21 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
         }
 
         val resolved = decodeStorageIndex(lengthReader) { index, referenceType ->
-            val propertyReference = this[index]?.ref()
-            when {
-                propertyReference == null -> throw DefNotFoundException("Property reference does not exist")
-                readLength >= length -> wrapListReferenceIfNeeded(propertyReference)
-                propertyReference is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedStorageRef(
-                    lengthReader,
-                    context,
-                    referenceType
-                ) { readLength >= length }
-                else -> throw DefNotFoundException("More property references found on property that cannot have any: $propertyReference")
+            var propertyReference: AnyPropertyReference = this[index]?.ref()
+                ?: throw DefNotFoundException("Property reference does not exist")
+            while (readLength < length) {
+                val start = readLength
+                propertyReference = if (propertyReference is HasEmbeddedPropertyReference<*>) {
+                    propertyReference.getEmbeddedStorageRef(lengthReader, context, referenceType) { readLength >= length }
+                } else {
+                    throw DefNotFoundException("More property references found on property that cannot have any: $propertyReference")
+                }
+                if (readLength <= start) throw ParseException("Stored property reference did not consume its next component")
             }
+            propertyReference
+        }
+        if (resolved.calculateStorageByteLength() != length) {
+            throw ParseException("Stored property reference is missing a required component")
         }
         return wrapListReferenceIfNeeded(resolved)
     }

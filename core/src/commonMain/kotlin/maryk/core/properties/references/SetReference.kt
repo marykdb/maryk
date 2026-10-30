@@ -31,9 +31,6 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
 
         return when (name[0]) {
             '#' -> {
-                if (name.length == 1) {
-                    throw ParseException("Set item reference requires a value")
-                }
                 SetItemReference(
                     propertyDefinition.definition.valueDefinition.fromString(
                         name.substring(1).unescapeReferenceSegment()
@@ -55,6 +52,7 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
         val protoKey = ProtoBuf.readReferenceKey(reader)
         return when (protoKey.tag) {
@@ -62,7 +60,8 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
                 SetItemReference(
                     this.propertyDefinition.definition.valueDefinition.readTransportBytes(
                         ProtoBuf.getLength(protoKey.wireType, reader),
-                        reader
+                        reader,
+                        context as CX?
                     ),
                     propertyDefinition.definition,
                     this

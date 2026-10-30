@@ -6,6 +6,9 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.number
+import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
@@ -15,6 +18,7 @@ import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertContentEquals
 import kotlin.test.expect
 
 private class EmptyValueObject : ValueDataObject(byteArrayOf())
@@ -23,7 +27,30 @@ private object EmptyValueDataModel : ValueDataModel<EmptyValueObject, EmptyValue
     override fun invoke(values: ObjectValues<EmptyValueObject, EmptyValueDataModel>) = EmptyValueObject()
 }
 
+private class SparseValueObject(val value: Int, val flag: Boolean) :
+    ValueDataObject(SparseValueDataModel.Serializer.toBytes(value, flag))
+
+private object SparseValueDataModel : ValueDataModel<SparseValueObject, SparseValueDataModel>("SparseValue") {
+    val value by number(2u, SparseValueObject::value, type = SInt32)
+    val flag by boolean(9u, SparseValueObject::flag)
+    override fun invoke(values: ObjectValues<SparseValueObject, SparseValueDataModel>) =
+        SparseValueObject(values(2u), values(9u))
+}
+
 internal class ValueDataModelTest {
+    @Test
+    fun sparsePropertyIndicesRetainValueObjectBytes() {
+        val original = SparseValueObject(42, true)
+        val values = SparseValueDataModel.create { value with 42; flag with true }
+        assertContentEquals(original.toByteArray(), SparseValueDataModel.toBytes(values))
+        checkProtoBufConversion(SparseValueDataModel, ValueDataModel.Model, { DefinitionsConversionContext() }, { converted, _ ->
+            @Suppress("UNCHECKED_CAST")
+            val reconstructed = converted as ValueDataModel<ValueDataObject, IsValueDataModel<ValueDataObject, *>>
+            val restored = reconstructed.create { reconstructed[2u]!! with 42; reconstructed[9u]!! with true }.toDataObject()
+            assertContentEquals(original.toByteArray(), restored.toByteArray())
+        })
+    }
+
     @Test
     fun emptyValueDataModelSerializesToEmptyBytes() {
         assertEquals(0, EmptyValueDataModel.Serializer.byteSize)

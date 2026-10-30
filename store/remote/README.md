@@ -327,8 +327,10 @@ use the common SQL engine over this store's public requests. See the [SQL guide]
 syntax, execution strategies, transaction tooling and resource limits. The shared
 SQL conformance contract verifies these features through this adapter.
 
-Models with floating-point fields inside packed value objects require matching
-value-object storage formats on the client and server. Store info advertises the
-format, and requests send `X-Maryk-Value-Storage-Format`; incompatible clients are
-rejected before decoding or applying requests. Ordinary Float/Double Protobuf
-scalar fields retain their wire format.
+Models with floating-point fields inside packed value objects or NANOS DateTime
+properties require matching transport formats on the client and server. Store
+info advertises the format, and requests send `X-Maryk-Value-Storage-Format`;
+incompatible peers are rejected before decoding or applying requests. This also
+protects NANOS DateTime collections, whose released packed pairs can resemble
+one current framed value. Upgrade both peers together. Ordinary Float/Double
+Protobuf scalar fields retain their wire format.

@@ -24,7 +24,8 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
 ) : IsFuzzyReference,
     IsPropertyReferenceWithParent<List<V>, IsListDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>>,
     CanHaveComplexChildReference<List<V>, IsListDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>>(
-        SubListDefinition(valueDefinition = mapDefinition.valueDefinition as IsValueDefinition<V, CX>),
+        SubListDefinition(valueDefinition = mapDefinition.valueDefinition as? IsValueDefinition<V, CX>
+            ?: throw RequestException("Wildcard map values require a value definition; use an explicit map key for collection-valued entries")),
         parentReference
     ) {
     override val completeName by lazy {

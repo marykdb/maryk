@@ -64,9 +64,9 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
     companion object : ContextualDataModel<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(
         contextTransformer = {
             if (it is GraphContext && it.subDataModel != null) {
-                GraphContext(it.subDataModel)
+                it.toGraphContext(it.subDataModel)
             } else {
-                GraphContext(it?.dataModel)
+                it.toGraphContext(it?.dataModel)
             }
         }
     ) {

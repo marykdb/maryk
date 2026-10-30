@@ -10,7 +10,6 @@ import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinedByReference
@@ -37,7 +36,7 @@ data class ReferenceTypePair<E : TypeEnum<Any>> internal constructor(
             definition = ContextualIndexedEnumDefinition<RequestContext, RequestContext, IndexedEnum, IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>>(
                 contextualResolver = {
                     @Suppress("UNCHECKED_CAST")
-                    (it?.reference as? MultiTypePropertyReference<TypeEnum<Any>, *, *, *, *>?)?.comparablePropertyDefinition?.definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>?
+                    it?.reference?.comparablePropertyDefinition as? IsMultiTypeDefinition<TypeEnum<Any>, Any, RequestContext>
                         ?: throw ContextNotFoundException()
                 }
             )

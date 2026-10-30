@@ -5,6 +5,38 @@ import kotlin.test.Test
 
 class MapItemsReaderTest {
     @Test
+    fun quotedFirstKeysBelongToTheirNestedMapping() {
+        for (key in listOf("''", "\"\"", "'same'", "\"same\"")) {
+            val expected = if (key.length == 2) "" else "same"
+            createYamlReader("left:\n  $key: []\nright:\n  $key: {}\n").apply {
+                assertStartObject()
+                assertFieldName("left")
+                assertStartObject()
+                assertFieldName(expected)
+                assertStartArray()
+                assertEndArray()
+                assertEndObject()
+                assertFieldName("right")
+                assertStartObject()
+                assertFieldName(expected)
+                assertStartObject()
+                assertEndObject()
+                assertEndObject()
+                assertEndObject()
+                assertEndDocument()
+            }
+            createYamlReader("parent:\n  $key: first\n  $key: duplicate\n").apply {
+                assertStartObject()
+                assertFieldName("parent")
+                assertStartObject()
+                assertFieldName(expected)
+                assertValue("first")
+                assertInvalidYaml()
+            }
+        }
+    }
+
+    @Test
     fun readSimpleMapping() {
         createYamlReader("""
         |key1: value1

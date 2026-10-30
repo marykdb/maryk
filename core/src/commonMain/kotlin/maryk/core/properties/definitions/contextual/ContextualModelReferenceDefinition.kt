@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.StorageDefinitionsConversionContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken.Value
@@ -65,7 +66,10 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
     }
 
     override fun calculateTransportByteLength(value: IsDataModelReference<DM>, cacher: WriteCacheWriter, context: CX?) =
-        value.name.calculateUTF8ByteLength()
+        transportName(value, context).calculateUTF8ByteLength()
+
+    private fun transportName(value: IsDataModelReference<DM>, context: CX?) =
+        if (contextTransformer(context) is StorageDefinitionsConversionContext) asString(value, context) else value.name
 
     override fun writeTransportBytes(
         value: IsDataModelReference<DM>,
@@ -73,7 +77,7 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) =
-        value.name.writeUTF8Bytes(writer)
+        transportName(value, context).writeUTF8Bytes(writer)
 
     override fun readTransportBytes(
         length: Int,
@@ -106,7 +110,7 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
         if (onlyName.isEmpty()) {
             throw ParseException("Model reference name cannot be empty")
         }
-        return try {
+        val resolved = try {
             this.contextualResolver(context, onlyName)
         } catch (_: DefNotFoundException) {
             LazyDataModelReference(onlyName, keyLength) {
@@ -117,5 +121,10 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
                 }.get
             }
         }
+        return if (context is StorageDefinitionsConversionContext && keyLength != null) {
+            // A parent schema can retain old references after its target has
+            // migrated. Its declared source width outranks the shared catalogue.
+            LazyDataModelReference(onlyName, keyLength) { resolved.get }
+        } else resolved
     }
 }

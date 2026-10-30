@@ -23,10 +23,10 @@ interface IsValueDataModel<DO: ValueDataObject, DM: IsObjectDataModel<DO>>:
         val bytes = ByteArray(this.Serializer.byteSize)
         var offset = 0
 
-        this.forEachIndexed { index, it ->
+        this.forEach { property ->
             @Suppress("UNCHECKED_CAST")
-            val def = it as IsFixedStorageBytesEncodable<in Any>
-            def.writeStorageBytes(values(index.toUInt() + 1u)) {
+            val def = property as IsFixedStorageBytesEncodable<in Any>
+            def.writeStorageBytes(values(property.index)) {
                 bytes[offset++] = it
             }
 

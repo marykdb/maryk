@@ -10,6 +10,9 @@ import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.migration.convertLegacyFloatingPointBytes
+import maryk.core.models.migration.readsLegacyValueStorage
+import maryk.core.models.migration.convertToReleasedFloatingPointBytes
+import maryk.core.models.migration.writesReleasedTransportForFingerprint
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitionType.Value
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
@@ -23,10 +26,11 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -54,9 +58,21 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
     override val wireType = LENGTH_DELIMITED
     override val byteSize = dataModel.Serializer.byteSize
 
-    override fun calculateStorageByteLength(value: DO) = this.byteSize
+    override fun calculateStorageByteLength(value: DO): Int {
+        validateByteSize(value)
+        return byteSize
+    }
 
-    override fun writeStorageBytes(value: DO, writer: (byte: Byte) -> Unit) = value._bytes.writeBytes(writer)
+    override fun writeStorageBytes(value: DO, writer: (byte: Byte) -> Unit) {
+        validateByteSize(value)
+        value._bytes.writeBytes(writer)
+    }
+
+    private fun validateByteSize(value: DO) {
+        if (value._bytes.size != byteSize) {
+            throw ParseException("Invalid storage byte length for ValueObject: ${value._bytes.size} != $byteSize")
+        }
+    }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): DO {
         if (length != byteSize) {
@@ -67,13 +83,19 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
     }
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?, earlierValue: DO?): DO {
-        if ((context as? RequestContext)?.legacyValueStorage != true) return readStorageBytes(length, reader)
+        if (!context.readsLegacyValueStorage()) return readStorageBytes(length, reader)
         val converted = convertLegacyFloatingPointBytes(ByteArray(length) { reader() })
         var offset = 0
         return readStorageBytes(converted.size) { converted[offset++] }
     }
 
-    override fun calculateTransportByteLength(value: DO) = this.dataModel.Serializer.byteSize
+    override fun calculateTransportByteLength(value: DO) = calculateStorageByteLength(value)
+
+    override fun writeTransportBytes(value: DO, cacheGetter: WriteCacheReader, writer: (Byte) -> Unit, context: IsPropertyContext?) {
+        validateByteSize(value)
+        if (context.writesReleasedTransportForFingerprint()) convertToReleasedFloatingPointBytes(value._bytes).writeBytes(writer)
+        else writeStorageBytes(value, writer)
+    }
 
     override fun asString(value: DO) = value.toBase64()
 
@@ -88,6 +110,9 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
         newValue: DO?,
         refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>, *>?
     ) {
+        if (newValue != null && newValue._bytes.size != byteSize) {
+            throw InvalidSizeException(refGetter(), newValue.toBase64(), byteSize.toUInt(), byteSize.toUInt())
+        }
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(

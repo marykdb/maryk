@@ -34,7 +34,7 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
 ) : IsPropRefGraph<DM> {
     companion object : ContextualDataModel<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(
         contextTransformer = {
-            GraphContext(it?.dataModel)
+            it.toGraphContext(it?.dataModel)
         },
     ) {
         val properties: ListDefinitionWrapper<TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode>, IsPropRefGraphNode<Nothing>, GraphContext, RootPropRefGraph<*>> by list(

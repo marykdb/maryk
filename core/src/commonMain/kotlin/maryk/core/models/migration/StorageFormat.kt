@@ -21,10 +21,14 @@ object StorageFormat {
     const val CURRENT = 2
 }
 
-/** Fixed-width non-floating indexes retain their existing representation. */
-fun IsIndexable.requiresStorageFormatUpgrade(): Boolean = hasVariableIndexComponent() || when (this) {
-    is Multiple -> references.any { it.requiresStorageFormatUpgrade() }
-    is AnyOf -> references.any { it.requiresStorageFormatUpgrade() }
+/** Fixed-width non-floating components can still have legacy bytes in their reference ancestors. */
+fun IsIndexable.requiresStorageFormatUpgrade(): Boolean =
+    !referenceStorageByteArray.bytes.contentEquals(toReleasedReferenceStorageByteArray()) || requiresKeyStorageFormatUpgrade()
+
+/** Primary record keys contain component values, without their index descriptor. */
+fun IsIndexable.requiresKeyStorageFormatUpgrade(): Boolean = hasVariableIndexComponent() || when (this) {
+    is Multiple -> references.any { it.requiresKeyStorageFormatUpgrade() }
+    is AnyOf -> references.any { it.requiresKeyStorageFormatUpgrade() }
     else -> componentDefinition()?.hasFloatingPointStorage() == true
 }
 

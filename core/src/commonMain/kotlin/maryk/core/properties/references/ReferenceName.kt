@@ -20,8 +20,8 @@ internal fun String.splitReferenceName() = buildList {
     add(segment.toString())
 }
 
-internal fun String.escapeReferenceSegment(): String {
-    require(isNotEmpty()) { "Empty reference members have no unambiguous text representation" }
+internal fun String.escapeReferenceSegment(allowEmpty: Boolean = false): String {
+    require(allowEmpty || isNotEmpty()) { "Empty property names have no unambiguous text representation" }
     return replace("\\", "\\\\").replace(".", "\\.")
 }
 

@@ -5,6 +5,13 @@ A DataModel is the blueprint for a record. It contains [property definitions](pr
 
 Every property in a DataModel has both a name and a unique integer index. The index must stay the same for the lifetime of the application and removes the need for reflection during serialisation, keeping processing fast.
 
+Referenced and embedded model names are part of schema identity. Changing a
+property to point at another model requires migration, including changing it to
+the containing model or another model already visited during compatibility
+checks. Recursive references do not waive this identity check.
+Changing the referenced model's key byte size also requires migration of its
+referencing properties; retained keys cannot be read using a different width.
+
 ### Example of a DataModel Representing a Person
 
 Consider a simple `Person` DataModel with first name, last name and date of birth.

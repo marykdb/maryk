@@ -64,18 +64,14 @@ class IncMapAdditionTest {
         )
     }
 
-    private val conversionChecker = { converted: IncMapAddition, _: IncMapAddition ->
-        assertEquals(incMapLessAddition, converted)
-    }
-
     @Test
     fun convertToProtoBufAndBackWithoutEnrichedContext() {
-        checkProtoBufConversion(this.incMapAddition, IncMapAddition, { this.context }, conversionChecker)
+        checkProtoBufConversion(this.incMapAddition, IncMapAddition, { this.context })
     }
 
     @Test
     fun convertToJSONAndBackWithoutEnrichedContext() {
-        checkJsonConversion(this.incMapAddition, IncMapAddition, { this.context }, conversionChecker)
+        checkJsonConversion(this.incMapAddition, IncMapAddition, { this.context })
     }
 
     @Test
@@ -84,10 +80,13 @@ class IncMapAdditionTest {
             """
             incMap:
               addedKeys: [22, 23]
+              addedValues:
+              - value: ho
+              - value: ha
 
             """.trimIndent()
         ) {
-            checkYamlConversion(this.incMapAddition, IncMapAddition, { this.context }, conversionChecker)
+            checkYamlConversion(this.incMapAddition, IncMapAddition, { this.context })
         }
     }
 
@@ -107,11 +106,23 @@ class IncMapAdditionTest {
             """
             incMap:
               addedKeys: [22, 23]
+              addedValues:
+              - value: ho
+              - value: ha
 
             """.trimIndent()
         ) {
             checkYamlConversion(this.incMapAddition, IncMapAddition, { enrichedContext })
         }
+    }
+
+    @Test
+    fun legacyMissingValuesStillUseTheRequestContext() {
+        val checker = { converted: IncMapAddition, _: IncMapAddition -> assertEquals(incMapAddition, converted) }
+        checkProtoBufConversion(incMapLessAddition, IncMapAddition, { enrichedContext }, checker)
+        checkJsonConversion(incMapLessAddition, IncMapAddition, { enrichedContext }, checker)
+        checkProtoBufConversion(incMapLessAddition, IncMapAddition, { context })
+        checkJsonConversion(incMapLessAddition, IncMapAddition, { context })
     }
 
     @Test

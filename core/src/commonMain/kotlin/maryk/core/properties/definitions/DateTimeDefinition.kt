@@ -14,6 +14,8 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.migration.readsLegacyNanosDateTime
+import maryk.core.models.migration.writesReleasedTransportForFingerprint
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
@@ -28,6 +30,7 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -77,7 +80,7 @@ data class DateTimeDefinition(
         when (this.precision) {
             TimePrecision.SECONDS -> Instant.fromEpochSeconds(initLongByVar(reader))
             TimePrecision.MILLIS -> Instant.fromEpochMilliseconds(initLongByVar(reader))
-            TimePrecision.NANOS -> if (length == -1) {
+            TimePrecision.NANOS -> if (length == -1 || context.readsLegacyNanosDateTime()) {
                 // A known scalar legacy field used a VAR_INT tag followed by two varints.
                 val seconds = initLongByVar(reader)
                 val nanos = initIntByVar(reader)
@@ -97,6 +100,10 @@ data class DateTimeDefinition(
         }
     }
 
+    override fun calculateTransportByteLength(value: LocalDateTime, cacher: WriteCacheWriter, context: IsPropertyContext?): Int =
+        calculateTransportByteLength(value) -
+            if (precision == TimePrecision.NANOS && context.writesReleasedTransportForFingerprint()) 2 else 0
+
     override fun writeTransportBytes(
         value: LocalDateTime,
         cacheGetter: WriteCacheReader,
@@ -108,9 +115,9 @@ data class DateTimeDefinition(
             TimePrecision.SECONDS -> utcValue.epochSeconds.writeVarBytes(writer)
             TimePrecision.MILLIS -> utcValue.toEpochMilliseconds().writeVarBytes(writer)
             TimePrecision.NANOS -> {
-                ProtoBuf.writeKey(1u, VAR_INT, writer)
+                if (!context.writesReleasedTransportForFingerprint()) ProtoBuf.writeKey(1u, VAR_INT, writer)
                 utcValue.epochSeconds.writeVarBytes(writer)
-                ProtoBuf.writeKey(2u, VAR_INT, writer)
+                if (!context.writesReleasedTransportForFingerprint()) ProtoBuf.writeKey(2u, VAR_INT, writer)
                 utcValue.nanosecondsOfSecond.writeVarBytes(writer)
             }
         }

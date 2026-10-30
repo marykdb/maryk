@@ -74,9 +74,9 @@ data class GraphMapItem<K : Any, DM : IsDataModel> internal constructor(
     companion object : ContextualDataModel<GraphMapItem<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(
         contextTransformer = {
             if (it is GraphContext && it.subDataModel != null) {
-                GraphContext(it.subDataModel)
+                it.toGraphContext(it.subDataModel)
             } else {
-                GraphContext(it?.dataModel)
+                it.toGraphContext(it?.dataModel)
             }
         }
     ) {

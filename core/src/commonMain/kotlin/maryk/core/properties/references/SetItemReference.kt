@@ -4,6 +4,7 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.writeCollectionQualifierBytes
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
@@ -28,8 +29,8 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, CanContainSetItemReference<*, *, *>, Set<T>> {
     override val completeName: String by lazy {
         this.parentReference?.let {
-            "${it.completeName}.#${setDefinition.valueDefinition.asString(value).escapeReferenceSegment()}"
-        } ?: "#${setDefinition.valueDefinition.asString(value).escapeReferenceSegment()}"
+            "${it.completeName}.#${setDefinition.valueDefinition.asString(value).escapeReferenceSegment(allowEmpty = true)}"
+        } ?: "#${setDefinition.valueDefinition.asString(value).escapeReferenceSegment(allowEmpty = true)}"
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -80,7 +81,7 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         // Write set item bytes
         valueDefinition.calculateStorageByteLength(value).writeVarBytes(writer)
         // Write value bytes
-        valueDefinition.writeStorageBytes(value, writer)
+        valueDefinition.writeCollectionQualifierBytes(value, writer)
     }
 
     override fun resolve(values: Set<T>) =

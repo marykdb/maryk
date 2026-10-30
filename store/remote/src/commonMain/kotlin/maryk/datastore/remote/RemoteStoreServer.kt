@@ -39,7 +39,7 @@ import io.ktor.utils.io.writeFully
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.migration.StorageFormat
-import maryk.core.models.migration.hasFloatingPointValueObjects
+import maryk.core.models.migration.hasLegacyTransportStorage
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.asValues
 import maryk.core.models.serializers.IsObjectDataModelSerializer
@@ -229,7 +229,7 @@ internal fun Application.remoteStoreModule(
         intercept(ApplicationCallPipeline.Call) {
             if (info.valueStorageFormat == StorageFormat.CURRENT.toUInt() && context.request.path() != RemoteStoreProtocol.infoPath &&
                 context.request.headers[RemoteStoreProtocol.valueStorageFormatHeader] != StorageFormat.CURRENT.toString()) {
-                context.respondText("Value-object storage format differs; upgrade the client and server together", status = HttpStatusCode.BadRequest)
+                context.respondText("Value transport format differs; upgrade the client and server together", status = HttpStatusCode.BadRequest)
                 finish()
                 return@intercept
             }
@@ -1097,7 +1097,7 @@ private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
         atomicCapabilities = dataStore.atomicCapabilities ?: (dataStore as? VersionedRestoreDataStore)?.restoreCapabilities,
         transactionCapabilities = dataStore.transactionCapabilities,
         supportsVersionedRestore = (dataStore as? VersionedRestoreDataStore)?.restoreCapabilities != null,
-        valueStorageFormat = if (dataStore.dataModelsById.values.any { it.hasFloatingPointValueObjects() }) StorageFormat.CURRENT.toUInt() else 1u,
+        valueStorageFormat = if (dataStore.dataModelsById.values.any { it.hasLegacyTransportStorage() }) StorageFormat.CURRENT.toUInt() else 1u,
     )
 }
 

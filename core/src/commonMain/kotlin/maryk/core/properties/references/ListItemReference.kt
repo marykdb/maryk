@@ -6,10 +6,10 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
-import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
@@ -30,7 +30,10 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     IsPropertyReferenceWithParent<T, IsSubDefinition<T, CX>, CanContainListItemReference<*, *, *>, List<T>>,
     CanHaveComplexChildReference<T, IsSubDefinition<T, CX>, CanContainListItemReference<*, *, *>, List<T>>(
         listDefinition.valueDefinition, parentReference
-    ) {
+    ),
+    CanContainMapItemReference<T, IsSubDefinition<T, CX>, List<T>>,
+    CanContainListItemReference<T, IsSubDefinition<T, CX>, List<T>>,
+    CanContainSetItemReference<T, IsSubDefinition<T, CX>, List<T>> {
     /** Convenience infix method to create Reference [value] pairs */
     @Suppress("UNCHECKED_CAST")
     infix fun <T : Any> with(value: T) =
@@ -52,7 +55,8 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
             is IsMultiTypeDefinition<*, *, *> -> {
                 this.propertyDefinition.resolveReferenceByName(name, this)
             }
-            else -> throw DefNotFoundException("ListItem can not contain embedded name references ($name)")
+            else -> readCollectionReference(name)
+                ?: throw DefNotFoundException("ListItem can not contain embedded name references ($name)")
         }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
@@ -63,7 +67,8 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
             is IsMultiTypeDefinition<*, *, *> -> {
                 this.propertyDefinition.resolveReference(reader, this)
             }
-            else -> throw DefNotFoundException("ListItem can not contain embedded index references ($index)")
+            else -> readCollectionReference(reader, context)
+                ?: throw DefNotFoundException("ListItem can not contain embedded index references ($index)")
         }
     }
 
@@ -74,13 +79,14 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return when (this.propertyDefinition) {
-            is IsEmbeddedObjectDefinition<*, *, *, *> -> {
+            is IsEmbeddedDefinition<*> -> {
                 this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
             }
             is IsMultiTypeDefinition<*, *, *> -> {
                 this.propertyDefinition.resolveReferenceFromStorage(reader, this)
             }
-            else -> throw DefNotFoundException("ListItem can not contain embedded index references ($index)")
+            else -> readCollectionStorageReference(reader, isDoneReading)
+                ?: throw DefNotFoundException("ListItem can not contain embedded index references ($index)")
         }
     }
 
@@ -101,11 +107,13 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         index.writeVarBytes(writer)
     }
 
-    override fun calculateSelfStorageByteLength() = Int.SIZE_BYTES
+    override fun calculateSelfStorageByteLength() = Int.SIZE_BYTES +
+        if (propertyDefinition.anonymousCollectionReferenceType() != null) 1 else 0
 
     override fun writeSelfStorageBytes(writer: (byte: Byte) -> Unit) {
         // Write index bytes
         index.writeBytes(writer)
+        propertyDefinition.anonymousCollectionReferenceType()?.let { 0u.writeVarIntWithExtraInfo(it.value, writer) }
     }
 
     override fun resolve(values: List<T>): T? = index.toIntOrNull()?.let(values::getOrNull)

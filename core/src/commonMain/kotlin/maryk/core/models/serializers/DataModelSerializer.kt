@@ -8,12 +8,17 @@ import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsTypedDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.migration.ReleasedTransportFingerprintException
+import maryk.core.models.migration.writesReleasedTransportForFingerprint
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EMPTY_COLLECTION_TAG_OFFSET
+import maryk.core.properties.definitions.emptyTransportCollection
+import maryk.core.properties.definitions.needsEmptyCollectionMarker
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
-import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -54,20 +59,15 @@ private fun IsDefinitionWrapper<*, *, *, *>.transportIndex(): Int {
     return index.toInt()
 }
 
-// Property transport indices are restricted to 1..32767. The upper bit marks
-// presence of an empty collection, without changing ordinary property encodings.
-private const val EMPTY_COLLECTION_TAG_OFFSET = 32768u
-
-private fun IsDefinitionWrapper<*, *, *, *>.needsEmptyCollectionMarker(value: Any): Boolean =
-    when (val property = definition) {
-        is IsMapDefinition<*, *, *> -> (value as? Map<*, *>)?.isEmpty() == true
-        is IsCollectionDefinition<*, *, *, *> -> (value as? Collection<*>)?.isEmpty() == true &&
-            when ((property.valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
-                VAR_INT, BIT_32, BIT_64 -> false
-                else -> true
-            }
-        else -> false
+private fun IsSerializablePropertyDefinition<*, *>.needsModelEmptyMarker(value: Any, context: IsPropertyContext?): Boolean {
+    val needsMarker = needsEmptyCollectionMarker(value, context)
+    if (needsMarker && context.writesReleasedTransportForFingerprint() &&
+        this !is IsCollectionDefinition<*, *, *, *> && this !is IsMapDefinition<*, *, *>
+    ) {
+        throw ReleasedTransportFingerprintException("Released contextual empty collection values do not retain presence")
     }
+    return needsMarker
+}
 
 /** Serializer for DataModels */
 open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO>, CX: IsPropertyContext>(
@@ -274,7 +274,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
             return 0 // Skip null value in counting
         }
 
-        if (definition.needsEmptyCollectionMarker(value)) {
+        if (definition.definition.needsModelEmptyMarker(value, context)) {
             definition.capture(context, value)
             return ProtoBuf.calculateKeyLength(definition.transportIndex().toUInt() + EMPTY_COLLECTION_TAG_OFFSET) + 1
         }
@@ -330,7 +330,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
 
         definition.capture(context, value)
 
-        if (definition.needsEmptyCollectionMarker(value)) {
+        if (definition.definition.needsModelEmptyMarker(value, context)) {
             ProtoBuf.writeKey(definition.transportIndex().toUInt() + EMPTY_COLLECTION_TAG_OFFSET, LENGTH_DELIMITED, writer)
             writer(0)
         } else definition.definition.writeTransportBytesWithKey(definition.transportIndex(), value, cacheGetter, writer, context)
@@ -424,19 +424,14 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
             val index = key.tag - EMPTY_COLLECTION_TAG_OFFSET
             val wrapper = model[index]
             val definition = wrapper?.definition
-            if (definition is IsCollectionDefinition<*, *, *, *> || definition is IsMapDefinition<*, *, *>) {
+            val empty = definition?.emptyTransportCollection(context)
+            if (empty != null) {
                 if (key.wireType != LENGTH_DELIMITED || readProtoBufValueLength(key, byteReader, remainingLength) != 0) {
                     throw ParseException("Empty collection marker must be length-delimited with zero length")
                 }
                 if (values[index] != null) throw ParseException("Empty collection marker conflicts with an earlier value")
-                @Suppress("UNCHECKED_CAST")
-                val empty = when (definition) {
-                    is IsCollectionDefinition<*, *, *, *> ->
-                        (definition as IsCollectionDefinition<Any, Collection<Any>, CX, IsSubDefinition<Any, CX>>).newMutableCollection(context)
-                    else -> mutableMapOf<Any, Any>()
-                }
                 values[index] = empty
-                wrapper.capture(context, empty)
+                requireNotNull(wrapper).capture(context, empty)
                 return
             }
         }

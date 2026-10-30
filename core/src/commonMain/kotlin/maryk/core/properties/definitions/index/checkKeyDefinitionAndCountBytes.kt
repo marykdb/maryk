@@ -5,6 +5,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.IsFixedBytesPropertyReference
+import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 
@@ -25,6 +26,11 @@ internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
             )
             keyDefinition.byteSize
         }
+        is TypeReference<*, *, *> -> {
+            require(keyDefinition.multiTypeDefinition.required) { "Multi type should be required for a key" }
+            require(keyDefinition.multiTypeDefinition.typeIsFinal) { "Multi type should have an immutable type for a key" }
+            keyDefinition.byteSize
+        }
         is IsFixedBytesPropertyReference<*> -> keyDefinition.byteSize
         is ValueWithFlexBytesPropertyReference<*, *, *, *> ->
             throw InvalidDefinitionException("Definition should have a fixed amount of bytes for a key")
@@ -35,7 +41,10 @@ internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
             throw InvalidDefinitionException("Definition should not fan out or split for a key")
         is Reversed<*> ->
             checkKeyDefinitionAndCountBytes(keyDefinition.reference)
-        is GeoHash -> keyDefinition.byteSize
+        is GeoHash -> {
+            checkKeyDefinitionAndCountBytes(keyDefinition.reference)
+            keyDefinition.byteSize
+        }
         else -> throw TypeException("Unknown key IsIndexable type: $keyDefinition")
     }
 }

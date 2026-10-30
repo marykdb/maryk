@@ -3,18 +3,26 @@ package maryk.core.models
 import maryk.core.models.migration.convertLegacyFloatingPointBytes
 import maryk.core.models.migration.convertLegacyStorageQualifier
 import maryk.core.models.migration.readLegacyValueStorage
+import maryk.core.models.migration.readLegacyTransportStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.set
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.query.DefinitionsContext
+import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
+import maryk.core.protobuf.WriteCache
 import maryk.core.values.ObjectValues
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -34,7 +42,73 @@ private object NestedFloatingModel : RootDataModel<NestedFloatingModel>() {
     ))
 }
 
+private object FloatingReferenceModel : RootDataModel<FloatingReferenceModel>() {
+    val mapped by map(1u, keyDefinition = ValueObjectDefinition(dataModel = FloatingValue), valueDefinition = StringDefinition())
+    val items by set(2u, valueDefinition = ValueObjectDefinition(dataModel = FloatingValue))
+}
+
+private object NumericNanQualifierModel : RootDataModel<NumericNanQualifierModel>() {
+    val doubles by map(1u, keyDefinition = NumberDefinition(type = Float64), valueDefinition = StringDefinition())
+    val floats by set(2u, valueDefinition = NumberDefinition(type = Float32))
+}
+
+private object EmbeddedFloatingList : DataModel<EmbeddedFloatingList>() {
+    val values by list(1u, valueDefinition = NumberDefinition(type = Float64))
+}
+
+private object EmbeddedFloatingQualifierModel : RootDataModel<EmbeddedFloatingQualifierModel>() {
+    val detail by embed(7u, dataModel = { EmbeddedFloatingList })
+}
+
 class LegacyFloatingPointStorageTest {
+    @Test
+    fun releasedEmbeddedListPropertyTagDoesNotConsumeTheFirstPositionByte() {
+        // Exact qualifier exported from the native 0.13.0 fixture: embedded7,
+        // named child list1, then its four-byte position. There is no anonymous tag.
+        val qualifier = "3e0a00000000".hexToByteArray()
+        val converted = EmbeddedFloatingQualifierModel.convertLegacyStorageQualifier(qualifier)
+        assertContentEquals(qualifier, converted.bytes)
+        assertEquals(qualifier.size, converted.length)
+        assertEquals(NumberDefinition(type = Float64), converted.definition)
+        assertEquals(true, converted.valueCell)
+    }
+
+    @Test
+    fun legacyNanQualifierPayloadsConvergeBeforeCollisionPreflight() {
+        val doubleReference = NumericNanQualifierModel.ref { doubles at Double.NaN }
+        val floatReference = NumericNanQualifierModel.ref { floats item Float.NaN }
+        val doubleQualifier = doubleReference.toStorageByteArray()
+        val floatQualifier = floatReference.toStorageByteArray()
+        for (bits in listOf(0x7ff8000000000000L, 0x7ff8000000000001L, -0x7ffffffffffffL)) {
+            val legacy = doubleQualifier.copyOfRange(0, doubleQualifier.size - 8) + legacyBytes(bits, 8)
+            assertContentEquals(doubleQualifier, NumericNanQualifierModel.convertLegacyStorageQualifier(legacy).bytes)
+        }
+        for (bits in listOf(0x7fc00000, 0x7fc00001, -0x3fffff)) {
+            val legacy = floatQualifier.copyOfRange(0, floatQualifier.size - 4) + legacyBytes(bits.toLong(), 4)
+            assertContentEquals(floatQualifier, NumericNanQualifierModel.convertLegacyStorageQualifier(legacy).bytes)
+        }
+    }
+
+    @Test
+    fun legacyValueObjectMapAndSetReferencesUseTheMigrationContext() {
+        val value = FloatingValue(-1.0, 1f)
+        val oldValue = legacyBytes((-1.0).toRawBits(), 8) + byteArrayOf(1) + legacyBytes(1f.toRawBits().toLong(), 4)
+        val context = RequestContext(DefinitionsContext())
+        for (reference in listOf(FloatingReferenceModel.ref { mapped at value }, FloatingReferenceModel.ref { items item value })) {
+            val cache = WriteCache()
+            val current = ByteArray(reference.calculateTransportByteLength(cache))
+            var offset = 0
+            reference.writeTransportBytes(cache) { current[offset++] = it }
+            val legacy = replace(current, value._bytes, oldValue)
+            offset = 0
+            val converted = context.readLegacyTransportStorage {
+                FloatingReferenceModel.getPropertyReferenceByBytes(legacy.size, { legacy[offset++] }, context)
+            }
+            assertEquals(reference, converted)
+            assertContentEquals(reference.toStorageByteArray(), converted.toStorageByteArray())
+        }
+    }
+
     @Test
     fun convertsBothWidthsReversalSignedZerosInfinitiesAndRawNanPayloads() {
         val doubles = listOf(Double.NEGATIVE_INFINITY, -2.0, -0.0, 0.0, Double.MIN_VALUE, 1.0, Double.POSITIVE_INFINITY,
@@ -87,6 +161,11 @@ class LegacyFloatingPointStorageTest {
         assertEquals(expected, read)
         offset = 0
         assertEquals(expected, definition.readTransportBytes(expected._bytes.size, { expected._bytes[offset++] }, context, null))
+        val definitions = DefinitionsConversionContext()
+        offset = 0
+        assertEquals(expected, definitions.readLegacyTransportStorage {
+            definition.readTransportBytes(legacy.size, { legacy[offset++] }, ModelContext(definitions), null)
+        })
     }
 
     private fun legacyBytes(bits: Long, size: Int, reversed: Boolean = false): ByteArray {

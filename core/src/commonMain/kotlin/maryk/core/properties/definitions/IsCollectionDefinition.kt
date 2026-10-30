@@ -1,20 +1,26 @@
 package maryk.core.properties.definitions
 
+import maryk.core.models.migration.transportWireType
+
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.models.migration.readsLegacyNanosDateTime
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.contextual.ContextualPropertyValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.NotEnoughItemsException
+import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.TimePrecision
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.BIT_32
@@ -24,6 +30,8 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.protobuf.addProtoByteLength
+import maryk.core.query.writesMigrationSchemaIdentity
+import maryk.lib.extensions.compare.compareTo
 import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -53,7 +61,6 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
         if (newValue != null) {
             validateSize(newValue.size.toUInt(), refGetter)
-
             createValidationUmbrellaException(refGetter) { addException ->
                 validateCollectionForExceptions(refGetter, newValue) { item, itemRefFactory ->
                     try {
@@ -62,6 +69,11 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                         addException(e)
                     }
                 }
+            }
+            try {
+                validateCollectionStorageIdentities(newValue)
+            } catch (error: ParseException) {
+                throw InvalidValueException(refGetter(), error.message ?: "Collection storage identities collide")
             }
         }
     }
@@ -94,10 +106,13 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
     /** Write [value] to JSON [writer] with [context] */
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
+        validateCollectionStorageIdentities(value, context)
         @Suppress("UNCHECKED_CAST")
         val definition = when(val def = this.valueDefinition) {
             is ContextualSubDefinition<*, *, *, *> -> (def as ContextualSubDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(def.contextTransformer(context))
             is ContextualValueDefinition<*, *, *, *> -> (def as ContextualValueDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(def.contextTransformer(context) as IsPropertyContext)
+            is ContextualPropertyValueDefinition<*, *, *> ->
+                (def as ContextualPropertyValueDefinition<IsPropertyContext, IsPropertyContext, Any>).contextualResolver(context)
             else -> this.valueDefinition
         }
 
@@ -139,15 +154,26 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         return collection as C
     }
 
+    private fun canonicalMigrationItems(value: C, context: CX?): Collection<T> =
+        if (this is IsSetDefinition<*, *> && context.writesMigrationSchemaIdentity()) {
+            @Suppress("UNCHECKED_CAST")
+            val definition = valueDefinition as IsValueDefinition<T, CX>
+            value.map { it to definition.toTransportByteArray(it, context) }
+                .sortedWith { first, second -> first.second.compareTo(second.second) }
+                .map { it.first }
+        } else value
+
     override fun calculateTransportByteLengthWithKey(
         index: Int,
         value: C,
         cacher: WriteCacheWriter,
         context: CX?
     ): Int {
+        validateCollectionStorageIdentities(value, context)
+        val orderedValues = canonicalMigrationItems(value, context)
         var totalByteSize = 0
 
-        when ((this.valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
+        when ((this.valueDefinition as? IsValueDefinition<*, *>)?.transportWireType(context)) {
             BIT_64, BIT_32, VAR_INT -> {
                 @Suppress("UNCHECKED_CAST")
                 val valueDefinition = this.valueDefinition as IsValueDefinition<T, CX>
@@ -156,7 +182,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 val container = ByteLengthContainer()
                 cacher.addLengthToCache(container)
 
-                value.forEachIndexed { position, item ->
+                orderedValues.forEachIndexed { position, item ->
                     if (context is RequestContext) {
                         context.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
                     }
@@ -169,7 +195,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 totalByteSize = totalByteSize.addProtoByteLength(ProtoBuf.calculateKeyLength(index.toUInt()))
                 totalByteSize = totalByteSize.addProtoByteLength(container.length.calculateVarByteLength())
             }
-            else -> value.forEachIndexed { position, item ->
+            else -> orderedValues.forEachIndexed { position, item ->
                 if (context is RequestContext) {
                     context.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
                 }
@@ -194,18 +220,20 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        when ((this.valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
+        validateCollectionStorageIdentities(value, context)
+        val orderedValues = canonicalMigrationItems(value, context)
+        when ((this.valueDefinition as? IsValueDefinition<*, *>)?.transportWireType(context)) {
             BIT_64, BIT_32, VAR_INT -> {
                 @Suppress("UNCHECKED_CAST")
                 val valueDefinition = this.valueDefinition as IsValueDefinition<T, CX>
 
                 ProtoBuf.writeKey(index.toUInt(), LENGTH_DELIMITED, writer)
                 cacheGetter.nextLengthFromCache().writeVarBytes(writer)
-                value.forEach { item ->
+                orderedValues.forEach { item ->
                     valueDefinition.writeTransportBytes(item, cacheGetter, writer, context)
                 }
             }
-            else -> for (item in value) {
+            else -> for (item in orderedValues) {
                 valueDefinition.writeTransportBytesWithKey(index, item, cacheGetter, writer, context)
             }
         }
@@ -218,7 +246,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: C?): C {
         when {
-            isPacked(length) -> {
+            isPacked(length, context) -> {
                 val collection = this.readPackedCollectionTransportBytes(
                     length,
                     reader,
@@ -246,7 +274,9 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     }
 
     /** Packed is true when encoded with longer length than expected byte size for single */
-    private fun isPacked(length: Int): Boolean {
+    private fun isPacked(length: Int, context: CX?): Boolean {
+        if (context.readsLegacyNanosDateTime() &&
+            (valueDefinition as? DateTimeDefinition)?.precision == TimePrecision.NANOS) return length >= 0
         val vt = (this.valueDefinition as? IsValueDefinition<*, *>)?.wireType
         return when (vt) {
             VAR_INT -> length >= 0

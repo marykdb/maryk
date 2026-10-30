@@ -1,6 +1,9 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.models.migration.readsLegacyTransportStorage
+import maryk.core.models.migration.ReleasedTransportFingerprintException
+import maryk.core.models.migration.writesReleasedTransportForFingerprint
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsMapDefinition
@@ -29,11 +32,18 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
 ) : IsContextualEncodable<T, CX>, IsValueDefinition<T, CX> {
     override val wireType = LENGTH_DELIMITED
     override val final = true
+    internal var rejectAmbiguousLegacyCollectionReads = false
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
     private fun IsSerializablePropertyDefinition<T, CXI>.needsEnvelope() =
         this is IsCollectionDefinition<*, *, *, *> || this is IsMapDefinition<*, *, *>
+
+    private fun rejectReleasedAppend(definition: IsSerializablePropertyDefinition<T, CXI>, context: CX?) {
+        if (rejectAmbiguousLegacyCollectionReads && definition.needsEnvelope() && context.writesReleasedTransportForFingerprint()) {
+            throw ReleasedTransportFingerprintException("Released collection-valued incrementing-map appends do not retain element boundaries")
+        }
+    }
 
     override fun asString(value: T, context: CX?): String {
         @Suppress("UNCHECKED_CAST")
@@ -51,6 +61,7 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
 
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?): Int {
         val definition = contextualResolver(context)
+        rejectReleasedAppend(definition, context)
         return if (definition.needsEnvelope()) definition.calculateTransportByteLengthWithKey(1, value, cacher, contextTransformer(context))
         else {
             @Suppress("UNCHECKED_CAST")
@@ -60,6 +71,7 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
 
     override fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (Byte) -> Unit, context: CX?) {
         val definition = contextualResolver(context)
+        rejectReleasedAppend(definition, context)
         if (definition.needsEnvelope()) definition.writeTransportBytesWithKey(1, value, cacheGetter, writer, contextTransformer(context))
         else {
             @Suppress("UNCHECKED_CAST")
@@ -75,6 +87,7 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
 
     override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?): Int {
         val definition = contextualResolver(context)
+        rejectReleasedAppend(definition, context)
         val innerContext = contextTransformer(context)
         return if (definition.needsEnvelope()) {
             calculateKeyAndContentLength(LENGTH_DELIMITED, index.toUInt(), cacher) {
@@ -85,6 +98,7 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
 
     override fun writeTransportBytesWithKey(index: Int, value: T, cacheGetter: WriteCacheReader, writer: (Byte) -> Unit, context: CX?) {
         val definition = contextualResolver(context)
+        rejectReleasedAppend(definition, context)
         val innerContext = contextTransformer(context)
         if (definition.needsEnvelope()) {
             writeKeyWithLength(LENGTH_DELIMITED, index.toUInt(), writer, cacheGetter)
@@ -96,6 +110,9 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
         val definition = contextualResolver(context)
         val innerContext = contextTransformer(context)
         if (!definition.needsEnvelope()) return definition.readTransportBytes(length, reader, innerContext, earlierValue)
+        if (rejectAmbiguousLegacyCollectionReads && context.readsLegacyTransportStorage()) {
+            throw ParseException("Legacy collection-valued incrementing-map appends have ambiguous element boundaries; reconstruct the log from a known source or restore a fresh snapshot")
+        }
         if (length < 0) throw ParseException("Collection replacement must be length-delimited")
         var consumed = 0
         val boundedReader = {

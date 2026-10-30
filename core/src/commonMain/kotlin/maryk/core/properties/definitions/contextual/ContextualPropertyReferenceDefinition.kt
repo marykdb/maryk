@@ -2,6 +2,8 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsDataModel
+import maryk.core.models.migration.releasedTransportBytes
+import maryk.core.models.migration.writesReleasedTransportForFingerprint
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.AnyPropertyReference
@@ -53,7 +55,8 @@ data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> inte
     }
 
     override fun calculateTransportByteLength(value: AnyPropertyReference, cacher: WriteCacheWriter, context: CX?) =
-        value.calculateTransportByteLength(cacher)
+        if (context.writesReleasedTransportForFingerprint()) value.releasedTransportBytes(requireNotNull(context)).size
+        else value.calculateTransportByteLength(cacher)
 
     override fun writeTransportBytes(
         value: AnyPropertyReference,
@@ -61,7 +64,8 @@ data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> inte
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        value.writeTransportBytes(cacheGetter, writer)
+        if (context.writesReleasedTransportForFingerprint()) value.releasedTransportBytes(requireNotNull(context)).forEach(writer)
+        else value.writeTransportBytes(cacheGetter, writer)
     }
 
     override fun readTransportBytes(

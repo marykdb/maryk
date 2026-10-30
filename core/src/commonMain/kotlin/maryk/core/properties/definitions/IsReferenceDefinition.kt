@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.IsRootDataModel
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.types.Key
@@ -25,14 +26,19 @@ interface IsReferenceDefinition<DM : IsRootDataModel, CX : IsPropertyContext> :
         var compatible = super<IsComparableDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         (definition as? IsReferenceDefinition<*, *>)?.let {
-            // Make sure references to self are not in eternal loop
-            if (checkedDataModelNames?.contains(this.internalDataModelReference.name) == true) {
-                return compatible
-            }
-
             if (definition.internalDataModelReference.name != this.internalDataModelReference.name) {
-                addIncompatibilityReason?.invoke("Data models are not the same comparing reference properties: $dataModel != ${definition.dataModel}")
+                addIncompatibilityReason?.invoke("Data models are not the same comparing reference properties: ${internalDataModelReference.name} != ${definition.internalDataModelReference.name}")
                 compatible = false
+            } else {
+                try {
+                    if (definition.byteSize != this.byteSize) {
+                        addIncompatibilityReason?.invoke("Key byte size for reference properties should be equal. $byteSize != ${definition.byteSize}")
+                        compatible = false
+                    }
+                } catch (_: DefNotFoundException) {
+                    addIncompatibilityReason?.invoke("Cannot establish the stored reference key width for ${internalDataModelReference.name}; an authoritative source schema is required")
+                    compatible = false
+                }
             }
         }
 

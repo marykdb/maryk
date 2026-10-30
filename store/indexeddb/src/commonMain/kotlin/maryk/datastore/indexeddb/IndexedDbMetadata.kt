@@ -1,6 +1,7 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.delay
+import maryk.core.extensions.bytes.initUInt
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.RequestException
@@ -14,8 +15,10 @@ import maryk.core.models.migration.MigrationPhase
 import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.MigrationStatus
+import maryk.core.models.migration.StorageFormat
 import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.models.migration.nextRuntimePhaseOrNull
+import maryk.core.models.migration.readLegacyTransportStorage
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -26,8 +29,14 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.query.StorageDefinitionsConversionContext
 import maryk.datastore.shared.migration.StorageFormatMetadataKey
+import maryk.datastore.shared.StoredModelDefinitionsContext
+import maryk.datastore.shared.loadStoredModelDefinitions
 import maryk.datastore.shared.migration.StorageFormatUpgradeStateKey
+import maryk.datastore.shared.migration.migrationTargetIdentity
+import maryk.datastore.shared.migration.requireMigrationTargetIdentity
+import maryk.datastore.shared.migration.decodeStorageFormat
 
 private const val IndexedDbStoreSchemaVersion = 3
 internal val OptionsMetadataKey = byteArrayOf(1)
@@ -51,7 +60,7 @@ internal class IndexedDbSchemaSnapshot(
 
 internal suspend fun IndexedDbByteStore.captureSchemaSnapshot(modelIds: Set<UInt>): IndexedDbSchemaSnapshot {
     val definitionKeys = listOf(OptionsMetadataKey, StorageFormatMetadataKey) + modelIds.flatMap { modelId ->
-        listOf(modelDefinitionMetadataKey(modelId), modelDependentsMetadataKey(modelId))
+        listOf(modelDefinitionMetadataKey(modelId), modelDependentsMetadataKey(modelId), sourceSchemaFormatMetadataKey(modelId))
     }
     return IndexedDbSchemaSnapshot(
         definitionKeys,
@@ -117,8 +126,14 @@ private suspend fun IndexedDbByteStore.migrateIndexedDbModelDefinitions(
         }
         .orEmpty()
         .let { legacySignatures ->
-            val conversionContext = DefinitionsConversionContext()
-            val storedModels = dataModelsById.mapValues { (modelId, _) ->
+            val conversionContext = StoredModelDefinitionsContext()
+            val sourceIds = scan("meta", startKey = ModelDefinitionMetadataPrefix,
+                endKey = ModelDependentsMetadataPrefix, includeEnd = false).map { (key, _) ->
+                if (key.size != 5) throw RequestException("Invalid stored model definition key")
+                var offset = 1
+                initUInt(reader = { key[offset++] })
+            }
+            val storedModels = loadStoredModelDefinitions((sourceIds + dataModelsById.keys).toSet()) { modelId ->
                 readStoredModelDefinition(modelId, conversionContext)
             }
             // Check every pending target before any callback can write through the startup bypass.
@@ -137,6 +152,7 @@ private suspend fun IndexedDbByteStore.migrateIndexedDbModelDefinitions(
                             "reopen with its target schema to resume before writing"
                     )
                 }
+                requireMigrationTargetIdentity(get("meta", migrationTargetMetadataKey(modelId)), dataModel)
             }
             for ((modelId, dataModel) in dataModelsById) {
                 val storedModel = storedModels[modelId]
@@ -219,7 +235,12 @@ private suspend fun IndexedDbByteStore.runMigration(
         MigrationPhase.Contract to migrationConfiguration.migrationContractHandler,
     )
     val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
+    val targetIdentity = migrationTargetIdentity(dataModel)
+    suspend fun persistProgress(state: MigrationState) {
+        writeMigrationState(modelId, state, targetIdentity)
+    }
     val resumedState = readMigrationState(modelId)
+    if (resumedState != null) requireMigrationTargetIdentity(get("meta", migrationTargetMetadataKey(modelId)), dataModel)
     if (resumedState != null && resumedState.migrationId != migrationId) {
         throw RequestException(
             "IndexedDB migration state for ${dataModel.Meta.name} belongs to ${resumedState.migrationId}, expected $migrationId"
@@ -252,8 +273,7 @@ private suspend fun IndexedDbByteStore.runMigration(
                     "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} exceeded max attempts"
                 )
             }
-            writeMigrationState(
-                modelId,
+            persistProgress(
                 MigrationState(
                     migrationId = migrationId,
                     phase = phase,
@@ -286,13 +306,12 @@ private suspend fun IndexedDbByteStore.runMigration(
                             attempt = 0u,
                             fromVersion = storedModel.Meta.version.toString(),
                             toVersion = dataModel.Meta.version.toString(),
-                        ).also { writeMigrationState(modelId, it) }
+                        ).also { persistProgress(it) }
                     }
                     break
                 }
                 is MigrationOutcome.Fatal -> {
-                    writeMigrationState(
-                        modelId,
+                    persistProgress(
                         MigrationState(
                             migrationId = migrationId,
                             phase = phase,
@@ -309,8 +328,7 @@ private suspend fun IndexedDbByteStore.runMigration(
                     )
                 }
                 is MigrationOutcome.Partial -> {
-                    writeMigrationState(
-                        modelId,
+                    persistProgress(
                         MigrationState(
                             migrationId = migrationId,
                             phase = phase,
@@ -336,7 +354,7 @@ private suspend fun IndexedDbByteStore.runMigration(
                         toVersion = dataModel.Meta.version.toString(),
                         cursor = outcome.nextCursor,
                         message = outcome.message,
-                    ).also { writeMigrationState(modelId, it) }
+                    ).also { persistProgress(it) }
                     if (
                         migrationConfiguration.migrationRetryPolicy.maxRetryOutcomes == null &&
                         migrationConfiguration.migrationRetryPolicy.maxAttempts == null
@@ -374,29 +392,43 @@ internal suspend fun IndexedDbByteStore.readStoredModelDefinition(
     modelId: UInt,
     conversionContext: DefinitionsConversionContext,
 ): RootDataModel<*>? {
-    get("meta", modelDependentsMetadataKey(modelId))?.let { dependentBytes ->
-        var readIndex = 0
-        Definitions.Serializer
-            .readProtoBuf(dependentBytes.size, { dependentBytes[readIndex++] }, conversionContext)
-            .toDataObject()
-    }
-
+    val dependentBytes = get("meta", modelDependentsMetadataKey(modelId))
     val modelBytes = get("meta", modelDefinitionMetadataKey(modelId)) ?: return null
-    var readIndex = 0
-    val storedModel = RootDataModel.Model.Serializer
-        .readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, conversionContext)
-        .toDataObject()
+    val schemaFormat = decodeStorageFormat(get("meta", sourceSchemaFormatMetadataKey(modelId))
+        ?: get("meta", StorageFormatMetadataKey))
+    // Retained roots can contain different revisions of a same-named recursive
+    // dependency; never bind one pair to definitions read from another pair.
+    val sourceContext = (conversionContext as? StoredModelDefinitionsContext)?.newSourcePairContext()
+        ?: StorageDefinitionsConversionContext()
+    fun decode(): RootDataModel<*> {
+        dependentBytes?.let {
+            var readIndex = 0
+            Definitions.Serializer
+                .readProtoBuf(dependentBytes.size, { dependentBytes[readIndex++] }, sourceContext)
+                .toDataObject()
+        }
 
-    conversionContext.dataModels[storedModel.Meta.name] = DataModelReference(storedModel)
-    return storedModel
+        var readIndex = 0
+        val storedModel = RootDataModel.Model.Serializer
+            .readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, sourceContext)
+            .toDataObject()
+        sourceContext.dataModels[storedModel.Meta.name] = DataModelReference(storedModel)
+        return storedModel
+    }
+    val model = if (schemaFormat == StorageFormat.LEGACY) sourceContext.readLegacyTransportStorage(::decode) else decode()
+    conversionContext.dataModels.putAll(sourceContext.dataModels)
+    conversionContext.enums.putAll(sourceContext.enums)
+    conversionContext.typeEnums.putAll(sourceContext.typeEnums)
+    (conversionContext as? StoredModelDefinitionsContext)?.registerSourceRoot(model)
+    return model
 }
 
-private suspend fun IndexedDbByteStore.storeModelDefinition(
+internal suspend fun IndexedDbByteStore.storeModelDefinition(
     modelId: UInt,
     dataModel: IsRootDataModel,
     completeMigration: Boolean = false,
 ) {
-    val context = DefinitionsConversionContext()
+    val context = StorageDefinitionsConversionContext()
     val modelCache = WriteCache()
     val rootDataModel = dataModel as RootDataModel<*>
     val modelSize = RootDataModel.Model.Serializer.calculateObjectProtoBufLength(rootDataModel, modelCache, context)
@@ -406,7 +438,8 @@ private suspend fun IndexedDbByteStore.storeModelDefinition(
     }
 
     val operations = mutableListOf<IndexedDbWriteOperation>(
-        IndexedDbWriteOperation.Put("meta", modelDefinitionMetadataKey(modelId), modelBytes)
+        IndexedDbWriteOperation.Put("meta", modelDefinitionMetadataKey(modelId), modelBytes),
+        IndexedDbWriteOperation.Put("meta", sourceSchemaFormatMetadataKey(modelId), StorageFormat.CURRENT.toString().encodeToByteArray()),
     )
     val dependencies = mutableListOf<MarykPrimitive>()
     dataModel.getAllDependencies(dependencies)
@@ -424,6 +457,7 @@ private suspend fun IndexedDbByteStore.storeModelDefinition(
     }
     if (completeMigration) {
         operations += IndexedDbWriteOperation.Delete("meta", migrationStateMetadataKey(modelId))
+        operations += IndexedDbWriteOperation.Delete("meta", migrationTargetMetadataKey(modelId))
     }
     writeBatch(operations)
 }
@@ -438,6 +472,9 @@ private fun modelDefinitionMetadataKey(modelId: UInt): ByteArray =
 private fun modelDependentsMetadataKey(modelId: UInt): ByteArray =
     ModelDependentsMetadataPrefix + modelId.toBigEndianBytes()
 
+internal fun sourceSchemaFormatMetadataKey(modelId: UInt): ByteArray =
+    "maryk.storage/source-schema-format:$modelId".encodeToByteArray()
+
 internal fun migrationStateMetadataKey(modelId: UInt): ByteArray =
     MigrationStateMetadataPrefix + modelId.toBigEndianBytes()
 
@@ -446,8 +483,14 @@ private suspend fun IndexedDbByteStore.readMigrationState(modelId: UInt): Migrat
     return MigrationState.requireFromPersistedBytes(bytes)
 }
 
-private suspend fun IndexedDbByteStore.writeMigrationState(modelId: UInt, state: MigrationState) {
-    put("meta", migrationStateMetadataKey(modelId), state.toPersistedBytes())
+internal fun migrationTargetMetadataKey(modelId: UInt): ByteArray =
+    "maryk.migration/target-schema:$modelId".encodeToByteArray()
+
+private suspend fun IndexedDbByteStore.writeMigrationState(modelId: UInt, state: MigrationState, identity: ByteArray) {
+    writeBatch(listOf(
+        IndexedDbWriteOperation.Put("meta", migrationStateMetadataKey(modelId), state.toPersistedBytes()),
+        IndexedDbWriteOperation.Put("meta", migrationTargetMetadataKey(modelId), identity),
+    ))
 }
 
 private fun UInt.toBigEndianBytes(): ByteArray = ByteArray(UInt.SIZE_BYTES).also { bytes ->

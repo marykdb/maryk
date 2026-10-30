@@ -2960,6 +2960,7 @@ class IndexedDbDataStoreTest {
                 CompleteMarykModel.scan(
                     where = Equals(CompleteMarykModel.string.ref() with "haas"),
                     toVersion = addStatus.version,
+                    allowTableScan = true,
                     filterSoftDeleted = false,
                 )
             )
@@ -2967,6 +2968,7 @@ class IndexedDbDataStoreTest {
                 CompleteMarykModel.scan(
                     where = Equals(CompleteMarykModel.string.ref() with "haas2"),
                     toVersion = changeStatus.version,
+                    allowTableScan = true,
                     filterSoftDeleted = false,
                 )
             )

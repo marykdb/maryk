@@ -35,6 +35,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readCurrentSnapsh
     if (snapshot.size == 17) return null
 
     val (meta, rows) = decodeCurrentSnapshot(snapshot)
+    // Released non-history soft deletes could retain table cells but omit this
+    // cached payload. Let the caller recover the authoritative table rows.
+    if (meta.isDeleted && rows.isEmpty()) return null
     val values = decodeStorageRowsToValues(
         dataModel,
         decryptSelectedStorageRows(dataModel, rows, select, decryptValue),
@@ -55,11 +58,15 @@ internal suspend fun <DM : IsRootDataModel> decodeCurrentSnapshotRecord(
     keyBytes: ByteArray,
     snapshot: ByteArray,
     select: RootPropRefGraph<DM>?,
+    allowEmptyDeletedSnapshot: Boolean = false,
     decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
 ): ValuesWithMetaData<DM>? {
     if (snapshot.size == 17) return null
 
     val (meta, rows) = decodeCurrentSnapshot(snapshot)
+    // A journal snapshot is self-contained, and a deleted record can validly
+    // have no optional fields. Table reads instead recover retained legacy cells.
+    if (!allowEmptyDeletedSnapshot && meta.isDeleted && rows.isEmpty()) return null
     val values = decodeStorageRowsToValues(
         dataModel,
         decryptSelectedStorageRows(dataModel, rows, select, decryptValue),

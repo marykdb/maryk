@@ -5,7 +5,6 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.fromChanges
 import maryk.core.models.key
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.ObjectCreate
@@ -30,6 +29,8 @@ import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.values.Values
 import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.normalizeReplicationChanges
+import maryk.datastore.shared.fromReplicationChanges
 import maryk.datastore.shared.updates.Update
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResponse(
@@ -55,15 +56,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
             storeAction.response.complete(ProcessResponse(update.version, response.await()))
         }
         is ChangeUpdate<DM> -> {
-            if (update.changes.contains(ObjectCreate)) {
+            val changes = normalizeReplicationChanges(update.changes)
+            if (changes.contains(ObjectCreate)) {
                 val response = CompletableDeferred<AddResponse<DM>>()
                 processAddRequest(
                     version = HLC(update.version),
                     storeAction = StoreAction(
-                        request = dataModel.add(update.key to dataModel.fromChanges(null, update.changes)),
+                        request = dataModel.add(update.key to dataModel.fromReplicationChanges(null, changes)),
                         response = response,
                     ),
-                    isDeleted = update.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
+                    isDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
                     ignoreIfVersionNotNewer = true,
                 )
                 storeAction.response.complete(ProcessResponse(update.version, response.await()))
@@ -72,7 +74,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                 processChangeRequest(
                     version = HLC(update.version),
                     storeAction = StoreAction(
-                        request = dataModel.change(update.key.change(*update.changes.toTypedArray())),
+                        request = dataModel.change(update.key.change(*changes.toTypedArray())),
                         response = response,
                     ),
                     ignoreIfVersionNotNewer = true,
@@ -100,15 +102,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
             val statuses = mutableListOf<IsAddOrChangeResponseStatus<DM>>()
             for (change in update.changes) {
                 for (versionedChange in change.changes) {
-                    if (versionedChange.changes.contains(ObjectCreate)) {
+                    val changes = normalizeReplicationChanges(versionedChange.changes)
+                    if (changes.contains(ObjectCreate)) {
                         val response = CompletableDeferred<AddResponse<DM>>()
                         processAddRequest(
                             version = HLC(versionedChange.version),
                             storeAction = StoreAction(
-                                request = dataModel.add(change.key to dataModel.fromChanges(null, versionedChange.changes)),
+                                request = dataModel.add(change.key to dataModel.fromReplicationChanges(null, changes)),
                                 response = response,
                             ),
-                            isDeleted = versionedChange.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
+                            isDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
                             ignoreIfVersionNotNewer = true,
                         )
                         statuses += response.await().statuses
@@ -117,7 +120,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                         processChangeRequest(
                             version = HLC(versionedChange.version),
                             storeAction = StoreAction(
-                                request = dataModel.change(change.key.change(*versionedChange.changes.toTypedArray())),
+                                request = dataModel.change(change.key.change(*changes.toTypedArray())),
                                 response = response,
                             ),
                             ignoreIfVersionNotNewer = true,

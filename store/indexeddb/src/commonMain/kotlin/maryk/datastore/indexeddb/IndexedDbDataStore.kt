@@ -97,6 +97,7 @@ import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.AtomicFailure
 import maryk.core.query.responses.AtomicFailureCode
 import maryk.core.query.responses.IsDataModelResponse
+import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
 import maryk.datastore.shared.TransactionAbort
 import maryk.datastore.shared.AtomicAbort
@@ -211,10 +212,11 @@ class IndexedDbDataStore private constructor(
         nativeByteStore.transaction(setOf("meta", CommitJournalStoreName), IndexedDbTransactionMode.READWRITE) {
             journalCursorMutex.withLock {
                 val codec = AtomicReceiptCodec(dataModelsById)
-                val fingerprint = codec.transactionFingerprint(request)
+                val fingerprints = codec.transactionFingerprints(request)
+                val fingerprint = fingerprints.current
                 val receiptKey = "maryk.transaction/".encodeToByteArray() + request.transactionId.encodeToByteArray()
-                nativeByteStore.get("meta", receiptKey)?.let { return@withLock codec.replayTransaction(it, fingerprint, request) }
-                if (request.hasMutations && !isSchemaCurrent()) {
+                nativeByteStore.get("meta", receiptKey)?.let { return@withLock codec.replayTransaction(it, fingerprints, request) }
+                if (!isSchemaCurrent()) {
                     return@withLock TransactionResponse(
                         TransactionStatus.Aborted,
                         message = StaleSchemaMessage,
@@ -349,6 +351,11 @@ class IndexedDbDataStore private constructor(
     ) { drainExternalCommits() }
 
     private suspend fun drainExternalCommitsLocked() {
+        if (!isSchemaCurrent()) {
+            val failure = StaleIndexedDbSchemaException()
+            failAllListeners(failure)
+            throw failure
+        }
         val floor = byteStore.get("meta", CommitJournalFloorMetadataKey)
         val cursor = lastJournalKey
         if (floor != null && cursor != null && floor.compareTo(cursor) > 0) {
@@ -464,6 +471,9 @@ class IndexedDbDataStore private constructor(
                                     externalCommitPending = false
                                     try {
                                         pollExternalCommits()
+                                    } catch (_: StaleIndexedDbSchemaException) {
+                                        // Listeners were failed; this instance must be reopened.
+                                        return@launch
                                     } catch (_: StorageException) {
                                         // A fresh subscription will establish a new snapshot boundary.
                                     }
@@ -489,6 +499,9 @@ class IndexedDbDataStore private constructor(
                 if (!indexedDbJournalPollingPausedForTests) {
                     try {
                         pollExternalCommits()
+                    } catch (_: StaleIndexedDbSchemaException) {
+                        // Schema invalidation is terminal for this instance's listener stream.
+                        return@launch
                     } catch (_: StorageException) {
                         // Active listeners were failed explicitly; a new subscription starts from a fresh snapshot.
                     }
@@ -617,21 +630,21 @@ class IndexedDbDataStore private constructor(
             try {
                 processStoreActions { storeAction ->
                     try {
-                        suspend fun process() {
+                        suspend fun process(action: StoreAction<*, *, *> = storeAction) {
                             @Suppress("UNCHECKED_CAST")
-                            when (storeAction.request) {
-                                is AddRequest<*> -> processAddRequest(clock, storeAction as AddStoreAction<IsRootDataModel>)
-                                is ChangeRequest<*> -> processChangeRequest(clock, storeAction as ChangeStoreAction<IsRootDataModel>)
-                                is DeleteRequest<*> -> processDeleteRequest(clock, storeAction as DeleteStoreAction<IsRootDataModel>)
-                                is GetRequest<*> -> processGetRequest(storeAction as GetStoreAction<IsRootDataModel>)
-                                is GetChangesRequest<*> -> processGetChangesRequest(storeAction as GetChangesStoreAction<IsRootDataModel>)
-                                is GetUpdatesRequest<*> -> processGetUpdatesRequest(storeAction as GetUpdatesStoreAction<IsRootDataModel>)
-                                is ScanRequest<*> -> processScanRequest(storeAction as ScanStoreAction<IsRootDataModel>)
-                                is ScanChangesRequest<*> -> processScanChangesRequest(storeAction as ScanChangesStoreAction<IsRootDataModel>)
-                                is ScanUpdateHistoryRequest<*>, is GetUpdateHistoryRequest<*> -> processScanUpdateHistoryRequest(storeAction as ScanUpdateHistoryStoreAction<IsRootDataModel>)
-                                is ScanUpdatesRequest<*> -> processScanUpdatesRequest(storeAction as ScanUpdatesStoreAction<IsRootDataModel>)
-                                is UpdateResponse<*> -> processUpdateResponse(storeAction as ProcessUpdateResponseStoreAction<IsRootDataModel>)
-                                else -> throw TypeException("Unknown request type ${storeAction.request}")
+                            when (action.request) {
+                                is AddRequest<*> -> processAddRequest(clock, action as AddStoreAction<IsRootDataModel>)
+                                is ChangeRequest<*> -> processChangeRequest(clock, action as ChangeStoreAction<IsRootDataModel>)
+                                is DeleteRequest<*> -> processDeleteRequest(clock, action as DeleteStoreAction<IsRootDataModel>)
+                                is GetRequest<*> -> processGetRequest(action as GetStoreAction<IsRootDataModel>)
+                                is GetChangesRequest<*> -> processGetChangesRequest(action as GetChangesStoreAction<IsRootDataModel>)
+                                is GetUpdatesRequest<*> -> processGetUpdatesRequest(action as GetUpdatesStoreAction<IsRootDataModel>)
+                                is ScanRequest<*> -> processScanRequest(action as ScanStoreAction<IsRootDataModel>)
+                                is ScanChangesRequest<*> -> processScanChangesRequest(action as ScanChangesStoreAction<IsRootDataModel>)
+                                is ScanUpdateHistoryRequest<*>, is GetUpdateHistoryRequest<*> -> processScanUpdateHistoryRequest(action as ScanUpdateHistoryStoreAction<IsRootDataModel>)
+                                is ScanUpdatesRequest<*> -> processScanUpdatesRequest(action as ScanUpdatesStoreAction<IsRootDataModel>)
+                                is UpdateResponse<*> -> processUpdateResponse(action as ProcessUpdateResponseStoreAction<IsRootDataModel>)
+                                else -> throw TypeException("Unknown request type ${action.request}")
                             }
                         }
 
@@ -655,7 +668,21 @@ class IndexedDbDataStore private constructor(
                                 process()
                             }
                         } else {
-                            process()
+                            // Schema transitions can run in another browser context while this
+                            // multi-read request suspends. Do not publish values decoded across it.
+                            if (!isSchemaCurrent()) throw RequestException(StaleSchemaMessage)
+                            val response = CompletableDeferred<IsResponse>()
+                            @Suppress("UNCHECKED_CAST")
+                            val readAction = StoreAction(
+                                storeAction.request as IsStoreRequest<IsRootDataModel, IsResponse>, response,
+                                storeAction.onBeforeReadContext, storeAction.onFlowSnapshotBoundary,
+                                storeAction.executionContext,
+                            )
+                            process(readAction)
+                            val result = response.await()
+                            if (!isSchemaCurrent()) throw RequestException(StaleSchemaMessage)
+                            @Suppress("UNCHECKED_CAST")
+                            (storeAction.response as CompletableDeferred<IsResponse>).complete(result)
                         }
                     } catch (e: CancellationException) {
                         if (currentCoroutineContext().isActive) {
@@ -969,6 +996,8 @@ class IndexedDbDataStore private constructor(
 
 private const val SensitiveChangeLogMigrationBatchSize = 256
 private const val StaleSchemaMessage = "IndexedDB schema changed or a migration is pending; reopen this datastore with the current models before writing"
+
+private class StaleIndexedDbSchemaException : RequestException(StaleSchemaMessage)
 private val SensitiveChangeLogMigrationMetadataPrefix = "sensitive-change-log-v1:".encodeToByteArray()
 
 private fun sensitiveChangeLogMigrationMarker(modelId: UInt, storeGroup: String): ByteArray =

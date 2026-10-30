@@ -3,12 +3,12 @@ package maryk.datastore.indexeddb.processors
 import maryk.core.aggregations.Aggregator
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.fromChanges
 import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.UpdatesResponse
@@ -20,6 +20,8 @@ import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.indexeddb.getBatch
 import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.shared.checkToVersion
+import maryk.datastore.shared.fromReplicationChanges
+import maryk.datastore.shared.normalizeReplicationChanges
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetRequest(
     storeAction: GetStoreAction<DM>,
@@ -201,8 +203,11 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetUpdates
                     version = versionedChange.version,
                     firstVersion = historicRecord?.firstVersion ?: versionedChange.version,
                     insertionIndex = keys.lastIndex,
-                    isDeleted = historicRecord?.isDeleted ?: false,
-                    values = historicRecord?.values ?: request.dataModel.fromChanges(null, versionedChange.changes),
+                    isDeleted = historicRecord?.isDeleted
+                        ?: (versionedChange.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false),
+                    values = historicRecord?.values ?: request.dataModel.fromReplicationChanges(
+                        null, normalizeReplicationChanges(versionedChange.changes),
+                    ),
                 )
             } else {
                 updates += ChangeUpdate(

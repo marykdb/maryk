@@ -17,8 +17,14 @@ import maryk.core.properties.definitions.index.stringIndexTransform
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.IsPropertyReferenceForCache
-import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.MapAnyKeyReference
+import maryk.core.properties.references.MapKeyReference
+import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.SetAnyValueReference
+import maryk.core.properties.references.SetItemReference
+import maryk.core.properties.references.SimpleTypedValueReference
+import maryk.core.properties.references.TypedValueReference
+import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.Key
 import maryk.core.query.ValueRange
 import maryk.core.query.ValuesWithMetaData
@@ -45,15 +51,23 @@ import maryk.core.properties.types.distanceTo
 import maryk.core.properties.types.isWithinBox
 import maryk.core.properties.types.isWithinPolygon
 import maryk.core.query.filters.matchesFilter
+import maryk.core.query.filters.matchesFilterWithPresence
 import maryk.core.values.Values
 import maryk.datastore.indexeddb.IndexedDbByteStore
 import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.indexeddb.createObjectRowKeyPrefix
-import maryk.datastore.indexeddb.decodeStorageValue
 import maryk.datastore.indexeddb.readCurrentValues
 import maryk.datastore.indexeddb.readRecord
 import maryk.datastore.indexeddb.tableQualifierFromRowKey
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.hasStoredReferenceValue
+import maryk.datastore.shared.hasStoredValuePayload
+import maryk.datastore.shared.helpers.convertToValueOrNull
+import maryk.datastore.shared.readStoredReferenceValue
+import maryk.datastore.shared.requiresStorageParentMarker
+import maryk.datastore.shared.requiresStoredReferenceStructure
+import maryk.datastore.shared.storageReferenceParents
+import maryk.datastore.shared.storedTypeIndex
 import maryk.lib.extensions.compare.matchesRangePart
 
 internal suspend fun IndexedDbDataStore.scanTableRows(
@@ -204,21 +218,27 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.valuesMatchFilter
 ): Boolean {
     if (filter == null) return true
     if (!filter.hasReferencedQualifier()) {
-        if (normalizingIndex == null) return values.matches(filter)
-        return matchesFilter(
+        return matchesFilterWithPresence(
             filter,
             valueMatcher = { propertyReference, valueMatcher ->
                 @Suppress("UNCHECKED_CAST")
                 val value = values[propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>]
 
-                if (value is List<*> && propertyReference !is ListReference<*, *>) {
+                if (value is List<*> && propertyReference.toQualifierMatcher() is QualifierFuzzyMatcher) {
                     value.any { valueMatcher(it) }
                 } else {
                     valueMatcher(value)
                 }
             },
+            presenceMatcher = { propertyReference ->
+                @Suppress("UNCHECKED_CAST")
+                val value = values[propertyReference as IsPropertyReference<Any, *, *>]
+                if (value is List<*> && propertyReference.toQualifierMatcher() is QualifierFuzzyMatcher) {
+                    value.any { it != null }
+                } else value != null
+            },
             normalizer = { propertyReference, value ->
-                val transform = normalizingIndex.stringIndexTransform(propertyReference) ?: return@matchesFilter value
+                val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilterWithPresence value
                 when (value) {
                     is String -> transform.apply(value)
                     else -> value
@@ -268,9 +288,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.valuesMatchRefere
     FilterType.Exists -> (filter as Exists).references.all { reference ->
         matchPropertyReference(dataModel, values, reference, toVersion) { it != null }
     }
-    FilterType.Equals -> (filter as Equals).referenceValuePairs.all { (reference, value) ->
-        matchPropertyReference(dataModel, values, reference, toVersion) { actual ->
-            valuesEqual(actual, value)
+    FilterType.Equals -> (filter as Equals).referenceValuePairs.all { pair ->
+        matchPropertyReference(dataModel, values, pair.reference, toVersion) { actual ->
+            matchesFilter(Equals(pair), valueMatcher = { _, matcher -> matcher(actual) })
         }
     }
     FilterType.LessThan -> (filter as LessThan).referenceValuePairs.all { (reference, value) ->
@@ -322,9 +342,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.valuesMatchRefere
             }
         }
     }
-    FilterType.ValueIn -> (filter as ValueIn).referenceValuePairs.all { (reference, expectedValues) ->
-        matchPropertyReference(dataModel, values, reference, toVersion) { actual ->
-            actual != null && expectedValues.any { valuesEqual(actual, it) }
+    FilterType.ValueIn -> (filter as ValueIn).referenceValuePairs.all { pair ->
+        matchPropertyReference(dataModel, values, pair.reference, toVersion) { actual ->
+            matchesFilter(ValueIn(pair), valueMatcher = { _, matcher -> matcher(actual) })
         }
     }
     FilterType.GeoWithinBox -> (filter as GeoWithinBox).let { geoFilter ->
@@ -368,7 +388,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.matchPropertyRefe
     @Suppress("UNCHECKED_CAST")
     val value = values[propertyReference as IsPropertyReference<Any, *, *>]
 
-    return if (value is List<*> && propertyReference !is ListReference<*, *>) {
+    return if (value is List<*> && qualifierMatcher is QualifierFuzzyMatcher) {
         value.any { valueMatcher(it) }
     } else {
         valueMatcher(value)
@@ -409,7 +429,8 @@ internal suspend fun IndexedDbDataStore.readStorageRows(
 
     val snapshot = byteStore.get("k:$modelId", keyBytes)
     if (snapshot != null && snapshot.size > 17) {
-        return decodeCurrentSnapshot(snapshot).second
+        val (meta, rows) = decodeCurrentSnapshot(snapshot)
+        if (!meta.isDeleted || rows.isNotEmpty()) return rows
     }
 
     return byteStore.scanObjectScopedRows("t:$modelId", keyBytes).map { (rowKey, rowValue) ->
@@ -425,7 +446,49 @@ internal suspend fun IndexedDbDataStore.matchQualifierOnRows(
     valueMatcher: (Any?) -> Boolean,
 ): Boolean {
     val reference = qualifierMatcher.referenceForMatch() ?: return false
-    val referenceForCache = reference as? IsPropertyReferenceForCache<*, *> ?: return false
+    val model = dataModelsById.getValue(modelId)
+
+    suspend fun decrypted(qualifier: ByteArray, bytes: ByteArray): ByteArray =
+        sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, bytes)
+
+    suspend fun activeType(actualReference: AnyPropertyReference): Boolean {
+        for (part in (listOf(actualReference) + storageReferenceParents(actualReference)).asReversed()) {
+            val expected = when (part) {
+                is TypedValueReference<*, *, *> -> part.type.index
+                is SimpleTypedValueReference<*, *, *> -> part.type.index
+                else -> continue
+            }
+            val parent = when (part) {
+                is TypedValueReference<*, *, *> -> part.parentReference
+                is SimpleTypedValueReference<*, *, *> -> part.parentReference
+                else -> null
+            } ?: return false
+            val qualifier = parent.toStorageByteArray()
+            val bytes = rows.firstOrNull { it.first.contentEquals(qualifier) }?.second ?: return false
+            if (storedTypeIndex(decrypted(qualifier, bytes)) != expected) return false
+        }
+        return true
+    }
+
+    suspend fun structure(actualReference: AnyPropertyReference): Any? {
+        val qualifier = actualReference.toStorageByteArray()
+        val raw = rows.firstOrNull { it.first.contentEquals(qualifier) }?.second ?: return null
+        val selected = mutableListOf<Pair<ByteArray, ByteArray>>()
+        val value = decrypted(qualifier, raw)
+        if (!hasStoredReferenceValue(actualReference, value, 0, value.size)) return null
+        for (parent in storageReferenceParents(actualReference)) {
+            val parentQualifier = parent.toStorageByteArray()
+            val parentRaw = rows.firstOrNull { it.first.contentEquals(parentQualifier) }?.second
+            val parentValue = parentRaw?.let { decrypted(parentQualifier, it) }
+            if (parentValue != null && hasStoredReferenceValue(parent, parentValue, 0, parentValue.size)) {
+                selected += parentQualifier to parentValue
+            } else if (requiresStorageParentMarker(parent)) return null
+        }
+        for ((childQualifier, childValue) in rows) {
+            if (childQualifier.matchesRangePart(0, qualifier)) selected += childQualifier to decrypted(childQualifier, childValue)
+        }
+        return model.readStoredReferenceValue(actualReference, selected)
+    }
 
     for ((qualifier, valueBytes) in rows) {
         val matched = when (qualifierMatcher) {
@@ -433,15 +496,20 @@ internal suspend fun IndexedDbDataStore.matchQualifierOnRows(
             is QualifierFuzzyMatcher -> qualifierMatcher.isMatch(qualifier, 0) == MATCH
         }
         if (!matched) continue
-
-        if (valueMatcher(decodeStorageValue(referenceForCache, sensitiveFields.decryptValueIfNeeded(
-                modelId,
-                keyBytes,
-                qualifier,
-                valueBytes,
-            )))) {
-            return true
+        var index = 0
+        val actualReference = if (reference is SimpleTypedValueReference<*, *, *> || reference is TypeReference<*, *, *>) reference else
+            model.getPropertyReferenceByStorageBytes(qualifier.size, { qualifier[index++] })
+        if (!activeType(actualReference) || !hasStoredValuePayload(actualReference.comparablePropertyDefinition, valueBytes, 0, valueBytes.size)) continue
+        val value = when {
+            (reference is MapAnyKeyReference<*, *, *> || reference is MapKeyReference<*, *, *>) && actualReference is MapValueReference<*, *, *> -> actualReference.key
+            reference is SetAnyValueReference<*, *> && actualReference is SetItemReference<*, *> -> actualReference.value
+            requiresStoredReferenceStructure(actualReference) -> structure(actualReference)
+            else -> {
+                @Suppress("UNCHECKED_CAST")
+                decrypted(qualifier, valueBytes).convertToValueOrNull(reference as IsPropertyReference<Any, *, *>)
+            }
         }
+        if (valueMatcher(value)) return true
     }
     return false
 }

@@ -1,7 +1,7 @@
 package maryk.datastore.indexeddb.processors
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.migration.readLegacyValueStorage
+import maryk.core.models.migration.readLegacyTransportStorage
 import maryk.core.exceptions.StorageException
 import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -44,7 +44,7 @@ internal fun <DM : IsRootDataModel> decodeVersionedChange(
     var index = 0
     @Suppress("UNCHECKED_CAST")
     val read = { DataObjectVersionedChange.Serializer.readProtoBuf(bytes.size, { bytes[index++] }, requestContext).toDataObject() as DataObjectVersionedChange<DM> }
-    return if (legacyValueStorage) requestContext.readLegacyValueStorage(read) else read()
+    return if (legacyValueStorage) requestContext.readLegacyTransportStorage(read) else read()
 }
 
 /** Stored log rows represent exactly one revision of their key and version. */

@@ -1,6 +1,7 @@
 package maryk.datastore.indexeddb.processors
 
 import maryk.core.exceptions.RequestException
+import maryk.core.extensions.bytes.toByteArray
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -60,6 +61,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
         request.dataModel.createScanRange(request.where, null, request.includeStart)
     }
     val scanType = request.dataModel.orderToScanType(request.order, keyScanRange.equalPairs)
+    if (!request.filterSoftDeleted && scanType is IndexScan) {
+        throw RequestException("Scans including soft-deleted records require primary-key ordering; secondary-index ordering is not supported")
+    }
 
     val includeHardDeletes = keepUpdateHistoryIndex &&
         request.fromVersion > 0uL &&
@@ -119,7 +123,12 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
     val updates = mutableListOf<IsUpdateResponse<DM>>()
     val matchingKeys = rows.map { it.key }
     val matchingKeyIndices = matchingKeys.withIndex().associate { it.value to it.index }
-    val orderedKeysUpdate = OrderedKeysUpdate(matchingKeys, highestVersion, selectedScanRows.sortingKeys)
+    val orderedKeysUpdate = OrderedKeysUpdate(
+        matchingKeys,
+        highestVersion,
+        if (usesUpdateHistoryIndex) rows.map { Bytes(it.lastVersion.toByteArray()) }
+        else selectedScanRows.sortingKeys,
+    )
     rows.forEachIndexed { index, record ->
         val versionedChanges = byteStore.readChangeLog(
             dataModel = request.dataModel,
@@ -212,6 +221,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectTableScanU
     tableScan: TableScan,
     limit: UInt = request.limit,
 ): ScanUpdateRows<DM> {
+    val readSelect = if (request.where == null) request.select else null
     val direction = tableScan.direction
     val rows = mutableListOf<ValuesWithMetaData<DM>>()
     val ranges = if (direction == ASC) keyScanRange.ranges else keyScanRange.ranges.asReversed()
@@ -237,18 +247,18 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectTableScanU
                     request.dataModel,
                     keyBytes,
                     snapshotBytes,
-                    request.select,
-                    { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
+                    readSelect,
+                    decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
                 )
-                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
+                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
             } else {
-                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, request.select)
+                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
             }
                 ?: return@scanInBatches true
             if (request.filterSoftDeleted && record.isDeleted) return@scanInBatches true
             if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)) return@scanInBatches true
 
-            rows += record
+            rows += record.copy(values = record.values.filterWithSelect(request.select))
             rows.size.toUInt() < limit
         }
         if (rows.size.toUInt() == limit) break@rangeLoop
@@ -272,6 +282,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectIndexScanU
     indexScan: IndexScan,
     limit: UInt = request.limit,
 ): ScanUpdateRows<DM> {
+    val readSelect = if (request.where == null) request.select else null
     val rows = ArrayList<ValuesWithMetaData<DM>>(request.limit.toInt().coerceAtLeast(4))
     val sortingKeys = ArrayList<Bytes>(request.limit.toInt().coerceAtLeast(4))
     val seenKeys = mutableSetOf<String>()
@@ -383,16 +394,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectIndexScanU
 
             val toVersion = request.toVersion
             val record = if (toVersion != null) {
-                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, request.select)
+                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
             } else {
-                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, request.select)
-                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
+                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, readSelect)
+                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
             }
                 ?: return true
             if (request.filterSoftDeleted && record.isDeleted) return true
             if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion, indexScan.index)) return true
 
-            rows += record
+            rows += record.copy(values = record.values.filterWithSelect(request.select))
             sortingKeys += Bytes(valueAndKey)
             return true
         }
@@ -439,6 +450,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectUpdateHist
     keyScanRange: KeyScanRanges,
     limit: UInt = request.limit,
 ): ScanUpdateRows<DM> {
+    val readSelect = if (request.where == null) request.select else null
     val rows = mutableListOf<ValuesWithMetaData<DM>>()
     val toVersion = request.toVersion
     byteStore.scanInBatches(storeName = keyStoreName, targetLimit = UInt.MAX_VALUE) { keyBytes, snapshotBytes ->
@@ -448,15 +460,15 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectUpdateHist
                 request.dataModel,
                 keyBytes,
                 snapshotBytes,
-                request.select,
-                { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
-            ) ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
+                readSelect,
+                decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
+            ) ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
         } else {
-            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, request.select)
+            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
         } ?: return@scanInBatches true
         if (request.filterSoftDeleted && record.isDeleted) return@scanInBatches true
         if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)) return@scanInBatches true
-        rows += record
+        rows += record.copy(values = record.values.filterWithSelect(request.select))
         true
     }
     rows.sortWith { first, second ->

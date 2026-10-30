@@ -1,5 +1,6 @@
 package maryk.datastore.indexeddb.processors
 
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.exceptions.AlreadyExistsException
@@ -9,6 +10,7 @@ import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.types.numeric.NumberType
+import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.IncMapAddition
@@ -20,36 +22,63 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.values.Values
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.IncrementingMapMaximum
 
 
 
 internal fun <DM : IsRootDataModel> materializeChanges(
     changes: List<IsChange>,
     currentValues: Values<DM>,
+    persistedMaxima: Map<Bytes, Comparable<Any>> = emptyMap(),
 ) : MaterializedChanges {
     val appliedChanges = mutableListOf<IsChange>()
     val generatedChanges = mutableListOf<IsChange>()
     val latestGeneratedKeyByReference = mutableMapOf<Any, Comparable<Any>>()
+    var stagedValues = currentValues
+    val observedMaxima = mutableMapOf<Bytes, IncrementingMapMaximum>()
+
+    fun observe(values: Values<DM>) {
+        for (maximum in collectIncrementingMapMaxima(values)) {
+            val identity = Bytes(maximum.reference.toStorageByteArray())
+            if (observedMaxima[identity]?.key?.let { it >= maximum.key } != true) observedMaxima[identity] = maximum
+        }
+    }
+    observe(currentValues)
 
     for (change in changes) {
         if (change !is IncMapChange) {
             appliedChanges += change
+            if (change !is Check) {
+                stagedValues = seedMissingRootMaps(stagedValues, listOf(change)).change(change)
+                observe(stagedValues)
+            }
             continue
         }
 
         val additions = change.valueChanges.mapNotNull { valueChange ->
             val addValues = valueChange.addValues ?: return@mapNotNull null
             if (addValues.isEmpty()) return@mapNotNull null
+            if (valueChange.reference.propertyDefinition.definition.keyNumberDescriptor.type in
+                setOf(NumberType.Float32Type, NumberType.Float64Type)) {
+                throw RequestException("Automatic incrementing-map allocation requires an integer key descriptor")
+            }
 
-            val currentMap = currentValues[valueChange.reference].orEmptyComparableMap()
-            val currentMaxKey = latestGeneratedKeyByReference[valueChange.reference]
-                ?: currentMap.keys.maxOrNull()
+            val currentMap = stagedValues[valueChange.reference].orEmptyComparableMap()
+            val referenceIdentity = Bytes(valueChange.reference.toStorageByteArray())
+            val currentMaxKey = listOfNotNull(
+                latestGeneratedKeyByReference[valueChange.reference],
+                currentMap.keys.maxOrNull(),
+                persistedMaxima[referenceIdentity],
+                observedMaxima[referenceIdentity]?.key,
+            ).maxOrNull()
                 ?: zeroComparableKeyFor(valueChange.reference)
             val nextKeys = ArrayList<Comparable<Any>>(addValues.size)
             var nextKey = currentMaxKey
 
             repeat(addValues.size) {
-                nextKey = nextComparableKey(nextKey)
+                val previous = nextKey
+                nextKey = nextComparableKey(valueChange.reference, previous)
+                if (nextKey <= previous) throw RequestException("Incrementing map key space is exhausted")
                 nextKeys += nextKey
             }
             latestGeneratedKeyByReference[valueChange.reference] = nextKey
@@ -66,12 +95,15 @@ internal fun <DM : IsRootDataModel> materializeChanges(
             val addition = IncMapAddition(additions)
             appliedChanges += addition
             generatedChanges += addition
+            stagedValues = stagedValues.change(addition)
+            observe(stagedValues)
         }
     }
 
     return MaterializedChanges(
         appliedChanges = appliedChanges,
         generatedChanges = generatedChanges,
+        incrementingMapMaxima = observedMaxima.values.toList(),
     )
 }
 
@@ -134,24 +166,27 @@ internal fun zeroComparableKeyFor(
     NumberType.UInt16Type -> 0.toUShort()
     NumberType.UInt32Type -> 0u
     NumberType.UInt64Type -> 0uL
-    NumberType.SInt8Type -> 0.toByte()
-    NumberType.SInt16Type -> 0.toShort()
-    NumberType.SInt32Type -> 0
-    NumberType.SInt64Type -> 0L
-    else -> error("Unsupported incrementing map key type ${reference.propertyDefinition.definition.keyNumberDescriptor.type}")
+    NumberType.SInt8Type -> Byte.MIN_VALUE
+    NumberType.SInt16Type -> Short.MIN_VALUE
+    NumberType.SInt32Type -> Int.MIN_VALUE
+    NumberType.SInt64Type -> Long.MIN_VALUE
+    else -> throw RequestException("Automatic incrementing-map allocation requires an integer key descriptor")
 } as Comparable<Any>
 
 @Suppress("UNCHECKED_CAST")
-internal fun nextComparableKey(value: Comparable<Any>): Comparable<Any> = when (value) {
-    is UByte -> (value + 1u).toUByte()
-    is UShort -> (value + 1u).toUShort()
-    is UInt -> value + 1u
-    is ULong -> value + 1u
-    is Byte -> (value + 1).toByte()
-    is Short -> (value + 1).toShort()
-    is Int -> value + 1
-    is Long -> value + 1
-    else -> error("Unsupported incrementing map key type ${value::class}")
+internal fun nextComparableKey(
+    reference: IncMapReference<out Comparable<Any>, out Any, *>,
+    value: Comparable<Any>,
+): Comparable<Any> = when (reference.propertyDefinition.definition.keyNumberDescriptor.type) {
+    NumberType.UInt8Type -> ((value as UByte) + 1u).toUByte()
+    NumberType.UInt16Type -> ((value as UShort) + 1u).toUShort()
+    NumberType.UInt32Type -> (value as UInt) + 1u
+    NumberType.UInt64Type -> (value as ULong) + 1uL
+    NumberType.SInt8Type -> ((value as Byte) + 1).toByte()
+    NumberType.SInt16Type -> ((value as Short) + 1).toShort()
+    NumberType.SInt32Type -> (value as Int) + 1
+    NumberType.SInt64Type -> (value as Long) + 1L
+    else -> throw RequestException("Automatic incrementing-map allocation requires an integer key descriptor")
 } as Comparable<Any>
 
 @Suppress("UNCHECKED_CAST")

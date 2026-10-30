@@ -27,6 +27,7 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
+import maryk.datastore.shared.checkTableScanAllowed
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 import maryk.lib.extensions.compare.compareTo
@@ -62,6 +63,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
     val uniqueStoreName = "u:$modelId"
     val historicTableStoreName = "ht:$modelId"
     val historicUniqueStoreName = "hu:$modelId"
+    val requestedScanType = request.dataModel.orderToScanType(request.order, keyScanRange.equalPairs)
+    if (!request.filterSoftDeleted && requestedScanType is IndexScan) {
+        throw RequestException("Scans including soft-deleted records require primary-key ordering; secondary-index ordering is not supported")
+    }
     val aggregator = request.aggregations?.let(::Aggregator)
     val values = ArrayList<ValuesWithMetaData<DM>>(request.limit.toInt().coerceAtLeast(4))
 
@@ -104,7 +109,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
         return
     }
 
-    keyScanRange.uniques?.firstOrNull()?.let { uniqueToMatch ->
+    keyScanRange.uniques?.takeIf { request.filterSoftDeleted }?.firstOrNull()?.let { uniqueToMatch ->
         if (continuation != null) {
             storeAction.response.complete(
                 ValuesResponse(
@@ -169,9 +174,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
         return
     }
 
-    val requestedScanType = request.dataModel.orderToScanType(request.order, keyScanRange.equalPairs)
     val scanType = if (requestedScanType is TableScan) {
-        request.dataModel.optimizeTableScan(
+        if (!request.filterSoftDeleted) request.dataModel.checkTableScanAllowed(
+            requestedScanType, keyScanRange, request.allowTableScan,
+        ) else request.dataModel.optimizeTableScan(
             requestedScanType,
             keyScanRange,
             filter = request.where,
@@ -233,7 +239,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
                             keyBytes,
                             snapshotBytes,
                             readSelect,
-                            { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
+                            decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
                         )
                             ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
                     }
@@ -279,7 +285,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
                             keyBytes,
                             snapshotBytes,
                             readSelect,
-                            { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
+                            decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
                         )
                             ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
                     }

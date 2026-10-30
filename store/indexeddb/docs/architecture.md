@@ -90,3 +90,8 @@ IndexedDB follows the same Maryk request semantics as RocksDB/FoundationDB where
 - historic reads use stored snapshots and historic secondary rows;
 - update-history scans use an inverted version index when enabled;
 - live flow listener state remains in memory, as in the other stores, while initial/refill reads come from IndexedDB.
+
+Projected update scans evaluate filters against the full current or requested
+historic record before applying the returned selection. This rule applies to
+primary-key, secondary-index and newest-first history scans, so selecting fewer
+fields does not change which records match.

@@ -86,15 +86,6 @@ internal fun IsFilter.hasReferencedQualifier(): Boolean = when (filterType) {
     FilterType.MatchesRegEx -> false
 }
 
-internal fun valuesEqual(actual: Any?, expected: Any?): Boolean = when {
-    actual is Collection<*> && expected is Collection<*> -> expected.all { expectedValue ->
-        actual.any { it == expectedValue }
-    }
-    actual is Collection<*> -> actual.any { it == expected }
-    expected is Collection<*> -> expected.any { it == actual }
-    else -> actual == expected
-}
-
 internal fun <DM : IsRootDataModel> ValuesWithMetaData<DM>.toCreationChanges(
     fromVersion: ULong,
     toVersion: ULong?,

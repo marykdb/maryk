@@ -94,7 +94,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
                 return@transaction
             }
 
-            val oldTableRows = if (keepAllVersions && !request.hardDelete) {
+            val oldTableRows = if (!request.hardDelete) {
                 scanTableRows(tableStoreName, key.bytes)
             } else {
                 emptyList()
@@ -121,6 +121,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
             }
 
             if (request.hardDelete) {
+                deleteIncrementingMapWatermarks(byteStore, operations, modelId, key.bytes)
                 operations.put(hardDeleteStoreName, key.bytes, version.timestamp.toBigEndianBytes())
                 operations.delete(keyStoreName, key.bytes)
                 for ((rowKey, _) in scanTableRows(tableStoreName, key.bytes)) {

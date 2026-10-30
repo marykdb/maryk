@@ -231,22 +231,21 @@ internal suspend fun decodeCommitJournalEntry(
     val objectKey = dataModel.key(value.copyOfRange(JournalHeaderSize, keyEnd))
     val payload = value.copyOfRange(keyEnd, value.size)
     return when (type) {
-        AdditionJournalEntry -> Update.Addition(
-            dataModel,
-            objectKey,
-            version,
-            requireNotNull(
+        AdditionJournalEntry -> {
+            val snapshot = requireNotNull(
                 decodeCurrentSnapshotRecord(
                     dataModel,
                     objectKey.bytes,
                     payload,
                     select = null,
+                    allowEmptyDeletedSnapshot = true,
                     decryptValue = { qualifier, encoded ->
                         sensitiveFields.decryptValueIfNeeded(modelId, objectKey.bytes, qualifier, encoded)
                     },
                 )
-            ) { "Invalid IndexedDB addition journal snapshot" }.values,
-        )
+            ) { "Invalid IndexedDB addition journal snapshot" }
+            Update.Addition(dataModel, objectKey, version, snapshot.values, snapshot.isDeleted)
+        }
         ChangeJournalEntry -> Update.Change(
             dataModel,
             objectKey,

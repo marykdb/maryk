@@ -1,0 +1,71 @@
+package maryk.datastore.indexeddb
+
+import kotlinx.coroutines.test.runTest
+import maryk.datastore.shared.IsDataStore
+import maryk.datastore.test.LaggedSnapshotRecord
+import maryk.datastore.test.assertLaggedRefillPosition
+import maryk.datastore.test.assertSameKeyRefillPreservesChanges
+import maryk.datastore.test.assertLaggedSnapshotFlowMatrix
+import maryk.datastore.test.assertLaggedUpdateHistorySnapshotOrder
+import maryk.datastore.test.assertUpdateHistoryRevisionTies
+import maryk.datastore.test.assertUpdateHistoryRefillUsesCurrentSnapshot
+import kotlin.test.Test
+import kotlin.random.Random
+
+class LaggedSnapshotFlowTest {
+    private suspend fun withStore(history: Boolean, block: suspend (IsDataStore) -> Unit) {
+        installIndexedDbForTests()
+        val store = IndexedDbDataStore.open(
+            "lagged-snapshot-$history-${Random.nextInt()}",
+            mapOf(1u to LaggedSnapshotRecord), keepAllVersions = history, keepUpdateHistoryIndex = history,
+        )
+        try {
+            block(store)
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
+    fun snapshotsDoNotReplayAlreadyIncludedDeltas() = runTest() {
+        for (history in listOf(false, true)) withStore(history, ::assertLaggedSnapshotFlowMatrix)
+    }
+
+    @Test
+    fun historySnapshotsRetainActualVersionOrder() = runTest() {
+        for (projected in listOf(false, true)) withStore(true) {
+            assertLaggedUpdateHistorySnapshotOrder(it, projected)
+        }
+    }
+
+    @Test
+    fun historyRefillUsesCurrentValuesAndVersion() = runTest() {
+        for (projected in listOf(false, true)) withStore(true) {
+            assertUpdateHistoryRefillUsesCurrentSnapshot(it, projected)
+        }
+    }
+
+    @Test
+    fun refillPreservesCandidateOrder() = runTest() {
+        for (history in listOf(false, true)) for (indexed in listOf(false, true)) for (projected in listOf(false, true)) {
+            withStore(history) { assertLaggedRefillPosition(it, indexed, projected) }
+        }
+    }
+
+    @Test
+    fun batchRevisionTiesHaveStableHistoryOrder() = runTest() {
+        for (descendingInput in listOf(false, true)) for (projected in listOf(false, true)) for (limit in listOf(1u, 2u)) {
+            withStore(true) { assertUpdateHistoryRevisionTies(it, descendingInput, projected, limit) }
+        }
+    }
+    @Test
+    fun sameKeyRefillPreservesInterveningChanges() = runTest() {
+        for (history in listOf(false, true)) for (indexed in listOf(false, true)) for (projected in listOf(false, true)) {
+            withStore(history) { assertSameKeyRefillPreservesChanges(it, indexed, false, projected) }
+        }
+        for (projected in listOf(false, true)) {
+            withStore(true) { assertSameKeyRefillPreservesChanges(it, false, true, projected) }
+        }
+    }
+
+}

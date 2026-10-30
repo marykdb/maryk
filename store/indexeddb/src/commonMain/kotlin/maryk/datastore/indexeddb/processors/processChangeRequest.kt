@@ -4,6 +4,8 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
+import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
+import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -13,6 +15,7 @@ import maryk.core.query.changes.Check
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexDelete
 import maryk.core.query.changes.IndexUpdate
+import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
 import maryk.core.query.requests.add
@@ -24,6 +27,7 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.values.Values
 import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.indexeddb.IndexedDbRecordMeta
 import maryk.datastore.indexeddb.IndexedDbTransactionMode
@@ -32,6 +36,7 @@ import maryk.datastore.indexeddb.createTableRowKey
 import maryk.datastore.indexeddb.decodeStorageRowsToValues
 import maryk.datastore.indexeddb.decodeRecordMeta
 import maryk.datastore.indexeddb.encodeChangeJournalPayload
+import maryk.datastore.indexeddb.encodeStorageValue
 import maryk.datastore.indexeddb.tableQualifierFromRowKey
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.diffIndexValues
@@ -120,7 +125,15 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                         return@transaction
                     }
 
-                val materializedChanges = materializeChanges(objectChange.changes, currentValues)
+                val persistedMaxima = mutableMapOf<Bytes, Comparable<Any>>()
+                for (change in objectChange.changes.filterIsInstance<IncMapChange>()) {
+                    for (valueChange in change.valueChanges) {
+                        readIncrementingMapMaximum(byteStore, modelId, keyBytes, valueChange.reference)?.let {
+                            persistedMaxima[Bytes(valueChange.reference.toStorageByteArray())] = it
+                        }
+                    }
+                }
+                val materializedChanges = materializeChanges(objectChange.changes, currentValues, persistedMaxima)
                 val checkExceptions = evaluateChecks(materializedChanges.appliedChanges, currentValues)
                 if (checkExceptions.isNotEmpty()) {
                     statuses += ValidationFail(checkExceptions)
@@ -136,8 +149,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 if (!targetIsDeleted) {
                     changedValues.validate()
                 }
+                val watermarkWrites = prepareIncrementingMapWatermarks(byteStore, modelId, keyBytes,
+                    materializedChanges.incrementingMapMaxima, collectIncrementingMapMaxima(currentValues))
 
-                if (changedValues == currentValues && targetIsDeleted == currentMeta.isDeleted) {
+                if (!watermarkWrites.advanced && targetIsDeleted == currentMeta.isDeleted && haveSameStorageValues(changedValues, currentValues)) {
                     if (ignoreIfVersionNotNewer) {
                         val operations = mutableListOf<IndexedDbWriteOperation>()
                         val currentRows = encodedCurrentRows?.map { (qualifier, value) -> createTableRowKey(keyBytes, qualifier) to value }
@@ -211,7 +226,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                         }
                     }
                 }
-                val operations = mutableListOf<IndexedDbWriteOperation>()
+                val operations = watermarkWrites.operations.toMutableList()
                 val activeIndexRows = if (targetIsDeleted) emptyList() else storagePlan.indexRows
                 val (removedIndexRows, addedIndexRows) = diffIndexValues(if (currentMeta.isDeleted) emptyList() else oldIndexRows, activeIndexRows)
                 removedIndexRows.forEach { operations.delete(indexStoreName, it) }
@@ -309,4 +324,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
             statuses = statuses
         )
     )
+}
+
+/** Compare ordinary encoded cells before encryption, retaining raw floating-point identities. */
+private fun <DM : IsRootDataModel> haveSameStorageValues(left: Values<DM>, right: Values<DM>): Boolean {
+    fun rows(values: Values<DM>) = buildMap {
+        values.writeToStorage { type, qualifier, definition, value ->
+            if (type != ObjectDelete) {
+                put(Bytes(qualifier), Bytes(encodeStorageValue(type, definition, value)))
+            }
+        }
+    }
+    return rows(left) == rows(right)
 }

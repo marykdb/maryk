@@ -5,6 +5,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.js.js
 
+internal actual fun supportsDistinctNaNPayloadsForTests(): Boolean = false
+
 internal actual suspend fun installIndexedDbForTests() {
     installFakeIndexedDb()
 }

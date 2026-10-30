@@ -83,6 +83,34 @@ Sensitive current and historic table values are encrypted before being written. 
 
 Sensitive indexed properties are rejected. Use an explicit blind-index field instead.
 
+## Incrementing-map lifetime metadata and opening recovery
+
+Allocation maxima live in `meta` below `maryk.incmap/<modelId>/`, followed by the
+length-prefixed record key and canonical incrementing-map qualifier. The value is
+the key definition's ordinary encoded maximum. Replacements and removed ancestors
+retain this lifetime maximum; hard deletion clears it. A separate
+`maryk.incmap.verified/<modelId>/` record attests complete recovery of a released
+record's allocations and is also cleared on hard deletion.
+
+The released unversioned layout upgrades directly to storage format 2 in the
+unreleased 0.14 transition. It physically removed deleted table rows and rebuilt
+complete snapshots, so retained collection count `[0]` proves a present empty
+collection. Those ordinary bytes are preserved. All collection-bearing schemas
+are inventoried even when they have no floating-point properties.
+
+Released incrementing-map maxima already erased by replacements or removals
+cannot be inferred from current values. Creation-only records require no history.
+Edited records require retained complete snapshots or an externally verified
+recovery of every allocation maximum, including removed map instances. Historic
+qualifiers seed watermarks before source rows move; interrupted retries never
+lower them. Creation and latest snapshot frontiers validate the retained bounds,
+but cannot prove that no intermediate snapshots were erased. History must have
+been enabled continuously and never pruned. Otherwise recover from an authoritative
+application log or backup. Opening fails with the model and record identity if
+the evidence is insufficient; writing a recovery attestation alone is not a repair.
+Application migrations must remap lifetime metadata when changing record keys,
+incrementing-map qualifiers or their key definitions.
+
 ## Cross-context commit journal
 
 Commit journal keys contain eight committed-clock bytes and four sequence bytes.

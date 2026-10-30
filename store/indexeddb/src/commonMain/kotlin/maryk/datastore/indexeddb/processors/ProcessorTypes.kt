@@ -1,5 +1,7 @@
 package maryk.datastore.indexeddb.processors
 
+import maryk.datastore.shared.IncrementingMapMaximum
+
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -69,6 +71,7 @@ internal data class IndexedDbUniqueRow(
 internal data class MaterializedChanges(
     val appliedChanges: List<IsChange>,
     val generatedChanges: List<IsChange>,
+    val incrementingMapMaxima: List<IncrementingMapMaximum> = emptyList(),
 )
 
 internal data class StorageRowToWrite(
@@ -91,6 +94,7 @@ internal fun IndexedDbDataStore.modelWriteStoreNames(
     historicIndexCleanupStoreName: String,
     historicUniqueCleanupStoreName: String,
 ): Set<String> = buildSet {
+    add("meta")
     add(keyStoreName)
     add(tableStoreName)
     add(indexStoreName)

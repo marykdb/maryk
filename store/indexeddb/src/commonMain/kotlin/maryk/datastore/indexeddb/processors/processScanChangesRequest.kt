@@ -42,6 +42,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
     val keyScanRange = request.dataModel.createScanRange(request.where, request.startKey?.bytes, request.includeStart)
     val changes = mutableListOf<DataObjectVersionedChange<DM>>()
     val scanType = request.dataModel.orderToScanType(request.order, keyScanRange.equalPairs)
+    if (!request.filterSoftDeleted && scanType is IndexScan) {
+        throw RequestException("Scans including soft-deleted records require primary-key ordering; secondary-index ordering is not supported")
+    }
     if (scanType is IndexScan) {
         storeAction.response.complete(
             processIndexScanChanges(

@@ -10,6 +10,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+internal actual fun supportsDistinctNaNPayloadsForTests(): Boolean = true
+
 internal actual suspend fun installIndexedDbForTests() {
     if (!indexedDbAvailable()) {
         val fakeIndexedDbModule = loadFakeIndexedDb().await()

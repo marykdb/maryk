@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
@@ -81,6 +82,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                 values.validate()
 
                 val operations = mutableListOf<IndexedDbWriteOperation>()
+                operations += prepareIncrementingMapWatermarks(byteStore, modelId, key.bytes, collectIncrementingMapMaxima(values)).operations
                 if (tombstoneVersion != null) {
                     operations.delete("hd:$modelId", key.bytes)
                 }
@@ -165,13 +167,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                     changeStoreName = changeStoreName,
                     keyBytes = key.bytes,
                     version = version.timestamp,
-                    changes = listOf(ObjectCreate) + values.toChanges().toList()
+                    changes = listOf(ObjectCreate) + values.toChanges().toList() +
+                        if (isDeleted) listOf(ObjectSoftDeleteChange(true)) else emptyList()
                 )
                 if (keepUpdateHistoryIndex && changePayload != null) {
                     operations.put(updateHistoryStoreName, createUpdateHistoryRowKey(version.timestamp, key.bytes), changePayload)
                 }
 
-                val update = Update.Addition(request.dataModel, key, version.timestamp, values)
+                val update = Update.Addition(request.dataModel, key, version.timestamp, values, isDeleted)
                 commitIndexedDbUpdate(operations, update, currentSnapshot)
                 statuses += AddSuccess(key, version.timestamp, emptyList())
             }

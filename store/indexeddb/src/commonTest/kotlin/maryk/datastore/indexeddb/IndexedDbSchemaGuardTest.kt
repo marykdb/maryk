@@ -126,9 +126,10 @@ class IndexedDbSchemaGuardTest {
                 val commit = staged.commit()
                 assertEquals(TransactionStatus.Aborted, commit.status)
                 assertEquals(AtomicFailureCode.InvalidState, commit.failure?.code)
-                val fresh = old.beginTransaction()
+                // Capturing a new transaction snapshot is itself a read and must
+                // reject a stale schema before any operation can be staged.
                 val failure = assertFailsWith<TransactionException> {
-                    fresh.execute(ModelV1_1.delete(key))
+                    old.beginTransaction()
                 }
                 assertEquals(TransactionStatus.Aborted, failure.response.status)
                 assertEquals(AtomicFailureCode.InvalidState, failure.response.failure?.code)

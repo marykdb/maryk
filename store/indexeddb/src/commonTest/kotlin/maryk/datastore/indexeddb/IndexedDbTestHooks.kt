@@ -3,6 +3,9 @@ package maryk.datastore.indexeddb
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+/** JS Number containers may canonicalize NaNs before datastore code receives them. */
+internal expect fun supportsDistinctNaNPayloadsForTests(): Boolean
+
 internal expect suspend fun installIndexedDbForTests()
 
 internal expect suspend fun upgradeNativeIndexedDbForTests(databaseName: String)

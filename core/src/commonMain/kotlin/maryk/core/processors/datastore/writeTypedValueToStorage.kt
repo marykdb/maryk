@@ -23,7 +23,9 @@ fun <T : IsPropertyDefinition<*>> writeTypedValueToStorage(
 
     if (valueDefinition is IsSimpleValueDefinition<*, *>) {
         val qualifier = writeQualifier(qualifierSize, qualifierWriter)
-        valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, typedValue)
+        // In-memory writers retain the cell rather than encoding it immediately.
+        // Do not let a caller-owned MutableTypedValue rewrite committed state.
+        valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, TypedValue(typedValue.type, typedValue.value))
     } else {
         val qualifierTypeLength = qualifierSize + typedValue.type.index.calculateVarIntWithExtraInfoByteSize()
         val qualifierTypeWriter = createQualifierWriter(

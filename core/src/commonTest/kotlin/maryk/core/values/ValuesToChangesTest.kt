@@ -3,9 +3,13 @@ package maryk.core.values
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import maryk.core.models.fromChanges
 import maryk.core.properties.enum.invoke
 import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.SubObjectChangeException
+import maryk.core.query.pairs.with
+import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.SimpleMarykTypeEnum.S3
@@ -13,9 +17,84 @@ import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.expect
 
 class ValuesToChangesTest {
+    @Test
+    fun creationChangesRestoreEmbeddedAndTypedEmbeddedValuesAlongsideWholeCollections() {
+        val nested = EmbeddedMarykModel.create(setDefaults = false) {
+            value with "child"
+            model with EmbeddedMarykModel.create(setDefaults = false) { value with "grandchild" }
+        }
+        val values = TestMarykModel.create(setDefaults = false) {
+            embeddedValues with nested
+            multi with S3(nested)
+            listOfString with listOf("first", "second")
+            map with mapOf(LocalTime(12, 23) to "mapped")
+            incMap with mapOf(700u to "explicit source key")
+        }
+
+        assertEquals(values, TestMarykModel.fromChanges(null, values.toChanges().toList()))
+    }
+
+    @Test
+    fun creationChangesDistinguishEmptyEmbeddedParentsFromAbsentParents() {
+        val empty = EmbeddedMarykModel.create(setDefaults = false) {}
+        val nestedEmpty = EmbeddedMarykModel.create(setDefaults = false) { model with empty }
+        for (values in listOf(
+            TestMarykModel.create(setDefaults = false) {},
+            TestMarykModel.create(setDefaults = false) { embeddedValues with empty },
+            TestMarykModel.create(setDefaults = false) { embeddedValues with nestedEmpty },
+            TestMarykModel.create(setDefaults = false) { multi with S3(empty) },
+            TestMarykModel.create(setDefaults = false) { multi with S3(nestedEmpty) },
+        )) {
+            val changes = values.toChanges()
+            assertEquals(values, TestMarykModel.fromChanges(null, changes.toList()))
+        }
+    }
+
+    @Test
+    fun creationChangesPreservePairAndOperationOrderWithoutAllocatingMapKeys() {
+        val parent = TestMarykModel.ref { incMap }
+        val key700 = parent.propertyDefinition.definition.valueRef(700u, parent)
+        val key900 = parent.propertyDefinition.definition.valueRef(900u, parent)
+        val changes = listOf(
+            Change(
+                TestMarykModel.ref { embeddedValues { model { value } } } with "first",
+                key700 with "discarded",
+                TestMarykModel.ref { incMap } with mapOf(900u to "whole map"),
+            ),
+            Change(
+                key900 with "last",
+                TestMarykModel.ref { embeddedValues { model { value } } } with "last child",
+            ),
+        )
+        val restored = TestMarykModel.fromChanges(null, changes)
+        assertEquals(mapOf(900u to "last"), restored { incMap })
+        assertEquals("last child", restored[TestMarykModel.ref { embeddedValues { model { value } } }])
+        assertNull(restored.original { enum })
+    }
+
+    @Test
+    fun creationChangesSelectTheLaterTypedCase() {
+        val restored = TestMarykModel.fromChanges(null, listOf(Change(
+            TestMarykModel.ref { multi.atType(S1) } with "first case",
+            TestMarykModel.ref { multi.withType(S3) { value } } with "second case",
+            TestMarykModel.ref { multi.atType(S1) } with "last case",
+        )))
+        assertEquals(S1("last case"), restored { multi })
+    }
+
+    @Test
+    fun ordinaryChangesStillRejectMissingEmbeddedParentsAndCreationDeletionDoesNotSeedThem() {
+        val empty = TestMarykModel.create(setDefaults = false) {}
+        val child = TestMarykModel.ref { embeddedValues { model { value } } }
+        assertFailsWith<SubObjectChangeException> { empty.change(Change(child with "value")) }
+        assertEquals(empty, TestMarykModel.fromChanges(null, listOf(Change(child with null))))
+    }
+
     @Test
     fun convertValuesToChanges() {
         val values = TestMarykModel.create {

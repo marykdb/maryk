@@ -114,6 +114,20 @@ class ListChangeTest {
     }
 
     @Test
+    fun deletingDuplicateValuesRemovesOneOccurrencePerRequestedValue() {
+        val original = TestMarykModel.create { list with listOf(3, 4, 3, 3) }
+        val changed = original.change(ListChange(TestMarykModel.ref { list }.change(
+            deleteValues = listOf(3), addValuesAtIndex = mapOf(1u to 9),
+        )))
+        assertEquals(listOf(4, 9, 3, 3), changed { list })
+        assertEquals(listOf(3, 4, 3, 3), original { list })
+        val repeatedDeletion = original.change(ListChange(TestMarykModel.ref { list }.change(
+            deleteValues = listOf(3, 3, 999),
+        )))
+        assertEquals(listOf(4, 3), repeatedDeletion { list })
+    }
+
+    @Test
     fun oversizedAddIndexDoesNotWrap() {
         val original = TestMarykModel.create {
             list with listOf(3, 4, 5)

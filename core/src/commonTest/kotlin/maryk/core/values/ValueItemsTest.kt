@@ -35,12 +35,12 @@ class ValueItemsTest {
     }
 
     @Test
-    fun existingChangeToUnitRemovesPendingChange() {
+    fun existingChangeToUnitRetainsDeletionMarker() {
         val changes = MutableValueItems(ValueItem(1u, "new"))
 
         changes.copyFromOriginalAndChange(ValueItems(ValueItem(1u, "old")), 1u) { _, _ -> Unit }
 
-        assertFalse(changes.contains(1u))
+        assertEquals(Unit, changes[1u])
     }
 
     @Test

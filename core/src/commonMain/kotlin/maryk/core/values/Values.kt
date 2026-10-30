@@ -43,7 +43,7 @@ data class Values<DM : IsValuesDataModel> internal constructor(
     }
 
     fun copy(values: IsValueItems) =
-        Values(dataModel, values.copyAdding(values), context)
+        Values(dataModel, this.values.copyAdding(values), context)
 
     /** Copy values and add or replace one raw root value item for datastore materialization. */
     fun copyWithValue(index: UInt, value: Any) =
@@ -73,7 +73,13 @@ data class Values<DM : IsValuesDataModel> internal constructor(
                     valueItemsToChange.copyFromOriginalAndChange(values, ref.index, valueChanger)
                 }
             }
-            Values(dataModel, values.copyAdding(valueItemsToChange), context)
+            // Completed working slots replace roots; copyAdding deliberately merges embedded values.
+            val changedItems = MutableValueItems(values.toMutableList())
+            for ((index, value) in valueItemsToChange) {
+                if (value is Unit || (value as? TypedValue<*, *>)?.value is Unit) changedItems.remove(index)
+            }
+            for ((index, value) in valueItemsToChange.toImmutableValueItems()) changedItems[index] = value
+            Values(dataModel, changedItems, context)
         }
 
     /** Convert these values to a list of [IsChange]s */
@@ -94,7 +100,14 @@ data class Values<DM : IsValuesDataModel> internal constructor(
                 when {
                     definition is IsEmbeddedValuesDefinition<*, *> -> {
                         val ref = def.ref(parentRef)
-                        addPairs(definition.dataModel, (value as Values<*>).values, ref)
+                        val embedded = value as Values<*>
+                        if (embedded.size == 0) {
+                            @Suppress("UNCHECKED_CAST")
+                            referenceValuePairs += ReferenceValuePair(
+                                ref as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>,
+                                embedded,
+                            )
+                        } else addPairs(definition.dataModel, embedded.values, ref)
                     }
                     definition is IsMultiTypeDefinition<*, *, *> -> {
                         val typedValue = value as TypedValue<TypeEnum<Any>, Any>
@@ -104,7 +117,7 @@ data class Values<DM : IsValuesDataModel> internal constructor(
                         val typeRef = multiDef.atType(type).ref(parentRef)
 
                         val subDef = multiDef.definition(type)
-                        if (subDef is IsEmbeddedValuesDefinition<*, *>) {
+                        if (subDef is IsEmbeddedValuesDefinition<*, *> && (typedValue.value as Values<*>).size > 0) {
                             addPairs(subDef.dataModel, (typedValue.value as Values<*>).values, typeRef)
                         } else {
                             @Suppress("UNCHECKED_CAST")

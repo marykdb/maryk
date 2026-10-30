@@ -7,9 +7,12 @@ import maryk.lib.exceptions.ParseException
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.models.graph
+import maryk.core.query.changes.Change
+import maryk.core.query.pairs.with
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.invoke
+import maryk.core.properties.types.MutableTypedValue
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V2
 import maryk.test.models.SimpleMarykTypeEnum.S1
@@ -17,10 +20,42 @@ import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.expect
 
 class ValuesTest {
+    @Test
+    fun copyingValueItemsMergesNestedFieldsAndPreservesUnchangedSiblings() {
+        val original = TestMarykModel.create(setDefaults = false) {
+            string with "root sibling"
+            embeddedValues with EmbeddedMarykModel.create(setDefaults = false) { value with "child sibling" }
+        }
+        val additions = TestMarykModel.create(setDefaults = false) {
+            embeddedValues with EmbeddedMarykModel.create(setDefaults = false) {
+                model with EmbeddedMarykModel.create(setDefaults = false) { value with "grandchild" }
+            }
+        }
+
+        val merged = original.copy(additions.values)
+        assertEquals("root sibling", merged { string })
+        assertEquals("child sibling", merged[TestMarykModel.ref { embeddedValues { value } }])
+        assertEquals("grandchild", merged[TestMarykModel.ref { embeddedValues { model { value } } }])
+        assertNull(original[TestMarykModel.ref { embeddedValues { model } }])
+    }
+
+    @Test
+    fun changedTypedValuesAreImmutableAndRetainOrdinaryTypedValueEquality() {
+        val original = TestMarykModel.create(setDefaults = false) { multi with S1("original") }
+        val changed = original.change(Change(TestMarykModel.ref { multi.atType(S1) } with "updated"))
+        val unchanged = original.change(Change(TestMarykModel.ref { multi.atType(S1) } with "original"))
+
+        assertEquals(S1("updated"), changed { multi })
+        assertFalse(changed.original { multi } is MutableTypedValue<*, *>)
+        assertEquals(original, unchanged)
+        assertEquals(S1("original"), original { multi })
+    }
+
     @Test
     fun malformedEmptyCollectionPresenceIsRejected() {
         for ((wireType, payload) in listOf(WireType.VAR_INT to listOf<Byte>(0), WireType.LENGTH_DELIMITED to listOf<Byte>(1, 42))) {

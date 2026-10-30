@@ -17,6 +17,7 @@ import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
+import maryk.core.values.mutableValueCreator
 import maryk.json.IsJsonLikeWriter
 
 /** Defines [valueChanges] to incrementing maps  */
@@ -62,27 +63,32 @@ data class IncMapChange internal constructor(
             var referenceIndex = 0
 
             fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
-                val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+                val savedReferenceIndex = referenceIndex
+                try {
+                    val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
-                return if (currentRef == null) {
-                    when (newValue) {
-                        is MutableMap<*, *> -> {
-                            valueChange.addValues?.let { addValues ->
-                                appendValues(valueChange.reference, newValue, addValues)
+                    return if (currentRef == null) {
+                        when (newValue) {
+                            is MutableMap<*, *> -> {
+                                valueChange.addValues?.let { addValues ->
+                                    appendValues(valueChange.reference, newValue, addValues)
+                                }
                             }
+                            null -> throw RequestException("Cannot set incrementing map changes on non existing value")
+                            else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
                         }
-                        null -> throw RequestException("Cannot set incrementing map changes on non existing value")
-                        else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
+                        null
+                    } else {
+                        deepValueChanger(
+                            originalValue,
+                            newValue,
+                            currentRef,
+                            ::valueChanger
+                        )
+                        null // Deeper change so no overwrite
                     }
-                    null
-                } else {
-                    deepValueChanger(
-                        originalValue,
-                        newValue,
-                        currentRef,
-                        ::valueChanger
-                    )
-                    null // Deeper change so no overwrite
+                } finally {
+                    referenceIndex = savedReferenceIndex
                 }
             }
 
@@ -136,6 +142,6 @@ private fun <K : Comparable<K>, V : Any> appendValues(
     var latestKeyedItem = typedMap.maxByOrNull { it.key }?.key ?: descriptor.zero
     for (value in addValues) {
         latestKeyedItem = descriptor.sum(latestKeyedItem, one)
-        typedMap[latestKeyedItem] = value as V
+        typedMap[latestKeyedItem] = (mutableValueCreator(value, preserveValues = true) ?: value) as V
     }
 }

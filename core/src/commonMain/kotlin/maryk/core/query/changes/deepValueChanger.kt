@@ -15,15 +15,19 @@ import maryk.core.properties.types.MutableTypedValue
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.MutableValueItems
 import maryk.core.values.Values
+import maryk.core.values.mutableValueCreator
 
 // Thrown when sub object was tried to be changed.
 object SubObjectChangeException: RequestException("Cannot set sub value on non existing value")
 
-/** changes deeper value for [reference] based on [originalValue] and [newValue] with [valueChanger] */
+/**
+ * Changes a deeper value for [reference]. Wildcards invoke [valueChanger] once per
+ * matching branch, so callbacks must restore their position in the reference path.
+ */
 internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: AnyPropertyReference, valueChanger: (Any?, Any?) -> Any?) {
     when (newValue) {
         is Values<*> -> (newValue.values as MutableValueItems).copyFromOriginalAndChange(
-            (originalValue as Values<*>).values,
+            (originalValue as? Values<*>)?.values,
             (reference as IsPropertyReferenceForValues<*, *, *, *>).index,
             valueChanger
         )
@@ -32,7 +36,7 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
                 val listIndex = reference.index.toListIndex()
                 @Suppress("UNCHECKED_CAST")
                 val changedValue = valueChanger(
-                    (originalValue as List<Any>).getOrNull(listIndex),
+                    (originalValue as? List<Any>)?.getOrNull(listIndex),
                     newValue[listIndex]
                 )
 
@@ -40,21 +44,21 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
                 when(changedValue) {
                     Unit -> newValue.removeAt(listIndex)
                     null -> {} // Do nothing
-                    else -> (newValue as MutableList<Any>)[listIndex] = changedValue
+                    else -> (newValue as MutableList<Any>)[listIndex] = mutableValueCreator(changedValue, preserveValues = true) ?: changedValue
                 }
             }
             is ListAnyItemReference<*, *> -> {
                 @Suppress("UNCHECKED_CAST")
-                for (index in (originalValue as List<Any>).lastIndex downTo 0) {
+                for (index in newValue.lastIndex downTo 0) {
                     val changedValue = valueChanger(
-                        originalValue.getOrNull(index),
+                        (originalValue as? List<Any>)?.getOrNull(index),
                         (newValue as MutableList<Any>)[index]
                     )
 
                     when(changedValue) {
                         Unit -> newValue.removeAt(index)
                         null -> {} // Do nothing
-                        else -> newValue[index] = changedValue
+                        else -> newValue[index] = mutableValueCreator(changedValue, preserveValues = true) ?: changedValue
                     }
                 }
             }
@@ -67,13 +71,13 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
 
                 @Suppress("UNCHECKED_CAST")
                 val changedValue = valueChanger(
-                    (originalValue as Map<Any, Any>).getOrElse(reference.key) { null },
+                    (originalValue as? Map<Any, Any>)?.get(reference.key),
                     newMapValue[reference.key]
                 )
                 when(changedValue) {
                     Unit -> newMapValue.remove(reference.key)
                     null -> {} // Do nothing
-                    else -> newMapValue[reference.key] = changedValue
+                    else -> newMapValue[reference.key] = mutableValueCreator(changedValue, preserveValues = true) ?: changedValue
                 }
             }
             is MapAnyValueReference<*, *, *> -> {
@@ -84,7 +88,7 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
                 for ((key, value) in newMapValue.entries) {
                     @Suppress("UNCHECKED_CAST")
                     val changedValue = valueChanger(
-                        (originalValue as Map<Any, Any>).getOrElse(key) { null },
+                        (originalValue as? Map<Any, Any>)?.get(key),
                         value
                     )
                     when(changedValue) {
@@ -92,7 +96,7 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
                             itemsToRemove = itemsToRemove?.apply { add(key) } ?: mutableListOf(key)
                         }
                         null -> {} // Do nothing
-                        else -> newMapValue[key] = changedValue
+                        else -> newMapValue[key] = mutableValueCreator(changedValue, preserveValues = true) ?: changedValue
                     }
                 }
                 itemsToRemove?.forEach {
@@ -127,19 +131,20 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
         }
         is TypedValue<*, *> -> when (reference) {
             is TypedValueReference<*, *, *> -> {
+                if (newValue.type != reference.type) throw SubObjectChangeException
                 @Suppress("UNCHECKED_CAST")
                 val changedValue = valueChanger(
-                    (originalValue as TypedValue<*, *>).value,
+                    (originalValue as? TypedValue<*, *>)?.takeIf { it.type == reference.type }?.value,
                     newValue.value
                 )
                 if (changedValue != null) {
                     @Suppress("UNCHECKED_CAST")
-                    (newValue as MutableTypedValue<TypeEnum<Any>, Any>).value = changedValue
+                    (newValue as MutableTypedValue<TypeEnum<Any>, Any>).value = mutableValueCreator(changedValue, preserveValues = true) ?: changedValue
                 }
             }
             else -> throw RequestException("Unsupported reference type: $reference")
         }
-        null -> throw SubObjectChangeException
+        null, Unit -> throw SubObjectChangeException
         else -> throw RequestException("Unsupported reference type: $reference")
     }
 }

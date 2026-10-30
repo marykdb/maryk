@@ -18,6 +18,7 @@ import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.references.toListIndex
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
+import maryk.core.values.mutableValueCreator
 import maryk.json.IsJsonLikeWriter
 
 /** Defines changes to a list by [listValueChanges] */
@@ -75,35 +76,43 @@ data class ListChange internal constructor(
             var referenceIndex = 0
 
             fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
-                val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+                val savedReferenceIndex = referenceIndex
+                try {
+                    val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
-                return if (currentRef == null) {
-                    when (newValue) {
-                        is MutableList<*> -> {
-                            listValueChanges.deleteValues?.let { newValue.removeAll(it) }
-                            listValueChanges.addValuesAtIndex?.let {
-                                for ((index, value) in it) {
+                    return if (currentRef == null) {
+                        when (newValue) {
+                            is MutableList<*> -> {
+                                listValueChanges.deleteValues?.forEach { newValue.remove(it) }
+                                listValueChanges.addValuesAtIndex?.let {
+                                    for ((index, value) in it) {
+                                        @Suppress("UNCHECKED_CAST")
+                                        (newValue as MutableList<Any>).add(index.toListIndex(),
+                                            mutableValueCreator(value, preserveValues = true) ?: value)
+                                    }
+                                }
+                                listValueChanges.addValuesToEnd?.let {
                                     @Suppress("UNCHECKED_CAST")
-                                    (newValue as MutableList<Any>).add(index.toListIndex(), value)
+                                    (newValue as MutableList<Any>).addAll(it.map { value ->
+                                        mutableValueCreator(value, preserveValues = true) ?: value
+                                    })
                                 }
                             }
-                            listValueChanges.addValuesToEnd?.let {
-                                @Suppress("UNCHECKED_CAST")
-                                (newValue as MutableList<Any>).addAll(it)
-                            }
+                            null -> throw RequestException("Cannot set list changes on non existing value")
+                            else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
                         }
-                        null -> throw RequestException("Cannot set list changes on non existing value")
-                        else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
+                        null
+                    } else {
+                        deepValueChanger(
+                            originalValue,
+                            newValue,
+                            currentRef,
+                            ::valueChanger
+                        )
+                        null // Deeper change so no overwrite
                     }
-                    null
-                } else {
-                    deepValueChanger(
-                        originalValue,
-                        newValue,
-                        currentRef,
-                        ::valueChanger
-                    )
-                    null // Deeper change so no overwrite
+                } finally {
+                    referenceIndex = savedReferenceIndex
                 }
             }
 

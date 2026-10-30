@@ -63,7 +63,7 @@ internal fun List<ValueItem>.searchItemByIndex(index: UInt) =
 private fun UInt.toIntOrListSize(size: Int): Int =
     if (this > Int.MAX_VALUE.toUInt()) size else toInt()
 
-val EmptyValueItems: IsValueItems = MutableValueItems()
+val EmptyValueItems: IsValueItems get() = MutableValueItems()
 @Suppress("FunctionName")
 fun ValueItems(vararg item: ValueItem): IsValueItems = MutableValueItems(*item)
 
@@ -123,17 +123,17 @@ value class MutableValueItems(
         val originalValue = sourceValueItems?.getValueItem(referenceIndex)?.value
         when {
             index < 0 -> {
-                val newValue = mutableValueCreator(originalValue)
+                val newValue = mutableValueCreator(originalValue, preserveValues = true)
                 when (val changedValue = valueChanger(originalValue, newValue)) {
                     Unit -> list.add(-index - 1, ValueItem(referenceIndex, Unit))
                     null -> newValue?.let { list.add(-index - 1, ValueItem(referenceIndex, it)) }
-                    else -> list.add(-index - 1, ValueItem(referenceIndex, changedValue))
+                    else -> list.add(-index - 1, ValueItem(referenceIndex, mutableValueCreator(changedValue, preserveValues = true) ?: changedValue))
                 }
             }
             else -> when (val changedValue = valueChanger(originalValue, list[index].value)) {
-                Unit -> list.removeAt(index)
+                Unit -> list[index] = ValueItem(referenceIndex, Unit)
                 null -> Unit
-                else -> list[index] = ValueItem(referenceIndex, changedValue)
+                else -> list[index] = ValueItem(referenceIndex, mutableValueCreator(changedValue, preserveValues = true) ?: changedValue)
             }
         }
     }
@@ -161,7 +161,7 @@ value class MutableValueItems(
     override fun toString() = list.joinToString(separator = ", ", prefix = "{", postfix = "}")
 }
 
-private fun mutableValueCreator(valueToChange: Any?, preserveValues: Boolean = false): Any? = when (valueToChange) {
+internal fun mutableValueCreator(valueToChange: Any?, preserveValues: Boolean = false): Any? = when (valueToChange) {
     null -> null
     is List<*> -> valueToChange.mapTo(ArrayList(valueToChange.size)) {
         mutableValueCreator(it, preserveValues = true) ?: it
@@ -173,10 +173,62 @@ private fun mutableValueCreator(valueToChange: Any?, preserveValues: Boolean = f
         key to (mutableValueCreator(value, preserveValues = true) ?: value)
     }
     is Values<*> -> if (preserveValues) {
-        Values(valueToChange.dataModel, valueToChange.values.copyAdding(emptyList()), valueToChange.context)
+        Values(valueToChange.dataModel, MutableValueItems(valueToChange.values.mapTo(ArrayList()) { (index, value) ->
+            ValueItem(index, mutableValueCreator(value, preserveValues = true) ?: value)
+        }), valueToChange.context)
     } else {
         Values(valueToChange.dataModel, MutableValueItems(), valueToChange.context)
     }
     is TypedValue<*, *> -> MutableTypedValue(valueToChange.type, mutableValueCreator(valueToChange.value, preserveValues = true) as Any)
     else -> valueToChange
+}
+
+/** Mutable typed wrappers belong to a change's working copy, not its returned values. */
+internal fun IsValueItems.toImmutableValueItems(): IsValueItems {
+    var result: MutableValueItems? = null
+    for ((index, value) in this) {
+        if (value is Unit || (value as? TypedValue<*, *>)?.value is Unit) {
+            if (result == null) result = MutableValueItems(toMutableList())
+            result.remove(index)
+            continue
+        }
+        val immutable = value.toImmutableValue()
+        if (immutable !== value) {
+            if (result == null) result = MutableValueItems(toMutableList())
+            result[index] = immutable
+        }
+    }
+    return result ?: this
+}
+
+private fun Any.toImmutableValue(): Any = when (this) {
+    is TypedValue<*, *> -> {
+        val immutable = value.toImmutableValue()
+        if (this is MutableTypedValue<*, *> || immutable !== value) TypedValue(type, immutable) else this
+    }
+    is Values<*> -> {
+        val immutable = values.toImmutableValueItems()
+        if (immutable === values) this else Values(dataModel, immutable, context)
+    }
+    is List<*> -> {
+        val immutable = map { it?.toImmutableValue() }
+        if (indices.all { this[it] === immutable[it] }) this else immutable
+    }
+    is Set<*> -> {
+        var changed = false
+        val immutable = mapTo(LinkedHashSet(size)) {
+            val value = it?.toImmutableValue()
+            if (value !== it) changed = true
+            value
+        }
+        if (changed) immutable else this
+    }
+    is Map<*, *> -> {
+        var changed = false
+        val immutable = mapValues { (_, value) ->
+            value?.toImmutableValue().also { if (it !== value) changed = true }
+        }
+        if (changed) immutable else this
+    }
+    else -> this
 }

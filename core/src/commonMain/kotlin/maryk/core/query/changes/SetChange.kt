@@ -47,28 +47,33 @@ data class SetChange internal constructor(
             var referenceIndex = 0
 
             fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
-                val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+                val savedReferenceIndex = referenceIndex
+                try {
+                    val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
-                return if (currentRef == null) {
-                    when (newValue) {
-                        is MutableSet<*> -> {
-                            setValueChanges.addValues?.let {
-                                @Suppress("UNCHECKED_CAST")
-                                (newValue as MutableSet<Any>).addAll(it)
+                    return if (currentRef == null) {
+                        when (newValue) {
+                            is MutableSet<*> -> {
+                                setValueChanges.addValues?.let {
+                                    @Suppress("UNCHECKED_CAST")
+                                    (newValue as MutableSet<Any>).addAll(it)
+                                }
                             }
+                            null -> throw RequestException("Cannot set set changes on non existing value")
+                            else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
                         }
-                        null -> throw RequestException("Cannot set set changes on non existing value")
-                        else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
+                        null
+                    } else {
+                        deepValueChanger(
+                            originalValue,
+                            newValue,
+                            currentRef,
+                            ::valueChanger
+                        )
+                        null // Deeper change so no overwrite
                     }
-                    null
-                } else {
-                    deepValueChanger(
-                        originalValue,
-                        newValue,
-                        currentRef,
-                        ::valueChanger
-                    )
-                    null // Deeper change so no overwrite
+                } finally {
+                    referenceIndex = savedReferenceIndex
                 }
             }
 

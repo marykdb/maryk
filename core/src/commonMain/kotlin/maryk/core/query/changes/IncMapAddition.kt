@@ -14,6 +14,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
+import maryk.core.values.mutableValueCreator
 import maryk.json.IsJsonLikeWriter
 
 /** Defines [additions] to incrementing maps  */
@@ -65,35 +66,42 @@ data class IncMapAddition(
             var referenceIndex = 0
 
             fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
-                val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+                val savedReferenceIndex = referenceIndex
+                try {
+                    val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
-                return if (currentRef == null) {
-                    when (newValue) {
-                        is MutableMap<*, *> -> {
-                            if (addition.addedValues == null) {
-                                throw RequestException("addedValues need to be set on IncMapAddition, maybe the RequestContext of the request was not used for the response?")
-                            }
-                            if (addition.addedValues.size != addition.addedKeys?.size) {
-                                throw RequestException("addedValues and addedKeys on IncMapAddition need to be of the same size")
-                            }
+                    return if (currentRef == null) {
+                        when (newValue) {
+                            is MutableMap<*, *> -> {
+                                if (addition.addedValues == null) {
+                                    throw RequestException("addedValues need to be set on IncMapAddition, maybe the RequestContext of the request was not used for the response?")
+                                }
+                                if (addition.addedValues.size != addition.addedKeys?.size) {
+                                    throw RequestException("addedValues and addedKeys on IncMapAddition need to be of the same size")
+                                }
 
-                            for (index in (0..addition.addedKeys.lastIndex)) {
-                                @Suppress("UNCHECKED_CAST")
-                                (newValue as MutableMap<Any, Any>)[addition.addedKeys[index]] = addition.addedValues[index]
+                                for (index in (0..addition.addedKeys.lastIndex)) {
+                                    val value = addition.addedValues[index]
+                                    @Suppress("UNCHECKED_CAST")
+                                    (newValue as MutableMap<Any, Any>)[addition.addedKeys[index]] =
+                                        mutableValueCreator(value, preserveValues = true) ?: value
+                                }
                             }
+                            null -> throw RequestException("Cannot set Incrementing map changes on non existing value")
+                            else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
                         }
-                        null -> throw RequestException("Cannot set Incrementing map changes on non existing value")
-                        else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
+                        null
+                    } else {
+                        deepValueChanger(
+                            originalValue,
+                            newValue,
+                            currentRef,
+                            ::valueChanger
+                        )
+                        null // Deeper change so no overwrite
                     }
-                    null
-                } else {
-                    deepValueChanger(
-                        originalValue,
-                        newValue,
-                        currentRef,
-                        ::valueChanger
-                    )
-                    null // Deeper change so no overwrite
+                } finally {
+                    referenceIndex = savedReferenceIndex
                 }
             }
 

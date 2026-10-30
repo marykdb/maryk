@@ -51,19 +51,24 @@ data class Change internal constructor(
 
             if (referenceValuePair is ReferenceNullPair) {
                 fun valueDeleter(originalValue: Any?, newValue: Any?): Any? {
-                    val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+                    val savedReferenceIndex = referenceIndex
+                    try {
+                        val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
-                    return if (currentRef != null) {
-                        try {
-                            deepValueChanger(
-                                originalValue,
-                                newValue,
-                                currentRef,
-                                ::valueDeleter
-                            )
-                            null // Deeper change so no overwrite
-                        } catch (_: SubObjectChangeException) {} // Ignore since there is nothing to delete
-                    } else Unit // Set the deletion as Unit
+                        return if (currentRef != null) {
+                            try {
+                                deepValueChanger(
+                                    originalValue,
+                                    newValue,
+                                    currentRef,
+                                    ::valueDeleter
+                                )
+                                null // Deeper change so no overwrite
+                            } catch (_: SubObjectChangeException) { null } // Nothing exists at this reference to delete
+                        } else Unit // Set the deletion as Unit
+                    } finally {
+                        referenceIndex = savedReferenceIndex
+                    }
                 }
 
                 when (val ref = mutableReferenceList[referenceIndex++]) {
@@ -72,18 +77,23 @@ data class Change internal constructor(
                 }
             } else {
                 fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
-                    val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+                    val savedReferenceIndex = referenceIndex
+                    try {
+                        val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
-                    return if (currentRef == null) {
-                        referenceValuePair.value
-                    } else {
-                        deepValueChanger(
-                            originalValue,
-                            newValue,
-                            currentRef,
-                            ::valueChanger
-                        )
-                        null // Deeper change so no overwrite
+                        return if (currentRef == null) {
+                            referenceValuePair.value
+                        } else {
+                            deepValueChanger(
+                                originalValue,
+                                newValue,
+                                currentRef,
+                                ::valueChanger
+                            )
+                            null // Deeper change so no overwrite
+                        }
+                    } finally {
+                        referenceIndex = savedReferenceIndex
                     }
                 }
 

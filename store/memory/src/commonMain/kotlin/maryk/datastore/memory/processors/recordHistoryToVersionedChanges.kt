@@ -18,7 +18,8 @@ internal fun <DM : IsRootDataModel> DM.recordHistoryToVersionedChanges(
     toVersion: ULong?,
     maxVersions: UInt,
     sortingKey: ByteArray?,
-    historyRecords: List<DataRecord<DM>>
+    historyRecords: List<DataRecord<DM>>,
+    keepAllVersions: Boolean,
 ): List<RecordVersionedChanges<DM>> {
     val allChanges = historyRecords.flatMap { historyRecord ->
         recordToObjectChanges(
@@ -27,7 +28,8 @@ internal fun <DM : IsRootDataModel> DM.recordHistoryToVersionedChanges(
             toVersion = toVersion,
             maxVersions = UInt.MAX_VALUE,
             sortingKey = sortingKey,
-            record = historyRecord
+            record = historyRecord,
+            keepAllVersions = keepAllVersions,
         )?.changes.orEmpty().map { RecordVersionedChanges(historyRecord, it) }
     }.sortedBy { it.versionedChange.version }
 

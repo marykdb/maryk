@@ -58,14 +58,15 @@ internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
             toVersion = getRequest.toVersion,
             maxVersions = getRequest.maxVersions,
             sortingKey = null,
-            historyRecords = records
+            historyRecords = records,
+            keepAllVersions = dataStore.keepAllVersions,
         ).forEach { (historyRecord, versionedChange) ->
             val changes = versionedChange.changes
 
             if (changes.contains(ObjectCreate)) {
                 getRequest.dataModel.recordToValueWithMeta(
                     getRequest.select,
-                    HLC(versionedChange.version),
+                    if (dataStore.keepAllVersions) HLC(versionedChange.version) else null,
                     historyRecord
                 )?.let { valuesWithMeta ->
                     updates += AdditionUpdate(

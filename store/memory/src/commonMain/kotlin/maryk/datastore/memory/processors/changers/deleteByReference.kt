@@ -13,7 +13,6 @@ import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
-import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.SetItemReference
@@ -23,7 +22,6 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
 import maryk.datastore.memory.records.DataRecordNode
-import maryk.datastore.memory.records.DataRecordValue
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchesRangePart
 
@@ -43,9 +41,18 @@ internal fun <T : Any> deleteByReference(
         throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
     }
 
+    if (reference is ListItemReference<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        val listReference = reference.parentReference as ListReference<Any, IsPropertyContext>
+        val original = getList(values, listReference) ?: return false
+        if (reference.index >= original.size.toUInt()) return false
+
+        val newList = original.toMutableList().apply { removeAt(reference.index.toInt()) }
+        listReference.propertyDefinition.validateWithRef(original, newList) { listReference }
+        return setListValue(values, listReference, newList, original.size, version, keepAllVersions)
+    }
+
     val referenceToCompareTo = reference.toStorageByteArray()
-    var referenceOfParent: ByteArray? = null
-    var toShiftListCount = 0u
     val valueIndex = values.binarySearch {
         it.reference compareTo referenceToCompareTo
     }
@@ -63,7 +70,7 @@ internal fun <T : Any> deleteByReference(
             // With delete the prev value for complex types needs to be set to check final and required states
             // Only current values are checked on content
             when (reference) {
-                is MapReference<*, *, *> -> mapOf<Any, Any>() as T
+                is IsMapReference<*, *, *, *> -> mapOf<Any, Any>() as T
                 is ListReference<*, *> -> listOf<Any>() as T
                 is SetReference<*, *> -> setOf<Any>() as T
                 is EmbeddedValuesPropertyRef<*, *> -> reference.propertyDefinition.definition.dataModel.emptyValues() as T
@@ -79,24 +86,6 @@ internal fun <T : Any> deleteByReference(
                         mapReference.propertyDefinition.definition.validateSize(newCount) { mapReference }
                     }
                     // Map values can be set to null to be deleted.
-                    shouldHandlePrevValue = false
-                    it
-                }
-                is ListItemReference<*, *> -> {
-                    val listReference = reference.parentReference as ListReference<Any, IsPropertyContext>
-                    val listDefinition = listReference.propertyDefinition.definition
-                    createCountUpdater(
-                        values,
-                        listReference as IsPropertyReference<List<*>, IsPropertyDefinition<List<*>>, out Any>,
-                        version,
-                        -1,
-                        keepAllVersions
-                    ) { newCount ->
-                        toShiftListCount = newCount - reference.index
-                        listDefinition.validateSize(newCount) { listReference }
-                    }
-                    referenceOfParent = listReference.toStorageByteArray()
-                    // List values can be set to null to be deleted.
                     shouldHandlePrevValue = false
                     it
                 }
@@ -137,31 +126,8 @@ internal fun <T : Any> deleteByReference(
     // Delete value and complex sub parts below same reference
     for (index in valueIndex until values.size) {
         val value = values[index]
-        val refOfParent = referenceOfParent
-
         if (value.reference.matchesRangePart(0, referenceToCompareTo)) {
-            if (toShiftListCount <= 0u) {
-                // Delete if not a list or no further list items
-                isDeleted = deleteByIndex<T>(values, index, value.reference, version, keepAllVersions) != null
-            }
-        } else if (refOfParent != null && value.reference.matchesRangePart(0, refOfParent)) {
-            // To handle list shifting
-            if (toShiftListCount > 0u) {
-                @Suppress("UNCHECKED_CAST")
-                setValueAtIndex(
-                    values,
-                    index - 1,
-                    values[index - 1].reference,
-                    (value as DataRecordValue<Any>).value,
-                    version,
-                    keepAllVersions
-                )
-                toShiftListCount--
-            }
-
-            if (toShiftListCount <= 0u) {
-                isDeleted = deleteByIndex<T>(values, index, value.reference, version, keepAllVersions) != null
-            }
+            isDeleted = deleteByIndex<T>(values, index, value.reference, version, keepAllVersions) != null
         } else {
             break
         }

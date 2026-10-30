@@ -1,50 +1,32 @@
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.processors.datastore.readStorageToList
+import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.matchesRangePart
 
-/**
- * Get list from [values] at [reference] by reading and collecting all values from DataRecord
- */
+/** Read list items together with their embedded or typed descendants. */
 internal fun <T : Any> getList(
     values: List<DataRecordNode>,
     reference: TypedPropertyReference<out List<T>>
 ): MutableList<T>? {
-    val referenceToCompareTo = reference.toStorageByteArray()
-
-    var valueIndex = values.binarySearch {
-        it.reference compareTo referenceToCompareTo
-    }
-
-    if (valueIndex < 0) return null
-
-    val count = getValueAtIndex<Int>(values, valueIndex)?.value ?: 0
-    valueIndex++ // skip count index
-
-    val list = ArrayList<T>(count)
-    while (valueIndex < values.size) {
-        val node = getValueAtIndex<T>(values, valueIndex)
-
-        if (node != null) {
-            // Break if reference does not match list start
-            if (!node.reference.matchStart(referenceToCompareTo)) {
-                break
-            }
-
-            list.add(node.value)
-        }
-        valueIndex++
-    }
-    return list
-}
-
-/** Match given [startBytes] against starting bytes of this byte array. Return true if match */
-private fun ByteArray.matchStart(startBytes: ByteArray): Boolean {
-    if (startBytes.size > this.size) return false
-
-    startBytes.forEachIndexed { index, byte ->
-        if (this[index] != byte) return false
-    }
-    return true
+    val prefix = reference.toStorageByteArray()
+    var index = values.binarySearch { it.reference compareTo prefix }
+    if (index < 0) return null
+    var valueIndex = index
+    @Suppress("UNCHECKED_CAST")
+    return readStorageToList(
+        reference as ListReference<T, *>,
+        getQualifier = { handler ->
+            val qualifier = values.getOrNull(index)?.reference
+            if (qualifier != null && qualifier.matchesRangePart(0, prefix)) {
+                valueIndex = index++
+                handler({ qualifier[it] }, qualifier.size)
+                true
+            } else false
+        },
+        processValue = { _, _ -> getValueAtIndex<Any>(values, valueIndex)?.value },
+    )
 }

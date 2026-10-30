@@ -135,7 +135,7 @@ class InMemoryDataStore private constructor(
             @Suppress("UNCHECKED_CAST")
             val original = atomicDataStores[id] as? DataStore<IsRootDataModel>
             id to (original?.copyForAtomic(keys.map { Bytes(it.bytes) }.toSet(), budget)
-                ?: DataStore<IsRootDataModel>(keepAllVersions, keepUpdateHistoryIndex))
+                ?: DataStore<IsRootDataModel>(keepAllVersions, keepUpdateHistoryIndex, model))
         }.toMap()
         val fetcher: (IsRootDataModel) -> DataStore<IsRootDataModel> = { staged.getValue(getDataModelId(it)) }
         val updates = mutableListOf<Update<*>>()
@@ -192,10 +192,10 @@ class InMemoryDataStore private constructor(
             val id = getDataModelId(model)
             @Suppress("UNCHECKED_CAST")
             val original = atomicDataStores[id] as? DataStore<IsRootDataModel>
-            if (targetKeys[id].isNullOrEmpty()) original ?: DataStore(keepAllVersions, keepUpdateHistoryIndex)
+            if (targetKeys[id].isNullOrEmpty()) original ?: DataStore(keepAllVersions, keepUpdateHistoryIndex, model)
             else staged.getOrPut(id) {
                 original?.copyForAtomic(targetKeys[id].orEmpty(), budget)
-                    ?: DataStore(keepAllVersions, keepUpdateHistoryIndex)
+                    ?: DataStore(keepAllVersions, keepUpdateHistoryIndex, model)
             }
         }
         return try {
@@ -268,7 +268,7 @@ class InMemoryDataStore private constructor(
                             val index = dataModelIdsByString[model.Meta.name] ?: throw DefNotFoundException(model.Meta.name)
                             @Suppress("UNCHECKED_CAST")
                             dataStores.getOrPut(index) {
-                                DataStore<IsRootDataModel>(keepAllVersions, keepUpdateHistoryIndex)
+                                DataStore<IsRootDataModel>(keepAllVersions, keepUpdateHistoryIndex, model)
                             } as DataStore<IsRootDataModel>
                         }
 

@@ -2,7 +2,6 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.fromChanges
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.responses.AddOrChangeResponse
@@ -14,6 +13,8 @@ import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.normalizeReplicationChanges
+import maryk.datastore.shared.fromReplicationChanges
 import maryk.datastore.shared.updates.FlowUpdateEmitter
 
 /**
@@ -32,18 +33,19 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
     val changeStatuses = mutableListOf<IsAddOrChangeResponseStatus<DM>>()
     for (change in update.changes) {
         for (versionedChange in change.changes) {
+            val changes = normalizeReplicationChanges(versionedChange.changes)
             val version = HLC(versionedChange.version)
             val lastAppliedVersion = dataStore.lastAppliedVersion(change.key.bytes)
             if (lastAppliedVersion != null && version <= lastAppliedVersion) {
-                changeStatuses += if (versionedChange.changes.contains(ObjectCreate)) {
+                changeStatuses += if (changes.contains(ObjectCreate)) {
                     AddSuccess(change.key, lastAppliedVersion.timestamp, emptyList())
                 } else {
                     ChangeSuccess(lastAppliedVersion.timestamp, emptyList())
                 }
                 continue
             }
-            if (versionedChange.changes.contains(ObjectCreate)) {
-                val addedValues = dataModel.fromChanges(null, versionedChange.changes)
+            if (changes.contains(ObjectCreate)) {
+                val addedValues = dataModel.fromReplicationChanges(null, changes)
 
                 changeStatuses += processAdd(
                     dataStore,
@@ -51,7 +53,7 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
                     key = change.key,
                     version = version,
                     objectToAdd = addedValues,
-                    isDeleted = versionedChange.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
+                    isDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
                     updateSharedFlow = updateSharedFlow
                 )
             } else {
@@ -60,9 +62,10 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
                     dataModel,
                     change.key,
                     null,
-                    versionedChange.changes,
+                    changes,
                     version,
-                    updateSharedFlow
+                    updateSharedFlow,
+                    advanceVersionOnNoOp = true,
                 )
             }
         }

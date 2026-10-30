@@ -1,6 +1,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
@@ -20,6 +21,7 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
 import maryk.datastore.shared.ScanType.UpdateHistoryScan
 import maryk.datastore.shared.checkToVersion
+import maryk.datastore.shared.checkTableScanAllowed
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 
@@ -44,6 +46,10 @@ internal fun <DM : IsRootDataModel> processScan(
     if (keyScanRange.ranges.isEmpty()) {
         return FetchByTableScan(ASC, null, null)
     }
+    val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
+    if (!scanRequest.filterSoftDeleted && scanIndex is IndexScan) {
+        throw RequestException("Scans including soft-deleted records require primary-key ordering; secondary-index ordering is not supported")
+    }
 
     when {
         // If hard key match then quit with direct record
@@ -58,7 +64,7 @@ internal fun <DM : IsRootDataModel> processScan(
         }
         else -> {
             // Process uniques as a fast path
-            keyScanRange.uniques?.takeIf { it.isNotEmpty() }?.let {
+            keyScanRange.uniques?.takeIf { scanRequest.filterSoftDeleted && it.isNotEmpty() }?.let {
                 // Only process the first unique since it has to match every found unique matcher
                 // and if first is set it can go to direct key to match further
                 val firstReference = it.first()
@@ -82,10 +88,10 @@ internal fun <DM : IsRootDataModel> processScan(
                 return FetchByUniqueKey(firstReference.reference)
             }
 
-            val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
-
             val processedScanIndex = if (scanIndex is TableScan) {
-                scanRequest.dataModel.optimizeTableScan(
+                if (!scanRequest.filterSoftDeleted) scanRequest.dataModel.checkTableScanAllowed(
+                    scanIndex, keyScanRange, allowTableScanOverride || scanRequest.allowTableScan,
+                ) else scanRequest.dataModel.optimizeTableScan(
                     scanIndex,
                     keyScanRange,
                     filter = scanRequest.where,

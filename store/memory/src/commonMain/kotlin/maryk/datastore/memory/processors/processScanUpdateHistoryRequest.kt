@@ -112,7 +112,8 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
             entry.version,
             1u,
             null,
-            record
+            record,
+            dataStore.keepAllVersions,
         )?.changes?.forEach { versionedChange ->
             val changes = versionedChange.changes
             if (changes.contains(ObjectCreate)) {

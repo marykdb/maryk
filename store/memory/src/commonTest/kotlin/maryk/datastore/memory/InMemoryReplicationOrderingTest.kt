@@ -5,7 +5,9 @@ import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.models.key
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
@@ -14,6 +16,7 @@ import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.test.models.Log
@@ -25,6 +28,35 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class InMemoryReplicationOrderingTest {
+    @Test
+    fun replicatedNoOpAdvancesWatermarkBeforeAnOlderChangeArrives() = runTest {
+        for (keepHistory in listOf(false, true)) {
+            for (initialReplay in listOf(false, true)) {
+                val store = InMemoryDataStore.open(keepAllVersions = keepHistory, dataModelsById = mapOf(1u to Log))
+                try {
+                    val values = Log("unchanged", timestamp = LocalDateTime(2026, 1, 1, 0, 0))
+                    val key = Log.key(values)
+                    store.processUpdate(UpdateResponse(Log, AdditionUpdate(key, 10uL, 10uL, 0, false, values)))
+                    val unchanged = listOf(Change(Log.ref { message } with "unchanged"))
+                    if (initialReplay) {
+                        store.processUpdate(UpdateResponse(Log, InitialChangesUpdate(
+                            version = 30uL,
+                            changes = listOf(DataObjectVersionedChange(key, changes = listOf(VersionedChanges(30uL, unchanged)))),
+                        )))
+                    } else {
+                        store.processUpdate(UpdateResponse(Log, ChangeUpdate(key, 30uL, 0, unchanged)))
+                    }
+                    assertEquals(30uL, store.execute(Log.get(key)).values.single().lastVersion)
+                    store.processUpdate(UpdateResponse(Log, ChangeUpdate(key, 20uL, 0,
+                        listOf(Change(Log.ref { message } with "stale value")))))
+                    val record = store.execute(Log.get(key)).values.single()
+                    assertEquals("unchanged", record.values { message })
+                    assertEquals(30uL, record.lastVersion)
+                } finally { store.close() }
+            }
+        }
+    }
+
     @Test
     fun rejectsUpdateVersionWhichCannotLeaveClockSuccessor() = runTest {
         val dataStore = InMemoryDataStore.open(dataModelsById = mapOf(1u to Log))

@@ -54,7 +54,7 @@ internal fun <DM : IsRootDataModel> filterMatches(
     matchesFilter(
         filter,
         valueMatcher = { propertyReference, valueMatcher ->
-            dataRecord.matchQualifier(propertyReference, toVersion, recordFetcher, valueMatcher)
+            dataRecord.matchQualifier(dataModel, propertyReference, toVersion, recordFetcher, valueMatcher)
         },
         normalizer = { propertyReference, value ->
             val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilter value
@@ -65,17 +65,17 @@ internal fun <DM : IsRootDataModel> filterMatches(
         },
         searchMatcher = { name, value ->
             dataModel.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
-                dataRecord.matchQualifier(propertyReference, toVersion, recordFetcher, valueMatcher)
+                dataRecord.matchQualifier(dataModel, propertyReference, toVersion, recordFetcher, valueMatcher)
             }
         },
         searchPrefixMatcher = { name, value ->
             dataModel.matchesNamedSearchIndexPrefix(name, value) { propertyReference, valueMatcher ->
-                dataRecord.matchQualifier(propertyReference, toVersion, recordFetcher, valueMatcher)
+                dataRecord.matchQualifier(dataModel, propertyReference, toVersion, recordFetcher, valueMatcher)
             }
         },
         searchRegexMatcher = { name, regex ->
             dataModel.matchesNamedSearchIndexRegex(name, regex) { propertyReference, valueMatcher ->
-                dataRecord.matchQualifier(propertyReference, toVersion, recordFetcher, valueMatcher)
+                dataRecord.matchQualifier(dataModel, propertyReference, toVersion, recordFetcher, valueMatcher)
             }
         }
     )

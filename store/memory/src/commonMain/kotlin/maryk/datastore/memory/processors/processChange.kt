@@ -1,5 +1,7 @@
 package maryk.datastore.memory.processors
 
+import maryk.datastore.memory.records.haveSameStoredValue
+
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -25,12 +27,14 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.enum.MultiTypeEnum
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IncMapReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListAnyItemReference
@@ -42,6 +46,7 @@ import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.toListIndex
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
@@ -70,6 +75,7 @@ import maryk.datastore.memory.processors.changers.deleteByReference
 import maryk.datastore.memory.processors.changers.getCurrentIncMapKey
 import maryk.datastore.memory.processors.changers.getList
 import maryk.datastore.memory.processors.changers.getValue
+import maryk.datastore.memory.processors.changers.getValueAtIndex
 import maryk.datastore.memory.processors.changers.setListValue
 import maryk.datastore.memory.processors.changers.setValue
 import maryk.datastore.memory.processors.changers.setValueAtIndex
@@ -80,17 +86,12 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.DeletedValue
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.hasActiveStoredType
 import maryk.datastore.shared.diffIndexValues
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.FlowUpdateEmitter
 import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
-
-private data class UniqueIndexChange(
-    val value: DataRecordValue<Comparable<Any>>?,
-    val reference: ByteArray,
-    val previousValue: Comparable<Any>?
-)
 
 /**
  * Apply [changes] to a specific object at [key] and record them as [version]
@@ -102,7 +103,8 @@ internal suspend fun <DM : IsRootDataModel> processChange(
     lastVersion: ULong?,
     changes: List<IsChange>,
     version: HLC,
-    updateSharedFlow: FlowUpdateEmitter
+    updateSharedFlow: FlowUpdateEmitter,
+    advanceVersionOnNoOp: Boolean = false,
 ): IsChangeResponseStatus<DM> {
     val index = dataStore.records.binarySearch { it.key compareTo key }
 
@@ -129,7 +131,8 @@ internal suspend fun <DM : IsRootDataModel> processChange(
                 changes,
                 version,
                 dataStore.keepAllVersions,
-                updateSharedFlow
+                updateSharedFlow,
+                advanceVersionOnNoOp,
             )
         }
     }
@@ -142,7 +145,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
     changes: List<IsChange>,
     version: HLC,
     keepAllVersions: Boolean,
-    updateSharedFlow: FlowUpdateEmitter
+    updateSharedFlow: FlowUpdateEmitter,
+    advanceVersionOnNoOp: Boolean,
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -163,10 +167,22 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             addValidationFail(AlreadyExistsException(ref, ue.key))
         }
 
-        var uniqueIndexChanges: MutableList<UniqueIndexChange>? = null
-
         val newValueList = objectToChange.values.toMutableList()
         val wasSoftDeleted = objectToChange.isDeleted(null)
+
+        fun hasActiveType(reference: AnyPropertyReference) = hasActiveStoredType(reference) { parent ->
+            when (val value = getValue<Any>(newValueList, parent.toStorageByteArray())?.value) {
+                is TypedValue<*, *> -> value.type.index
+                is TypeEnum<*> -> value.index
+                else -> null
+            }
+        }
+
+        fun requireActiveType(reference: AnyPropertyReference) {
+            if (!hasActiveType(reference)) {
+                throw RequestException("Property '${reference.completeName}' can only be changed in its active type. Set the multi type parent first.")
+            }
+        }
 
         var isChanged = false
         val setChanged = { didChange: Boolean -> if (didChange) isChanged = true }
@@ -209,7 +225,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                             dataModel.recordToValueWithMeta(null, null, currentRecord)?.values
                         } else null
                         for ((reference, expected) in change.referenceValuePairs) {
-                            val actual = if (reference.comparablePropertyDefinition is IsSimpleValueDefinition<*, *>) getValue<Any>(newValueList, reference.toStorageByteArray())?.value
+                            val actual = if (!hasActiveType(reference)) null
+                                else if (reference.comparablePropertyDefinition is IsSimpleValueDefinition<*, *>) getValue<Any>(newValueList, reference.toStorageByteArray())?.value
                                 else completeValues?.get(reference)
                             if (actual != expected) addValidationFail(InvalidValueException(reference, expected.toString()))
                         }
@@ -218,29 +235,23 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                         for (pair in change.referenceValuePairs) {
                             @Suppress("UNCHECKED_CAST")
                             val reference = pair.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                            if (pair.value == null && !hasActiveType(reference)) continue
+                            requireActiveType(reference)
+                            if (pair.value != null && reference is TypedValueReference<*, *, *> &&
+                                reference.comparablePropertyDefinition is IsSimpleValueDefinition<*, *>) {
+                                throw RequestException("Simple type values must be changed through the multi type parent.")
+                            }
                             when (val value = pair.value) {
                                 null -> {
-                                    deleteByReference(newValueList, reference, version, keepAllVersions) { _, previousValue ->
+                                    @Suppress("UNCHECKED_CAST")
+                                    val deletionReference = reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
+                                    deleteByReference(newValueList, deletionReference, version, keepAllVersions) { _, previousValue ->
                                         try {
-                                            reference.propertyDefinition.validateWithRef(
+                                            deletionReference.propertyDefinition.validateWithRef(
                                                 previousValue = previousValue,
                                                 newValue = null,
-                                                refGetter = { reference }
+                                                refGetter = { deletionReference }
                                             )
-
-                                            val definition = reference.comparablePropertyDefinition
-                                            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                                                @Suppress("UNCHECKED_CAST")
-                                                val comparableValue = previousValue as Comparable<Any>
-                                                when (uniqueIndexChanges) {
-                                                    null -> uniqueIndexChanges = mutableListOf(
-                                                        UniqueIndexChange(null, reference.toStorageByteArray(), comparableValue)
-                                                    )
-                                                    else -> uniqueIndexChanges?.add(
-                                                        UniqueIndexChange(null, reference.toStorageByteArray(), comparableValue)
-                                                    )
-                                                }
-                                            }
 
                                             // Extra validations based on reference type
                                             when (reference) {
@@ -271,8 +282,6 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         value as Map<Any, Any>
                                     ) { mapReference }
 
-                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
-
                                     val expectedValues = mutableListOf<Pair<ByteArray, Any?>>()
                                     val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
                                         expectedValues.add(qualifier to mapValue)
@@ -287,6 +296,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     if (hasSameStorageValues(currentValues, expectedValues)) {
                                         continue
                                     }
+
+                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
 
                                     // Delete all existing values in placeholder
                                     deleteByReference(newValueList, mapReference, version, keepAllVersions)
@@ -317,8 +328,6 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         value as List<Any>
                                     ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
-                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
-
                                     val expectedValues = mutableListOf<Pair<ByteArray, Any?>>()
                                     val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
                                         expectedValues.add(qualifier to mapValue)
@@ -333,6 +342,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     if (hasSameStorageValues(currentValues, expectedValues)) {
                                         continue
                                     }
+
+                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
 
                                     // Delete all existing values in placeholder
                                     deleteByReference(newValueList, reference, version, keepAllVersions)
@@ -363,8 +374,6 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         value as Set<Any>
                                     ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
-                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
-
                                     val expectedValues = mutableListOf<Pair<ByteArray, Any?>>()
                                     val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
                                         expectedValues.add(qualifier to mapValue)
@@ -379,6 +388,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     if (hasSameStorageValues(currentValues, expectedValues)) {
                                         continue
                                     }
+
+                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
 
                                     // Delete all existing values in placeholder
                                     deleteByReference(newValueList, reference, version, keepAllVersions)
@@ -483,31 +494,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                 else -> {
                                     setValue(
                                         newValueList, reference, value, version, keepAllVersions
-                                    ) { dataRecordValue, previousValue ->
-                                        val definition = reference.comparablePropertyDefinition
-                                        if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                                            @Suppress("UNCHECKED_CAST")
-                                            val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
-                                            try {
-                                                dataStore.validateUniqueNotExists(comparableValue, objectToChange)
-                                                @Suppress("UNCHECKED_CAST")
-                                                val previousComparableValue = previousValue as? Comparable<Any>
-                                                when (uniqueIndexChanges) {
-                                                    null -> uniqueIndexChanges = mutableListOf(
-                                                        UniqueIndexChange(comparableValue, comparableValue.reference, previousComparableValue)
-                                                    )
-                                                    else -> uniqueIndexChanges.add(
-                                                        UniqueIndexChange(comparableValue, comparableValue.reference, previousComparableValue)
-                                                    )
-                                                }
-                                            } catch (e: UniqueException) {
-                                                // Only throw if key is not equal otherwise ignore as it is the same as existing key
-                                                if (e.key != objectToChange.key) {
-                                                    throw e
-                                                }
-                                            }
-                                        }
-
+                                    ) { _, previousValue ->
                                         if (previousValue == null) {
                                             // Check if parent exists before trying to change
                                             if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null) {
@@ -537,6 +524,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                     }
                     is ListChange -> {
                         for (listChange in change.listValueChanges) {
+                            requireActiveType(listChange.reference)
                             val originalList = getList(newValueList, listChange.reference)
                             val list = originalList?.toMutableList() ?: mutableListOf()
                             val originalCount = list.size
@@ -583,6 +571,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                     is SetChange -> {
                         @Suppress("UNCHECKED_CAST")
                         for (setChange in change.setValueChanges) {
+                            requireActiveType(setChange.reference)
                             val setReference = setChange.reference as SetReference<Any, IsPropertyContext>
                             val setDefinition = setReference.propertyDefinition
                             var countChange = 0
@@ -621,6 +610,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                     is IncMapChange -> {
                         @Suppress("UNCHECKED_CAST")
                         for (valueChange in change.valueChanges) {
+                            requireActiveType(valueChange.reference)
                             val incMapReference = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
                             val incMapDefinition = incMapReference.propertyDefinition
 
@@ -683,9 +673,11 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
         }
 
         val isSoftDeleted = getValue<Boolean>(newValueList, objectSoftDeleteQualifier)?.value == true
-        if (wasSoftDeleted && !isSoftDeleted) {
+        val oldUniqueValues = if (wasSoftDeleted) emptyMap() else collectUniqueValues(dataModel, objectToChange.values)
+        val newUniqueValues = if (isSoftDeleted) emptyMap() else collectUniqueValues(dataModel, newValueList)
+        for (uniqueValue in newUniqueValues.values) {
             try {
-                dataStore.validateUniqueValuesNotExists(objectToChange, newValueList)
+                dataStore.validateUniqueNotExists(uniqueValue, objectToChange)
             } catch (ue: UniqueException) {
                 addUniqueValidationFail(ue)
             }
@@ -700,6 +692,9 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
         }
 
         if (!isChanged) {
+            if (advanceVersionOnNoOp && version > objectToChange.lastVersion) {
+                objectToChange.lastVersion = version
+            }
             return ChangeSuccess(objectToChange.lastVersion.timestamp, outChanges)
         }
 
@@ -708,26 +703,14 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
         }
         dataStore.addToUpdateHistory(version, objectToChange.key.bytes)
 
-        when {
-            !wasSoftDeleted && isSoftDeleted -> {
-                dataStore.removeFromUniqueIndices(objectToChange, version)
+        for ((reference, oldValue) in oldUniqueValues) {
+            if (!haveSameStoredValue(newUniqueValues[reference]?.value, oldValue.value)) {
+                dataStore.removeFromUniqueIndex(objectToChange, oldValue.reference, oldValue.value, version)
             }
-            !isSoftDeleted -> {
-                uniqueIndexChanges?.forEach { indexChange ->
-                    if (indexChange.value == null) {
-                        indexChange.previousValue?.let {
-                            dataStore.removeFromUniqueIndex(objectToChange, indexChange.reference, it, version)
-                        }
-                    } else {
-                        dataStore.addToUniqueIndex(
-                            objectToChange,
-                            indexChange.value.reference,
-                            indexChange.value.value,
-                            version,
-                            indexChange.previousValue
-                        )
-                    }
-                }
+        }
+        for ((reference, newValue) in newUniqueValues) {
+            if (!haveSameStoredValue(oldUniqueValues[reference]?.value, newValue.value)) {
+                dataStore.addToUniqueIndex(objectToChange, newValue.reference, newValue.value, version)
             }
         }
 
@@ -740,10 +723,6 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
 
         // Apply the new values now all validations have been accepted
         objectToChange.values = newValueList
-
-        if (wasSoftDeleted && !isSoftDeleted) {
-            dataStore.addToUniqueIndices(objectToChange, version)
-        }
 
         // Process indexes
         dataModel.Meta.indexes?.forEachIndexed { index, it ->
@@ -840,6 +819,24 @@ private fun checkParentReference(
     }
 }
 
+/** Resolve unique descendants from the complete staged state, including complex replacements. */
+private fun collectUniqueValues(
+    dataModel: IsRootDataModel,
+    values: List<DataRecordNode>,
+): Map<Bytes, DataRecordValue<Comparable<Any>>> = buildMap {
+    for (index in values.indices) {
+        val value = getValueAtIndex<Any>(values, index) ?: continue
+        if (value.reference.contentEquals(objectSoftDeleteQualifier)) continue
+        var offset = 0
+        val definition = dataModel.getPropertyReferenceByStorageBytes(value.reference.size, reader = { value.reference[offset++] })
+            .comparablePropertyDefinition
+        if (definition is IsComparableDefinition<*, *> && definition.unique) {
+            @Suppress("UNCHECKED_CAST")
+            put(Bytes(value.reference), value as DataRecordValue<Comparable<Any>>)
+        }
+    }
+}
+
 /**
  * Create a ValueWriter to [newValueList] at [version]
  * Use [keepAllVersions] at true to keep all past versions
@@ -912,7 +909,7 @@ private fun hasSameStorageValues(
 private fun valuesEqual(left: Any?, right: Any?): Boolean =
     when {
         left is ByteArray && right is ByteArray -> left.contentEquals(right)
-        else -> left == right
+        else -> haveSameStoredValue(left, right)
     }
 
 private fun ByteArray.startsWith(prefix: ByteArray): Boolean {

@@ -1,6 +1,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.toByteArray
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Bytes
@@ -84,14 +85,15 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
             toVersion = scanRequest.toVersion,
             maxVersions = scanRequest.maxVersions,
             sortingKey = sortingKey,
-            historyRecords = historyRecords
+            historyRecords = historyRecords,
+            keepAllVersions = dataStore.keepAllVersions,
         ).forEach { (historyRecord, versionedChange) ->
             val changes = versionedChange.changes
 
             if (changes.contains(ObjectCreate)) {
                 scanRequest.dataModel.recordToValueWithMeta(
                     scanRequest.select,
-                    HLC(versionedChange.version),
+                    if (dataStore.keepAllVersions) HLC(versionedChange.version) else null,
                     historyRecord
                 )?.let { valuesWithMeta ->
                     updates += AdditionUpdate(
@@ -210,6 +212,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
     val scanRequest = storeAction.request
     val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
     val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val matchingVersions = mutableMapOf<Key<DM>, ULong>()
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     val seenKeys = HashSet<Key<DM>>(expectedSize * 2)
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
@@ -262,6 +265,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
         if (!shouldProcessRecord(record, scanRequest, scanRange, recordFetcher)) continue
 
         matchingKeys += key
+        matchingVersions[key] = record.lastVersion.timestamp
         lastResponseVersion = maxOf(lastResponseVersion, record.lastVersion.timestamp)
 
         scanRequest.dataModel.recordToObjectChanges(
@@ -270,7 +274,8 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
             scanRequest.toVersion,
             scanRequest.maxVersions,
             null,
-            record
+            record,
+            dataStore.keepAllVersions,
         )?.let { objectChange ->
             for (versionedChange in objectChange.changes) {
                 val changes = versionedChange.changes
@@ -278,7 +283,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                 if (changes.contains(ObjectCreate)) {
                     scanRequest.dataModel.recordToValueWithMeta(
                         scanRequest.select,
-                        HLC(versionedChange.version),
+                        if (dataStore.keepAllVersions) HLC(versionedChange.version) else null,
                         record
                     )?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
@@ -329,7 +334,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
         OrderedKeysUpdate(
             version = lastResponseVersion,
             keys = matchingKeys,
-            sortingKeys = null
+            sortingKeys = matchingKeys.map { Bytes(matchingVersions.getValue(it).toByteArray()) }
         )
     )
 

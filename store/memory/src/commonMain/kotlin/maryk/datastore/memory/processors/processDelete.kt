@@ -84,6 +84,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                     version,
                     dataStore.keepAllVersions
                 )
+                newValues.forEach { it.commit() }
 
                 val newRecord = oldRecord.copy(
                     values = newValues,

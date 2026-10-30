@@ -1090,7 +1090,7 @@ class InMemoryDataStoreTest {
                 dataStore.execute(
                     Log.scan(
                         where = Equals(Log.severity.ref() with INFO),
-                        order = Orders(Log.ref { severity }.ascending()),
+                        allowTableScan = true,
                         filterSoftDeleted = false
                     )
                 ).values.map { it.key }
@@ -1146,6 +1146,7 @@ class InMemoryDataStoreTest {
                 dataStore.execute(
                     UniqueModel.scan(
                         where = Equals(UniqueModel.ref { email } with "soft-delete@example.com"),
+                        allowTableScan = true,
                         filterSoftDeleted = false
                     )
                 ).values.map { it.key }

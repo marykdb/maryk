@@ -1,6 +1,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.exceptions.TypeException
+import maryk.core.clock.HLC
 import maryk.core.processors.datastore.readStorageToChanges
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.graph.RootPropRefGraph
@@ -18,7 +19,8 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
     toVersion: ULong?,
     maxVersions: UInt,
     sortingKey: ByteArray?,
-    record: DataRecord<DM>
+    record: DataRecord<DM>,
+    keepAllVersions: Boolean,
 ): DataObjectVersionedChange<DM>? {
     var valueIndex = -1
 
@@ -34,6 +36,10 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
         },
         select = select,
         creationVersion = if(record.firstVersion.timestamp >= fromVersion) record.firstVersion.timestamp else null,
+        readValuesAtVersion = { version ->
+            val readVersion = if (keepAllVersions) HLC(version) else null
+            recordToValueWithMeta(select, readVersion, record)?.values
+        },
         processValue = { _, _, valueWithVersionReader ->
             when (val node = record.values[valueIndex]) {
                 is DataRecordValue<*> -> {

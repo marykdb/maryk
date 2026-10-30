@@ -6,6 +6,7 @@ import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DeletedValue
 import maryk.datastore.memory.records.IsDataRecordValue
+import maryk.datastore.memory.records.haveSameStoredValue
 
 /**
  * Sets a [value] at a specific [valueIndex] and stores it below [reference] at [version] in [values]
@@ -32,7 +33,7 @@ internal fun <T : Any> setValueAtIndex(
         is DataRecordValue<*> -> {
             if (keepAllVersions && matchedValue.version != version) {
                 // Only store value if was not already value
-                if (matchedValue.value != value) {
+                if (!haveSameStoredValue(matchedValue.value, value)) {
                     DataRecordValue(reference, value, version).also {
                         @Suppress("UNCHECKED_CAST")
                         (values as MutableList<DataRecordNode>)[valueIndex] =
@@ -45,7 +46,7 @@ internal fun <T : Any> setValueAtIndex(
                 } else null
             } else {
                 // Only store value if was not already value
-                if (matchedValue.value != value) {
+                if (!haveSameStoredValue(matchedValue.value, value)) {
                     DataRecordValue(reference, value, version).also {
                         (values as MutableList<DataRecordNode>)[valueIndex] = it
                     }
@@ -63,7 +64,7 @@ internal fun <T : Any> setValueAtIndex(
             val lastValue = matchedValue.toAdd ?: matchedValue.history.last()
 
             // Only store value if was not already value
-            if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
+            if (lastValue !is DataRecordValue<*> || !haveSameStoredValue(lastValue.value, value)) {
                 DataRecordValue(reference, value, version).also {
                     @Suppress("UNCHECKED_CAST")
                     (matchedValue.copyForChange() as DataRecordHistoricValues<T>).let { historicValues ->

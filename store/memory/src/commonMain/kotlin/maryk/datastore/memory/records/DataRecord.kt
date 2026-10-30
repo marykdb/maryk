@@ -3,6 +3,7 @@ package maryk.datastore.memory.records
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.graph
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
@@ -11,11 +12,18 @@ import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsListDefinition
+import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.SetAnyValueReference
 import maryk.core.properties.references.SetReference
@@ -26,7 +34,10 @@ import maryk.core.values.IsValuesGetter
 import maryk.datastore.memory.processors.changers.getValue
 import maryk.datastore.memory.processors.changers.getValueAtIndex
 import maryk.datastore.memory.processors.objectSoftDeleteQualifier
+import maryk.datastore.memory.processors.recordToValueWithMeta
+import maryk.datastore.shared.hasActiveStoredType
 import maryk.datastore.shared.isSkippableDataError
+import maryk.datastore.shared.requiresStoredReferenceStructure
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.exceptions.ParseException
 
@@ -160,21 +171,46 @@ internal data class DataRecord<DM : IsRootDataModel>(
         toVersion: HLC?,
         recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?,
         matcher: (T?) -> Boolean
-    ) = this.matchQualifier(reference.toQualifierMatcher(), toVersion, recordFetcher, matcher)
+    ) = this.matchQualifier(reference.toQualifierMatcher(), toVersion, recordFetcher, null, matcher)
+
+    fun <T : Any> matchQualifier(
+        dataModel: DM,
+        reference: IsPropertyReference<T, *, *>,
+        toVersion: HLC?,
+        recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?,
+        matcher: (T?) -> Boolean
+    ) = this.matchQualifier(reference.toQualifierMatcher(), toVersion, recordFetcher, dataModel, matcher)
 
     private fun <T : Any> matchQualifier(
         qualifierMatcher: IsQualifierMatcher,
         toVersion: HLC?,
         recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?,
+        dataModel: IsRootDataModel?,
         matcher: (T?) -> Boolean
     ): Boolean {
         when (qualifierMatcher) {
             is QualifierExactMatcher -> {
+                val actualReference = qualifierMatcher.reference ?: dataModel?.let { model ->
+                    var offset = 0
+                    model.getPropertyReferenceByStorageBytes(qualifierMatcher.qualifier.size, { qualifierMatcher.qualifier[offset++] })
+                }
+                if (actualReference != null && !hasActiveType(actualReference, toVersion)) return matcher(null)
                 val value = get<T>(qualifierMatcher.reference, qualifierMatcher.qualifier, toVersion)
                     ?: return matcher(null)
 
                 return when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
-                    null -> matcher(value)
+                    null -> {
+                        val definition = qualifierMatcher.reference?.comparablePropertyDefinition
+                        val structural = definition is IsListDefinition<*, *> || definition is IsMapDefinition<*, *, *> ||
+                            definition is IsSetDefinition<*, *> || definition is IsEmbeddedValuesDefinition<*, *> ||
+                            definition is IsMultiTypeDefinition<*, *, *> && value is TypeEnum<*>
+                        if (dataModel == null || !structural) matcher(value) else {
+                            var offset = 0
+                            val reference = dataModel.getPropertyReferenceByStorageBytes(qualifierMatcher.qualifier.size, { qualifierMatcher.qualifier[offset++] })
+                            @Suppress("UNCHECKED_CAST")
+                            matcher(readStructure(dataModel, reference, toVersion) as T?)
+                        }
+                    }
                     else -> {
                         recordFetcher(
                             referencedMatcher.reference.propertyDefinition.dataModel,
@@ -183,6 +219,7 @@ internal data class DataRecord<DM : IsRootDataModel>(
                             referencedMatcher.qualifierMatcher,
                             toVersion,
                             recordFetcher,
+                            referencedMatcher.reference.propertyDefinition.dataModel,
                             matcher
                         ) == true
                     }
@@ -205,20 +242,28 @@ internal data class DataRecord<DM : IsRootDataModel>(
                     when (qualifierMatcher.isMatch(value.reference, 0)) {
                         NO_MATCH -> continue@qualifiers
                         MATCH -> {
+                            val actualReference = dataModel?.let { model ->
+                                var offset = 0
+                                model.getPropertyReferenceByStorageBytes(value.reference.size, { value.reference[offset++] })
+                            } ?: qualifierMatcher.reference
+                            if (actualReference != null && !hasActiveType(actualReference, toVersion)) continue@qualifiers
                             val matches = when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
                                 null -> {
                                     val decoded = qualifierMatcher.reference?.let {
                                         readFuzzyValue(it, value.reference)
                                     }
                                     @Suppress("UNCHECKED_CAST")
-                                    matcher((decoded ?: value.value) as T?)
+                                    matcher((decoded ?: if (dataModel != null && actualReference != null && requiresStoredReferenceStructure(actualReference)) {
+                                        readStructure(dataModel, actualReference, toVersion)
+                                    } else value.value) as T?)
                                 }
                                 else -> {
                                     recordFetcher(
                                         referencedMatcher.reference.comparablePropertyDefinition.dataModel,
                                         value.value as Key<*>
                                     )?.matchQualifier(
-                                        referencedMatcher.qualifierMatcher, toVersion, recordFetcher, matcher
+                                        referencedMatcher.qualifierMatcher, toVersion, recordFetcher,
+                                        referencedMatcher.reference.comparablePropertyDefinition.dataModel, matcher
                                     ) == true
                                 }
                             }
@@ -230,6 +275,23 @@ internal data class DataRecord<DM : IsRootDataModel>(
                 }
                 return false
             }
+        }
+    }
+
+    private fun readStructure(dataModel: IsRootDataModel, reference: AnyPropertyReference, toVersion: HLC?): Any? {
+        val root = reference.unwrap().first() as IsPropertyReferenceForValues<*, *, *, *>
+        val projection = dataModel.graph { listOf(dataModel[root.index]!!) }
+        @Suppress("UNCHECKED_CAST")
+        val snapshot = dataModel.recordToValueWithMeta(projection, toVersion, this as DataRecord<IsRootDataModel>)?.values
+        @Suppress("UNCHECKED_CAST")
+        return snapshot?.get(reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
+    }
+
+    private fun hasActiveType(reference: AnyPropertyReference, toVersion: HLC?): Boolean = hasActiveStoredType(reference) { parent ->
+        when (val value = getValue<Any>(values, parent.toStorageByteArray(), toVersion)?.value) {
+            is TypedValue<*, *> -> value.type.index
+            is TypeEnum<*> -> value.index
+            else -> null
         }
     }
 

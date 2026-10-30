@@ -3,6 +3,7 @@ package maryk.datastore.memory.processors.changers
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.IncMapReference
 import maryk.datastore.memory.records.DataRecordNode
+import maryk.datastore.shared.incrementingMapKeyPrefix
 import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareTo
 
@@ -20,7 +21,7 @@ internal fun getCurrentIncMapKey(
     val nextValueReference = values.getOrNull(valueIndex + 1)?.reference
 
     return if (nextValueReference != null && referenceToCompareTo.compareDefinedRange(nextValueReference, 0) == 0) {
-        nextValueReference
+        incrementingMapKeyPrefix(nextValueReference, referenceToCompareTo, reference.propertyDefinition.definition.keyDefinition.byteSize)
     } else {
         // If nothing was found create a new reference
         val mapKeySize = reference.propertyDefinition.definition.keyDefinition.byteSize

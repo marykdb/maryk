@@ -1,18 +1,17 @@
 package maryk.datastore.memory.processors.changers
 
 import maryk.core.clock.HLC
-import maryk.core.extensions.bytes.writeBytes
+import maryk.core.processors.datastore.ValueWriter
+import maryk.core.processors.datastore.writeListToStorage
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.TypedPropertyReference
+import maryk.core.properties.types.Bytes
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.matchesRangePart
 
-/**
- * Set a list value in [values] for [reference] with a [newList] at new [version].
- * With [originalCount] it is determined if items need to be deleted.
- * Use [keepAllVersions] on true to keep old versions
- * Returns true if changed
- */
+/** Replace the complete list subtree so shifted complex items keep their descendants. */
 internal fun <T : Any> setListValue(
     values: MutableList<DataRecordNode>,
     reference: TypedPropertyReference<out List<T>>,
@@ -23,55 +22,25 @@ internal fun <T : Any> setListValue(
 ): Boolean {
     @Suppress("UNCHECKED_CAST")
     val listReference = reference as ListReference<T, *>
-    val referenceToCompareTo = listReference.toStorageByteArray()
+    val prefix = reference.toStorageByteArray()
+    val expected = mutableListOf<Pair<ByteArray, Any>>()
+    val writer: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, value -> expected += qualifier to value }
+    writeListToStorage(prefix.size, reference::writeStorageBytes, writer,
+        listReference.propertyDefinition.definition, newList)
+    val expectedReferences = expected.mapTo(hashSetOf()) { Bytes(it.first) }
 
-    var valueIndex = values.binarySearch {
-        it.reference compareTo referenceToCompareTo
-    }
-
-    // Set the count
-    setValueAtIndex(values, valueIndex, referenceToCompareTo, newList.size, version, keepAllVersions)
-
-    var changed = false
-
-    val toDeleteCount = originalCount - newList.size
-    if (toDeleteCount > 0) {
-        changed = true
-        for (i in 0 until toDeleteCount) {
-            var byteIndex = referenceToCompareTo.size
-            val refToDelete = referenceToCompareTo.copyOf(byteIndex + 4)
-            (i + newList.size).toUInt().writeBytes({
-                refToDelete[byteIndex++] = it
-            })
-            val indexToDelete = values.binarySearch {
-                it.reference compareTo refToDelete
-            }
-            deleteByIndex<T>(
-                values,
-                indexToDelete,
-                refToDelete,
-                version,
-                keepAllVersions
-            )
+    var changed = originalCount != newList.size
+    val currentReferences = values.asSequence().map { it.reference }
+        .filter { it.matchesRangePart(0, prefix) }.toList()
+    for (qualifier in currentReferences) {
+        if (Bytes(qualifier) !in expectedReferences) {
+            val index = values.binarySearch { it.reference compareTo qualifier }
+            if (deleteByIndex<Any>(values, index, qualifier, version, keepAllVersions) != null) changed = true
         }
     }
-
-    // Walk all new values to store
-    newList.forEachIndexed { index, item ->
-        var byteIndex = referenceToCompareTo.size
-        val newRef = referenceToCompareTo.copyOf(byteIndex + 4)
-
-        index.toUInt().writeBytes({
-            newRef[byteIndex++] = it
-        })
-
-        valueIndex = values.binarySearch {
-            it.reference compareTo newRef
-        }
-        setValueAtIndex(values, valueIndex, newRef, item, version, keepAllVersions)?.also {
-            changed = true
-        }
+    for ((qualifier, value) in expected) {
+        val index = values.binarySearch { it.reference compareTo qualifier }
+        if (setValueAtIndex(values, index, qualifier, value, version, keepAllVersions) != null) changed = true
     }
-
     return changed
 }

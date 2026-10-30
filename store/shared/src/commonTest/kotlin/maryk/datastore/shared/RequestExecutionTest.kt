@@ -1,6 +1,7 @@
 package maryk.datastore.shared
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import maryk.core.models.key
+import maryk.core.exceptions.StorageException
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.GetRequest
@@ -36,6 +38,7 @@ import maryk.core.values.Values
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.FlowUpdate
 import maryk.datastore.shared.updates.RemovePendingUpdateListenerAction
+import maryk.datastore.shared.updates.RemoveUpdateListenerAction
 import maryk.datastore.shared.updates.UPDATE_LISTENER_MAILBOX_CAPACITY
 import maryk.datastore.shared.updates.UpdateListenerOverflowException
 import maryk.test.models.SimpleMarykModel
@@ -401,6 +404,98 @@ class RequestExecutionTest {
     }
 
     @Test
+    fun closingDuringActivationCleanupPreservesCancellation() = runTest {
+        withContext(Dispatchers.Default) {
+            val store = FlowRegistrationTestStore().apply { pauseActivation = true }
+            try {
+                supervisorScope {
+                    val collector = async {
+                        store.executeFlow(SimpleMarykModel.scan(allowTableScan = true)).collect()
+                    }
+                    store.initialReadStarted.await()
+                    store.releaseInitialRead.complete(Unit)
+                    store.activationStarted.await()
+
+                    collector.cancel()
+                    withTimeout(2.seconds) { store.cleanupAfterActivation.await() }
+                    store.close()
+
+                    assertFailsWith<CancellationException> {
+                        withTimeout(2.seconds) { collector.await() }
+                    }
+                }
+            } finally {
+                store.releaseInitialRead.complete(Unit)
+                store.releaseActivation.complete(Unit)
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun closingDuringActiveListenerCleanupPreservesCancellation() = runTest {
+        withContext(Dispatchers.Default) {
+            val store = FlowRegistrationTestStore()
+            try {
+                supervisorScope {
+                    val initial = CompletableDeferred<Unit>()
+                    val active = async {
+                        store.executeFlow(SimpleMarykModel.scan(allowTableScan = true)).collect {
+                            assertIs<InitialValuesUpdate<SimpleMarykModel>>(it)
+                            initial.complete(Unit)
+                        }
+                    }
+                    store.initialReadStarted.await()
+                    store.releaseInitialRead.complete(Unit)
+                    withTimeout(2.seconds) { initial.await() }
+
+                    // A second registration holds the update actor while the first
+                    // listener's cancellation queues its removal acknowledgement.
+                    store.pauseActivation = true
+                    val registering = async {
+                        store.executeFlow(SimpleMarykModel.scan(allowTableScan = true)).collect()
+                    }
+                    store.activationStarted.await()
+                    active.cancel()
+                    withTimeout(2.seconds) { store.activeListenerCleanup.await() }
+                    store.close()
+
+                    assertFailsWith<CancellationException> {
+                        withTimeout(2.seconds) { active.await() }
+                    }
+                    // Closing a still-active request must retain its storage failure.
+                    assertFailsWith<StorageException> {
+                        withTimeout(2.seconds) { registering.await() }
+                    }
+                }
+            } finally {
+                store.releaseInitialRead.complete(Unit)
+                store.releaseActivation.complete(Unit)
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun unrelatedListenerCleanupFailureRemainsVisible() = runTest {
+        withContext(Dispatchers.Default) {
+            val failure = StorageException("DataStore is closed")
+            val store = FlowRegistrationTestStore().apply { listenerRemovalFailure = failure }
+            try {
+                store.releaseInitialRead.complete(Unit)
+                val observed = assertFailsWith<StorageException> {
+                    store.executeFlow(SimpleMarykModel.scan(allowTableScan = true)).take(1).single()
+                }
+                assertTrue(observed === failure || observed.cause === failure)
+                // A matching exception message does not mean the store was closed.
+                store.execute(SimpleMarykModel.scan(allowTableScan = true))
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
     fun pendingFlowListenerOverflowFailsWhenItsSnapshotCompletes() {
         runTest {
             withContext(Dispatchers.Default) {
@@ -449,12 +544,14 @@ private class FlowRegistrationTestStore : AbstractDataStore(
     val activationStarted = CompletableDeferred<Unit>()
     val releaseActivation = CompletableDeferred<Unit>()
     val cleanupAfterActivation = CompletableDeferred<Unit>()
+    val activeListenerCleanup = CompletableDeferred<Unit>()
     private val key = SimpleMarykModel.key(ByteArray(16))
     private var values: Values<SimpleMarykModel>? = null
     private var version = 0uL
     private var delayedSnapshotUpdate: FlowUpdate? = null
     var emitSnapshotUpdateBeforeResponse = false
     var pauseActivation = false
+    var listenerRemovalFailure: Throwable? = null
 
     fun enqueueConcurrentMutation(): CompletableDeferred<AddResponse<SimpleMarykModel>> {
         return enqueueMutation("added during registration")
@@ -494,6 +591,9 @@ private class FlowRegistrationTestStore : AbstractDataStore(
             updateSharedFlow.collect { action ->
                 if (action is RemovePendingUpdateListenerAction && action.listener.activatedListener.value != null) {
                     cleanupAfterActivation.complete(Unit)
+                }
+                if (action is RemoveUpdateListenerAction) {
+                    activeListenerCleanup.complete(Unit)
                 }
             }
         }
@@ -547,6 +647,7 @@ private class FlowRegistrationTestStore : AbstractDataStore(
 
     override fun onUpdateListenerRemoved(dataModelId: UInt) {
         listenerRemoved.complete(Unit)
+        listenerRemovalFailure?.let { throw it }
     }
 
     override fun onUpdateListenerAdded(dataModelId: UInt) {

@@ -92,7 +92,8 @@ abstract class AbstractDataStore(
     final override val dataModelIdsByString = dataModelRegistry.dataModelIdsByString
 
     private val initIsDone: AtomicBoolean = atomic(false)
-    private val isClosed: AtomicBoolean = atomic(false)
+    private val closeCause = atomic<StorageException?>(null)
+    private val isClosed get() = closeCause.value != null
     private val updateProcessorFailure = atomic<Throwable?>(null)
     private val pendingResponsesMutex = Mutex()
     private val pendingResponses = mutableSetOf<CompletableDeferred<*>>()
@@ -151,9 +152,7 @@ abstract class AbstractDataStore(
         updateProcessorFailure.value?.let { failure ->
             throw StorageException("DataStore update processor failed", failure)
         }
-        if (isClosed.value) {
-            throw StorageException("DataStore is closed")
-        }
+        closeCause.value?.let { throw it }
     }
 
     override val supportsAtomicRequests: Boolean get() = false
@@ -329,11 +328,7 @@ abstract class AbstractDataStore(
                 listenerAddedToStore = true
 
                 listener.getFlow().onCompletion {
-                    if (isClosed.value) return@onCompletion
-
-                    withContext(NonCancellable) {
-                        if (isClosed.value) return@withContext
-
+                    cleanupFlowListener {
                         val listenerRemoved = CompletableDeferred<Unit>()
                         awaitPendingResponse(listenerRemoved) {
                             mutableUpdateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
@@ -343,8 +338,8 @@ abstract class AbstractDataStore(
                     }
                 }.collect { emit(it) }
             } catch (error: Throwable) {
-                withContext(NonCancellable) {
-                    if (!isClosed.value && !listenerCleanupComplete) {
+                cleanupFlowListener {
+                    if (!listenerCleanupComplete) {
                         val listenerRemoved = CompletableDeferred<Unit>()
                         awaitPendingResponse(listenerRemoved) {
                             mutableUpdateSharedFlow.emit(RemovePendingUpdateListenerAction(dataModelId, pendingListener, listenerRemoved))
@@ -355,6 +350,22 @@ abstract class AbstractDataStore(
                     }
                 }
                 throw error
+            }
+        }
+    }
+
+    /** Closure may fail a pending removal acknowledgement after cleanup has started. */
+    private suspend fun cleanupFlowListener(cleanup: suspend () -> Unit) {
+        withContext(NonCancellable) {
+            if (isClosed) return@withContext
+            try {
+                cleanup()
+            } catch (error: Throwable) {
+                // Coroutine stacktrace recovery can copy an exception while
+                // retaining the original as its cause. Match this store's
+                // shutdown signal, rather than its exception type or message.
+                val shutdown = closeCause.value
+                if (shutdown == null || error !== shutdown && error.cause !== shutdown) throw error
             }
         }
     }
@@ -590,11 +601,11 @@ abstract class AbstractDataStore(
     }
 
     override suspend fun closeAllListeners() {
-        if (isClosed.value) return
+        if (isClosed) return
 
         waitForInit()
 
-        if (isClosed.value) return
+        if (isClosed) return
 
         val listenersRemoved = CompletableDeferred<Unit>()
         awaitPendingResponse(listenersRemoved) {
@@ -605,7 +616,7 @@ abstract class AbstractDataStore(
 
     /** Fail live listeners when a backend cannot safely continue an incremental stream. */
     protected suspend fun failAllListeners(cause: Throwable) {
-        if (isClosed.value) return
+        if (isClosed) return
         mutableUpdateSharedFlow.emit(FailAllUpdateListenersAction(cause))
         onAllUpdateListenersRemoved()
     }
@@ -639,9 +650,8 @@ abstract class AbstractDataStore(
     }
 
     protected suspend fun startClosingDataStore(): Boolean {
-        if (isClosed.getAndSet(true)) return false
-
         val closeError = StorageException("DataStore is closed")
+        if (!closeCause.compareAndSet(null, closeError)) return false
         storeChannel.close()
         storeActorHasStarted.completeExceptionally(closeError)
         updateSharedFlowHasStarted.completeExceptionally(closeError)

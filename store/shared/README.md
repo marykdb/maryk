@@ -17,6 +17,10 @@ Not intended as a standalone store.
   updates and initial history replay. Deleted creations remain excluded from normal
   reads and active indexes until an explicit later undelete.
 - Shared update/listener flow behavior.
+- Flow completion includes listener cleanup. If store shutdown overlaps that
+  cleanup, its shutdown acknowledgement does not replace the flow's cancellation
+  or original failure. Other cleanup failures remain visible, and closing active
+  requests still fails them with `StorageException`.
 - Shared versioning/query semantics.
 - Shared sensitive-field encryption contracts:
   - `maryk.datastore.shared.encryption.FieldEncryptionProvider`

@@ -6,6 +6,8 @@ import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSubDefinition
+import maryk.core.properties.definitions.writeCollectionQualifierBytes
+import maryk.core.properties.definitions.validateCollectionStorageIdentities
 
 /** Write a complete [map] defined by [definition] with [qualifierWriter] of [qualifierLength] to storage with [valueWriter]. */
 @Suppress("UNCHECKED_CAST")
@@ -16,6 +18,7 @@ fun <T : IsPropertyDefinition<*>, K : Any, V : Any> writeMapToStorage(
     definition: T,
     map: Map<K, V>
 ) {
+    definition.validateCollectionStorageIdentities(map)
     // Write Map Size
     valueWriter(
         MapSize as StorageTypeEnum<T>,
@@ -35,7 +38,7 @@ fun <T : IsPropertyDefinition<*>, K : Any, V : Any> writeMapToStorage(
         val mapValueQualifierWriter: QualifierWriter = { writer ->
             qualifierWriter?.invoke(writer)
             keyByteSize.writeVarBytes(writer)
-            keyDefinition.writeStorageBytes(key, writer)
+            keyDefinition.writeCollectionQualifierBytes(key, writer)
         }
 
         writeValue(

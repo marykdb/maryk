@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.index.queryToStorageByteArrays
 import maryk.core.properties.definitions.index.normalizeStringForIndex
 import maryk.core.properties.definitions.index.coveringPrefixes
 import maryk.core.properties.references.IsIndexablePropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -308,7 +309,8 @@ private fun handleValueIn(
         }
 
         listOfUniqueFilters?.let {
-            reference.comparablePropertyDefinition.let {
+            val propertyReference: AnyPropertyReference = reference
+            propertyReference.comparablePropertyDefinition.let {
                 // Unique matchers are conjunctive single-record lookups, not alternatives.
                 if (it is IsComparableDefinition<*, *> && it.unique && value.size == 1) {
                     listOfUniqueFilters.add(createUniqueToMatch(reference, it, value.single()))
@@ -375,7 +377,8 @@ private fun <T : Any> walkFilterReferencesAndValues(
         }
 
         listOfUniqueFilters?.let {
-            reference.comparablePropertyDefinition.let {
+            val propertyReference: AnyPropertyReference = reference
+            propertyReference.comparablePropertyDefinition.let {
                 if (it is IsComparableDefinition<*, *> && it.unique) {
                     listOfUniqueFilters.add(createUniqueToMatch(reference, it, value))
                 }
@@ -387,7 +390,7 @@ private fun <T : Any> walkFilterReferencesAndValues(
 @Suppress("UNCHECKED_CAST")
 private fun <T : Any> createUniqueToMatch(
     reference: IsPropertyReference<out T, IsSerializablePropertyDefinition<out T, IsPropertyContext>, *>,
-    it: IsSerializablePropertyDefinition<out T, IsPropertyContext>,
+    it: IsComparableDefinition<*, *>,
     value: T
 ) = UniqueToMatch(
     reference.toStorageByteArray(),

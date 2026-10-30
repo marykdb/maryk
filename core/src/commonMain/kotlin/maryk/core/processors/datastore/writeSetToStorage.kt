@@ -7,6 +7,9 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.toCollectionQualifierBytes
+import maryk.core.properties.types.Bytes
+import maryk.core.properties.definitions.validateCollectionStorageIdentities
 
 /** Write a complete [set] defined by [definition] with [qualifierWriter] of [qualifierCount] to storage with [valueWriter]. */
 @Suppress("UNCHECKED_CAST")
@@ -17,6 +20,7 @@ fun <T : IsPropertyDefinition<*>> writeSetToStorage(
     definition: T,
     set: Set<*>
 ) {
+    definition.validateCollectionStorageIdentities(set)
     // Write Set Size
     valueWriter(
         SetSize as StorageTypeEnum<T>,
@@ -27,8 +31,9 @@ fun <T : IsPropertyDefinition<*>> writeSetToStorage(
 
     // Process Set Values
     val setValueDefinition = (definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
-    (set as Set<Comparable<Any>>).sorted().forEach { setItem ->
-        val setItemByteSize = setValueDefinition.calculateStorageByteLength(setItem)
+    val items = (set as Set<Any>).map { it to setValueDefinition.toCollectionQualifierBytes(it) }.sortedBy { Bytes(it.second) }
+    items.forEach { (setItem, encodedItem) ->
+        val setItemByteSize = encodedItem.size
         val setItemQualifierLength = qualifierCount + setItemByteSize + setItemByteSize.calculateVarByteLength()
 
         writeValue(
@@ -37,7 +42,7 @@ fun <T : IsPropertyDefinition<*>> writeSetToStorage(
             { writer ->
                 qualifierWriter(writer)
                 setItemByteSize.writeVarBytes(writer)
-                setValueDefinition.writeStorageBytes(setItem, writer)
+                encodedItem.forEach(writer)
             },
             setValueDefinition,
             setItem,

@@ -1,5 +1,13 @@
 package maryk.core.query.filters
 
+import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.references.MapKeyReference
+import maryk.core.properties.references.SetItemReference
+import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.SetAnyValueReference
@@ -20,18 +28,37 @@ fun matchesFilter(
     searchMatcher: (String, String) -> Boolean = { _, _ -> false },
     searchPrefixMatcher: (String, String) -> Boolean = { _, _ -> false },
     searchRegexMatcher: (String, Regex) -> Boolean = { _, _ -> false }
+): Boolean = matchesFilterWithPresence(
+    filter, valueMatcher, { reference -> valueMatcher(reference) { it != null } },
+    normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher,
+)
+
+/**
+ * Match filters when stored presence can be tested independently from value decoding.
+ * [presenceMatcher] receives both concrete and wildcard references from [Exists];
+ * comparisons and search predicates keep using their existing callbacks.
+ */
+fun matchesFilterWithPresence(
+    filter: IsFilter?,
+    valueMatcher: (AnyPropertyReference, (Any?) -> Boolean) -> Boolean,
+    presenceMatcher: (AnyPropertyReference) -> Boolean,
+    normalizer: (AnyPropertyReference, Any?) -> Any? = { _, value -> value },
+    searchMatcher: (String, String) -> Boolean = { _, _ -> false },
+    searchPrefixMatcher: (String, String) -> Boolean = { _, _ -> false },
+    searchRegexMatcher: (String, Regex) -> Boolean = { _, _ -> false }
 ): Boolean {
     if (filter == null) {
         return true
     }
 
     checkFilterNesting(filter)
-    return matchesFilterInternal(filter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)
+    return matchesFilterInternal(filter, valueMatcher, presenceMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)
 }
 
 private fun matchesFilterInternal(
     filter: IsFilter,
     valueMatcher: (AnyPropertyReference, (Any?) -> Boolean) -> Boolean,
+    presenceMatcher: (AnyPropertyReference) -> Boolean,
     normalizer: (AnyPropertyReference, Any?) -> Any?,
     searchMatcher: (String, String) -> Boolean,
     searchPrefixMatcher: (String, String) -> Boolean,
@@ -41,14 +68,14 @@ private fun matchesFilterInternal(
         FilterType.And -> {
             val and = filter as And
             for (aFilter in and.filters) {
-                if (!matchesFilterInternal(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
+                if (!matchesFilterInternal(aFilter, valueMatcher, presenceMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
             }
             return true
         }
         FilterType.Or -> {
             val or = filter as Or
             for (aFilter in or.filters) {
-                if (matchesFilterInternal(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return true
+                if (matchesFilterInternal(aFilter, valueMatcher, presenceMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return true
             }
             return false
         }
@@ -56,14 +83,14 @@ private fun matchesFilterInternal(
             val notFilter = (filter as Not)
             for (aFilter in notFilter.filters) {
                 // If internal filter succeeds, then fail
-                if (matchesFilterInternal(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
+                if (matchesFilterInternal(aFilter, valueMatcher, presenceMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
             }
             return true
         }
         FilterType.Exists -> {
             val exists = filter as Exists
             for (propRef in exists.references) {
-                if (!valueMatcher(propRef) { it != null }) return false
+                if (!presenceMatcher(propRef)) return false
             }
             return true
         }
@@ -78,9 +105,9 @@ private fun matchesFilterInternal(
                 if (!valueMatcher(propRef) { actualValue ->
                     val normalizedValue = normalizer(propRef, value)
                     if (isAnyCollectionReference && actualValue is Collection<*>) {
-                        actualValue.any { transformedEquals(normalizer(propRef, it), normalizedValue) }
+                        actualValue.any { transformedEquals(propRef, normalizer(propRef, it), normalizedValue) }
                     } else {
-                        transformedEquals(normalizer(propRef, actualValue), normalizedValue)
+                        transformedEquals(propRef, normalizer(propRef, actualValue), normalizedValue)
                     }
                 }) return false
             }
@@ -186,7 +213,7 @@ private fun matchesFilterInternal(
             for ((propRef, values) in valueInFilter.referenceValuePairs) {
                 if (!valueMatcher(propRef) {
                         val normalizedActual = normalizer(propRef, it)
-                        normalizedActual != null && values.any { value -> transformedEquals(normalizedActual, normalizer(propRef, value)) }
+                        normalizedActual != null && values.any { value -> transformedEquals(propRef, normalizedActual, normalizer(propRef, value)) }
                     }) return false
             }
             return true
@@ -249,11 +276,42 @@ private fun ValueRange<*>.normalized(
     inclusiveTo = this.inclusiveTo
 )
 
-private fun transformedEquals(actual: Any?, expected: Any?): Boolean = when {
-    actual is Collection<*> && expected is Collection<*> -> expected.all { expectedValue ->
-        actual.any { it == expectedValue }
+/** Ordinary floating values retain raw payload identity; collection qualifiers canonicalize NaNs. */
+private fun transformedEquals(reference: AnyPropertyReference, actual: Any?, expected: Any?): Boolean {
+    val definition = reference.comparablePropertyDefinition
+    val memberDefinition = (definition as? IsCollectionDefinition<*, *, *, *>)?.valueDefinition ?: definition
+    val qualifierIdentity = definition is IsSetDefinition<*, *> || reference is SetAnyValueReference<*, *> ||
+        reference is SetItemReference<*, *> || reference is MapAnyKeyReference<*, *, *> || reference is MapKeyReference<*, *, *>
+    return when {
+        actual is Collection<*> && expected is Collection<*> -> expected.all { expectedValue ->
+            actual.any { filterScalarEquals(memberDefinition, it, expectedValue, qualifierIdentity) }
+        }
+        actual is Collection<*> -> actual.any { filterScalarEquals(memberDefinition, it, expected, qualifierIdentity) }
+        expected is Collection<*> -> expected.any { filterScalarEquals(memberDefinition, actual, it, qualifierIdentity) }
+        else -> filterScalarEquals(memberDefinition, actual, expected, qualifierIdentity)
     }
-    actual is Collection<*> -> actual.any { it == expected }
-    expected is Collection<*> -> expected.any { it == actual }
-    else -> actual == expected
+}
+
+private fun filterScalarEquals(
+    definition: IsPropertyDefinition<*>,
+    actual: Any?,
+    expected: Any?,
+    qualifierIdentity: Boolean,
+): Boolean {
+    if (definition is NumberDefinition<*> && actual is Number && expected is Number) {
+        when (definition.type) {
+            Float32 -> {
+                val left = actual.toFloat()
+                val right = expected.toFloat()
+                return if (qualifierIdentity) left.toBits() == right.toBits() else left.toRawBits() == right.toRawBits()
+            }
+            Float64 -> {
+                val left = actual.toDouble()
+                val right = expected.toDouble()
+                return if (qualifierIdentity) left.toBits() == right.toBits() else left.toRawBits() == right.toRawBits()
+            }
+            else -> Unit
+        }
+    }
+    return actual == expected
 }

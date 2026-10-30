@@ -113,16 +113,15 @@ class ReadStorageToChangesComplexKtTest {
                             ComplexModel.ref { mapIntMulti.at(7u) } withType T4,
                             ComplexModel.ref { mapIntMulti.at(8u) } withType T5,
                             ComplexModel.ref { mapIntMulti.at(9u) } withType T6,
-                            ComplexModel.ref { mapIntMulti.at(10u) } withType T7
+                            ComplexModel.ref { mapIntMulti.at(10u) } withType T7,
+                            ComplexModel.ref { mapIntMulti.at(10u) { atType(T7) } } withType S3
                         ),
                         Change(
                             ComplexModel.ref { multi.withType(T3) { value } } with "u3",
                             ComplexModel.ref { multi.withType(T3) { model { value } } } with "ue3",
                             ComplexModel.ref { mapStringString.at("v1") } with "a",
                             ComplexModel.ref { mapStringString.at("v22") } with "b",
-                            ComplexModel.ref { mapIntObject.at(1u) } with Unit,
                             ComplexModel.ref { mapIntObject.at(1u) { value } } with "t1",
-                            ComplexModel.ref { mapIntObject.at(2u) } with Unit,
                             ComplexModel.ref { mapIntObject.at(2u) { value } } with "t2",
                             ComplexModel.ref { mapIntObject.at(2u) { model { value } } } with "te2",
                             ComplexModel.ref { mapIntMulti.at(2u) { atType(T3) { value } } } with "m3",

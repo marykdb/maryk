@@ -11,6 +11,7 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.lib.exceptions.ParseException
+import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V0
 import maryk.test.models.Option.V2
 import maryk.test.models.TestMarykModel
@@ -84,6 +85,7 @@ class ReadStorageToChangesKtTest {
                             TestMarykModel.ref { double } with null,
                             TestMarykModel.ref { dateTime } with LocalDateTime(2018, 7, 18, 0, 0),
                             TestMarykModel.ref { map at LocalTime(10, 14, 1) } with "ten",
+                            TestMarykModel.ref { embeddedValues } with EmbeddedMarykModel.create(setDefaults = false) {},
                             TestMarykModel.ref { listOfString at 0u } with "v1"
                         ),
                         SetChange(

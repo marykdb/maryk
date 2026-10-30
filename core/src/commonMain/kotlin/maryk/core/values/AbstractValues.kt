@@ -8,6 +8,7 @@ import maryk.core.models.IsStorableDataModel
 import maryk.core.models.IsTypedDataModel
 import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
+import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -27,10 +28,10 @@ import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsFuzzyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.filters.matchesFilterWithPresence
 import maryk.core.properties.definitions.index.matchesNamedSearchIndex
 import maryk.core.properties.definitions.index.matchesNamedSearchIndexPrefix
 import maryk.core.properties.definitions.index.matchesNamedSearchIndexRegex
@@ -135,17 +136,24 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
     }
 
     /** Test if values matches given [filter] */
-    fun matches(filter: IsFilter?) = maryk.core.query.filters.matchesFilter(
+    fun matches(filter: IsFilter?) = matchesFilterWithPresence(
         filter,
         valueMatcher = { propertyReference, valueMatcher ->
             @Suppress("UNCHECKED_CAST")
             val value = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
 
-            if (value is List<*> && propertyReference !is ListReference<*, *>) {
+            if (value is List<*> && propertyReference.toQualifierMatcher() is QualifierFuzzyMatcher) {
                 value.any { valueMatcher(it) }
             } else {
                 valueMatcher(value)
             }
+        },
+        presenceMatcher = { propertyReference ->
+            @Suppress("UNCHECKED_CAST")
+            val value = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
+            if (propertyReference.toQualifierMatcher() is QualifierFuzzyMatcher && value is Collection<*>) {
+                value.isNotEmpty()
+            } else value != null
         },
         searchMatcher = { name, value ->
             (dataModel as? IsRootDataModel)?.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->

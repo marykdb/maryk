@@ -32,6 +32,7 @@ import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.ObjectDeleteReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.DELETE
@@ -79,6 +80,38 @@ fun <DM : IsRootDataModel> DM.readStorageToValues(
 
     // Create Values
     return Values(this, mutableValuesItems)
+}
+
+/** Read a complete list subtree, including embedded and typed item descendants. */
+fun <T : Any> readStorageToList(
+    reference: ListReference<T, *>,
+    getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
+    processValue: ValueReader,
+): MutableList<T>? {
+    val prefix = reference.toStorageByteArray()
+    var list: MutableList<T>? = null
+    var count: Int? = null
+    var first = true
+    val readValue: ValueReader = { type, ref ->
+        processValue(type, ref).also { if (type == ListSize && ref == reference) count = it as Int? }
+    }
+    processQualifiers(getQualifier) { reader, length, addToCache ->
+        if (first) {
+            if (length != prefix.size || prefix.indices.any { reader(it) != prefix[it] }) {
+                throw StorageException("Stored list is missing its count")
+            }
+            first = false
+        }
+        readQualifierOfType(reader, length, prefix.size, 0, reference.propertyDefinition.definition,
+            0u, LIST, null, reference, { _, value ->
+                @Suppress("UNCHECKED_CAST")
+                list = value as MutableList<T>
+            }, readValue, addToCache)
+    }
+    if (count != null && (count!! < 0 || list?.size != count)) {
+        throw StorageException("Stored list has a missing item")
+    }
+    return list
 }
 
 /**
@@ -205,7 +238,14 @@ private fun readQualifierOfType(
                     addToCache(currentOffset - 1) { _, _ ->
                         // Ignore reading and return
                     }
-                } else null // unknown value so ignore
+                } else {
+                    val embeddedDefinition = definition as? IsEmbeddedValuesDefinition<*, *>
+                        ?: throw TypeException("Only embedded definitions can have an existence qualifier. Not $definition")
+                    readEmbeddedValues(
+                        qualifierReader, qualifierLength, offset, readValueFromStorage,
+                        embeddedDefinition, reference, select, addToCache, valueAdder,
+                    )
+                }
             } else {
                 // Only embedded types can be encoded as complex EMBED qualifier
                 if (definition !is IsEmbeddedValuesDefinition<*, *>) {
@@ -235,7 +275,7 @@ private fun readQualifierOfType(
                     val listValueAdder: AddToValues = { i, value ->
                         val listIndex = i.toIntOrNull()
                             ?: throw StorageException("List index $i is outside supported range")
-                        list.add(listIndex, value)
+                        if (listIndex < list.size) list[listIndex] = value else list.add(listIndex, value)
                     }
 
                     // Add value processor to cache starting after list item
@@ -258,14 +298,25 @@ private fun readQualifierOfType(
                 val listIndex = initUInt({ qualifierReader(offset++) })
                 val itemReference = listDefinition.itemRef(listIndex, listReference)
 
-                if (qualifierLength > offset) {
-                    throw ParseException("Lists cannot contain complex data")
-                }
-
-                // Read list item
-                readValueFromStorage(Value, itemReference)?.let {
-                    // Only add to output if value read from storage is not null
-                    addValueToOutput(listIndex, it)
+                val valueDefinition = listDefinition.valueDefinition
+                val itemAdder: AddValue = { addValueToOutput(listIndex, it) }
+                when {
+                    valueDefinition is IsMultiTypeDefinition<*, *, *> || qualifierLength > offset ->
+                        readComplexWithSubDefinition(
+                            qualifierReader, qualifierLength, offset, readValueFromStorage,
+                            listDefinition, valueDefinition, select, itemReference, addToCache, itemAdder,
+                        )
+                    else -> {
+                        val value = readValueFromStorage(Value, itemReference)
+                        when {
+                            value == null -> addToCache(offset - 1) { _, _ -> }
+                            valueDefinition is IsEmbeddedValuesDefinition<*, *> -> readEmbeddedValues(
+                                qualifierReader, qualifierLength, offset, readValueFromStorage,
+                                valueDefinition, itemReference, select, addToCache, itemAdder,
+                            )
+                            else -> itemAdder(value)
+                        }
+                    }
                 }
             }
         }
@@ -367,7 +418,14 @@ private fun readQualifierOfType(
 
                 // Begin to read map value
                 if (qualifierLength <= offset) {
-                    val value = readValueFromStorage(Value, valueReference)
+                    val valueDefinition = mapDefinition.valueDefinition
+                    val value = if (valueDefinition is IsMultiTypeDefinition<*, *, *>) {
+                        readComplexWithSubDefinition(
+                            qualifierReader, qualifierLength, offset, readValueFromStorage,
+                            mapDefinition, valueDefinition, select, valueReference, addToCache, mapItemAdder,
+                        )
+                        return null
+                    } else readValueFromStorage(Value, valueReference)
 
                     when {
                         value == null ->
@@ -375,6 +433,10 @@ private fun readQualifierOfType(
                             addToCache(offset - 1) { _, _ ->
                                 // Ignore reading and return
                             }
+                        valueDefinition is IsEmbeddedValuesDefinition<*, *> -> readEmbeddedValues(
+                            qualifierReader, qualifierLength, offset, readValueFromStorage,
+                            valueDefinition, valueReference, select, addToCache, mapItemAdder,
+                        )
                         value != Unit -> mapItemAdder(value)
                         else -> null
                     }
@@ -453,16 +515,18 @@ private fun <DM : IsRootDataModel> readEmbeddedValues(
         )
     }
 
-    dataModel.readQualifier(
-        qualifierReader,
-        qualifierLength,
-        offset,
-        specificSelect,
-        parentReference,
-        valuesItemAdder,
-        readValueFromStorage,
-        addToCache
-    )
+    if (qualifierLength > offset) {
+        dataModel.readQualifier(
+            qualifierReader,
+            qualifierLength,
+            offset,
+            specificSelect,
+            parentReference,
+            valuesItemAdder,
+            readValueFromStorage,
+            addToCache
+        )
+    }
 }
 
 /** Read a typed value */
@@ -479,7 +543,11 @@ private fun readTypedValue(
     typeToCheck: IndexedEnum? = null
 ) {
     if (qualifierLength <= offset) {
-        readValueFromStorage(Value, parentReference)?.let {
+        val value = readValueFromStorage(Value, parentReference)
+        if (value == null) {
+            // Retained child tombstones cannot establish a deleted typed parent.
+            addToCache(offset - 1) { _, _ -> }
+        } else {
             // Pass type to check
             addToCache(offset - 1) { qr, ql ->
                 readTypedValue(
@@ -492,11 +560,11 @@ private fun readTypedValue(
                     parentReference = parentReference,
                     addToCache = addToCache,
                     addValueToOutput = addValueToOutput,
-                    typeToCheck = it as? TypeEnum<*> ?: (it as TypedValue<*, *>).type
+                    typeToCheck = value as? TypeEnum<*> ?: (value as TypedValue<*, *>).type
                 )
             }
 
-            addValueToOutput(it)
+            addValueToOutput(value)
         }
     } else {
         var qIndex = offset
@@ -543,12 +611,17 @@ private fun IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>.readCom
 
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }
 
-    if (qualifierLength <= offset) {
+    if (qualifierLength <= offset && definition is IsEmbeddedValuesDefinition<*, *>) {
         val value = readValueFromStorage(Embed, typedValueReference)
 
         if (value == null) {
             // Ensure that next values will not be read because Values are deleted
             addToCache(offset - 1) { _, _ -> }
+        } else {
+            readEmbeddedValues(
+                qualifierReader, qualifierLength, offset, readValueFromStorage,
+                definition, typedValueReference, select, addToCache, addMultiTypeToOutput,
+            )
         }
         // Don't process further
         return

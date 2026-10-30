@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.definitions.validateCollectionStorageIdentities
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.DELETE
@@ -63,6 +64,9 @@ fun <DM : IsTypedDataModel<*>> AbstractValues<*, DM>.writeToStorage(
     qualifierWriter: QualifierWriter? = null,
     valueWriter: ValueWriter<IsPropertyDefinition<*>>
 ) {
+    for ((index, value) in this.values) {
+        this.dataModel[index]!!.definition.validateCollectionStorageIdentities(value)
+    }
     for ((index, value) in this.values) {
         val definition = this.dataModel[index]!!
         writeValue(definition.index, qualifierCount, qualifierWriter, definition.definition, value, valueWriter)

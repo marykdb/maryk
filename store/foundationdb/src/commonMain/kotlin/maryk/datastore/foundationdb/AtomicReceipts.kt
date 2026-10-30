@@ -3,17 +3,25 @@ package maryk.datastore.foundationdb
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.core.exceptions.StorageException
 import maryk.datastore.shared.MAX_ATOMIC_BYTES
+import maryk.datastore.shared.tagReleasedTransactionReceipt
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.tuple.Tuple
 
 // Stay comfortably below FoundationDB's 100000-byte single-value ceiling.
 private const val RECEIPT_CHUNK_BYTES = 80_000
+private val releasedReceiptHeader = tagReleasedTransactionReceipt(byteArrayOf())
+private val maxReceiptBytes = MAX_ATOMIC_BYTES + 32 + releasedReceiptHeader.size
 
 internal fun readAtomicReceipt(transaction: Transaction, prefix: ByteArray, id: String): ByteArray? {
     val manifest = transaction.get(prefix + Tuple.from(id).pack()).awaitResult() ?: return null
-    if (manifest.size != 4) throw StorageException("Invalid atomic receipt manifest")
-    val length = manifest.fold(0) { size, byte -> (size shl 8) or (byte.toInt() and 255) }
-    if (length !in 1..MAX_ATOMIC_BYTES + 32) throw StorageException("Invalid atomic receipt length")
+    val released = manifest.size == releasedReceiptHeader.size + 4 && releasedReceiptHeader.indices.all { manifest[it] == releasedReceiptHeader[it] }
+    if (manifest.size != 4 && !released) throw StorageException("Invalid atomic receipt manifest")
+    val length = manifest.takeLast(4).fold(0) { size, byte -> (size shl 8) or (byte.toInt() and 255) }
+    // Tagged released manifests describe the old unframed chunks; add their
+    // header exactly once when enforcing the complete receipt limit.
+    if (length < 1 || length > maxReceiptBytes - if (released) releasedReceiptHeader.size else 0) {
+        throw StorageException("Invalid atomic receipt length")
+    }
     val receipt = ByteArray(length)
     for (offset in 0 until length step RECEIPT_CHUNK_BYTES) {
         val chunk = transaction.get(prefix + Tuple.from(id, (offset / RECEIPT_CHUNK_BYTES).toLong()).pack()).awaitResult()
@@ -21,7 +29,7 @@ internal fun readAtomicReceipt(transaction: Transaction, prefix: ByteArray, id: 
         if (chunk.size != minOf(RECEIPT_CHUNK_BYTES, length - offset)) throw StorageException("Invalid atomic receipt chunk length")
         chunk.copyInto(receipt, offset)
     }
-    return receipt
+    return if (released) releasedReceiptHeader + receipt else receipt
 }
 
 internal fun writeAtomicReceipt(transaction: Transaction, prefix: ByteArray, id: String, receipt: ByteArray) {

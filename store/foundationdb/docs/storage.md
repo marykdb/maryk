@@ -65,7 +65,19 @@ The “qualifier” is generated from Maryk’s property references. Collections
   - Value: just `value` (no version prefix, since it is already in the key)
   - Inverting bytes for the version makes newer versions sort before older versions lexicographically, so a forward range scan gives “latest first”.
 
+Property deletion uses an empty historic payload. Retained current tombstones
+use an exact two-byte `00 00` payload, distinct from the canonical one-byte zero
+count of a present empty collection. Incrementing-map tombstones retain allocated
+keys; allocation advances only the numeric key bytes, excluding anonymous
+collection markers and child qualifiers.
+
 Maryk’s value serialization is reused across storage engines. Simple types are written directly, and for wrappers (e.g. enums, typed values) the inner type bytes are composed accordingly.
+
+Multi-type discriminators define which child case is active. Mutations and
+checks consult the current staged discriminator before reading child cells;
+inactive writes reject and inactive deletions leave retained cells untouched.
+Simple case values are stored inline on the multi-type parent. Replace that
+parent with a `TypedValue` rather than writing an extra typed child qualifier.
 
 ## Versioning
 
@@ -95,6 +107,11 @@ Uniques are stored in `unique` as:
 - Value: `(version || keyBytes)`
 
 On insertion, we first read to check if a value already exists, and fail if the unique is taken. On update/delete we remove the unique entry (and, if historic is enabled, write a historic “tombstone” or snapshot into `unique_versioned`).
+
+Mutation cleanup reads the stored unique-property descriptors in its own native
+transaction. This includes dynamic map/list/typed references introduced by other
+open writers, so hard deletion purges their retained ownership history while
+preserving claims belonging to other records.
 
 ## Indexes
 

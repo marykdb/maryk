@@ -37,6 +37,7 @@ import maryk.foundationdb.Transaction
 import kotlin.time.Duration.Companion.milliseconds
 
 internal class FoundationDBMigrationRequestContext(
+    val owner: FoundationDBDataStore,
     val transactionGuard: ((Transaction) -> Unit)? = null,
     val modelId: UInt? = null,
 ) : AbstractCoroutineContextElement(FoundationDBMigrationRequestContext) {
@@ -221,30 +222,22 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
             attempt = attempt,
         )
         assertLeaseOwnership()
-        val transactionGuard = foundationDBMigrationLease?.let { lease ->
-            { transaction: Transaction -> lease.requireOwnership(transaction, index, migrationId) }
+        // Custom leases still need a request context that identifies the active migrator.
+        val transactionGuard: (Transaction) -> Unit = { transaction ->
+            foundationDBMigrationLease?.requireOwnership(transaction, index, migrationId)
         }
-        val outcome = if (transactionGuard == null) {
-            when (phase) {
-                MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
-                MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
-                MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
-                MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
-            }
-        } else {
-            migrationTransactionGuards.update { it + (index to transactionGuard) }
-            try {
-                withContext(FoundationDBMigrationRequestContext(transactionGuard, index)) {
-                    when (phase) {
-                        MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
-                        MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
-                        MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
-                        MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
-                    }
+        migrationTransactionGuards.update { it + (index to transactionGuard) }
+        val outcome = try {
+            withContext(FoundationDBMigrationRequestContext(this@handleRequiredMigration, transactionGuard, index)) {
+                when (phase) {
+                    MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
+                    MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
+                    MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
+                    MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
                 }
-            } finally {
-                migrationTransactionGuards.update { it - index }
             }
+        } finally {
+            migrationTransactionGuards.update { it - index }
         }
         return phase to outcome
     }
@@ -262,9 +255,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
         assertLeaseOwnership()
         finalizeMigration(
             storedModel,
-            foundationDBMigrationLease?.let { lease ->
-                { transaction -> lease.requireOwnership(transaction, index, migrationId) }
-            },
+            { transaction -> foundationDBMigrationLease?.requireOwnership(transaction, index, migrationId) },
         ) { transaction -> migrationStateStore.clear(transaction, index) }
         assertLeaseOwnership()
         migrationRuntimeDetailsByModelId.update { it - index }

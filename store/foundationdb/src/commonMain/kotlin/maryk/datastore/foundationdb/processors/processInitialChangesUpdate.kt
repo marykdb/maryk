@@ -2,7 +2,6 @@ package maryk.datastore.foundationdb.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.fromChanges
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.responses.AddOrChangeResponse
@@ -12,6 +11,8 @@ import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.fromReplicationChanges
+import maryk.datastore.shared.normalizeReplicationChanges
 
 /** Processes an InitialChanges UpdateResponse into FoundationDB */
 internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processInitialChangesUpdate(
@@ -26,8 +27,9 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processInitial
 
     for (change in update.changes) {
         for (versionedChange in change.changes) {
-            if (versionedChange.changes.contains(ObjectCreate)) {
-                val addedValues = dataModel.fromChanges(null, versionedChange.changes)
+            val changes = normalizeReplicationChanges(versionedChange.changes)
+            if (changes.contains(ObjectCreate)) {
+                val addedValues = dataModel.fromReplicationChanges(null, changes)
 
                 val addStatus = processAdd(
                     tableDirs = tableDirs,
@@ -35,7 +37,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processInitial
                     key = change.key,
                     version = HLC(versionedChange.version),
                     objectToAdd = addedValues,
-                    isDeleted = versionedChange.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
+                    isDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
                     ignoreIfVersionNotNewer = true,
                 )
                 changeStatuses += addStatus
@@ -44,7 +46,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processInitial
                     dataModel = dataModel,
                     key = change.key,
                     lastVersion = null,
-                    changes = versionedChange.changes,
+                    changes = changes,
                     version = HLC(versionedChange.version),
                     tableDirs = tableDirs,
                     ignoreIfVersionNotNewer = true,

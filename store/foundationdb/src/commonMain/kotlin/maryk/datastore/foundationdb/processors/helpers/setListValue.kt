@@ -1,21 +1,14 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-// Avoid UInt.writeBytes to keep compatibility here; we'll encode manually
-import maryk.core.extensions.bytes.toVarBytes
-import maryk.core.properties.definitions.IsStorageBytesEncodable
+import maryk.core.processors.datastore.writeListToStorage
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
-import maryk.datastore.foundationdb.HistoricTableDirectories
+import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
-import maryk.datastore.foundationdb.processors.HISTORIC_DELETE_MARKER
-import maryk.datastore.shared.TypeIndicator
 import maryk.foundationdb.Transaction
 
-/**
- * Set a full list value for [reference] with [newList] and update count, deleting any tail items beyond new size.
- * Returns true if anything changed.
- */
-internal fun <T : Any> setListValue(
+/** Rewrite every descendant when list items shift, and remove obsolete descendants. */
+internal fun <T : Any> FoundationDBDataStore.setListValue(
     tr: Transaction,
     tableDirs: IsTableDirectories,
     key: Key<*>,
@@ -24,55 +17,13 @@ internal fun <T : Any> setListValue(
     originalCount: Int,
     versionBytes: ByteArray
 ): Boolean {
-    val keyAndRef = packKey(tableDirs.tablePrefix, key.bytes, reference.toStorageByteArray())
-    @Suppress("UNCHECKED_CAST")
-    val valueDef = reference.propertyDefinition.valueDefinition as IsStorageBytesEncodable<T>
-
-    // Update count
-    setValue(tr, tableDirs, key.bytes, reference.toStorageByteArray(), versionBytes, newList.size.toVarBytes())
-
-    var changed = false
-
-    // Delete tail items if list shrank
-    val toDelete = originalCount - newList.size
-    if (toDelete > 0) {
-        for (i in 0 until toDelete) {
-            val refToDelete = keyAndRef.copyOf(keyAndRef.size + 4)
-            writeUIntBE(refToDelete, keyAndRef.size, (i + newList.size).toUInt())
-            tr.clear(refToDelete)
-            if (tableDirs is HistoricTableDirectories) {
-                val qualifier = refToDelete.copyOfRange(packKey(tableDirs.tablePrefix, key.bytes).size, refToDelete.size)
-                writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, HISTORIC_DELETE_MARKER)
-            }
-        }
-        changed = true
-    }
-
-    // Write all new/updated items
-    newList.forEachIndexed { idx, item ->
-        val itemRef = keyAndRef.copyOf(keyAndRef.size + 4)
-        writeUIntBE(itemRef, keyAndRef.size, idx.toUInt())
-        val valueBytes = valueDef.toStorageBytes(item, TypeIndicator.NoTypeIndicator.byte)
-        tr.set(itemRef, combineToValue(versionBytes, valueBytes))
-        if (tableDirs is HistoricTableDirectories) {
-            val qualifier = itemRef.copyOfRange(packKey(tableDirs.tablePrefix, key.bytes).size, itemRef.size)
-            writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, valueBytes)
-        }
-        changed = true
-    }
-    return changed
-}
-
-private fun combineToValue(version: ByteArray, value: ByteArray): ByteArray {
-    val result = ByteArray(version.size + value.size)
-    version.copyInto(destination = result, destinationOffset = 0)
-    value.copyInto(destination = result, destinationOffset = version.size)
-    return result
-}
-
-private fun writeUIntBE(buf: ByteArray, offset: Int, value: UInt) {
-    buf[offset] = ((value shr 24) and 0xFFu).toByte()
-    buf[offset + 1] = ((value shr 16) and 0xFFu).toByte()
-    buf[offset + 2] = ((value shr 8) and 0xFFu).toByte()
-    buf[offset + 3] = (value and 0xFFu).toByte()
+    val current = getCurrentValuesForPrefix(tr, tableDirs, key, reference.toStorageByteArray())
+    val keep = mutableListOf<ByteArray>()
+    var changed = originalCount != newList.size
+    val writer = createValueWriter(tableDirs.modelId, tr, tableDirs, key, versionBytes,
+        qualifiersToKeep = keep, currentValues = current, skipCurrentUniqueOwnership = true,
+        onWrite = { changed = true })
+    writeListToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes,
+        writer, reference.propertyDefinition, newList)
+    return unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes) || changed
 }

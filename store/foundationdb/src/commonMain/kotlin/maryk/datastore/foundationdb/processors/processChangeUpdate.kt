@@ -2,7 +2,6 @@ package maryk.datastore.foundationdb.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.fromChanges
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.responses.AddResponse
@@ -12,6 +11,8 @@ import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.fromReplicationChanges
+import maryk.datastore.shared.normalizeReplicationChanges
 
 /** Processes a Change UpdateResponse into FoundationDB */
 internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeUpdate(
@@ -19,11 +20,12 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeU
 ) {
     val dataModel = storeAction.request.dataModel
     val update = storeAction.request.update as ChangeUpdate<DM>
+    val changes = normalizeReplicationChanges(update.changes)
 
     val tableDirs = getTableDirs(getDataModelId(dataModel))
 
-    if (update.changes.contains(ObjectCreate)) {
-        val addedValues = dataModel.fromChanges(null, update.changes)
+    if (changes.contains(ObjectCreate)) {
+        val addedValues = dataModel.fromReplicationChanges(null, changes)
 
         val addStatus = processAdd(
             tableDirs = tableDirs,
@@ -31,7 +33,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeU
             key = update.key,
             version = HLC(update.version),
             objectToAdd = addedValues,
-            isDeleted = update.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
+            isDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
             ignoreIfVersionNotNewer = true,
         )
 
@@ -43,7 +45,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeU
             dataModel = dataModel,
             key = update.key,
             lastVersion = null,
-            changes = update.changes,
+            changes = changes,
             version = HLC(update.version),
             tableDirs = tableDirs,
             ignoreIfVersionNotNewer = true,

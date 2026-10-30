@@ -41,6 +41,8 @@ import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricUnique
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.incrementingMapWatermarkPrefix
+import maryk.datastore.shared.migration.legacyIncrementingMapProofKey
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
@@ -290,6 +292,8 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         }
 
         if (hardDelete) {
+            tr.clear(FDBRange.startsWith(packKey(tableDirs.modelPrefix, incrementingMapWatermarkPrefix(tableDirs.modelId, key.bytes))))
+            tr.clear(packKey(tableDirs.modelPrefix, legacyIncrementingMapProofKey(tableDirs.modelId, key.bytes)))
             tr.set(tombstoneKey, versionBytes)
             cache.delete(dbIndex, key)
 

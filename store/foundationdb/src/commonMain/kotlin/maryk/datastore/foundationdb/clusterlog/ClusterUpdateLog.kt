@@ -1,8 +1,8 @@
 package maryk.datastore.foundationdb.clusterlog
 
 import maryk.core.clock.HLC
-import maryk.core.models.migration.hasFloatingPointValueObjects
-import maryk.core.models.migration.readLegacyValueStorage
+import maryk.core.models.migration.hasLegacyTransportStorage
+import maryk.core.models.migration.readLegacyTransportStorage
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -50,7 +50,7 @@ internal class ClusterUpdateLog(
     private val allowDeletedAdditions: Boolean = false,
 ) {
     private val originBytes = originId.encodeToByteArray()
-    private val orderedValueObjectModels = dataModelsById.filterValues { it.hasFloatingPointValueObjects() }.keys
+    private val migratedTransportModels = dataModelsById.filterValues { it.hasLegacyTransportStorage() }.keys
 
     init {
         require(shardCount > 0) { "shardCount should be positive" }
@@ -330,7 +330,7 @@ internal class ClusterUpdateLog(
         out[o++] = (mid and 0xFF).toByte()
 
         // Reuse a reserved type bit; no per-record or extra log-envelope bytes.
-        out[o++] = (update.type.toInt() or if (modelId in orderedValueObjectModels && update.type != ClusterLogUpdate.TYPE_DELETION) 0x40 else 0).toByte()
+        out[o++] = (update.type.toInt() or if (modelId in migratedTransportModels && update.type != ClusterLogUpdate.TYPE_DELETION) 0x40 else 0).toByte()
 
         val v = update.version
         out[o++] = ((v shr 56) and 0xFFu).toByte()
@@ -379,7 +379,7 @@ internal class ClusterUpdateLog(
 
         val encodedType = value[o++].toInt() and 255
         val type = (encodedType and 0x40.inv()).toByte()
-        val legacyValueObjects = modelId in orderedValueObjectModels && encodedType and 0x40 == 0
+        val legacyTransport = modelId in migratedTransportModels && encodedType and 0x40 == 0
         if (value.size < o + 8 + 2 + 4) return null
 
         val version =
@@ -434,7 +434,7 @@ internal class ClusterUpdateLog(
             }
         }
 
-        val decodedUpdate = if (legacyValueObjects) ctx.readLegacyValueStorage(::readPayload) else readPayload()
+        val decodedUpdate = if (legacyTransport) ctx.readLegacyTransportStorage(::readPayload) else readPayload()
         if (decodedUpdate == null) return null
         return DecodedUpdate(
             header = ClusterLogHeader(origin = origin, modelId = modelId),

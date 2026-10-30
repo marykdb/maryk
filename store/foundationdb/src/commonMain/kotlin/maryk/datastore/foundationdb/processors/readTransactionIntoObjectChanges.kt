@@ -3,7 +3,6 @@ package maryk.datastore.foundationdb.processors
 import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -35,6 +34,7 @@ import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.withCurrentPayload
 import maryk.datastore.shared.readValue
+import maryk.datastore.shared.readStoredCount
 import maryk.foundationdb.Range as FDBRange
 
 /** Process values for [key] from FDB transaction to a DataObjectVersionedChange */
@@ -52,6 +52,13 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
     decryptValue: DecryptValue? = null
 ): DataObjectVersionedChange<DM>? {
     val changes: List<VersionedChanges>
+    val readValuesAtVersion = { version: ULong ->
+        val snapshotVersion = if (tableDirs is HistoricTableDirectories) version else null
+        requireNotNull(readTransactionIntoValuesWithMetaData(
+            tr, creationVersion, tableDirs, key, select, snapshotVersion,
+            { _, _, reader -> reader() }, decryptValue,
+        )).values
+    }
 
     if (toVersion == null && maxVersions == 1u) {
         val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
@@ -70,6 +77,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
             getQualifier = getQualifier,
             select = select,
             creationVersion = if (creationVersion >= fromVersion) creationVersion else null,
+            readValuesAtVersion = readValuesAtVersion,
             processValue = { storageType, reference, valueWithVersionReader ->
                 val currentVersion: ULong
                 val keyBytes = iterator.current.key
@@ -114,9 +122,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, _ ->
-                                    index = offset
-                                    initIntByVar { payload[index++] }
+                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
+                                    readStoredCount(payload, offset, length)
                                 }
                             }
                         } else null
@@ -125,9 +132,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, _ ->
-                                    index = offset
-                                    initIntByVar { payload[index++] }
+                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
+                                    readStoredCount(payload, offset, length)
                                 }
                             }
                         } else null
@@ -136,9 +142,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, _ ->
-                                    index = offset
-                                    initIntByVar { payload[index++] }
+                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
+                                    readStoredCount(payload, offset, length)
                                 }
                             }
                         } else null
@@ -177,6 +182,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
             getQualifier = getQualifier,
             select = select,
             creationVersion = if (creationVersion >= fromVersion) creationVersion else null,
+            readValuesAtVersion = readValuesAtVersion,
             processValue = { storageType, reference, valueWithVersionReader ->
                 if (currentVersion >= fromVersion) {
                     val storedKey = iterator.current.key
@@ -211,24 +217,21 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 if (v.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }
-                                index = 0
-                                initIntByVar { v[index++] }
+                                readStoredCount(v)
                             }
                             SetSize -> {
                                 val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
                                 if (v.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }
-                                index = 0
-                                initIntByVar { v[index++] }
+                                readStoredCount(v)
                             }
                             MapSize -> {
                                 val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
                                 if (v.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }
-                                index = 0
-                                initIntByVar { v[index++] }
+                                readStoredCount(v)
                             }
                             Embed -> {}
                             TypeValue -> throw StorageException("Not used in direct encoding")

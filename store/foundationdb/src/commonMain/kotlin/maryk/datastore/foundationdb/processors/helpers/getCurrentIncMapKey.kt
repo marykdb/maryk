@@ -6,6 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.shared.incrementingMapAllocationPrefix
 
 /**
  * Get the current incrementing map key qualifier for [reference].
@@ -20,22 +21,19 @@ internal fun getCurrentIncMapKey(
     val refBytes = reference.toStorageByteArray()
     val base = packKey(tableDirs.tablePrefix, key.bytes)
     val prefix = packKey(tableDirs.tablePrefix, key.bytes, refBytes)
+    val maximum = readIncrementingMapMaximum(tr, tableDirs, key.bytes, reference)
     val iter = tr.getRange(Range.startsWith(prefix)).iterator()
     return if (iter.hasNext()) {
         // First is count; advance
-        iter.nextBlocking()
-        if (iter.hasNext()) {
-            val firstItemKey = iter.nextBlocking().key
-            firstItemKey.copyOfRange(base.size, firstItemKey.size)
+        val first = iter.nextBlocking()
+        val firstItemKey = if (!first.key.contentEquals(prefix)) first.key else if (iter.hasNext()) iter.nextBlocking().key else null
+        if (firstItemKey != null) {
+            incrementingMapAllocationPrefix(reference, firstItemKey.copyOfRange(base.size, firstItemKey.size), maximum)
         } else {
             // No items yet; create a starting qualifier [refBytes + keySizeMarker + 0xFF..]
-            val refSize = refBytes.size
-            val mapKeySize = reference.propertyDefinition.definition.keyDefinition.byteSize
-            ByteArray(mapKeySize + refSize + 1) { i -> if (i < refSize) refBytes[i] else if (i == refSize) mapKeySize.toByte() else 0xFF.toByte() }
+            incrementingMapAllocationPrefix(reference, null, maximum)
         }
     } else {
-        val refSize = refBytes.size
-        val mapKeySize = reference.propertyDefinition.definition.keyDefinition.byteSize
-        ByteArray(mapKeySize + refSize + 1) { i -> if (i < refSize) refBytes[i] else if (i == refSize) mapKeySize.toByte() else 0xFF.toByte() }
+        incrementingMapAllocationPrefix(reference, null, maximum)
     }
 }

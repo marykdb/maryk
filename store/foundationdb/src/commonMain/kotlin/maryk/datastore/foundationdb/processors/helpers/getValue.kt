@@ -5,6 +5,7 @@ import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.shared.isStoredPropertyDeleteMarker
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.lib.extensions.compare.compareToRange
 
@@ -120,9 +121,10 @@ private inline fun <T : Any> ByteArray.handleCurrentValue(
 ): T? {
     requireVersionedValue(this)
     return if (decryptValue == null) {
-        handleResult(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+        if (isStoredPropertyDeleteMarker(this, VERSION_BYTE_SIZE, size - VERSION_BYTE_SIZE)) null
+        else handleResult(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
     } else {
         val payload = decryptValue(modelId, this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE, keyBytes, referenceBytes)
-        handleResult(payload, 0, payload.size)
+        if (isStoredPropertyDeleteMarker(payload)) null else handleResult(payload, 0, payload.size)
     }
 }

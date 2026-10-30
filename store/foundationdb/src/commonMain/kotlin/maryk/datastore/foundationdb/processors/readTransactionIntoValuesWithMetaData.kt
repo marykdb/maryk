@@ -3,7 +3,6 @@ package maryk.datastore.foundationdb.processors
 import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.emptyValues
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -36,6 +35,8 @@ import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.withCurrentPayload
 import maryk.datastore.shared.readValue
+import maryk.datastore.shared.readStoredCount
+import maryk.datastore.shared.hasStoredValuePayload
 
 /**
  * Read values for [key] from a FoundationDB [tr] into a ValuesWithMeta object.
@@ -124,32 +125,30 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     ListSize -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, _ ->
-                                index = offset
-                                initIntByVar { payload[index++] }
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
+                                readStoredCount(payload, offset, length)
                             }
                         }
                     }
                     SetSize -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, _ ->
-                                index = offset
-                                initIntByVar { payload[index++] }
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
+                                readStoredCount(payload, offset, length)
                             }
                         }
                     }
                     MapSize -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, _ ->
-                                index = offset
-                                initIntByVar { payload[index++] }
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
+                                readStoredCount(payload, offset, length)
                             }
                         }
                     }
                     Embed -> {
                         currentVersion = value.readVersionBytes()
+                        if (hasStoredValuePayload(reference.propertyDefinition, value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)) Unit else null
                     }
                     TypeValue -> throw StorageException("Not used in direct encoding")
                 }.also {
@@ -216,18 +215,15 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                 }
                             }
                             ListSize -> {
-                                index = 0
-                                initIntByVar { value[index++] }
+                                readStoredCount(value)
                             }
                             SetSize -> {
-                                index = 0
-                                initIntByVar { value[index++] }
+                                readStoredCount(value)
                             }
                             MapSize -> {
-                                index = 0
-                                initIntByVar { value[index++] }
+                                readStoredCount(value)
                             }
-                            Embed -> {}
+                            Embed -> if (value.isHistoricDeleteMarker(allowLegacyMarker = true)) null else Unit
                             TypeValue -> throw StorageException("Not used in direct encoding")
                             ObjectDelete -> null
                         }

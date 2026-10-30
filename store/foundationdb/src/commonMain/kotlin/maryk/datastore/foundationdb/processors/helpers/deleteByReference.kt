@@ -4,15 +4,16 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.emptyValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IncMapReference
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
-import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.SetItemReference
@@ -26,7 +27,8 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.HISTORIC_DELETE_MARKER
-import maryk.datastore.shared.TypeIndicator
+import maryk.datastore.shared.StoredPropertyDeleteMarker
+import maryk.datastore.shared.hasStoredValuePayload
 import maryk.datastore.shared.readValue
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
@@ -57,21 +59,29 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
     when (reference) {
         is MapValueReference<*, *, *> -> {
             @Suppress("UNCHECKED_CAST")
-            val parentRef = reference.parentReference as IsPropertyReference<Map<*, *>, IsPropertyDefinition<Map<*, *>>, *>
+            val parentRef = reference.parentReference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *>
+            @Suppress("UNCHECKED_CAST")
+            val mapDefinition = reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
+            val current = getCurrentValuesForPrefix(tr, tableDirs, key, referenceBytes)
+            val directValue = current.firstOrNull { it.first.contentEquals(referenceBytes) }?.second ?: return false
+            requireVersionedValue(directValue)
+            if (!hasStoredValuePayload(reference.comparablePropertyDefinition, directValue, VERSION_BYTE_SIZE, directValue.size - VERSION_BYTE_SIZE)) return false
+
             // Decrement count
-            withCountUpdate(tr, tableDirs, key, parentRef, -1, versionBytes) { _ -> }
+            withCountUpdate(tr, tableDirs, key, parentRef, -1, versionBytes) { newCount ->
+                mapDefinition.validateSize(newCount) { parentRef }
+            }
 
             // Collect current values under this map value and delete or mark deleted
-            val current = getCurrentValuesForPrefix(tr, tableDirs, key, referenceBytes)
             val isIncMap = reference.parentReference is IncMapReference<*, *, *>
             var changed = false
             for ((qualifier, _) in current) {
                 if (isIncMap && qualifier.contentEquals(referenceBytes)) {
                     // Keep record for incrementing map; mark as deleted instead of clearing
-                    setValue(tr, tableDirs, key.bytes, qualifier, versionBytes, TypeIndicator.DeletedIndicator.byteArray)
+                    setValue(tr, tableDirs, key.bytes, qualifier, versionBytes, StoredPropertyDeleteMarker)
                 } else {
                     tr.clear(packKey(tableDirs.tablePrefix, key.bytes, qualifier))
-                    writeHistoricTable(tr, tableDirs, key.bytes, referenceBytes, versionBytes, HISTORIC_DELETE_MARKER)
+                    writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, HISTORIC_DELETE_MARKER)
                 }
                 changed = true
             }
@@ -80,7 +90,8 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
         is ListItemReference<*, *> -> {
             @Suppress("UNCHECKED_CAST")
             val listRef = reference.parentReference as ListReference<Any, *>
-            val original = tr.getList(tableDirs, key, listRef)
+            val original = tr.getList(tableDirs, key, listRef,
+                { modelId, value, offset, length, recordKey, qualifier -> decryptValueIfNeeded(modelId, recordKey, qualifier, value, offset, length) })
             if (reference.index >= original.size.toUInt()) {
                 // Nothing to delete
                 return false
@@ -101,6 +112,7 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
         is SetItemReference<*, *> -> {
             @Suppress("UNCHECKED_CAST")
             val setRef = reference.parentReference as SetReference<Any, IsPropertyContext>
+            tr.get(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes)).awaitResult() ?: return false
             // Decrement count
             withCountUpdate(tr, tableDirs, key, setRef, -1, versionBytes) { newCount ->
                 setRef.propertyDefinition.validateSize(newCount) { setRef }
@@ -120,21 +132,25 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
     // If there is a direct value at top (exact qualifier), compute a synthetic prev value for complex types
     current.firstOrNull { it.first.contentEquals(referenceBytes) }?.let { (_, prev) ->
         val syntheticPrev: Any = when (reference) {
-            is MapReference<*, *, *> -> mapOf<Any, Any>()
+            is IsMapReference<*, *, *, *> -> mapOf<Any, Any>()
             is ListReference<*, *> -> listOf<Any>()
             is SetReference<*, *> -> setOf<Any>()
             is EmbeddedValuesPropertyRef<*, *> ->
                 reference.propertyDefinition.definition.dataModel.emptyValues()
-            is MultiTypePropertyReference<*, *, *, *, *> -> {
-                var ri = VERSION_BYTE_SIZE
-                val read = readValue(reference.comparablePropertyDefinition, { prev[ri++] }) { prev.size - ri }
+            is MultiTypePropertyReference<*, *, *, *, *> -> withDecryptedValueIfNeeded(
+                dataModelId, key.bytes, referenceBytes, prev, VERSION_BYTE_SIZE, prev.size - VERSION_BYTE_SIZE
+            ) { bytes, offset, length ->
+                var ri = offset
+                val read = readValue(reference.comparablePropertyDefinition, { bytes[ri++] }) { offset + length - ri }
                 when (read) {
                     is TypedValue<*, *> -> read as Any
                     is MultiTypeEnum<*> -> read(Unit) as Any
                     else -> read as Any
                 }
             }
-            else -> decodePrevForDelete(reference, prev, VERSION_BYTE_SIZE, prev.size - VERSION_BYTE_SIZE) as Any
+            else -> withDecryptedValueIfNeeded(
+                dataModelId, key.bytes, referenceBytes, prev, VERSION_BYTE_SIZE, prev.size - VERSION_BYTE_SIZE
+            ) { bytes, offset, length -> decodePrevForDelete(reference, bytes, offset, length) as Any }
         }
         @Suppress("UNCHECKED_CAST")
         handlePreviousValue?.invoke(syntheticPrev as T?)

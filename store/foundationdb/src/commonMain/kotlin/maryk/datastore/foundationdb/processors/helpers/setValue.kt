@@ -11,6 +11,7 @@ internal fun setValue(
     version: ByteArray,
     value: ByteArray
 ) {
+    rememberIncrementingMapKeys(tr, tableDirs, keyBytes, reference, value)
     // Latest table value: (key, reference) -> (version || value)
     tr.set(
         packKey(tableDirs.tablePrefix, keyBytes, reference),

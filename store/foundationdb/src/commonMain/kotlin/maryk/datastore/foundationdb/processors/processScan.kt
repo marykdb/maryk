@@ -2,6 +2,7 @@ package maryk.datastore.foundationdb.processors
 
 import maryk.foundationdb.Transaction
 import maryk.core.models.IsRootDataModel
+import maryk.core.exceptions.RequestException
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
@@ -26,6 +27,7 @@ import maryk.datastore.foundationdb.processors.helpers.TransactionRunner
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
+import maryk.datastore.shared.checkTableScanAllowed
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 
@@ -69,6 +71,12 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processScanInTransactio
         return FetchByTableScan(ASC, null, null)
     }
 
+    val deletedInclusiveScan = if (!scanRequest.filterSoftDeleted) {
+        scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs).also {
+            if (it is ScanType.IndexScan) throw RequestException("Secondary-index ordering cannot include soft-deleted records; use primary-key ordering")
+        }
+    } else null
+
     // If hard key match then quit with direct record
     if (keyScanRange.isSingleKey()) {
         val key = scanRequest.dataModel.key(keyScanRange.ranges.first().start)
@@ -84,7 +92,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processScanInTransactio
     }
 
     // Fast path for unique lookups: resolve unique -> key directly (supports toVersion).
-    keyScanRange.uniques?.takeIf { it.isNotEmpty() }?.let { uniqueMatchers ->
+    keyScanRange.uniques?.takeIf { scanRequest.filterSoftDeleted && it.isNotEmpty() }?.let { uniqueMatchers ->
         val firstMatcher = uniqueMatchers.first()
         @Suppress("UNCHECKED_CAST")
         val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>)
@@ -130,8 +138,10 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processScanInTransactio
         return FetchByUniqueKey(firstMatcher.reference)
     }
 
-    val processedScanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs).let {
-        if (it is ScanType.TableScan) {
+    val processedScanIndex = (deletedInclusiveScan ?: scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)).let {
+        if (!scanRequest.filterSoftDeleted) {
+            scanRequest.dataModel.checkTableScanAllowed(it as ScanType.TableScan, keyScanRange, scanRequest.allowTableScan)
+        } else if (it is ScanType.TableScan) {
             scanRequest.dataModel.optimizeTableScan(
                 it,
                 keyScanRange,

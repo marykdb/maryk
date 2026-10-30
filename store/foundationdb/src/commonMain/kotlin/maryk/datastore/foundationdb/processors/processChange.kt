@@ -5,7 +5,6 @@ import maryk.foundationdb.Transaction
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
@@ -47,6 +46,7 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.toListIndex
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
@@ -81,18 +81,17 @@ import maryk.datastore.foundationdb.processors.helpers.asByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.checkParentReference
 import maryk.datastore.foundationdb.processors.helpers.createValueWriter
-import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.deleteByReference
 import maryk.datastore.foundationdb.processors.helpers.getCurrentIncMapKey
 import maryk.datastore.foundationdb.processors.helpers.getCurrentValuesForPrefix
 import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.getList
 import maryk.datastore.foundationdb.processors.helpers.getValue
+import maryk.datastore.foundationdb.processors.helpers.hasActiveStoredType
 import maryk.datastore.foundationdb.processors.helpers.handleMapAdditionCount
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readMapByReference
-import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
 import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
@@ -110,10 +109,13 @@ import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricTable
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricUnique
 import maryk.datastore.shared.TypeIndicator
+import maryk.datastore.shared.areSameStoredScalarValues
+import maryk.datastore.shared.hasStoredValuePayload
+import maryk.datastore.shared.readStoredCount
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.normalizeReplicationChanges
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.datastore.shared.isSkippableDataError
-import maryk.datastore.shared.readValue
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 import maryk.lib.bytes.combineToByteArray
@@ -134,6 +136,20 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
     version: HLC,
     tableDirs: IsTableDirectories,
     ignoreIfVersionNotNewer: Boolean = false,
+): IsChangeResponseStatus<DM> = processNormalizedChange(
+    dataModel, key, lastVersion,
+    if (ignoreIfVersionNotNewer) normalizeReplicationChanges(changes) else changes,
+    version, tableDirs, ignoreIfVersionNotNewer,
+)
+
+private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormalizedChange(
+    dataModel: DM,
+    key: Key<DM>,
+    lastVersion: ULong?,
+    changes: List<IsChange>,
+    version: HLC,
+    tableDirs: IsTableDirectories,
+    ignoreIfVersionNotNewer: Boolean = false,
 ): IsChangeResponseStatus<DM> {
     val dataModelId = getDataModelId(dataModel)
     val result: IsChangeResponseStatus<DM> = try {
@@ -142,6 +158,12 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
         runRequestTransaction(dataModelId) { tr ->
             updateToEmit = null
             val keyBytes = key.bytes
+            fun hasActiveType(reference: AnyPropertyReference) = tr.hasActiveStoredType(tableDirs, keyBytes, reference, null) { modelId, value, offset, length, recordKey, qualifier ->
+                decryptValueIfNeeded(modelId, recordKey, qualifier, value, offset, length)
+            }
+            fun requireActiveType(reference: AnyPropertyReference) {
+                if (!hasActiveType(reference)) throw RequestException("Property '${reference.completeName}' belongs to an inactive type. Set the multi type parent first.")
+            }
             val tombstoneRead = if (ignoreIfVersionNotNewer) {
                 tr.get(packKey(tableDirs.replicationTombstonePrefix, keyBytes))
             } else null
@@ -192,6 +214,12 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
             ) { bytes, offset, length -> length == 1 && bytes[offset] == TRUE } == true
             val targetIsDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: currentIsDeleted
+            val uniqueReferencesToReconcile = if (changes.any { it is ObjectSoftDeleteChange }) null else
+                requestedChangedReferences.map { it.toStorageByteArray() }
+            val initialUniqueClaims = (if (currentIsDeleted || targetIsDeleted) emptyList() else captureCurrentUniqueClaims(dataModel, tr, tableDirs, key.bytes, uniqueReferencesToReconcile)).toMutableList()
+            val rememberUniqueClaim = { reference: ByteArray, candidates: List<ByteArray> ->
+                initialUniqueClaims += CurrentUniqueClaim(reference.copyOf(), candidates.map { it.copyOf() })
+            }
 
             // Capture initial index values BEFORE any writes
             val storeGetter = object : IsValuesGetter {
@@ -235,6 +263,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 tableDirs,
                                 key,
                                 propertyReference as ListReference<Any, IsPropertyContext>,
+                                { modelId, value, offset, length, recordKey, qualifier -> decryptValueIfNeeded(modelId, recordKey, qualifier, value, offset, length) },
                             ) as T?
                         }
 
@@ -288,7 +317,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 } else null
 
             fun checkedValue(reference: IsPropertyReference<Any, *, *>, completeValues: Values<DM>?): Any? =
-                if (reference.comparablePropertyDefinition is IsSimpleValueDefinition<*, *>) {
+                if (!hasActiveType(reference)) null else if (reference.comparablePropertyDefinition is IsSimpleValueDefinition<*, *>) {
                     tr.getValue(tableDirs, null, keyBytes, reference.toStorageByteArray(), decryptValue = { modelId, value, offset, length, recordKey, qualifier ->
                         decryptValueIfNeeded(modelId, recordKey, qualifier, value, offset, length)
                     }) { bytes, offset, length -> bytes.convertToValue(reference, offset, length) }
@@ -311,6 +340,11 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 if (exceptions.isNotEmpty()) {
                     throw EarlyStatus(ValidationFail<DM>(exceptions))
                 } else {
+                    if (ignoreIfVersionNotNewer) {
+                        setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
+                        persistDurableClockWatermark(tr, tableDirs, keyBytes, writeVersion)
+                        return@runRequestTransaction ChangeSuccess(writeVersion.timestamp, emptyList())
+                    }
                     return@runRequestTransaction ChangeSuccess(latestVersion, emptyList())
                 }
             }
@@ -369,57 +403,9 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 byteArrayOf(if (change.isDeleted) TRUE else 0)
                             )
 
-                            getUniqueIndices(dataModelId, tableDirs.uniquePrefix, tr).forEach { reference ->
-                                if (change.isDeleted) {
-                                    deleteCurrentUniqueIndexEntryForKey(
-                                        tr = tr,
-                                        tableDirs = tableDirs,
-                                        reference = reference,
-                                        key = key.bytes,
-                                        versionBytes = versionBytes
-                                    )
-                                } else {
-                                    val uniqueReferenceWithValue =
-                                        findLatestHistoricUniqueReferenceForKey(
-                                            tr = tr,
-                                            tableDirs = tableDirs as? HistoricTableDirectories,
-                                            reference = reference,
-                                            key = key.bytes
-                                        ) ?: try {
-                                            var index = 0
-                                            @Suppress("UNCHECKED_CAST")
-                                            val propertyReference = dataModel.getPropertyReferenceByStorageBytes(
-                                                reference.size,
-                                                { reference[index++] }
-                                            ) as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
-                                            val currentValue = storeGetter[propertyReference] ?: return@forEach
-                                            val storableDefinition = Value.castDefinition(propertyReference.comparablePropertyDefinition)
-                                            @Suppress("UNCHECKED_CAST")
-                                            val valueBytes =
-                                                (storableDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(
-                                                    currentValue,
-                                                    TypeIndicator.NoTypeIndicator.byte
-                                                )
-                                            reference + mapUniqueValueBytes(dataModelId, reference, valueBytes)
-                                        } catch (error: Throwable) {
-                                            error.rethrowIfFatal()
-                                            if (!error.isSkippableDataError()) {
-                                                throw error
-                                            }
-                                            return@forEach
-                                        }
-
-                                    tr.get(packKey(tableDirs.uniquePrefix, uniqueReferenceWithValue))
-                                        .awaitResult()
-                                        ?.takeIf { it.size == VERSION_BYTE_SIZE + key.bytes.size }
-                                        ?.let { stored ->
-                                            val owner = Key<IsValuesDataModel>(
-                                                stored.copyOfRange(VERSION_BYTE_SIZE, stored.size)
-                                            )
-                                            if (owner != key) throw UniqueException(reference, owner)
-                                        }
-
-                                    setUniqueIndexValue(tr, tableDirs, uniqueReferenceWithValue, versionBytes, key.bytes)
+                            if (change.isDeleted) {
+                                getUniqueIndices(dataModelId, tableDirs.uniquePrefix, tr).forEach { reference ->
+                                    deleteCurrentUniqueIndexEntryForKey(tr, tableDirs, reference, key.bytes, versionBytes)
                                 }
                             }
 
@@ -453,6 +439,12 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                             for (pair in change.referenceValuePairs) {
                                 @Suppress("UNCHECKED_CAST")
                                 val reference = pair.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                                if (pair.value == null && !hasActiveType(reference)) continue
+                                if (pair.value != null) requireActiveType(reference)
+                                if (pair.value != null && reference is TypedValueReference<*, *, *> &&
+                                    reference.comparablePropertyDefinition is IsSimpleValueDefinition<*, *>) {
+                                    throw RequestException("Simple typed values are stored on their multi type parent. Change the parent with a TypedValue instead.")
+                                }
                                 val referenceBytes = reference.toStorageByteArray()
                                 when (val value = pair.value) {
                                     null -> {
@@ -481,15 +473,18 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         val mapDef = reference.propertyDefinition as? IsMapDefinition<Any, Any, IsPropertyContext>
                                             ?: throw TypeException("Expected a Reference to IsMapDefinition for Map change")
                                         val current = getCurrentValuesForPrefix(tr, tableDirs, key, referenceBytes)
-                                        val hadPrev = current.isNotEmpty()
+                                        val hadPrev = hasCurrentComplexValue(current, reference)
                                         try {
                                             @Suppress("UNCHECKED_CAST")
-                                            mapDef.validateWithRef(if (hadPrev) mapOf() else null, value as Map<Any, Any>) { reference as MapReference<Any, Any, IsPropertyContext> }
+                                            mapDef.validateWithRef(if (hadPrev) mapOf() else null, value as Map<Any, Any>) { reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
                                         } catch (e: ValidationException) { addValidation(e) }
                                         val keep = mutableListOf<ByteArray>()
                                         var didWrite = false
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim) { didWrite = true }
                                         checkParentReference(reference)
+                                        if (!hasCurrentComplexValue(current, reference) && reference is MapValueReference<*, *, *>) {
+                                            handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes)
+                                        }
                                         @Suppress("UNCHECKED_CAST")
                                         writeMapToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, mapDef, value as Map<Any, Any>)
                                         val didDelete = unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
@@ -501,15 +496,18 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         val listDef = reference.propertyDefinition as? IsListDefinition<Any, IsPropertyContext>
                                             ?: throw TypeException("Expected a Reference to IsListDefinition for List change")
                                         val current = getCurrentValuesForPrefix(tr, tableDirs, key, referenceBytes)
-                                        val hadPrev = current.isNotEmpty()
+                                        val hadPrev = hasCurrentComplexValue(current, reference)
                                         try {
                                             @Suppress("UNCHECKED_CAST")
-                                            listDef.validateWithRef(if (hadPrev) listOf() else null, value as List<Any>) { reference as ListReference<Any, IsPropertyContext> }
+                                            listDef.validateWithRef(if (hadPrev) listOf() else null, value as List<Any>) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
                                         } catch (e: ValidationException) { addValidation(e) }
                                         val keep = mutableListOf<ByteArray>()
                                         var didWrite = false
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim) { didWrite = true }
                                         checkParentReference(reference)
+                                        if (!hasCurrentComplexValue(current, reference) && reference is MapValueReference<*, *, *>) {
+                                            handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes)
+                                        }
                                         writeListToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, reference.propertyDefinition, value)
                                         val didDelete = unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
                                         if (didWrite || didDelete) isChanged = true
@@ -520,15 +518,18 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         val setDef = reference.propertyDefinition as? IsSetDefinition<Any, IsPropertyContext>
                                             ?: throw TypeException("Expected a Reference to IsSetDefinition for Set change")
                                         val current = getCurrentValuesForPrefix(tr, tableDirs, key, referenceBytes)
-                                        val hadPrev = current.isNotEmpty()
+                                        val hadPrev = hasCurrentComplexValue(current, reference)
                                         try {
                                             @Suppress("UNCHECKED_CAST")
-                                            setDef.validateWithRef(if (hadPrev) setOf() else null, value as Set<Any>) { reference as SetReference<Any, IsPropertyContext> }
+                                            setDef.validateWithRef(if (hadPrev) setOf() else null, value as Set<Any>) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
                                         } catch (e: ValidationException) { addValidation(e) }
                                         val keep = mutableListOf<ByteArray>()
                                         var didWrite = false
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim) { didWrite = true }
                                         checkParentReference(reference)
+                                        if (!hasCurrentComplexValue(current, reference) && reference is MapValueReference<*, *, *>) {
+                                            handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes)
+                                        }
                                         writeSetToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, reference.propertyDefinition, value)
                                         val didDelete = unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
                                         if (didWrite || didDelete) isChanged = true
@@ -545,8 +546,11 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, HISTORIC_DELETE_MARKER)
                                         }
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, null)
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, null, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim)
                                         checkParentReference(reference)
+                                        if (!hasCurrentComplexValue(current, reference) && reference is MapValueReference<*, *, *>) {
+                                            handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes)
+                                        }
                                         writeTypedValueToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, reference.propertyDefinition, value)
                                         isChanged = true
                                         putOverlay(reference, value)
@@ -557,7 +561,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         // Validate only when the property definition exposes an embedded values definition
                                         @Suppress("UNCHECKED_CAST")
                                         (reference.propertyDefinition as? IsEmbeddedValuesDefinition<IsValuesDataModel, IsPropertyContext>)?.let { valuesDef ->
-                                            val hadPrev = current.isNotEmpty()
+                                            val hadPrev = hasCurrentComplexValue(current, reference)
                                             try {
                                                 val valuesRef = reference as IsPropertyReference<Values<IsValuesDataModel>, IsPropertyDefinition<Values<IsValuesDataModel>>, *>
                                                 valuesDef.validateWithRef(
@@ -568,7 +572,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         }
 
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current)
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim)
                                         // Marker for embedded object
                                         writer(Embed, referenceBytes, reference.propertyDefinition, Unit)
                                         @Suppress("UNCHECKED_CAST")
@@ -578,7 +582,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             writer
                                         )
                                         // If this is a map value insertion and no previous existed, bump the map's count
-                                        if (current.isEmpty() && reference is MapValueReference<*, *, *>) {
+                                        if (!hasCurrentComplexValue(current, reference) && reference is MapValueReference<*, *, *>) {
                                             @Suppress("UNCHECKED_CAST")
                                             val parentRef = reference.parentReference as MapReference<Any, Any, IsPropertyContext>
                                             withCountUpdate(
@@ -598,13 +602,14 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                                 b.convertToValue(reference, o, l)
                                             }
 
-                                            if (value == previousValue) {
+                                            if (areSameStoredScalarValues(reference.comparablePropertyDefinition, value, previousValue)) {
                                                 // Skip if value is unchanged
                                                 continue
                                             }
 
                                             if (previousValue == null) {
-                                                if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null) {
+                                                if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null &&
+                                                    !(ignoreIfVersionNotNewer && reference is MapValueReference<*, *, *> && reference.parentReference is IncMapReference<*, *, *>)) {
                                                     val parentExists = tr.getValue(
                                                         tableDirs,
                                                         null,
@@ -612,7 +617,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                                         reference.parentReference!!.toStorageByteArray(),
                                                         decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                                                     ) { b, o, l ->
-                                                        if (l == 0 || b[o] == TypeIndicator.DeletedIndicator.byte) null else true
+                                                        if (hasStoredValuePayload(reference.parentReference!!.comparablePropertyDefinition, b, o, l)) true else null
                                                     } != null
                                                     if (!parentExists) {
                                                         throw RequestException("Property '${reference.completeName}' can only be changed if parent value exists. Set the parent value with this value.")
@@ -622,7 +627,8 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                                 // Extra validations based on reference type
                                                 checkParentReference(reference)
                                                 if (reference is MapValueReference<*, *, *>) {
-                                                    handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes)
+                                                    handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes,
+                                                        allowMissingParent = ignoreIfVersionNotNewer && reference.parentReference is IncMapReference<*, *, *>)
                                                 }
                                             }
 
@@ -635,6 +641,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                                 key,
                                                 versionBytes,
                                                 skipCurrentUniqueOwnership = targetIsDeleted,
+                                                onUniqueClaim = rememberUniqueClaim,
                                             )
 
                                             // Unique handling if applicable is covered by writer for TypeValue; handle comparable uniques here
@@ -658,8 +665,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                         }
                         is ListChange -> {
                             for (listChange in change.listValueChanges) {
+                                requireActiveType(listChange.reference)
                                 @Suppress("UNCHECKED_CAST")
-                                val originalList = tr.getList(tableDirs, key, listChange.reference as ListReference<Any, *>)
+                                val originalList = tr.getList(tableDirs, key, listChange.reference as ListReference<Any, *>,
+                                    { modelId, value, offset, length, recordKey, qualifier -> decryptValueIfNeeded(modelId, recordKey, qualifier, value, offset, length) })
                                 val list = originalList.toMutableList()
                                 val originalCount = list.size
 
@@ -692,6 +701,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                         is SetChange -> {
                             @Suppress("UNCHECKED_CAST")
                             for (setChange in change.setValueChanges) {
+                                requireActiveType(setChange.reference)
                                 val setRef = setChange.reference as SetReference<Any, IsPropertyContext>
                                 val setDef = setRef.propertyDefinition
                                 var countChange = 0
@@ -726,8 +736,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 if (countChange != 0) {
                                     val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, setChange.reference.toStorageByteArray())).awaitResult()
                                     val prevCount = countEntry?.let { arr ->
-                                        var ri = VERSION_BYTE_SIZE
-                                        initIntByVar { arr[ri++] }
+                                        readStoredCount(arr, VERSION_BYTE_SIZE, arr.size - VERSION_BYTE_SIZE)
                                     } ?: 0
                                     setDef.validateSize((prevCount + countChange).toUInt()) { setRef }
                                     setValue(tr, tableDirs, key.bytes, setChange.reference.toStorageByteArray(), versionBytes, (prevCount + countChange).toVarBytes())
@@ -737,6 +746,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                         is IncMapChange -> {
                             @Suppress("UNCHECKED_CAST")
                             for (valueChange in change.valueChanges) {
+                                requireActiveType(valueChange.reference)
                                 val incMapRef = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
                                 val incDef = incMapRef.propertyDefinition
 
@@ -750,7 +760,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                     }
 
                                     val currentIncKey = getCurrentIncMapKey(tr, tableDirs, key, incMapRef)
-                                    val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes)
+                                    val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim)
                                     val addedKeys = writeIncMapAdditionsToStorage(currentIncKey, writer, incMapRef.propertyDefinition.definition, addValues)
 
                                     if (addedKeys.isNotEmpty()) {
@@ -764,15 +774,14 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
                                     val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, valueChange.reference.toStorageByteArray())).awaitResult()
                                     val prevCount = countEntry?.let { arr ->
-                                        var ri = VERSION_BYTE_SIZE
-                                        initIntByVar { arr[ri++] }
+                                        readStoredCount(arr, VERSION_BYTE_SIZE, arr.size - VERSION_BYTE_SIZE)
                                     } ?: 0
                                     incDef.validateSize((prevCount + addValues.size).toUInt()) { incMapRef }
                                     setValue(tr, tableDirs, key.bytes, valueChange.reference.toStorageByteArray(), versionBytes, (prevCount + addValues.size).toVarBytes())
                                 }
                             }
                         }
-                        else -> return@runRequestTransaction ServerFail("Unsupported operation $change")
+                        else -> throw EarlyStatus(ServerFail<DM>("Unsupported operation $change"))
                     }
                 }
             } catch (e: ValidationUmbrellaException) {
@@ -797,8 +806,17 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             }
 
             if (!isChanged) {
+                if (ignoreIfVersionNotNewer) {
+                    // An accepted replication event fences older events even when its value is equal.
+                    setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
+                    persistDurableClockWatermark(tr, tableDirs, keyBytes, writeVersion)
+                    return@runRequestTransaction ChangeSuccess(writeVersion.timestamp, outChanges)
+                }
                 return@runRequestTransaction ChangeSuccess(latestVersion, outChanges)
             }
+
+            reconcileCurrentUniqueClaims(dataModel, tr, tableDirs, key.bytes, versionBytes,
+                initialUniqueClaims, targetIsDeleted, uniqueReferencesToReconcile)
 
             // Update latest version if anything changed
             if (writeVersion.timestamp > latestVersion) setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
@@ -908,6 +926,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
     } catch (e: EarlyStatus) {
         @Suppress("UNCHECKED_CAST")
         e.status as IsChangeResponseStatus<DM>
+    } catch (exception: UniqueException) {
+        var offset = 0
+        val reference = dataModel.getPropertyReferenceByStorageBytes(exception.reference.size, { exception.reference[offset++] })
+        ValidationFail(listOf(AlreadyExistsException(reference, exception.key)))
     } catch (t: Throwable) {
         t.rethrowIfFatal()
         val cause = t.unwrapFdb()
@@ -940,7 +962,6 @@ private fun deleteCurrentUniqueIndexEntryForKey(
             tr.clear(kv.key)
             val uniqueRef = kv.key.copyOfRange(tableDirs.uniquePrefix.size, kv.key.size)
             writeHistoricUnique(tr, tableDirs, key, uniqueRef, versionBytes)
-            break
         }
     }
 }
@@ -970,60 +991,15 @@ private fun collectCurrentIndexEntriesForKey(
     return valueAndKeys
 }
 
-private fun findLatestHistoricUniqueReferenceForKey(
-    tr: Transaction,
-    tableDirs: HistoricTableDirectories?,
-    reference: ByteArray,
-    key: ByteArray
-): ByteArray? {
-    tableDirs ?: return null
-
-    val iterator = tr.getRange(Range.startsWith(tableDirs.historicUniquePrefix)).iterator()
-    var bestVersion = 0uL
-    var bestUniqueReference: ByteArray? = null
-
-    while (iterator.hasNext()) {
-        val kv = iterator.nextBlocking()
-        if (
-            kv.value.size != key.size ||
-            !kv.value.matchesRangePart(0, key, length = key.size)
-        ) {
-            continue
-        }
-
-        val versionOffset = kv.key.size - VERSION_BYTE_SIZE
-        val separatorIndex = versionOffset - 1
-        if (
-            separatorIndex < tableDirs.historicUniquePrefix.size ||
-            kv.key[separatorIndex] != 0.toByte()
-        ) {
-            continue
-        }
-
-        val uniqueReference = decodeZeroFreeUsing01OrNull(
-            kv.key,
-            tableDirs.historicUniquePrefix.size,
-            separatorIndex - tableDirs.historicUniquePrefix.size
-        ) ?: continue
-
-        if (!uniqueReference.matchesRangePart(0, reference, length = reference.size)) {
-            continue
-        }
-
-        val version = kv.key.readReversedVersionBytes(versionOffset)
-        if (bestUniqueReference == null || version > bestVersion) {
-            bestVersion = version
-            bestUniqueReference = uniqueReference
-        }
-    }
-
-    return bestUniqueReference
-}
-
 private fun collectRequestedChangedReferences(changes: List<IsChange>) = buildList {
     changes.forEach { change ->
         when (change) {
-            is Change -> change.referenceValuePairs.forEach { add(it.reference) }
+            is Change -> change.referenceValuePairs.forEach {
+                val reference = it.reference
+                add(reference)
+                // Deleting one item shifts every following item's descendants and claims.
+                if (it.value == null && reference is ListItemReference<*, *>) add(requireNotNull(reference.parentReference))
+            }
             is ListChange -> change.listValueChanges.forEach { add(it.reference) }
             is SetChange -> change.setValueChanges.forEach { add(it.reference) }
             is IncMapChange -> change.valueChanges.forEach { add(it.reference) }
@@ -1040,4 +1016,13 @@ private fun IsIndexable.isAffectedByReference(reference: AnyPropertyReference): 
     is Multiple -> this.references.any { it.isAffectedByReference(reference) }
     is AnyOf -> this.references.any { it.isForPropertyReference(reference) }
     else -> false
+}
+
+private fun hasCurrentComplexValue(
+    currentValues: List<Pair<ByteArray, ByteArray>>,
+    reference: IsPropertyReference<*, *, *>,
+): Boolean {
+    val qualifier = reference.toStorageByteArray()
+    val stored = currentValues.firstOrNull { it.first.contentEquals(qualifier) }?.second ?: return false
+    return hasStoredValuePayload(reference.comparablePropertyDefinition, stored, VERSION_BYTE_SIZE, stored.size - VERSION_BYTE_SIZE)
 }

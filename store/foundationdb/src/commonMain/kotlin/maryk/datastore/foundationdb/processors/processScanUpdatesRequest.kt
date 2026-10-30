@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
 import maryk.core.processors.datastore.scanRange.createScanRange
+import maryk.core.extensions.bytes.toByteArray
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
@@ -574,7 +575,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
         OrderedKeysUpdate(
             version = lastResponseVersion,
             keys = matchingKeys,
-            sortingKeys = null
+            sortingKeys = matchingKeys.map { Bytes(matchingVersions.getValue(it).toByteArray()) }
         )
     )
 

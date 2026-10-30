@@ -1,8 +1,17 @@
 package maryk.datastore.foundationdb.clusterlog
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.set
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.TimePrecision.NANOS
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with
 import maryk.datastore.test.StorageUpgradeFixture
@@ -23,7 +32,42 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
+private object NanosClusterLogRecord : RootDataModel<NanosClusterLogRecord>() {
+    val stamps by list(1u, valueDefinition = DateTimeDefinition(precision = NANOS))
+    val distinctStamps by set(2u, valueDefinition = DateTimeDefinition(precision = NANOS))
+    val tail by number(3u, type = UInt32)
+}
+
 class ClusterUpdateLogCodecTest {
+    @Test
+    fun distinguishesReleasedPackedNanosCollectionsFromCurrentFramedValues() {
+        val log = newLog(mapOf(1u to NanosClusterLogRecord))
+        val stamps = listOf(LocalDateTime(1970, 1, 1, 0, 0, 8), LocalDateTime(1970, 1, 1, 0, 0, 16, 42))
+        val values = NanosClusterLogRecord.create {
+            NanosClusterLogRecord.stamps with stamps
+            distinctStamps with stamps.toSet()
+            tail with 42u
+        }
+        val key = Bytes(ByteArray(16) { 7 })
+        val update = ClusterLogAddition(key, 1uL, values)
+        val current = log.encodeValue(1u, update, NanosClusterLogRecord)
+        val typeOffset = 2 + "node-a".encodeToByteArray().size + 4
+        assertTrue(current[typeOffset].toInt() and 0x40 != 0)
+        assertEquals(update, assertNotNull(log.decodeValue(current)).update)
+
+        // Released collections concatenate (seconds, nanos) pairs in a packed field.
+        // Each packed field below is also a valid new scalar message, so guessing
+        // from its contents would silently collapse the two timestamps into one.
+        val legacyPayload = byteArrayOf(10, 4, 8, 0, 16, 42, 18, 4, 8, 0, 16, 42, 24, 42)
+        val lengthOffset = typeOffset + 1 + 8 + 2 + key.bytes.size
+        val payloadLength = ByteArray(4)
+        var offset = 0
+        legacyPayload.size.toUInt().writeBytes(writer = { payloadLength[offset++] = it })
+        val legacy = current.copyOfRange(0, lengthOffset) + payloadLength + legacyPayload
+        legacy[typeOffset] = update.type
+        assertEquals(update, assertNotNull(log.decodeValue(legacy)).update)
+    }
+
     @Test
     fun distinguishesLegacyAndCurrentPackedFloatingValuePayloadsWithoutRewritingTheLog() {
         val log = newLog(mapOf(1u to StorageUpgradeRecord))

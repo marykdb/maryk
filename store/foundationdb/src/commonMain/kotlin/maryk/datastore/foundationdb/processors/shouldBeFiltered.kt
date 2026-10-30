@@ -7,10 +7,11 @@ import maryk.core.properties.definitions.index.matchesNamedSearchIndex
 import maryk.core.properties.definitions.index.matchesNamedSearchIndexPrefix
 import maryk.core.properties.definitions.index.matchesNamedSearchIndexRegex
 import maryk.core.properties.definitions.index.stringIndexTransform
-import maryk.core.query.filters.matchesFilter
+import maryk.core.query.filters.matchesFilterWithPresence
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
+import maryk.datastore.foundationdb.processors.helpers.matchQualifierPresence
 import maryk.datastore.foundationdb.processors.helpers.matchQualifier
 
 /**
@@ -31,13 +32,16 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
 ) = when {
     toVersion != null && createdVersion != null && createdVersion > toVersion -> true
     this.filterSoftDeleted && isSoftDeleted(transaction, tableDirs, toVersion, key, keyOffset, keyLength, decryptValue) -> true
-    else -> !matchesFilter(
+    else -> !matchesFilterWithPresence(
         where,
         valueMatcher = { propertyReference, valueMatcher ->
             transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, valueMatcher)
         },
+        presenceMatcher = { propertyReference ->
+            transaction.matchQualifierPresence(tableDirs, key.copyOfRange(keyOffset, keyOffset + keyLength), propertyReference, toVersion, decryptValue)
+        },
         normalizer = { propertyReference, value ->
-            val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilter value
+            val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilterWithPresence value
             when (value) {
                 is String -> transform.apply(value)
                 else -> value

@@ -238,6 +238,33 @@ Maryk is licensed under the Apache 2.0 License. See the repository's LICENSE fil
 
 A hard delete permanently removes a record's current and historic values, including when `keepAllVersions` is enabled. An earlier `toVersion` query cannot recover erased values. Use soft deletion when historical recovery is required.
 
+Undeleting a record claims its current unique values, including changes or removals
+made while it was deleted. Older historic claims are not restored. Sensitive
+unique values are checked against every configured token candidate before the
+active token is installed.
+Changes reconcile unique ownership against the final stored values. Removing
+embedded children or collection entries, including embedded leaves within map
+values, also releases their claims in the same transaction; conflicts leave the record and its indexes unchanged. Reconciliation
+reads the affected qualifier ranges, preserving unrelated encrypted cells. Soft
+deletion releases owner-matched claims without decrypting payloads. Removing an
+optional encrypted value decrypts its previous value for validation before
+clearing the stored cell. With history
+enabled, undelete can recover a damaged current cell's claim from its exact source
+version; it never substitutes an older historical value.
+
+An accepted replication change advances the record's source version even when
+the supplied value is unchanged. Older changes and deletions remain rejected
+after reopening the store.
+Replication replays committed values and resolved incrementing-map keys in their
+source operation order. Source checks and derived index/type notifications are
+not executed as new mutations. Missing allocation keys or values reject replay
+before that version is applied.
+
+Scans with `filterSoftDeleted = false` use primary-key table scans so multiple
+deleted records with the same formerly unique value remain visible. Table-scan
+permission and minimum key-range bounds still apply. Explicit secondary-index
+ordering with deleted records is rejected; use primary-key ordering.
+
 
 ## Serializable transaction scopes
 
@@ -264,10 +291,13 @@ Float/Double values and index components now share the ordered numeric encoding.
 The upgrade converts affected current/historical fields, collection qualifiers,
 packed value objects and unique lookups, including contextual encryption and
 sensitive unique tokens. Original versions, record IDs and references are kept.
-Unchanged cells and fixed-width non-floating indexes are not rewritten.
+Unchanged cells and indexes whose descriptors and value encodings are unchanged
+are not rewritten.
 Legacy variable-width index entries gain escaped boundaries and UTF-16 string
-ordering. Primary keys whose bytes change require an explicit key/reference
-migration and fail preflight.
+ordering. Index descriptors also convert fixed floating-point or packed-value map
+and set ancestor keys, including indexes whose leaf value is an unchanged integer.
+Primary keys whose bytes change require an explicit key/reference migration and
+fail preflight.
 
 The store metadata records `maryk.storage/format = 2` only after verification.
 Later opens read the stamp and skip the conversion and data scans. A durable
@@ -279,6 +309,23 @@ Legacy field encryption is not converted. Do not run old writers during the
 upgrade or downgrade afterward. Restart scans and replication subscriptions from
 a fresh snapshot; old scan cursors are rejected.
 
+Temporary staging includes both old and new keys. When this envelope exceeds
+FoundationDB's 100,000-byte value limit, the upgrade chunks it in a separate
+temporary metadata subspace. Chunks, their manifest and the checkpoint commit
+together; cleanup removes them before the format is published. This also permits
+conversion of floating collection qualifiers whose unchanged value is close to
+the native value limit.
+
+Stored source model definitions and their dependencies use the legacy transport
+reader during upgrade, preserving NANOS DateTime collection defaults. Before
+publication each source definition pair is rewritten with its own current-format
+marker in one guarded transaction. A restart can therefore distinguish rewritten
+schemas from remaining legacy pairs while the global upgrade is unfinished.
+This preserves source schemas and versions, including models not registered by
+the opener; application schema migrations still run afterward.
+Read-only schema discovery used by the App and CLI selects the same legacy/current
+reader from the store format and each source-pair marker before opening the store.
+
 Per-model `maryk.storage/maintenance` metadata separately records completion of
 clock repair and optional history/tombstone backfills. Later opens read these
 completion flags and the operational clock watermark, skipping old repair-marker
@@ -286,6 +333,21 @@ checks and scans. Models first opened later and newly enabled history still get
 their required maintenance. This is engine metadata, independent of model schema
 versions, with no extra fields on application records.
 
-FoundationDB cluster logs distinguish old/new packed-value
-payloads in an existing type bit; old queued payloads can be read without a queue
-rewrite or extra log-envelope bytes.
+FoundationDB cluster logs distinguish released and current transport payloads
+in an existing type bit, including packed floating value objects and NANOS
+DateTime collections. Released packed DateTime pairs are decoded using the
+recorded format, preserving every element even when their bytes also resemble
+one current framed value. Old queued payloads can be read without a queue rewrite
+or extra log-envelope bytes.
+
+Retained transaction receipts keep their original request identity across this
+upgrade. Opening conversion tags released receipts explicitly; new receipts use
+the current request fingerprint. A retry compares against the appropriate codec
+before returning the retained response. If the released request encoding cannot
+be reproduced unambiguously, the store reports that identity cannot be proven
+and keeps the receipt instead of applying the transaction again.
+FoundationDB stores the released receipt tag in its manifest and reconstructs
+the tagged logical receipt from unchanged 80,000-byte chunks. Manifest conversion
+uses the same staged opening-upgrade checkpoints as other format-sensitive
+metadata. Receipt limits include the fingerprint and current envelope, and the
+released manifest adds its envelope only once during reconstruction.

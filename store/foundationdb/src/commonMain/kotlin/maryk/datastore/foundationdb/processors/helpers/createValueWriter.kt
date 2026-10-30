@@ -31,6 +31,7 @@ internal fun FoundationDBDataStore.createValueWriter(
     qualifiersToKeep: MutableList<ByteArray>? = null,
     currentValues: List<Pair<ByteArray, ByteArray>>? = null,
     skipCurrentUniqueOwnership: Boolean = false,
+    onUniqueClaim: ((ByteArray, List<ByteArray>) -> Unit)? = null,
     onWrite: (() -> Unit)? = null,
 ): ValueWriter<IsPropertyDefinition<*>> = { type, reference, definition, value ->
     fun shouldSkip(referenceBytes: ByteArray, valueBytes: ByteArray): Boolean =
@@ -62,6 +63,7 @@ internal fun FoundationDBDataStore.createValueWriter(
                     val uniqueRefs = mapUniqueValueByteCandidates(dataModelId, reference, valueBytes)
                         .map { uniqueValue -> reference + uniqueValue }
                     val uniqueRef = uniqueRefs.first()
+                    onUniqueClaim?.invoke(reference, uniqueRefs.map { it.copyOfRange(reference.size, it.size) })
                     try {
                         for (candidateRef in uniqueRefs) {
                             val uniqueExists = tr.get(packKey(tableDirs.uniquePrefix, candidateRef)).awaitResult()

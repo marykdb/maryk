@@ -1,6 +1,8 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import maryk.datastore.foundationdb.processors.HISTORIC_DELETE_MARKER
+import maryk.datastore.shared.TypeIndicator
+import maryk.datastore.shared.isStoredPropertyDeleteMarker
 
-internal fun ByteArray.isHistoricDeleteMarker() =
-    this.isEmpty() || this.contentEquals(HISTORIC_DELETE_MARKER)
+internal fun ByteArray.isHistoricDeleteMarker(allowLegacyMarker: Boolean = false) =
+    isEmpty() || isStoredPropertyDeleteMarker(this) ||
+        (allowLegacyMarker && size == 1 && this[0] == TypeIndicator.DeletedIndicator.byte)

@@ -343,7 +343,7 @@ class FoundationDBDataStoreMigrationTest {
     }
 
     @Test
-    fun backgroundMigrationFailsPromptlyForInvalidPersistedState() = runTest(timeout = 3.minutes) {
+    fun openingRejectsInvalidPersistedStateBeforeBackgroundWork() = runTest(timeout = 3.minutes) {
         val invalidStates = listOf(
             "malformed" to "not migration state".encodeToByteArray(),
             "mismatched" to MigrationState(
@@ -369,32 +369,19 @@ class FoundationDBDataStoreMigrationTest {
             }
             initialStore.close()
 
-            val dataStore = FoundationDBDataStore.open(
-                keepAllVersions = true,
-                fdbClusterFilePath = "fdb.cluster",
-                directoryPath = dirPath,
-                dataModelsById = mapOf(1u to ModelV2),
-                migrationConfiguration = MigrationConfiguration(
-                    migrationLease = NoopMigrationLease,
-                    migrationStartupBudgetMs = -1L,
-                    continueMigrationsInBackground = true,
-                    migrationHandler = { MigrationOutcome.Success },
+            assertFailsWith<MigrationException> {
+                FoundationDBDataStore.open(
+                    keepAllVersions = true,
+                    fdbClusterFilePath = "fdb.cluster",
+                    directoryPath = dirPath,
+                    dataModelsById = mapOf(1u to ModelV2),
+                    migrationConfiguration = MigrationConfiguration(
+                        migrationLease = NoopMigrationLease,
+                        migrationStartupBudgetMs = -1L,
+                        continueMigrationsInBackground = true,
+                        migrationHandler = { MigrationOutcome.Success },
+                    )
                 )
-            )
-
-            try {
-                val failure = runCatching {
-                    withContext(Dispatchers.Default.limitedParallelism(1)) {
-                        withTimeout(5_000.milliseconds) {
-                            dataStore.awaitMigration(1u)
-                        }
-                    }
-                }.exceptionOrNull()
-
-                assertIs<MigrationException>(failure)
-                assertTrue(dataStore.pendingMigrations()[1u]?.contains("Persisted migration state") == true)
-            } finally {
-                dataStore.close()
             }
         }
     }

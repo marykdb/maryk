@@ -6,8 +6,9 @@ import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.migration.StorageFormat
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DefinitionsConversionContext
+import maryk.core.query.StorageDefinitionsConversionContext
 import maryk.datastore.foundationdb.metadata.ensureModelNameMapping
 import maryk.datastore.foundationdb.metadata.toMetadataBytes
 import maryk.datastore.foundationdb.processors.helpers.packKey
@@ -36,7 +37,7 @@ internal fun encodeModelDefinition(dataModel: IsRootDataModel): EncodedModelDefi
     val nameBytes = dataModel.Meta.name.encodeToByteArray()
     val versionBytes = dataModel.Meta.version.toByteArray()
 
-    val context = DefinitionsConversionContext()
+    val context = StorageDefinitionsConversionContext()
 
     val modelCache = WriteCache()
     val modelSize = RootDataModel.Model.Serializer
@@ -80,4 +81,5 @@ internal fun storeModelDefinition(
     } else {
         transaction.clear(packKey(model, modelDependentsDefinitionKey))
     }
+    transaction.set(packKey(model, sourceSchemaStorageFormatKey), StorageFormat.CURRENT.toString().encodeToByteArray())
 }

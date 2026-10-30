@@ -23,3 +23,5 @@ internal val modelReplicationTombstoneBackfillCompleteKey = byteArrayOf(11)
 internal val modelHlcWatermarkPrefix = byteArrayOf(12)
 /** Legacy-store recovery floor, retained after the initial bounded migration scan. */
 internal val modelHlcRecoveryWatermarkKey = byteArrayOf(12, 0)
+
+internal val modelMigrationTargetKey = "maryk.migration/target-schema".encodeToByteArray()

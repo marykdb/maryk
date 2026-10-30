@@ -62,6 +62,40 @@ Model migrations are ordered by dependency graph.
 - A dependent handler does not start until each referenced model has completed finalization and definition publication.
 - Dependency cycles are detected and rejected up front with `MigrationException`.
 
+## Released storage recovery limits
+
+The released unversioned layout upgrades directly to storage format 2 during the
+unreleased 0.14 transition. All collection storage is inspected, including models
+without floating-point fields. Ordinary empty collection counts remain `[0]`.
+Released FoundationDB also wrote `[0]` for historic deletions. A count at the
+record's original creation version proves a present empty collection; a later
+historic zero can be intrinsically ambiguous. Deleting a collection and setting
+it empty can produce identical historic bytes, even after later writes restore
+the same current state. The upgrade stops in Expand before moving source rows,
+with model, qualifier and version evidence and recovery guidance. It does not
+infer presence from aggregate counts. New historic deletions use an empty payload.
+
+Incrementing-map recovery separately establishes each maximum allocated key over
+the complete record lifetime, including replaced maps and removed ancestors.
+Creation-only records are safe without history. Edited records require continuous
+retained history or external verification of all allocation maxima. Raw historic
+qualifiers seed model metadata watermarks before Backfill, and retries never lower
+a recovered maximum. Matching historic creation and latest frontier checks the
+retained bounds; it does not prove that no interval was erased. History must have
+been enabled continuously and must not have been pruned. Otherwise use an
+authoritative application log or backup; current keys cannot establish erased
+allocations and opening fails with the affected model and record.
+
+Model metadata stores maxima below `maryk.incmap/<modelId>/` plus the scoped
+record key and canonical map qualifier. A separate
+`maryk.incmap.verified/<modelId>/` record attests complete per-record recovery.
+The attestation is valid only after all maxima have been established; setting it
+alone does not repair erased allocations. Hard deletion clears both namespaces.
+Intermediate development checkpoints predating these proof rules are rejected
+without changing storage format 2; they are not a released compatibility baseline.
+An application migration that changes record identities, map qualifiers or the
+incrementing key definition must remap lifetime watermarks with the data.
+
 ## Startup budget and background continuation
 
 Use:
@@ -166,3 +200,30 @@ FoundationDBDataStore.open(
     )
 )
 ```
+
+
+Pending application migrations are bound to the complete target schema, including
+dependent definitions and reference widths. The checkpoint and its target digest
+are persisted together. Reopening with the source schema or a different target,
+even one using the same version number, fails before opening callbacks run. Resume
+with the original target; changing a version string cannot authorize skipping
+completed phases.
+
+Older unfinished checkpoints without a target digest cannot establish which schema
+already rewrote their rows. They require authoritative recovery of the intended
+target and progress; do not delete the checkpoint to bypass the guard. A final
+marker can be cleaned automatically only when the independently published schema
+proves that its target was completed. Normal state serialization and storage-format
+versions are unchanged.
+
+Already-open instances also check persisted migration progress inside their native
+read and write transactions. They reject access while a transition is pending and
+require reopening after the target schema is published. Migration callbacks retain
+access under their migration ownership guard.
+
+Synchronous phase callbacks can use the normal datastore request API. Encryption,
+durable clocks and the cluster log are initialized before its actor starts, and
+failed or canceled startup closes that actor. Migration request access belongs to
+one store instance; calling another store from a callback does not bypass that
+store's migration guards. Cluster log readers check the same schema fence before
+decoding updates.

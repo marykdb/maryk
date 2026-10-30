@@ -18,6 +18,8 @@ import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.shared.hasStoredValuePayload
+import maryk.datastore.shared.readStoredCount
 
 internal fun checkParentReference(
     reference: IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
@@ -39,7 +41,8 @@ internal fun handleMapAdditionCount(
     tableDirs: IsTableDirectories,
     key: Key<*>,
     reference: MapValueReference<*, *, *>,
-    versionBytes: ByteArray
+    versionBytes: ByteArray,
+    allowMissingParent: Boolean = true,
 ) {
     @Suppress("UNCHECKED_CAST")
     val mapDef = reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
@@ -51,9 +54,12 @@ internal fun handleMapAdditionCount(
     @Suppress("UNCHECKED_CAST")
     val parentRef = reference.parentReference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *>
     val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, parentRef.toStorageByteArray())).awaitResult()
+    if (!allowMissingParent && (countEntry == null || !hasStoredValuePayload(parentRef.comparablePropertyDefinition,
+            countEntry, VERSION_BYTE_SIZE, countEntry.size - VERSION_BYTE_SIZE))) {
+        throw RequestException("Property '${reference.completeName}' can only be changed if parent value exists. Set the parent value with this value.")
+    }
     val prevCount = countEntry?.let { arr ->
-        var ri = VERSION_BYTE_SIZE
-        maryk.core.extensions.bytes.initIntByVar { arr[ri++] }
+        readStoredCount(arr, VERSION_BYTE_SIZE, arr.size - VERSION_BYTE_SIZE)
     } ?: 0
     val newCount = prevCount + 1
     mapDef.validateSize(newCount.toUInt()) { parentRef }

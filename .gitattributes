@@ -1,0 +1,2 @@
+# An empty final field represents an exact zero-length stored value.
+store/rocksdb/src/jvmTest/resources/released-0.13.0/rows.tsv whitespace=-blank-at-eol

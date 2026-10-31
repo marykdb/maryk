@@ -5,7 +5,11 @@ package maryk.core.properties.references
 import kotlinx.datetime.LocalTime
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.string
 import maryk.test.models.MarykTypeEnum
@@ -48,6 +52,12 @@ private object CachedMultiTypeModel : RootDataModel<CachedMultiTypeModel>() {
         typeEnum = MarykTypeEnum,
         typeIsFinal = false
     )
+}
+
+private object CachedCollectionModel : RootDataModel<CachedCollectionModel>() {
+    val items by list(1u, valueDefinition = EmbeddedValuesDefinition(dataModel = { CachedSharedNameModel }))
+    val entries by map(2u, keyDefinition = StringDefinition(),
+        valueDefinition = EmbeddedValuesDefinition(dataModel = { CachedSharedNameModel }))
 }
 
 class ReferenceCacheTest {
@@ -93,5 +103,39 @@ class ReferenceCacheTest {
 
         assertEquals(listCacheSize, TestMarykModel.list.refCache.value?.size ?: 0)
         assertEquals(mapCacheSize, TestMarykModel.map.refCache.value?.size ?: 0)
+    }
+
+    @Test
+    fun nestedChildrenReuseTheSameParentWithoutAliasingDifferentDefinitions() {
+        val parent = CachedCollectionModel.items.definition.itemRef(0u, CachedCollectionModel.items.ref())
+        val family = CachedSharedNameModel.familyName.ref(parent)
+        assertSame(family, CachedSharedNameModel.familyName.ref(parent))
+        val lastName = CachedSharedLastNameModel.lastName.ref(family)
+        val prefix = CachedSharedLastNameModel.prefix.ref(family)
+        assertSame(lastName, CachedSharedLastNameModel.lastName.ref(family))
+        assertSame(prefix, CachedSharedLastNameModel.prefix.ref(family))
+        assertNotSame(lastName, prefix)
+        assertEquals(1u, lastName.index)
+        assertEquals(2u, prefix.index)
+    }
+
+    @Test
+    fun nestedCollectionReadsDoNotRetainItemParentChainsInSharedDefinitions() {
+        val list = CachedCollectionModel.items.ref()
+        val map = CachedCollectionModel.entries.ref()
+        val definitions = listOf(CachedSharedNameModel.familyName,
+            CachedSharedLastNameModel.lastName, CachedSharedLastNameModel.prefix)
+        val before = definitions.map { it.refCache.value?.size ?: 0 }
+        repeat(300) { index ->
+            val parents = listOf(CachedCollectionModel.items.definition.itemRef(index.toUInt(), list),
+                CachedCollectionModel.entries.definition.valueRef("item-$index", map))
+            for (parent in parents) {
+                val family = CachedSharedNameModel.familyName.ref(parent)
+                CachedSharedLastNameModel.lastName.ref(family)
+                CachedSharedLastNameModel.prefix.ref(family)
+            }
+        }
+        assertEquals(before, definitions.map { it.refCache.value?.size ?: 0 },
+            "Transient collection parents must not be retained by shared property definitions")
     }
 }

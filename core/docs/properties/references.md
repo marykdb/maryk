@@ -4,6 +4,12 @@ To filter on a property you need a property reference. For example, to find all 
 
 These operations can be defined in Kotlin or any of the serialization formats Maryk supports. 
 
+Nested references are cached with their parent reference. Repeated selection from
+the same parent reuses its child references, while separate parent instances keep
+separate caches. Shared property definitions do not retain transient collection
+item parents created while reading data, so repeated reads do not accumulate
+those parent chains in a model-wide cache.
+
 ## Example models
 
 This `Person` model has two top level fields (`firstName`, `lastName`) and an embedded `Address`:

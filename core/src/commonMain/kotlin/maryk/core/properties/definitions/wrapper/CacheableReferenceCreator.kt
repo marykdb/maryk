@@ -6,6 +6,7 @@ import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 
 data class RefCacheEntry(
@@ -13,6 +14,30 @@ data class RefCacheEntry(
     val discriminator: Any?,
     val reference: IsPropertyReference<*, *, *>
 )
+
+internal data class ChildRefCacheEntry(
+    val owner: CacheableReferenceCreator,
+    val discriminator: Any?,
+    val reference: IsPropertyReference<*, *, *>
+)
+
+@Suppress("UNCHECKED_CAST")
+private fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> CacheableReferenceCreator.cacheChildReference(
+    cache: AtomicRef<PersistentList<ChildRefCacheEntry>?>,
+    discriminator: Any?,
+    creator: () -> R
+): R {
+    while (true) {
+        val current = cache.value
+        current?.firstOrNull { it.owner === this && it.discriminator == discriminator }?.let {
+            return it.reference as R
+        }
+        val reference = creator()
+        val entry = ChildRefCacheEntry(this, discriminator, reference)
+        val updated = current?.mutate { it.add(entry) } ?: persistentListOf(entry)
+        if (cache.compareAndSet(current, updated)) return reference
+    }
+}
 
 private fun PersistentList<RefCacheEntry>.findCachedReference(
     parentRef: AnyPropertyReference?,
@@ -36,6 +61,10 @@ interface CacheableReferenceCreator {
         discriminator: Any? = null,
         creator: () -> R
     ): R {
+        if (parentRef is CanHaveComplexChildReference<*, *, *, *>) {
+            // Shared definitions must not retain every newly decoded item parent forever.
+            return cacheChildReference(parentRef.childRefCache, discriminator, creator)
+        }
         while (true) {
             val currentCache = refCache.value
 

@@ -52,6 +52,10 @@ val reader = MarykYamlReader { if (it.hasNext()) it.nextChar() else null }
 val values = User.Serializer.readJson(reader)
 ```
 
+Explicit flow collections require their closing `}` or `]`, including after a
+tag or anchor. Default order mappings such as `!Desc {}` must be empty and
+complete; nonempty mappings are rejected instead of silently discarding fields.
+
 ## Interoperability
 
 - YAML works well for human‑authored content and demos. For production transport, prefer ProtoBuf or JSON.

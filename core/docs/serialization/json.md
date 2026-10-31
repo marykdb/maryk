@@ -51,6 +51,11 @@ val values = User.Serializer.readJson(reader)
 
 Model and collection decoders require the closing `}` or `]` before returning a
 value. Truncated input is rejected even when earlier fields or items were read.
+Custom decoders for reference/value pairs, collection mutations, comparison
+filters, and property-reference graphs also require all their inner and outer
+closing tokens. A truncated mutation or selection does
+not become a partially decoded request. A named `CollectRequest` wrapper contains
+exactly one request; extra fields are rejected.
 A model with no declared fields still requires an object (`{}`); well-formed
 unknown fields are skipped using the same rules as other models.
 

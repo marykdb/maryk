@@ -95,6 +95,7 @@ open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference
                         reader.nextToken()
 
                         containedDataModel.Serializer.walkJsonToRead(reader, valueMap, context)
+                        reader.requireJsonToken(JsonToken.EndObject)
                     }
 
                     val dataObjectMap = ObjectValues(containedDataModel, valueMap, context)
@@ -107,6 +108,7 @@ open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference
             reader.nextToken()
         } while (true)
 
+        reader.requireJsonToken(JsonToken.EndObject)
         return ObjectValues(
             model,
             ValueItems(

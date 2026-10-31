@@ -1,6 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.models.QueryModel
+import maryk.core.models.serializers.requireJsonToken
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.string
@@ -13,6 +14,7 @@ import maryk.core.values.IsValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken.EndObject
 import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.StartObject
@@ -99,7 +101,8 @@ data class CollectRequest<RQ : IsTransportableRequest<RP>, RP : IsResponse>(
                 reader.nextToken()
                 val request = request.readJson(reader, context)
 
-                reader.nextToken() // read past end object
+                reader.nextToken()
+                reader.requireJsonToken(EndObject)
 
                 return create(context) {
                     this.name -= name

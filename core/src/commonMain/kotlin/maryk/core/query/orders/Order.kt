@@ -4,6 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.BaseDataModel
 import maryk.core.models.QueryModel
 import maryk.core.models.emptyValues
+import maryk.core.models.serializers.requireJsonToken
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.enum
@@ -23,6 +24,7 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken.EndDocument
 import maryk.json.JsonToken.StartDocument
+import maryk.json.JsonToken.EndObject
 import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Suspended
 import maryk.json.JsonToken.Value
@@ -145,7 +147,8 @@ data class Order internal constructor(
                                 }
                             }
 
-                            reader.nextToken() // Read until EndObject
+                            reader.nextToken()
+                            reader.requireJsonToken(EndObject)
                             ObjectValues(this@Model, valueMap, context)
                         }
                         is Value<*> -> {

@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import maryk.core.exceptions.SerializationException
+import maryk.core.models.serializers.requireJsonToken
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
@@ -118,6 +119,7 @@ abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsData
                 reader.nextToken()
             } while (true)
 
+            reader.requireJsonToken(JsonToken.EndObject)
             return model.create(context) {
                 model.referenceValuePairs -= listOfTypePairs
             }

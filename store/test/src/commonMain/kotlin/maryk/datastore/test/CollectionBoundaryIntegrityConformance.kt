@@ -27,8 +27,14 @@ suspend fun assertCollectionBoundaryIntegrity(store: IsDataStore) {
         attributes with mapOf("" to "$id", "long".repeat(40) to "\u0000🚀")
     }
     var boxes = (0..260).map(::detail)
-    var entries = listOf(0, 1, 127, 128, 129, 255, 256).associate {
-        "a".repeat(it) + "\u0000🚀" to detail(it)
+    var entries = listOf(0, 1, 127, 128, 129, 255, 256).associate { byteLength ->
+        val mapKey = when (byteLength) {
+            0 -> ""
+            1 -> "\u0000"
+            else -> "a".repeat(byteLength - 5) + "\u0000🚀"
+        }
+        assertEquals(byteLength, mapKey.encodeToByteArray().size)
+        mapKey to detail(byteLength)
     }
     fun image() = model.create {
         label with "boundary"

@@ -19,6 +19,8 @@ data class ContextTransformerDefinition<T : Any, in CX : IsPropertyContext, CXI 
     override val required = definition.required
     override val final = definition.final
 
+    internal fun transformContext(context: CX?) = contextTransformer(context)
+
     override fun fromString(string: String, context: CX?) =
         this.definition.fromString(string, contextTransformer(context))
 
@@ -30,6 +32,9 @@ data class ContextTransformerDefinition<T : Any, in CX : IsPropertyContext, CXI 
 
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =
         this.definition.calculateTransportByteLength(value, cacher, contextTransformer(context))
+
+    override fun writeTransportBytesWithKey(index: Int, value: T, cacheGetter: WriteCacheReader, writer: (Byte) -> Unit, context: CX?) =
+        definition.writeTransportBytesWithKey(index, value, cacheGetter, writer, contextTransformer(context))
 
     override fun writeTransportBytes(
         value: T,

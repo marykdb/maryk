@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
@@ -43,7 +44,7 @@ data class ListChange internal constructor(
 
             valueChange.addValuesAtIndex?.forEach { (index, value) ->
                 try {
-                    listDefinition.valueDefinition.validateWithRef(null, value) {
+                    listDefinition.valueDefinition.validateValueWithRef(null, value) {
                         @Suppress("UNCHECKED_CAST")
                         listDefinition.itemRef(
                             index,
@@ -57,7 +58,7 @@ data class ListChange internal constructor(
 
             valueChange.addValuesToEnd?.forEach { value ->
                 try {
-                    listDefinition.valueDefinition.validateWithRef(null, value) {
+                    listDefinition.valueDefinition.validateValueWithRef(null, value) {
                         @Suppress("UNCHECKED_CAST")
                         listDefinition.anyItemRef(valueChange.reference) as IsPropertyReference<Any, *, *>
                     }

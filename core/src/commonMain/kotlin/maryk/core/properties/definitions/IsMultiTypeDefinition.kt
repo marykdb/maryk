@@ -13,9 +13,14 @@ import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
+import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
+import maryk.core.properties.definitions.contextual.ContextInjectCollectionOnWriteDefinition
+import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
+import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
+import maryk.core.properties.definitions.contextual.ContextualPropertyValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.enum.IndexedEnum
@@ -341,9 +346,12 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
 
             return TypedValue(type, value)
         } else {
+            if (reader.currentToken !is JsonToken.StartArray) {
+                throw ParseException("Expected a multi type array")
+            }
             reader.nextToken().let {
-                if (it !is Value<*>) {
-                    throw ParseException("Expected a value at start, not ${it.name}")
+                if (it !is Value<*> || it.value !is String) {
+                    throw ParseException("Expected a type name at start, not ${it.name}")
                 }
                 val type: E = this.typeEnum.resolve(it.value as String)
                     ?: throw ParseException("Invalid multi type name ${it.value}")
@@ -356,7 +364,9 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                     definition.readJsonToValues(reader, context) as T
                 } else definition.readJson(reader, context)
 
-                reader.nextToken() // skip end object
+                if (reader.nextToken() !is JsonToken.EndArray) {
+                    throw ParseException("Multi type array must contain exactly a type name and a value")
+                }
 
                 return TypedValue(type, value)
             }
@@ -370,7 +380,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         earlierValue: TypedValue<E, T>?
     ): TypedValue<E, T> {
         var lengthToGo = length
-        var value: T? = earlierValue?.value
+        var value: T? = null
 
         val wrappedReader = {
             if (lengthToGo <= 0) {
@@ -392,7 +402,12 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             val newType = this.typeEnum.resolve(typeIndex) ?: throw ParseException("Unknown multi type index $typeIndex")
 
             type = when(type) {
-                null -> newType
+                null -> {
+                    // Repeated occurrences may continue the same branch, but
+                    // a different branch must start with its own payload.
+                    value = earlierValue?.takeIf { it.type == newType }?.value
+                    newType
+                }
                 newType -> type
                 else -> throw ParseException("If multiple type values encoded they should be all of the same type")
             }
@@ -499,7 +514,14 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 }
 
-internal fun IsSubDefinition<*, *>.acceptsProtoBufWireType(
+// Preserve the existing JVM entry point while sharing the check with model
+// properties whose contextual definitions do not implement IsSubDefinition.
+internal fun IsSubDefinition<*, *>.acceptsProtoBufWireType(wireType: WireType, context: IsPropertyContext?): Boolean {
+    val definition: IsSerializablePropertyDefinition<*, *> = this
+    return definition.acceptsProtoBufWireType(wireType, context)
+}
+
+internal fun IsSerializablePropertyDefinition<*, *>.acceptsProtoBufWireType(
     wireType: WireType,
     context: IsPropertyContext?
 ): Boolean {
@@ -512,7 +534,7 @@ internal fun IsSubDefinition<*, *>.acceptsProtoBufWireType(
         is IsCollectionDefinition<*, *, *, *> -> when (val valueDefinition = valueDefinition) {
             is IsMultiTypeDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
             is IsContextualEncodable<*, *> ->
-                (valueDefinition as IsContextualEncodable<*, *>).acceptsContextualProtoBufWireType(wireType, context)
+                valueDefinition.acceptsContextualProtoBufWireType(wireType, context)
             else -> when (val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
                 VAR_INT, BIT_32, BIT_64 -> wireType == LENGTH_DELIMITED || wireType == valueWireType
                 else -> wireType == LENGTH_DELIMITED
@@ -521,7 +543,7 @@ internal fun IsSubDefinition<*, *>.acceptsProtoBufWireType(
         is IsMapDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
         is IsMultiTypeDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
         is IsContextualEncodable<*, *> ->
-            (this as IsContextualEncodable<*, *>).acceptsContextualProtoBufWireType(wireType, context)
+            acceptsContextualProtoBufWireType(wireType, context)
         is IsValueDefinition<*, *> -> wireType == this.wireType
         else -> true
     }
@@ -532,6 +554,19 @@ internal fun IsContextualEncodable<*, *>.acceptsContextualProtoBufWireType(
     wireType: WireType,
     context: IsPropertyContext?
 ): Boolean = when (this) {
+    is ContextTransformerDefinition<*, *, *> ->
+        (this as ContextTransformerDefinition<Any, IsPropertyContext, IsPropertyContext>)
+            .definition.acceptsProtoBufWireType(wireType, transformContext(context))
+    is ContextValueTransformDefinition<*, *> -> definition.acceptsProtoBufWireType(wireType, context)
+    is ContextCaptureDefinition<*, *> -> definition.acceptsProtoBufWireType(wireType, context)
+    is ContextInjectCollectionOnWriteDefinition<*, *, *> -> definition.acceptsProtoBufWireType(wireType, context)
+    is ContextualPropertyValueDefinition<*, *, *> -> {
+        val typed = this as ContextualPropertyValueDefinition<IsPropertyContext, IsPropertyContext, Any>
+        val definition = typed.contextualResolver(context)
+        if (definition is IsCollectionDefinition<*, *, *, *> || definition is IsMapDefinition<*, *, *>) {
+            wireType == LENGTH_DELIMITED
+        } else definition.acceptsProtoBufWireType(wireType, typed.contextTransformer(context))
+    }
     is ContextualValueDefinition<*, *, *, *> ->
         (this as ContextualValueDefinition<IsPropertyContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>)
             .contextualResolver(context)
@@ -548,22 +583,16 @@ internal fun IsContextualEncodable<*, *>.acceptsContextualProtoBufWireType(
         wireType == LENGTH_DELIMITED ||
             (this as ContextualCollectionDefinition<IsPropertyContext>)
                 .contextualResolver(context)
-                .acceptsResolvedProtoBufWireType(wireType, context)
+                .acceptsProtoBufWireType(wireType, context)
     is ContextualMapDefinition<*, *, *> ->
         wireType == LENGTH_DELIMITED ||
             (this as ContextualMapDefinition<Any, Any, IsPropertyContext>)
                 .contextualResolver(context)
-                .acceptsResolvedProtoBufWireType(wireType, context)
+                .acceptsProtoBufWireType(wireType, context)
     is ContextCollectionTransformerDefinition<*, *, *, *> ->
         (this as ContextCollectionTransformerDefinition<Any, Collection<Any>, IsPropertyContext, IsPropertyContext>)
             .definition
-            .acceptsResolvedProtoBufWireType(wireType, this.contextTransformer(context))
+            .acceptsProtoBufWireType(wireType, this.contextTransformer(context))
     is IsValueDefinition<*, *> -> wireType == this.wireType
     else -> wireType == LENGTH_DELIMITED
 }
-
-private fun IsSerializablePropertyDefinition<*, *>.acceptsResolvedProtoBufWireType(
-    wireType: WireType,
-    context: IsPropertyContext?
-) = (this as? IsSubDefinition<*, *>)?.acceptsProtoBufWireType(wireType, context)
-    ?: wireType == LENGTH_DELIMITED

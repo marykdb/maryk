@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.acceptsProtoBufWireType
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -129,7 +130,12 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
         while (consumed < length) {
             val key = ProtoBuf.readKey(boundedReader)
             if (key.tag == 1u) {
-                value = definition.readTransportBytes(ProtoBuf.getLength(key.wireType, boundedReader), boundedReader, innerContext, value)
+                if (!definition.acceptsProtoBufWireType(key.wireType, innerContext)) {
+                    throw ParseException("Collection replacement wire type does not match its definition")
+                }
+                val valueLength = ProtoBuf.getLength(key.wireType, boundedReader)
+                if (valueLength > length - consumed) throw ParseException("Collection replacement exceeds declared length")
+                value = definition.readTransportBytes(valueLength, boundedReader, innerContext, value)
             } else ProtoBuf.skipField(key, boundedReader)
         }
         return value

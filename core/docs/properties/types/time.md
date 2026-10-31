@@ -69,3 +69,7 @@ The bytes are transported in a different way depending on the precision of time.
 ISO8601 String: `HH:MM:SS.SSSSSSSSS`
 
 Example: `20:47:22.825635486`
+
+Native integer input represents whole seconds after midnight, from `0` through
+`86399`. Fractional native numbers are rejected on JavaScript as well as JVM;
+they are not truncated to another time.

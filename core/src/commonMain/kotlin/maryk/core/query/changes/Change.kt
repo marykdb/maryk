@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.ReferenceValuePairsDataModel
@@ -33,7 +34,7 @@ data class Change internal constructor(
         for (pair in referenceValuePairs) {
             try {
                 @Suppress("UNCHECKED_CAST")
-                (pair.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>).comparablePropertyDefinition.validateWithRef(null, pair.value) {
+                (pair.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>).comparablePropertyDefinition.validateValueWithRef(null, pair.value) {
                     pair.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
                 }
             } catch (e: ValidationException) {

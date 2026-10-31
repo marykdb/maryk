@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
@@ -43,7 +44,7 @@ data class IncMapChange internal constructor(
             if (addedValues != null) {
                 for (value in addedValues) {
                     try {
-                        mapDefinition.valueDefinition.validateWithRef(null, value) {
+                        mapDefinition.valueDefinition.validateValueWithRef(null, value) {
                             @Suppress("UNCHECKED_CAST")
                             mapDefinition.anyValueRef(reference) as? IsPropertyReference<Any, *, *>
                         }

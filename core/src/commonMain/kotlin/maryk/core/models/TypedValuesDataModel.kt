@@ -3,8 +3,11 @@
 package maryk.core.models
 
 import maryk.core.models.serializers.DataModelSerializer
+import maryk.core.inject.AnyInject
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.validateValueWithRef
+import maryk.core.properties.definitions.validateValueType
 import maryk.core.properties.definitions.wrapper.IsReferenceCreator
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -111,12 +114,12 @@ abstract class TypedValuesDataModel<DM: IsValuesDataModel> : BaseDataModel<Any>(
                         continue
                     } else continue
 
-                val value = values.process<Any?>(definition, orgValue, true) { true } ?: continue // skip empty values
                 try {
-                    definition.validate(
-                        newValue = value,
-                        parentRefFactory = refGetter
-                    )
+                    if (orgValue !is AnyInject && orgValue != Unit) {
+                        definition.validateValueType(orgValue) { definition.ref(refGetter()) }
+                    }
+                    val value = values.process<Any?>(definition, orgValue, true) { true } ?: continue // skip empty values
+                    definition.validateValueWithRef(newValue = value) { definition.ref(refGetter()) }
                 } catch (e: ValidationException) {
                     addException(e)
                 }

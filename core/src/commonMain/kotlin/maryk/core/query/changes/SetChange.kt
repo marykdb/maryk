@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSetDefinition
@@ -39,7 +40,7 @@ data class SetChange internal constructor(
             val definition = change.reference.comparablePropertyDefinition as IsSetDefinition<Any, IsPropertyContext>
             for (value in change.addValues.orEmpty()) {
                 try {
-                    definition.valueDefinition.validateWithRef(null, value) {
+                    definition.valueDefinition.validateValueWithRef(null, value) {
                         definition.itemRef(value, change.reference as CanContainSetItemReference<*, *, *>)
                     }
                 } catch (exception: ValidationException) {

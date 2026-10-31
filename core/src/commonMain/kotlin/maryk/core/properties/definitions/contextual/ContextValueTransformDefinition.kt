@@ -34,6 +34,9 @@ data class ContextValueTransformDefinition<T : Any, in CX : IsPropertyContext>(
     override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?) =
         this.definition.calculateTransportByteLengthWithKey(index, value, cacher, context)
 
+    override fun writeTransportBytesWithKey(index: Int, value: T, cacheGetter: WriteCacheReader, writer: (Byte) -> Unit, context: CX?) =
+        definition.writeTransportBytesWithKey(index, value, cacheGetter, writer, context)
+
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =
         this.definition.calculateTransportByteLength(value, cacher, context)
 

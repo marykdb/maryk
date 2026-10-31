@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
@@ -40,14 +41,14 @@ data class IncMapAddition(
             if (addedKeys != null && addedValues != null) {
                 for ((index, key) in addedKeys.withIndex()) {
                     try {
-                        mapDefinition.keyDefinition.validateWithRef(null, key) {
+                        mapDefinition.keyDefinition.validateValueWithRef(null, key) {
                             mapDefinition.keyRef(key, reference)
                         }
                     } catch (e: ValidationException) {
                         addException(e)
                     }
                     try {
-                        mapDefinition.valueDefinition.validateWithRef(null, addedValues[index]) {
+                        mapDefinition.valueDefinition.validateValueWithRef(null, addedValues[index]) {
                             mapDefinition.valueRef(key, reference)
                         }
                     } catch (e: ValidationException) {

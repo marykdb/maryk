@@ -114,5 +114,13 @@ native form.
 The multitype is encoded as an embedded object within a length delimited tag/value. It then 
 contains 1 tag/value pair in which the tag is the type index and the value contains the actual value. 
 
+Repeated occurrences of the same case can accumulate collection entries.
+Changing the case starts a new payload; entries from the preceding case do not
+carry over. Contextual definitions preserve the same continuation rules.
+
+In JSON, a typed value is an array containing exactly its type name and payload,
+for example `["S1", "a value"]`. Extra elements are rejected.
+
 ## String representation
-TypeID as a `UInt16` encoded to string.
+The string form is the JSON representation of the complete typed value, for
+example `["S1", "a value"]`. A type reference identifies only the case.

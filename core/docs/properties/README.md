@@ -75,3 +75,8 @@ Every property definition supports validation helpers. Common options include:
 * **default** – value to use if none is provided (default `null`)
 
 Each type may define extra validations such as `minSize`, `maxSize`, ranges or regex patterns. Refer to the individual type pages for full details.
+
+Values supplied through untyped model slots or mutation references must still
+match the declared property type. Validation checks collection members and typed
+payloads before conversion, serialization or storage, including non-null map keys and members.
+Rejected writes preserve the existing record and version.

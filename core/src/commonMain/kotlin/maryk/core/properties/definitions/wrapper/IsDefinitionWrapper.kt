@@ -8,6 +8,7 @@ import maryk.core.models.ValuesCollectorContext
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitionType
@@ -116,7 +117,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
      * @throws maryk.core.properties.exceptions.ValidationException when encountering invalid new value
      */
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> AnyPropertyReference? = { null }) {
-        this.validateWithRef(previousValue, newValue) { this.ref(parentRefFactory()) }
+        this.validateValueWithRef(previousValue, newValue) { this.ref(parentRefFactory()) }
     }
 
     /** Calculates the needed byte size to transport [value] within optional [context] and caches it with [cacher] */

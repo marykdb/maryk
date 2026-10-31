@@ -102,7 +102,8 @@ data class TimeDefinition(
 
     override fun fromNativeType(value: Any) = when (value) {
         is Long -> value.takeIf { it in 0L..86399L }?.let { LocalTime.fromSecondOfDay(it.toInt()) }
-        is Int -> value.takeIf { it in 0..86399 }?.let(LocalTime::fromSecondOfDay)
+        // JS represents Int and Double with the same runtime Number type.
+        is Int -> value.takeIf { it in 0..86399 && it.toDouble() % 1.0 == 0.0 }?.let(LocalTime::fromSecondOfDay)
         is LocalTime -> value.atPrecision(precision)
         else -> null
     }

@@ -85,6 +85,12 @@ change this behavior. Repeated collection or map value fields within one entry
 still accumulate to form that entry's value. This does not change writer bytes or
 stored values; it prevents a decoder from merging two separate map entries.
 
+Repeated typed fields continue a payload only while their case remains the same.
+A different case discards the earlier payload. Contextual readers forward these
+continuations, and context-transforming writers use the resolved definition's
+field tag, wire type and length. Readers check wire types at model, typed-value
+and collection-envelope boundaries.
+
 ### Complete collection values and empty presence
 
 Whole-property reference pairs (`Change`, `Check`, `Equals`, and `ValueIn`

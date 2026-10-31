@@ -1,8 +1,5 @@
 package maryk.core.models.serializers
 
-import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.properties.types.TimePrecision
-
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsObjectDataModel
@@ -15,22 +12,17 @@ import maryk.core.properties.definitions.EMPTY_COLLECTION_TAG_OFFSET
 import maryk.core.properties.definitions.emptyTransportCollection
 import maryk.core.properties.definitions.needsEmptyCollectionMarker
 import maryk.core.properties.definitions.IsCollectionDefinition
-import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
-import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
-import maryk.core.properties.definitions.IsMultiTypeDefinition
+import maryk.core.properties.definitions.acceptsProtoBufWireType
+import maryk.core.properties.definitions.validateValueType
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
-import maryk.core.protobuf.WireType
-import maryk.core.protobuf.WireType.BIT_32
-import maryk.core.protobuf.WireType.BIT_64
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
-import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.protobuf.addProtoByteLength
@@ -123,6 +115,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         value: Any,
         context: CX?
     ) {
+        def.validateValueType(value) { def.ref() }
         writer.writeFieldName(def.name)
         def.definition.writeJsonValue(value, writer, context)
     }
@@ -273,6 +266,9 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         if (value == null) {
             return 0 // Skip null value in counting
         }
+        if (value !is Inject<*, *> || model == InjectWithReference) {
+            definition.validateValueType(value) { definition.ref() }
+        }
 
         if (definition.definition.needsModelEmptyMarker(value, context)) {
             definition.capture(context, value)
@@ -327,6 +323,8 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         if (value is Inject<*, *> && model != InjectWithReference) {
             return // Skip Inject values since they are encoded in Requests object
         }
+
+        definition.validateValueType(value) { definition.ref() }
 
         definition.capture(context, value)
 
@@ -441,7 +439,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         if (propertyDefinition == null) {
             skipUnknownField(key, byteReader, remainingLength)
         } else {
-            if (!propertyDefinition.acceptsProtoBufWireType(key.wireType)) {
+            if (!propertyDefinition.acceptsProtoBufWireType(key.wireType, context)) {
                 throw ParseException("Unexpected wire type ${key.wireType} for property '${dataObjectPropertyDefinition.name}'")
             }
             val valueLength = readProtoBufValueLength(key, byteReader, remainingLength)
@@ -464,22 +462,6 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                     dataObjectPropertyDefinition.capture(context, it)
                 }
         }
-    }
-
-    private fun IsPropertyDefinition<*>.acceptsProtoBufWireType(wireType: WireType): Boolean = when (this) {
-        is DateTimeDefinition -> wireType == this.wireType || precision == TimePrecision.NANOS && wireType == VAR_INT
-        is IsCollectionDefinition<*, *, *, *> -> when (val valueDefinition = valueDefinition) {
-            is IsMultiTypeDefinition<*, *, *> -> true
-            is IsContextualEncodable<*, *> -> true
-            else -> when (val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
-            VAR_INT, BIT_32, BIT_64 -> wireType == LENGTH_DELIMITED || wireType == valueWireType
-            else -> wireType == LENGTH_DELIMITED
-            }
-        }
-        is IsMultiTypeDefinition<*, *, *> -> true
-        is IsContextualEncodable<*, *> -> true
-        is IsValueDefinition<*, *> -> wireType == this.wireType
-        else -> true // Polymorphic definitions select their wire type from the encoded value.
     }
 
     /**

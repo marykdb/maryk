@@ -96,6 +96,12 @@ and preserve serializer validation hooks without modifying the earlier value.
 Readers check wire types at model, typed-value
 and collection-envelope boundaries.
 
+Collection readers accept packed and unpacked numeric elements through contextual
+scalar wrappers. The resolved element wire type determines packing and fixed
+4-byte or 8-byte boundaries. Reads still apply the original wrapper's value
+transformations and capture hooks. Complete collection-valued elements keep their
+own envelopes, and writers retain their existing packing choices and bytes.
+
 ### Complete collection values and empty presence
 
 Whole-property reference pairs (`Change`, `Check`, `Equals`, and `ValueIn`

@@ -5,7 +5,6 @@ import maryk.core.models.migration.transportWireType
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.models.migration.readsLegacyNanosDateTime
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
@@ -20,7 +19,6 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.TimePrecision
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.BIT_32
@@ -109,8 +107,8 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         validateCollectionStorageIdentities(value, context)
         @Suppress("UNCHECKED_CAST")
         val definition = when(val def = this.valueDefinition) {
-            is ContextualSubDefinition<*, *, *, *> -> (def as ContextualSubDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(def.contextTransformer(context))
-            is ContextualValueDefinition<*, *, *, *> -> (def as ContextualValueDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(def.contextTransformer(context) as IsPropertyContext)
+            is ContextualSubDefinition<*, *, *, *> -> (def as ContextualSubDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(context)
+            is ContextualValueDefinition<*, *, *, *> -> (def as ContextualValueDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(context)
             is ContextualPropertyValueDefinition<*, *, *> ->
                 (def as ContextualPropertyValueDefinition<IsPropertyContext, IsPropertyContext, Any>).contextualResolver(context)
             else -> this.valueDefinition
@@ -150,6 +148,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 valueDefinition.readJson(reader, context)
             )
         }
+        if (reader.currentToken is Stopped) throw ParseException("JSON input ended before the collection was complete")
         @Suppress("UNCHECKED_CAST")
         return collection as C
     }
@@ -275,13 +274,11 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
 
     /** Packed is true when encoded with longer length than expected byte size for single */
     private fun isPacked(length: Int, context: CX?): Boolean {
-        if (context.readsLegacyNanosDateTime() &&
-            (valueDefinition as? DateTimeDefinition)?.precision == TimePrecision.NANOS) return length >= 0
-        val vt = (this.valueDefinition as? IsValueDefinition<*, *>)?.wireType
+        val vt = valueDefinition.collectionElementWireType(context)
         return when (vt) {
             VAR_INT -> length >= 0
             BIT_32, BIT_64 -> {
-                val byteSize = (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize
+                val byteSize = if (vt == BIT_32) 4 else 8
                 if (length >= 0 && length % byteSize != 0) {
                     throw ParseException("Packed fixed-width collection has invalid length $length")
                 }

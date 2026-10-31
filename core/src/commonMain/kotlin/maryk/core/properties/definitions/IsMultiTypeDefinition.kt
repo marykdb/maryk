@@ -541,14 +541,11 @@ internal fun IsSerializablePropertyDefinition<*, *>.acceptsProtoBufWireType(
 
     return when (this) {
         is DateTimeDefinition -> wireType == this.wireType || precision == TimePrecision.NANOS && wireType == VAR_INT
-        is IsCollectionDefinition<*, *, *, *> -> when (val valueDefinition = valueDefinition) {
-            is IsMultiTypeDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
-            is IsContextualEncodable<*, *> ->
-                valueDefinition.acceptsContextualProtoBufWireType(wireType, context)
-            else -> when (val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
-                VAR_INT, BIT_32, BIT_64 -> wireType == LENGTH_DELIMITED || wireType == valueWireType
-                else -> wireType == LENGTH_DELIMITED
-            }
+        is IsCollectionDefinition<*, *, *, *> -> when (val elementWireType = valueDefinition.collectionElementWireType(context)) {
+            VAR_INT, BIT_32, BIT_64 -> wireType == LENGTH_DELIMITED || wireType == elementWireType
+            else -> if (valueDefinition is IsContextualEncodable<*, *>) {
+                (valueDefinition as IsContextualEncodable<*, *>).acceptsContextualProtoBufWireType(wireType, context)
+            } else wireType == LENGTH_DELIMITED
         }
         is IsMapDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
         is IsMultiTypeDefinition<*, *, *> -> wireType == LENGTH_DELIMITED

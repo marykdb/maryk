@@ -157,23 +157,16 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
             reader.nextToken()
         }
 
-        return if (model.isNotEmpty()) {
-            if (reader.currentToken !is JsonToken.StartObject) {
-                throw IllegalJsonOperation("Expected object at start of JSON, not ${reader.currentToken}")
-            }
-
-            val valueMap = MutableValueItems()
-            reader.nextToken()
-            walkJsonToRead(reader, valueMap, context)
-            if (reader.currentToken is JsonToken.Suspended) {
-                throw IllegalJsonOperation("JSON input ended before the object was complete")
-            }
-
-            valueMap
-        } else {
-            reader.nextToken()
-            MutableValueItems()
+        if (reader.currentToken !is JsonToken.StartObject) {
+            throw IllegalJsonOperation("Expected object at start of JSON, not ${reader.currentToken}")
         }
+        val valueMap = MutableValueItems()
+        reader.nextToken()
+        walkJsonToRead(reader, valueMap, context)
+        if (reader.currentToken !== JsonToken.EndObject) {
+            throw IllegalJsonOperation("JSON input ended before the object was complete")
+        }
+        return valueMap
     }
 
     internal open fun walkJsonToRead(

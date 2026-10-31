@@ -49,6 +49,11 @@ val reader = JsonReader { if (it.hasNext()) it.nextChar() else null }
 val values = User.Serializer.readJson(reader)
 ```
 
+Model and collection decoders require the closing `}` or `]` before returning a
+value. Truncated input is rejected even when earlier fields or items were read.
+A model with no declared fields still requires an object (`{}`); well-formed
+unknown fields are skipped using the same rules as other models.
+
 ## Interoperability
 
 - Ideal for public APIs and cross‑language tooling.

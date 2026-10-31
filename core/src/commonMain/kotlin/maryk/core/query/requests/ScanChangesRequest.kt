@@ -13,6 +13,7 @@ import maryk.core.properties.types.validateKey
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.filters.singleReferenceInFilter
 import maryk.core.query.orders.IsOrder
 import maryk.core.query.orders.Order
 import maryk.core.query.orders.Orders
@@ -81,7 +82,7 @@ data class ScanChangesRequest<DM : IsRootDataModel> internal constructor(
         // Since mutable values can change the changes would not be returned leading
         // to unreliable patterns
         where?.let {
-            where.singleReference { ref ->
+            dataModel.singleReferenceInFilter(where) { ref ->
                 !ref.propertyDefinition.required || !ref.propertyDefinition.final
             }?.let {
                 throw RequestException("Property `$it` is mutable which are not supported on filters in change listeners.")
@@ -94,8 +95,9 @@ data class ScanChangesRequest<DM : IsRootDataModel> internal constructor(
             if (order is Orders ||
                 order is Order && (
                     order.propertyReference != null && (
-                        !order.propertyReference.propertyDefinition.required ||
-                            !order.propertyReference.propertyDefinition.final
+                        order.propertyReference.unwrap().any {
+                            !it.propertyDefinition.required || !it.propertyDefinition.final
+                        }
                     )
                 )
             ) {

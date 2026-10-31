@@ -33,7 +33,7 @@ data class GeoWithinPolygon(
         this(reference, vertices.toList())
 
     override fun singleReference(predicate: (IsPropertyReference<*, *, *>) -> Boolean) =
-        reference.takeIf(predicate)
+        reference.takeIf { it.unwrap().asReversed().any(predicate) }
 
     companion object : QueryModel<GeoWithinPolygon, Companion>() {
         val reference by contextual(

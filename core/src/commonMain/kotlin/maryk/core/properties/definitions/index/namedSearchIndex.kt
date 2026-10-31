@@ -94,7 +94,7 @@ private fun IsIndexablePropertyReference<String>.directStringIndexTransform(): S
     else -> StringIndexTransform()
 }
 
-private fun IsIndexablePropertyReference<String>.toPropertyReference(): IsPropertyReference<*, *, *> = when (this) {
+internal fun IsIndexablePropertyReference<String>.toPropertyReference(): IsPropertyReference<*, *, *> = when (this) {
     is Normalize -> this.reference.toPropertyReference()
     is Split -> this.reference.toPropertyReference()
     is IsPropertyReference<*, *, *> -> this

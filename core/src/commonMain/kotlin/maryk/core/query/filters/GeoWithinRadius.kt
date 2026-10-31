@@ -29,7 +29,7 @@ data class GeoWithinRadius(
     }
 
     override fun singleReference(predicate: (IsPropertyReference<*, *, *>) -> Boolean) =
-        reference.takeIf(predicate)
+        reference.takeIf { it.unwrap().asReversed().any(predicate) }
 
     companion object : QueryModel<GeoWithinRadius, Companion>() {
         val reference by contextual(

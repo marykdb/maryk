@@ -437,7 +437,9 @@ Notes:
 - Default `maxVersions` is 1; requesting more than 1 version or using `toVersion` requires the store to enable `keepAllVersions`.
 - Aggregations are not supported for changes requests.
 - For `ScanChanges`, filters cannot use mutable (non-final or non-required) properties. Ordering is allowed only on the
-  primary key order or on required, final properties.
+  primary key order or on required, final properties. These checks include enclosing
+  properties and the underlying fields of named search indexes, including normalized
+  or split fields. A final child of an optional or mutable parent is not immutable.
 
 **Get changes with all parameters:**
 

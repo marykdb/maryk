@@ -4,15 +4,27 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.RequestException
+import maryk.core.models.DataModel
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.index.AnyOf
+import maryk.core.properties.definitions.index.normalize
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Equals
+import maryk.core.query.filters.IsFilter
+import maryk.core.query.filters.Matches
+import maryk.core.query.filters.MatchesPrefix
+import maryk.core.query.filters.MatchesRegEx
+import maryk.core.query.filters.Not
 import maryk.core.query.orders.Order.Companion.ascending
 import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.CaseInsensitivePerson
 import maryk.test.models.TestMarykModel
 import maryk.test.requests.scanChangesMaxRequest
 import maryk.test.requests.scanChangesRequest
@@ -21,6 +33,27 @@ import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class ScanChangesRequestTest {
+    @Test
+    fun checkNamedSearchMutability() {
+        val filters = listOf<IsFilter>(
+            Matches("name" with "match"),
+            MatchesPrefix("name" with "ma"),
+            MatchesRegEx("name" with Regex("^ma.*$")),
+        )
+        for (filter in filters.flatMap { listOf(it, Not(it)) }) {
+            assertFailsWith<RequestException> { CaseInsensitivePerson.scanChanges(where = filter) }
+            ImmutableSearchRecord.scanChanges(where = filter)
+        }
+    }
+
+    @Test
+    fun checkNestedOrderMutability() {
+        assertFailsWith<RequestException> {
+            NestedOrderRecord.scanChanges(order = NestedOrderRecord.ref { optional { code } }.ascending())
+        }
+        NestedOrderRecord.scanChanges(order = NestedOrderRecord.ref { stable { code } }.ascending())
+    }
+
     private val context = RequestContext(mapOf(
         SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel),
         TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
@@ -137,4 +170,19 @@ class ScanChangesRequestTest {
             checkYamlConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context })
         }
     }
+}
+
+private object ImmutableSearchRecord : RootDataModel<ImmutableSearchRecord>(
+    indexes = { listOf(AnyOf("name", ImmutableSearchRecord.name.ref()).normalize()) },
+) {
+    val name by string(1u, required = true, final = true)
+}
+
+private object NestedOrderLeaf : DataModel<NestedOrderLeaf>() {
+    val code by string(1u, required = true, final = true)
+}
+
+private object NestedOrderRecord : RootDataModel<NestedOrderRecord>() {
+    val optional by embed(1u, required = false, dataModel = { NestedOrderLeaf })
+    val stable by embed(2u, required = true, final = true, dataModel = { NestedOrderLeaf })
 }

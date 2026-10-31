@@ -35,7 +35,7 @@ data class GeoWithinBox(
     ) : this(reference, GeoPoint(south, west), GeoPoint(north, east))
 
     override fun singleReference(predicate: (IsPropertyReference<*, *, *>) -> Boolean) =
-        reference.takeIf(predicate)
+        reference.takeIf { it.unwrap().asReversed().any(predicate) }
 
     companion object : QueryModel<GeoWithinBox, Companion>() {
         val reference by contextual(

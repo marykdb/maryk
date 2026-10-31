@@ -3,18 +3,43 @@ package maryk.core.query.filters
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.exceptions.RequestException
+import maryk.core.models.DataModel
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.geoPoint
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.GeoPoint
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.scan
+import maryk.core.query.requests.scanChanges
 import maryk.test.models.CompleteMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class GeoFilterTest {
+    @Test
+    fun singleReferenceIncludesMutableParents() {
+        val nested = GeoFilterParent.ref { details { location } }
+        val parent = GeoFilterParent.ref { details }
+        val filters = listOf(
+            GeoWithinBox(nested, -1.0, -1.0, 1.0, 1.0),
+            GeoWithinRadius(nested, GeoPoint(0.0, 0.0), 1000.0),
+            GeoWithinPolygon(nested, GeoPoint(-1.0, -1.0), GeoPoint(-1.0, 1.0), GeoPoint(1.0, 0.0)),
+        )
+        for (filter in filters) {
+            assertEquals(nested, filter.singleReference { it == nested })
+            assertEquals(nested, filter.singleReference { it == parent })
+            assertNull(filter.singleReference { it == reference })
+            assertFailsWith<RequestException> { GeoFilterParent.scanChanges(where = filter) }
+        }
+    }
+
     private val reference = CompleteMarykModel.location.ref()
     private val context = RequestContext(mapOf(
         CompleteMarykModel.Meta.name to DataModelReference(CompleteMarykModel)
@@ -74,4 +99,12 @@ class GeoFilterTest {
             checkYamlConversion(request, ScanRequest, { context })
         }
     }
+}
+
+private object GeoFilterLeaf : DataModel<GeoFilterLeaf>() {
+    val location by geoPoint(1u, required = true, final = true)
+}
+
+private object GeoFilterParent : RootDataModel<GeoFilterParent>() {
+    val details by embed(1u, required = false, dataModel = { GeoFilterLeaf })
 }

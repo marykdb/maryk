@@ -53,7 +53,10 @@ internal fun initShortByVar(reader: () -> Byte): Short {
     var shift = 0
     var result = 0
     while (shift < 16) {
-        val b = (reader() and MAX_BYTE)
+        val b = readByteOrParseException(reader, "Malformed varShort")
+        if (shift == 14 && (b.toInt() and 0xFC) != 0) {
+            throw ParseException("Malformed varShort")
+        }
         result = result or ((b and 0x7F).toInt() shl shift)
         if (b and SIGN_BYTE == ZERO_BYTE) {
             return result.toShort()

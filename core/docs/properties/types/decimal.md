@@ -86,6 +86,11 @@ range. At scale `2`, a 2-byte property ranges from `-327.68..327.67`; the
 default 8-byte property ranges from
 `-92233720368547758.08..92233720368547758.07`.
 
+Validation checks both exact rescaling and the storage width before accepting a
+write, including map keys and set members. Values such as `1.2` can be stored
+at scale `2` as `1.20`; `1.234` is rejected instead of rounded. Memory retains
+the declared scale too.
+
 ## Whole-number Decimal
 
 Set `scale = 0u` when a domain value has no fractional unit. The stored value

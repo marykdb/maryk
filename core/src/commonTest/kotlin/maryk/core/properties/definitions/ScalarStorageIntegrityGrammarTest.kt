@@ -13,6 +13,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
+import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.SInt8
 import maryk.core.properties.types.numeric.SInt16
 import maryk.core.properties.types.numeric.SInt32
@@ -28,6 +29,7 @@ import maryk.test.models.MarykTypeEnum
 import maryk.test.models.Option
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
+import kotlin.math.floor
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -36,6 +38,11 @@ import kotlin.test.assertEquals
 class ScalarStorageIntegrityGrammarTest {
     @Test
     fun everyNumericDescriptorRetainsExtremaAndDeterministicBitPatterns() {
+        assertEquals(
+            NumberType.cases().map { it.descriptor() }.toSet(),
+            setOf(SInt8, SInt16, SInt32, SInt64, UInt8, UInt16, UInt32, UInt64, Float32, Float64),
+            "Every numeric descriptor needs storage and transport grammar cases",
+        )
         val bits = buildList {
             addAll(listOf(Long.MIN_VALUE, Long.MIN_VALUE + 1, -65536L, -129L, -128L, -1L, 0L, 1L, 127L, 128L, 65535L, Long.MAX_VALUE - 1, Long.MAX_VALUE))
             var state = 0x4d4152594bL
@@ -74,15 +81,21 @@ class ScalarStorageIntegrityGrammarTest {
         }
         verify(DateDefinition(), listOf(Int.MIN_VALUE, -1, 0, 1, Int.MAX_VALUE).map(LocalDate::fromEpochDays))
         for (precision in TimePrecision.entries) {
-            verify(TimeDefinition(precision = precision), listOf(LocalTime(0, 0), LocalTime(0, 0, 0, 1), LocalTime(12, 30, 59, 999999999), LocalTime(23, 59, 59, 999999999)))
+            verify(TimeDefinition(precision = precision), listOf(LocalTime(0, 0), LocalTime(0, 0, 0, 1), LocalTime(12, 30, 59, 999999999), LocalTime(23, 59, 59, 999999999))) {
+                it.truncate(precision)
+            }
             verify(DateTimeDefinition(precision = precision), listOf(LocalDateTime(1, 1, 1, 0, 0), LocalDateTime(1969, 12, 31, 23, 59, 59, 999999999),
-                LocalDateTime(1970, 1, 1, 0, 0), LocalDateTime(2000, 2, 29, 12, 30, 59, 1), LocalDateTime(9999, 12, 31, 23, 59, 59, 999999999)))
+                LocalDateTime(1970, 1, 1, 0, 0), LocalDateTime(2000, 2, 29, 12, 30, 59, 1), LocalDateTime(9999, 12, 31, 23, 59, 59, 999999999))) {
+                LocalDateTime(it.date, it.time.truncate(precision))
+            }
         }
-        verify(GeoPointDefinition(), listOf(GeoPoint(-90.0, -180.0), GeoPoint(-0.0, 0.0), GeoPoint(0.00000001, -0.00000001), GeoPoint(90.0, 180.0)))
-        verify(EnumDefinition(enum = Option), listOf(Option.V0, Option.V1, Option.V2, Option.V3))
+        verify(GeoPointDefinition(), listOf(GeoPoint(-90.0, -180.0), GeoPoint(-0.0, 0.0), GeoPoint(0.00000001, -0.00000001), GeoPoint(0.00000005, -0.00000005), GeoPoint(90.0, 180.0))) {
+            GeoPoint(floor(it.latitude * 10000000 + 0.5) / 10000000, floor(it.longitude * 10000000 + 0.5) / 10000000)
+        }
+        verify(EnumDefinition(enum = Option), listOf(Option.V1, Option.V2, Option.V3))
         verify(ReferenceDefinition(dataModel = { TestMarykModel }), listOf(0, 127, 255).map { byte -> Key<TestMarykModel>(ByteArray(TestMarykModel.Meta.keyByteSize) { byte.toByte() }) })
         verify(ValueObjectDefinition(dataModel = TestValueObject), listOf(TestValueObject(0, LocalDateTime(1970, 1, 1, 0, 0), false), TestValueObject(1, LocalDateTime(2000, 2, 29, 12, 30), true)))
-        for (size in listOf(1, 2, 8, 16)) {
+        for (size in listOf(1, 2, 8, 16, 128)) {
             for (scale in listOf(0u, 2u, 18u)) {
                 val values = listOf(Decimal.fromSignedBytes(ByteArray(size).also { it[0] = 0x80.toByte() }, scale),
                     Decimal.fromUnscaled(0, scale), Decimal.fromSignedBytes(ByteArray(size) { if (it == 0) 0x7f else -1 }, scale))
@@ -133,7 +146,7 @@ class ScalarStorageIntegrityGrammarTest {
         }
     }
 
-    private fun <T : Any> verify(definition: IsSimpleValueDefinition<T, IsPropertyContext>, values: List<T>) {
+    private fun <T : Any> verify(definition: IsSimpleValueDefinition<T, IsPropertyContext>, values: List<T>, expected: (T) -> T = { it }) {
         for (value in values) {
             val message = "${definition.propertyDefinitionTypeName()} $value"
             val storage = definition.toStorageBytes(value)
@@ -141,6 +154,7 @@ class ScalarStorageIntegrityGrammarTest {
             var offset = 0
             val stored = definition.readStorageBytes(storage.size) { storage[offset++] }
             assertEquals(storage.size, offset, message)
+            assertValueEquals(definition, expected(value), stored, "$message storage value")
             assertContentEquals(storage, definition.toStorageBytes(stored), "$message storage fixed point")
 
             val cache = WriteCache()
@@ -151,7 +165,26 @@ class ScalarStorageIntegrityGrammarTest {
             offset = 0
             val transported = definition.readTransportBytes(transport.size, { transport[offset++] })
             assertEquals(transport.size, offset, message)
+            assertValueEquals(definition, expected(value), transported, "$message transport value")
             assertContentEquals(storage, definition.toStorageBytes(transported), "$message transport/storage identity")
+        }
+    }
+
+    private fun LocalTime.truncate(precision: TimePrecision): LocalTime {
+        val unit = when (precision) {
+            TimePrecision.SECONDS -> 1000000000
+            TimePrecision.MILLIS -> 1000000
+            TimePrecision.NANOS -> 1
+        }
+        return LocalTime(hour, minute, second, nanosecond / unit * unit)
+    }
+
+    private fun <T : Any> assertValueEquals(definition: IsPropertyDefinition<T>, expected: T, actual: T, message: String) {
+        // Select by definition because Float and Double share their JS runtime type.
+        when ((definition as? NumberDefinition<*>)?.type) {
+            Float32 -> assertEquals((expected as Float).toRawBits(), (actual as Float).toRawBits(), message)
+            Float64 -> assertEquals((expected as Double).toRawBits(), (actual as Double).toRawBits(), message)
+            else -> assertEquals(expected, actual, message)
         }
     }
 

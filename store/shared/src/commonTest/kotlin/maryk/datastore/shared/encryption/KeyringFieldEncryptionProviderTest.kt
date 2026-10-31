@@ -12,7 +12,9 @@ import kotlin.test.assertTrue
 class KeyringFieldEncryptionProviderTest {
     @Test
     fun unencodableKeyIdsCannotProduceUnreadableCiphertext() {
-        for (id in listOf(0xD800.toChar().toString(), 0xDC00.toChar().toString())) {
+        for (code in listOf(0xD800, 0xDC00)) {
+            val id = charArrayOf(code.toChar()).concatToString()
+            assertEquals(code, id.single().code)
             assertFailsWith<IllegalArgumentException> {
                 KeyringFieldEncryptionProvider(id, mapOf(id to XorProvider(1)))
             }

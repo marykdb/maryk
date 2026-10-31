@@ -48,4 +48,10 @@ Each property of the value model is stored in its representative byte format. Al
 values are combined into one array separated by a separator byte (0b0001) in the
 order of how the properties are defined.
 
+Readers require each separator to be exactly `0x01` and reject invalid markers.
+
+Generated value objects check that supplied values match their packed bytes.
+Their cached fields are decoded at storage precision, and returned value slots
+are independent snapshots. Editing a returned slot cannot change the object.
+
 With transport the field is encoded as length delimited wire type preceded by length of bytes

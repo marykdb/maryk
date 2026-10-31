@@ -39,6 +39,9 @@ val def = BooleanDefinition(
 ```
 
 ## Storage and Transport Byte representation
+
+Storage accepts exactly `0` and `1`. ProtoBuf readers consume the complete
+varint and interpret any nonzero value as true; writers emit `0` or `1`.
 `0b0000` for false `0b0001` for true
 
 ## String representation

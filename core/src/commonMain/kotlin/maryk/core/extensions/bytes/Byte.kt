@@ -45,6 +45,9 @@ internal fun initByteByVar(reader: () -> Byte): Byte {
     var result = 0
     while (shift < 8) {
         val b = readByteOrParseException(reader, "Malformed varByte").toInt()
+        if (shift == 7 && (b and 0xFE) != 0) {
+            throw ParseException("Malformed varByte")
+        }
         result = result or ((b and 0x7F) shl shift)
         if (b and 0x80 == 0) {
             return result.toByte()

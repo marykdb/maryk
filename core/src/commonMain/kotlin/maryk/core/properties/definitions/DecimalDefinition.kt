@@ -9,6 +9,11 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
+import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.serializableValidationReference
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MapKeyReference
+import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.types.Decimal
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
@@ -138,12 +143,17 @@ class DecimalDefinition(
     ): Decimal = fromString(initString(length, reader))
 
     private fun Decimal.rescaleForTransport(): Decimal = try {
-        rescaleExact(scale).also(::requireFits)
+        rescaleExact(this@DecimalDefinition.scale).also(::requireFits)
+        // Retain valid text bytes for existing request fingerprints. Readers
+        // rescale exactly; the check above must use the property's storage shape.
+        this
     } catch (error: IllegalArgumentException) {
         throw ParseException("Decimal value cannot be represented in $byteSize storage bytes", error)
     } catch (error: ArithmeticException) {
-        throw ParseException("Decimal value cannot be represented at scale $scale", error)
+        throw ParseException("Decimal value cannot be represented at scale ${this@DecimalDefinition.scale}", error)
     }
+
+    override fun asString(value: Decimal) = value.rescaleForTransport().toString()
 
     override fun fromString(string: String): Decimal = try {
         Decimal.parse(string).rescaleExact(scale).also(::requireFits)
@@ -163,6 +173,27 @@ class DecimalDefinition(
                 null
             }
         }
+
+    override fun validateWithRef(
+        previousValue: Decimal?,
+        newValue: Decimal?,
+        refGetter: () -> IsPropertyReference<Decimal, IsPropertyDefinition<Decimal>, *>?,
+    ) {
+        if (newValue != null) {
+            try {
+                newValue.rescaleForTransport()
+            } catch (_: ParseException) {
+                // A rejected member's own text cannot be resolved by the reader.
+                val reference = when (val reference = refGetter()) {
+                    is MapKeyReference<*, *, *> -> reference.parentReference
+                    is SetItemReference<*, *> -> reference.parentReference
+                    else -> reference
+                }
+                throw InvalidValueException(serializableValidationReference(reference), newValue.toString())
+            }
+        }
+        super<IsArithmeticDefinition>.validateWithRef(previousValue, newValue, refGetter)
+    }
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,

@@ -44,10 +44,14 @@ fun LocalDateTime.Companion.fromByteReader(length: Int, reader: () -> Byte) = wh
     7 -> Instant.fromEpochSeconds(
         initLong(reader, 7)
     )
-    9 -> Instant.fromEpochSeconds(
-        initLong(reader, 7),
-        initShort(reader) * 1000000
-    )
+    9 -> {
+        val epochSeconds = initLong(reader, 7)
+        val milliseconds = initShort(reader).toInt()
+        require(milliseconds in 0..999) {
+            "Invalid millisecond fraction for DateTime conversion: $milliseconds"
+        }
+        Instant.fromEpochSeconds(epochSeconds, milliseconds * 1000000)
+    }
     11 -> {
         val epochSeconds = initLong(reader, 7)
         val nanosecond = initUInt(reader)

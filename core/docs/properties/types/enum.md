@@ -81,6 +81,16 @@ val def = EnumDefinition(
 ## Storage Byte representation
 The enum index value as two bytes. It is encoded as unsigned short.
 
+A written value's index must be resolvable by the configured definition.
+Unknown indexes require an `unknownCreator`; otherwise validation rejects them
+before storage. Memory resolves ordinary enum cells in the same way as
+persistent readers.
+
+Reserving a removed case's index and name prevents reuse, but stored values
+still need a reader. Removing that reader requires a model migration. Multi
+type cases must retain their declared payload definition until their stored
+values have been migrated.
+
 Indexes above 65,535 are rejected in declarations, value validation, resolution
 and binary encoding, including unknown enum cases. Existing supported indexes
 keep the same bytes; no data migration is needed. Previously truncated indexes

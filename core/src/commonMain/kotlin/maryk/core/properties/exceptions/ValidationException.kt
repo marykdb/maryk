@@ -22,6 +22,7 @@ import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.RequestContext
 import maryk.lib.bytes.calculateUTF8ByteLength
+import maryk.lib.exceptions.ParseException
 
 /** Validation Exception with newMessage for properties */
 abstract class ValidationException internal constructor(
@@ -67,6 +68,10 @@ internal fun serializableValidationReference(reference: AnyPropertyReference?): 
             candidate.calculateTransportByteLength(WriteCache())
             return candidate
         } catch (_: IllegalArgumentException) {
+            candidate = (candidate as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
+        } catch (_: ParseException) {
+            candidate = (candidate as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
+        } catch (_: ClassCastException) {
             candidate = (candidate as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
         }
     }

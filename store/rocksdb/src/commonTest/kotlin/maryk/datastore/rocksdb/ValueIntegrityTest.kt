@@ -9,6 +9,8 @@ import maryk.datastore.test.assertAllocationReplayCreatesMissingMaps
 import maryk.datastore.test.assertAnonymousCollectionMutations
 import maryk.datastore.test.assertCollectionTargetsRespectListBounds
 import maryk.datastore.test.assertDeletedCollectionConstraints
+import maryk.datastore.test.assertDecimalWriteIntegrity
+import maryk.datastore.test.assertEnumWriteIntegrity
 import maryk.datastore.test.assertImmutableWriteIntegrity
 import maryk.datastore.test.assertIndexBoundsHandleShortRows
 import maryk.datastore.test.assertMalformedKeyDiagnosticsCanTravel
@@ -85,4 +87,12 @@ class ValueIntegrityTest {
         for (history in listOf(false, true)) withStore(history) { assertSetItemWriteIntegrity(it) }
     }
 
+    @Test
+    fun decimalsMustFitTheirScaleAndStorageWidth() = runTest {
+        for (history in listOf(false, true)) withStore(history) { assertDecimalWriteIntegrity(it) }
+    }
+    @Test
+    fun enumValuesMustBeReadableByTheirDefinition() = runTest {
+        for (history in listOf(false, true)) withStore(history) { assertEnumWriteIntegrity(it) }
+    }
 }

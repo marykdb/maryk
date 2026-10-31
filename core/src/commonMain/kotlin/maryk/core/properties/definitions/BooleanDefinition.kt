@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.bytes.initBoolean
+import maryk.core.extensions.bytes.initULongByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
@@ -33,7 +33,11 @@ data class BooleanDefinition(
             throw ParseException("Invalid storage byte length for Boolean: $length != $byteSize")
         }
 
-        return initBoolean(reader)
+        return when (val byte = reader()) {
+            0.toByte() -> false
+            1.toByte() -> true
+            else -> throw ParseException("Invalid stored Boolean byte: ${byte.toUByte()}")
+        }
     }
 
     override fun calculateStorageByteLength(value: Boolean) = this.byteSize
@@ -45,7 +49,7 @@ data class BooleanDefinition(
         reader: () -> Byte,
         context: IsPropertyContext?,
         earlierValue: Boolean?
-    ) = initBoolean(reader)
+    ) = initULongByVar(reader) != 0uL
 
     override fun calculateTransportByteLength(value: Boolean) = this.byteSize
 

@@ -18,6 +18,7 @@ import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.MAX_ENUM_INDEX
 import maryk.core.properties.exceptions.OutOfRangeException
+import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.SetItemReference
@@ -62,6 +63,14 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
                 else -> reference
             }
             throw OutOfRangeException(reference, newValue.index.toString(), "0", MAX_ENUM_INDEX.toString())
+        }
+        if (newValue != null && enum.resolve(newValue.index) == null) {
+            val reference = when (val reference = refGetter()) {
+                is MapKeyReference<*, *, *> -> reference.parentReference
+                is SetItemReference<*, *> -> reference.parentReference
+                else -> reference
+            }
+            throw InvalidValueException(reference, "Unknown enum index ${newValue.index} for ${enum.name}")
         }
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
     }
@@ -146,6 +155,12 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
 
         if (definition is EnumDefinition) {
             compatible = enum.compatibleWith(definition.enum, checkedDataModelNames, addIncompatibilityReason) && compatible
+            for (storedCase in definition.enum.cases()) {
+                if (enum.resolve(storedCase.index) == null) {
+                    addIncompatibilityReason?.invoke("Stored enum index ${storedCase.index} is no longer readable. Keep a reader for it or migrate its values.")
+                    compatible = false
+                }
+            }
         }
 
         return compatible

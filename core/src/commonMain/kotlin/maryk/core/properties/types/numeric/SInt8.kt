@@ -37,5 +37,6 @@ object SInt8 : NumberDescriptor<Byte>(
     override fun ofInt(int: Int) = int.toByte()
     override fun ofLong(long: Long) = long.toByte()
     override fun createRandom() = Random.nextInt(Byte.MIN_VALUE.toInt(), Byte.MAX_VALUE.toInt() + 1).toByte()
-    override fun isOfType(value: Any) = value is Byte
+    override fun isOfType(value: Any) = value is Byte &&
+        isIntegralInRange(value.toDouble(), Byte.MIN_VALUE.toDouble(), Byte.MAX_VALUE.toDouble())
 }

@@ -14,8 +14,8 @@ object Float32 : NumberDescriptor<Float>(
     type = Float32Type,
     zero = 0.toFloat()
 ) {
-    override fun sum(value1: Float, value2: Float) = value1 + value2
-    override fun divide(value1: Float, value2: Float) = value1 / value2
+    override fun sum(value1: Float, value2: Float) = (value1.atFloat32Precision() + value2.atFloat32Precision()).atFloat32Precision()
+    override fun divide(value1: Float, value2: Float) = (value1.atFloat32Precision() / value2.atFloat32Precision()).atFloat32Precision()
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Float {
         checkStorageByteLength(length)
         return initFloat(reader)
@@ -25,10 +25,13 @@ object Float32 : NumberDescriptor<Float>(
     override fun calculateTransportByteLength(value: Float) = size
     override fun writeTransportBytes(value: Float, writer: (byte: Byte) -> Unit) = value.writeTransportBytes(writer)
     override fun ofString(value: String) = parseFloat32Text(value)
-    override fun ofDouble(double: Double) = double.toFloat()
-    override fun toDouble(value: Float) = value.toDouble()
-    override fun ofInt(int: Int) = int.toFloat()
-    override fun ofLong(long: Long) = long.toFloat()
-    override fun createRandom() = Random.nextFloat()
+    override fun ofDouble(double: Double) = double.toFloat().atFloat32Precision()
+    override fun toDouble(value: Float) = value.atFloat32Precision().toDouble()
+    override fun ofInt(int: Int) = int.toFloat().atFloat32Precision()
+    override fun ofLong(long: Long) = parseFloat32Text(long.toString())
+    override fun createRandom() = Random.nextFloat().atFloat32Precision()
     override fun isOfType(value: Any) = value is Float
 }
+
+/** JS uses Number for Float; force the same rounding as the persisted Float32 bits. */
+internal fun Float.atFloat32Precision() = Float.fromBits(toRawBits())

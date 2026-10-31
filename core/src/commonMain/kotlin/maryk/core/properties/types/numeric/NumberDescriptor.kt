@@ -28,6 +28,10 @@ abstract class NumberDescriptor<T : Comparable<T>> internal constructor(
         }
     }
 
+    /** JS represents narrow integers as Number, so a runtime type check is insufficient. */
+    protected fun isIntegralInRange(value: Double, minimum: Double, maximum: Double) =
+        value >= minimum && value <= maximum && value % 1.0 == 0.0
+
     /** Create number by string [value] */
     internal abstract fun ofString(value: String): T
 

@@ -10,15 +10,19 @@ import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.number
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.ValueDataObject
+import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.ObjectValues
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ValueItem
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertContentEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 private class EmptyValueObject : ValueDataObject(byteArrayOf())
@@ -38,6 +42,36 @@ private object SparseValueDataModel : ValueDataModel<SparseValueObject, SparseVa
 }
 
 internal class ValueDataModelTest {
+    @Test
+    fun generatedValueObjectsOwnTheirCachedValues() {
+        val items = MutableValueItems(ValueItem(2u, 42), ValueItem(9u, false))
+        val values = ObjectValues(SparseValueDataModel, items)
+        val value = ValueDataObjectWithValues(SparseValueDataModel.Serializer.toBytes(42, false), values)
+        items[2u] = 43
+        assertEquals(42, value.values<Int>(2u))
+        (value.values.values as MutableValueItems)[2u] = 44
+        assertEquals(42, value.values<Int>(2u))
+    }
+
+    @Test
+    fun generatedValueObjectsRequireMatchingBytesAndCachedValues() {
+        val values = SparseValueDataModel.create { value with 42; flag with false }
+        assertFailsWith<IllegalArgumentException> {
+            ValueDataObjectWithValues(SparseValueDataModel.Serializer.toBytes(43, false), values)
+        }
+    }
+
+    @Test
+    fun generatedValueObjectCachesUseStoredPrecision() {
+        val values = TestValueObject.create {
+            int with 1
+            dateTime with LocalDateTime(2000, 1, 1, 0, 0, 0, 123)
+            bool with true
+        }
+        val value = ValueDataObjectWithValues(TestValueObject.toBytes(values), values)
+        assertEquals(LocalDateTime(2000, 1, 1, 0, 0), value.values<LocalDateTime>(2u))
+    }
+
     @Test
     fun sparsePropertyIndicesRetainValueObjectBytes() {
         val original = SparseValueObject(42, true)

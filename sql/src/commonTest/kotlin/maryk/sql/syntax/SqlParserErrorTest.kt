@@ -61,12 +61,13 @@ class SqlParserErrorTest {
 
     @Test
     fun rejectsUnpairedSurrogates() {
-        val high = 0xD800.toChar().toString()
-        val low = 0xDC00.toChar().toString()
+        val high = charArrayOf(0xD800.toChar()).concatToString()
+        val low = charArrayOf(0xDC00.toChar()).concatToString()
 
-        // Kotlin/JS normalizes an unpaired UTF-16 surrogate before the lexer receives it.
-        if (high[0].code == 0xD800) assertFailsWith<SqlParseException> { SqlParser("SELECT '$high'").parse() }
-        if (low[0].code == 0xDC00) assertFailsWith<SqlParseException> { SqlParser("SELECT '$low'").parse() }
+        assertEquals(0xD800, high.single().code)
+        assertEquals(0xDC00, low.single().code)
+        assertFailsWith<SqlParseException> { SqlParser("SELECT '$high'").parse() }
+        assertFailsWith<SqlParseException> { SqlParser("SELECT '$low'").parse() }
         assertTrue(SqlParser("SELECT '${high + low}'").parse().select.isNotEmpty())
     }
 }

@@ -7,11 +7,15 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
+import maryk.core.properties.definitions.DecimalDefinition
+import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.decimal
+import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.incrementingMap
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.map
@@ -21,6 +25,9 @@ import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.invoke
+import maryk.core.properties.types.Decimal
+import maryk.core.properties.enum.IndexedEnumComparable
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
@@ -61,6 +68,12 @@ import maryk.test.models.MarykTypeEnum.T4
 import maryk.test.models.MarykTypeEnum.T5
 import maryk.test.models.MarykTypeEnum.T6
 
+enum class ReadableIntegrityOption(override val index: UInt) : IndexedEnumComparable<ReadableIntegrityOption> {
+    Known(1u), Omitted(2u);
+    override val alternativeNames: Set<String>? = null
+    companion object : IndexedEnumDefinition<ReadableIntegrityOption>(ReadableIntegrityOption::class, { listOf(Known) })
+}
+
 object ValueIntegrityRecord : RootDataModel<ValueIntegrityRecord>(
     indexes = { listOf(ValueIntegrityRecord.label.ref()) },
 ) {
@@ -80,6 +93,12 @@ object ValueIntegrityRecord : RootDataModel<ValueIntegrityRecord>(
     val fixedBranch by embed(17u, dataModel = { AnonymousCollectionChild }, final = true, required = false)
     val fixedListEntries by map(18u, keyDefinition = StringDefinition(), valueDefinition = ListDefinition(valueDefinition = StringDefinition()), final = true, required = false)
     val fixedSetEntries by map(19u, keyDefinition = StringDefinition(), valueDefinition = SetDefinition(valueDefinition = StringDefinition()), final = true, required = false)
+    val amount by decimal(20u, scale = 2u, byteSize = 1, required = false)
+    val exactMembers by set(21u, valueDefinition = DecimalDefinition(scale = 2u, byteSize = 1), required = false)
+    val exactEntries by map(22u, keyDefinition = DecimalDefinition(scale = 2u, byteSize = 1), valueDefinition = StringDefinition(), required = false)
+    val option by enum(23u, enum = ReadableIntegrityOption, required = false)
+    val optionMembers by set(24u, valueDefinition = EnumDefinition(enum = ReadableIntegrityOption), required = false)
+    val optionEntries by map(25u, keyDefinition = EnumDefinition(enum = ReadableIntegrityOption), valueDefinition = StringDefinition(), required = false)
     val allocatedText by incrementingMap(14u, keyNumberDescriptor = UInt32, valueDefinition = StringDefinition(minSize = 3u), required = false)
     val allocatedLists by incrementingMap(15u, keyNumberDescriptor = UInt32,
         valueDefinition = ListDefinition(valueDefinition = StringDefinition(minSize = 3u)), required = false)
@@ -96,10 +115,67 @@ object FixedKeyIntegrityRecord : RootDataModel<FixedKeyIntegrityRecord>(
 
 val validatedIntegrityModels = mapOf(1u to ValueIntegrityRecord, 2u to FixedKeyIntegrityRecord, 3u to AnonymousCollectionRecord)
 
+suspend fun assertEnumWriteIntegrity(store: IsDataStore) {
+    val model = ValueIntegrityRecord
+    val original = model.create {
+        label with "original"
+        text with "valid"
+        entries with emptyMap<String, String>()
+        option with ReadableIntegrityOption.Known
+    }
+    val added = assertIs<AddSuccess<ValueIntegrityRecord>>(store.execute(model.add(original)).statuses.single())
+    assertIs<ValidationFail<ValueIntegrityRecord>>(store.execute(model.add(original.copy { option with ReadableIntegrityOption.Omitted })).statuses.single())
+    for (change in listOf(
+        Change(model.ref { option } with ReadableIntegrityOption.Omitted),
+        SetChange(model.ref { optionMembers }.change(addValues = setOf(ReadableIntegrityOption.Omitted))),
+        Change(model.ref { optionEntries } with mapOf(ReadableIntegrityOption.Omitted to "valid")),
+    )) {
+        val response = store.execute(model.change(added.key.change(Change(model.ref { label } with "must roll back"), change)))
+        assertIs<ValidationFail<ValueIntegrityRecord>>(response.statuses.single(), response.toString())
+        assertValidationResponseCanTravel(response)
+        val current = store.execute(model.get(added.key)).values.single()
+        assertEquals(original, current.values)
+        assertEquals(added.version, current.lastVersion)
+        assertEquals(emptyList(), store.execute(model.scan(where = Equals(model.ref { label } with "must roll back"))).values)
+    }
+}
+
+suspend fun assertDecimalWriteIntegrity(store: IsDataStore) {
+    val model = ValueIntegrityRecord
+    val original = model.create {
+        label with "original"
+        text with "valid"
+        entries with emptyMap<String, String>()
+        amount with Decimal.parse("1.27")
+    }
+    val added = assertIs<AddSuccess<ValueIntegrityRecord>>(store.execute(model.add(original)).statuses.single())
+    for (value in listOf("1.28", "-1.29", "0.001").map(Decimal::parse)) {
+        assertIs<ValidationFail<ValueIntegrityRecord>>(store.execute(model.add(original.copy { amount with value })).statuses.single())
+        val changes = listOf(
+            Change(model.ref { amount } with value),
+            SetChange(model.ref { exactMembers }.change(addValues = setOf(value))),
+            Change(model.ref { exactEntries } with mapOf(value to "valid")),
+        )
+        for (change in changes) {
+            val response = store.execute(model.change(added.key.change(
+                Change(model.ref { label } with "must roll back"), change,
+            )))
+            assertIs<ValidationFail<ValueIntegrityRecord>>(response.statuses.single(), "$value: $change")
+            assertValidationResponseCanTravel(response)
+            val current = store.execute(model.get(added.key)).values.single()
+            assertEquals(original, current.values)
+            assertEquals(added.version, current.lastVersion)
+            assertEquals(emptyList(), store.execute(model.scan(where = Equals(model.ref { label } with "must roll back"))).values)
+        }
+    }
+}
+
 suspend fun assertUnicodeWriteIntegrity(store: IsDataStore) {
     val model = ValueIntegrityRecord
     val key = model.key(ByteArray(model.Meta.keyByteSize))
-    val invalid = listOf(0xD800.toChar().toString(), 0xDC00.toChar().toString(), "before" + 0xD800.toChar() + "after")
+    val high = unpairedHighSurrogate()
+    val invalid = listOf(high, charArrayOf(0xDC00.toChar()).concatToString(), "before${high}after")
+    assertEquals(0xD800, invalid.last()[6].code)
     for (text in invalid) {
         assertIs<ValidationFail<ValueIntegrityRecord>>(store.execute(model.add(key to model.create {
             label with "unchanged"
@@ -155,7 +231,7 @@ suspend fun assertMalformedKeyDiagnosticsCanTravel(store: IsDataStore) {
         entries with emptyMap<String, String>()
     })).statuses.single()).key
     val response = store.execute(model.change(key.change(Change(
-        model.ref { entries } with mapOf(0xD800.toChar().toString() to "x"),
+        model.ref { entries } with mapOf(unpairedHighSurrogate() to "x"),
     ))))
     assertIs<ValidationFail<ValueIntegrityRecord>>(response.statuses.single())
     assertValidationResponseCanTravel(response)
@@ -179,7 +255,7 @@ suspend fun assertTypedValuesRespectDefinitions(store: IsDataStore) {
         Change(model.ref { typed } with T4(listOf("invalid&"))),
         Change(model.ref { typed } with T5(setOf("invalid&"))),
         Change(model.ref { typed } with T6(mapOf(1u to "invalid&"))),
-        Change(model.ref { typed } with T1(0xD800.toChar().toString())),
+        Change(model.ref { typed } with T1(unpairedHighSurrogate())),
         Change(model.ref { fixedType } with T2(1)),
         Change(model.ref { fixedValue } with T1("changed")),
     )
@@ -383,6 +459,8 @@ suspend fun assertAllocationErrorsRemainSerializable(store: IsDataStore) {
     assertEquals(mapOf(1u to listOf("valid")), current { allocatedLists })
     assertEquals(mapOf(1u to setOf("valid")), current { allocatedSets })
 }
+
+private fun unpairedHighSurrogate() = charArrayOf(0xD800.toChar()).concatToString()
 
 private fun assertValidationResponseCanTravel(response: ChangeResponse<ValueIntegrityRecord>) {
     fun context() = RequestContext(DefinitionsContext(mutableMapOf(

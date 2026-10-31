@@ -37,5 +37,6 @@ object SInt32 : NumberDescriptor<Int>(
     override fun ofInt(int: Int) = int
     override fun ofLong(long: Long) = long.toInt()
     override fun createRandom() = Random.nextInt()
-    override fun isOfType(value: Any) = value is Int
+    override fun isOfType(value: Any) = value is Int &&
+        isIntegralInRange(value.toDouble(), Int.MIN_VALUE.toDouble(), Int.MAX_VALUE.toDouble())
 }

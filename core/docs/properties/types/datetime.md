@@ -60,6 +60,10 @@ It depends on the precision of the Time how it will be stored
 - `MILLIS` - 9 byte combined integer with 7 bytes counting the seconds from midnight January 1st 1970 and 2 bytes for the milliseconds
 - `NANOS` - 11 byte integer with 7 bytes counting the seconds from midnight January 1st 1970 and 4 bytes for the nanoseconds
 
+Stored fractional fields must be within one second: milliseconds `0..999` and
+nanoseconds `0..999999999`. Invalid fractions are rejected rather than carried
+into another second.
+
 ## Transport Byte representation
 The bytes are transported in a different way depending on the precision of time.
 

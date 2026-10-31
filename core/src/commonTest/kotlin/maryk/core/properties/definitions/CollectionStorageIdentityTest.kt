@@ -7,6 +7,7 @@ import maryk.core.processors.datastore.writeMapToStorage
 import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
@@ -23,6 +24,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 
 private object CollectionIdentityModel : RootDataModel<CollectionIdentityModel>() {
     val doubles by map(1u, keyDefinition = NumberDefinition(type = Float64), valueDefinition = StringDefinition())
@@ -110,7 +112,10 @@ class CollectionStorageIdentityTest {
     fun invalidFloatingMemberTypesRetainStructuredValidationErrors() {
         @Suppress("UNCHECKED_CAST")
         val definition = SetDefinition(valueDefinition = NumberDefinition(type = Float64)) as IsSetDefinition<Any, IsPropertyContext>
-        assertFailsWith<InvalidValueException> { definition.validateWithRef(newValue = setOf("not a number")) }
+        val error = assertFailsWith<ValidationUmbrellaException> {
+            definition.validateWithRef(newValue = setOf("not a number"))
+        }
+        assertIs<InvalidValueException>(error.exceptions.single())
     }
 
     @Test

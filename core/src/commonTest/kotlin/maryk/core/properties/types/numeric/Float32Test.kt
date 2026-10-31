@@ -56,7 +56,7 @@ internal class Float32Test {
     @Test
     fun testOfNativeTypes() {
         expect(2131232F) { Float32.ofLong(2131232) }
-        expect(12213.121F) { Float32.ofDouble(12213.121) }
+        expect(12213.12109375) { Float32.ofDouble(12213.121).toDouble() }
         expect(1221321F) { Float32.ofInt(1221321) }
     }
 

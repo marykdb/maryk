@@ -7,6 +7,8 @@ import maryk.datastore.test.assertAllocationReplayCreatesMissingMaps
 import maryk.datastore.test.assertAnonymousCollectionMutations
 import maryk.datastore.test.assertCollectionTargetsRespectListBounds
 import maryk.datastore.test.assertDeletedCollectionConstraints
+import maryk.datastore.test.assertDecimalWriteIntegrity
+import maryk.datastore.test.assertEnumWriteIntegrity
 import maryk.datastore.test.assertImmutableWriteIntegrity
 import maryk.datastore.test.assertIndexBoundsHandleShortRows
 import maryk.datastore.test.assertMalformedKeyDiagnosticsCanTravel
@@ -105,4 +107,18 @@ class ValueIntegrityTest {
         }
     }
 
+    @Test
+    fun decimalsMustFitTheirScaleAndStorageWidth() = runTest {
+        for (history in listOf(false, true)) {
+            val store = InMemoryDataStore.open(dataModelsById = validatedIntegrityModels, keepAllVersions = history)
+            try { assertDecimalWriteIntegrity(store) } finally { store.close() }
+        }
+    }
+    @Test
+    fun enumValuesMustBeReadableByTheirDefinition() = runTest {
+        for (history in listOf(false, true)) {
+            val store = InMemoryDataStore.open(dataModelsById = validatedIntegrityModels, keepAllVersions = history)
+            try { assertEnumWriteIntegrity(store) } finally { store.close() }
+        }
+    }
 }

@@ -6,6 +6,9 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.serializableValidationReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
@@ -114,6 +117,17 @@ data class NumberDefinition<T : Comparable<T>>(
     }
 
     override fun fromNativeType(value: Any) = fromNativeType(this.type, value)
+
+    override fun validateWithRef(
+        previousValue: T?,
+        newValue: T?,
+        refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?,
+    ) {
+        if (newValue != null && !type.isOfType(newValue)) {
+            throw InvalidValueException(serializableValidationReference(refGetter()), "Expected ${type.type.name}: $newValue")
+        }
+        super<IsArithmeticDefinition>.validateWithRef(previousValue, newValue, refGetter)
+    }
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: IsPropertyContext?) = when (type) {
         UInt64 -> {
@@ -237,14 +251,36 @@ class NumericContext : IsPropertyContext {
 
 fun <T : Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
     when {
-        type.isOfType(value) -> {
+        // Float and Double share their runtime type on JS. Round through the
+        // Float32 bit representation before accepting a native JS number.
+        type == Float32 && value is Double -> {
+            val converted = Float.fromBits(value.toFloat().toRawBits())
+            if (!value.isNaN() && converted.toDouble() != value) {
+                throw ParseException("$value not of expected type")
+            }
+            @Suppress("UNCHECKED_CAST")
+            converted as T
+        }
+        type == Float64 && value is Double -> {
             @Suppress("UNCHECKED_CAST")
             value as T
         }
-        value is Double -> type.ofDouble(value).also {
-            if (type.toDouble(it) != value) {
+        value is Double -> {
+            // The inclusive maxima round up to the next power of two as Double.
+            // A round trip alone therefore cannot detect saturation at those bounds.
+            if (type == SInt64 && (value < -9223372036854775808.0 || value >= 9223372036854775808.0) ||
+                type == UInt64 && (value < 0.0 || value >= 18446744073709551616.0)) {
                 throw ParseException("$value not of expected type")
             }
+            type.ofDouble(value).also {
+                if (type.toDouble(it) != value) {
+                    throw ParseException("$value not of expected type")
+                }
+            }
+        }
+        type.isOfType(value) -> {
+            @Suppress("UNCHECKED_CAST")
+            value as T
         }
         value is Int -> type.ofInt(value).also {
             ensureIntegralConversionFits(type, value.toString(), it)

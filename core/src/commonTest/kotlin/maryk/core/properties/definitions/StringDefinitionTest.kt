@@ -20,11 +20,13 @@ import kotlin.test.expect
 internal class StringDefinitionTest {
     @Test
     fun validationRejectsUnrepresentableUtf16() {
+        val high = charArrayOf(0xD800.toChar()).concatToString()
         val invalid = listOf(
-            charArrayOf(0xD800.toChar()).concatToString(),
+            high,
             charArrayOf(0xDC00.toChar()).concatToString(),
-            "before" + 0xD800.toChar() + "after",
+            "before${high}after",
         )
+        assertEquals(0xD800, invalid.last()[6].code)
         for (value in invalid) {
             val error = assertFailsWith<InvalidValueException> {
                 StringDefinition().validateWithRef(newValue = value)

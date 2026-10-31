@@ -25,7 +25,7 @@ internal fun <T : Comparable<T>> NumberDescriptor<T>.asCanonicalString(value: T)
 }
 
 internal fun parseFloat32Text(value: String): Float {
-    if (!value.startsWith("NaN:")) return value.toFloat()
+    if (!value.startsWith("NaN:")) return parseFloat32DecimalText(value)
     val bits = rawNanHex(value, 8).toUInt(16).toInt()
     require(bits and 0x7f800000 == 0x7f800000 && bits and 0x007fffff != 0) {
         "Raw Float32 NaN text must contain NaN bits"

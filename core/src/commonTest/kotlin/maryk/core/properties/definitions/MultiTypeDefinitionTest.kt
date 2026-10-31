@@ -116,7 +116,7 @@ internal class MultiTypeDefinitionTest {
         def.validateWithRef(newValue = T2(400))
         def.validateWithRef(newValue = T4(listOf("#a", "#b", "#c")))
         def.validateWithRef(newValue = T5(setOf("#a", "#b", "#c")))
-        def.validateWithRef(newValue = T6(mapOf(1 to "#a")))
+        def.validateWithRef(newValue = T6(mapOf(1u to "#a")))
 
         assertFailsWith<OutOfRangeException> {
             def.validateWithRef(newValue = T2(3000))
@@ -131,7 +131,7 @@ internal class MultiTypeDefinitionTest {
             def.validateWithRef(newValue = T5(setOf("&WRONG")))
         }
         assertFailsWith<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = T6(mapOf(1 to "&WRONG")))
+            def.validateWithRef(newValue = T6(mapOf(1u to "&WRONG")))
         }
         assertFailsWith<InvalidValueException> {
             def.validateWithRef(newValue = T7(S1("&WRONG")))

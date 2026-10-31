@@ -29,14 +29,7 @@ open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO
     }
 
     override fun readFromBytes(reader: () -> Byte): DO {
-        val values = MutableValueItems()
-        model.forEachIndexed { index, it ->
-            if (index != 0) reader() // skip separation byte
-
-            val def = it as IsFixedStorageBytesEncodable<*>
-            values[it.index] = def.readStorageBytes(def.byteSize, reader)
-        }
-        return model.invoke(ObjectValues(model, values))
+        return model.invoke(ObjectValues(model, readValueObjectItems(model, reader)))
     }
 
     override fun toBytes(vararg inputs: Any): ByteArray {
@@ -78,8 +71,21 @@ open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO
         obj: DO,
         context: IsPropertyContext?
     ) = if (obj is ValueDataObjectWithValues) {
-        obj.values(definition.index)
+        obj.getValue(definition.index)
     } else {
         super.getValueWithDefinition(definition, obj, context)
     }
+}
+
+/** Decode fixed fields without constructing an object or consulting a caller-owned cache. */
+internal fun readValueObjectItems(model: IsValueDataModel<*, *>, reader: () -> Byte): MutableValueItems {
+    val values = MutableValueItems()
+    model.forEachIndexed { index, property ->
+        if (index != 0 && reader() != 1.toByte()) {
+            throw ParseException("Invalid value object separator for ${model.Meta.name}")
+        }
+        val definition = property as IsFixedStorageBytesEncodable<*>
+        values[property.index] = definition.readStorageBytes(definition.byteSize, reader)
+    }
+    return values
 }

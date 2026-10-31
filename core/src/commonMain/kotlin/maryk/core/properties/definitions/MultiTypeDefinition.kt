@@ -60,6 +60,13 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
 
         if (definition is MultiTypeDefinition<*, *>) {
             compatible = typeEnum.compatibleWith(definition.typeEnum, checkedDataModelNames, addIncompatibilityReason) && compatible
+            val declaredIndexes = typeEnum.cases().mapTo(mutableSetOf()) { it.index }
+            for (storedCase in definition.typeEnum.cases()) {
+                if (storedCase.index !in declaredIndexes) {
+                    addIncompatibilityReason?.invoke("Stored multi type case ${storedCase.index} lost its payload definition. Keep it declared or migrate its values.")
+                    compatible = false
+                }
+            }
             if (this.typeIsFinal && !definition.typeIsFinal) {
                 addIncompatibilityReason?.invoke("Multi type with changeable type was made type final")
                 compatible = false

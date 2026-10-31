@@ -102,6 +102,15 @@ orders negatives, signed zeros, positives and infinities numerically. Ordinary
 storage preserves raw NaN payload bits; indexes normalize NaNs for Kotlin numeric
 comparison. Index writers encode directly from numeric values.
 
+Float32 text parsing, conversions and arithmetic use 32-bit precision on every
+target, including JavaScript. Native numeric conversions reject values outside
+the requested integer range; a Double at `2^63` cannot be accepted as
+`Long.MAX_VALUE`. UInt64 conversions use the full unsigned range.
+
+Float32 parsing also handles exact midpoint boundaries, including subnormals
+and overflow, without rounding through an intermediate Double incorrectly.
+Long-to-Float32 conversion uses the same rule on every target.
+
 Persistent stores perform one opening migration from the released, unversioned
 layout (legacy format 1) to storage format 2. The migration converts affected
 current/historical values, collection qualifiers, packed value objects, unique
@@ -143,3 +152,6 @@ The numbers are differently encoded depending on their type.
  -2 as 3 etc. This way small positive and negative numbers take less space
  - `Float32` Encoded as 32-bit
  - `Float64` Encoded as 64-bit
+
+Integer readers reject varints whose bits exceed the declared width, including
+8-bit and 16-bit numbers, instead of truncating them to a different value.

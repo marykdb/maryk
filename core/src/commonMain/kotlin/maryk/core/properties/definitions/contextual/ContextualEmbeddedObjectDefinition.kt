@@ -11,6 +11,10 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonWriter
+import maryk.core.models.serializers.IsObjectDataModelSerializer
+import maryk.core.models.serializers.continuationValues
+import maryk.core.models.serializers.readProtoBufWithEarlier
+import maryk.core.models.IsObjectDataModel
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
 data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
@@ -52,6 +56,11 @@ data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
         reader: () -> Byte,
         context: CX?,
         earlierValue: Any?
-    ) =
-        contextualResolver(context).Serializer.readProtoBuf(length, reader, context).toDataObject()
+    ): Any {
+        val model = contextualResolver(context)
+        @Suppress("UNCHECKED_CAST")
+        val serializer = model.Serializer as IsObjectDataModelSerializer<Any, IsObjectDataModel<Any>, IsPropertyContext, CX>
+        val earlier = serializer.continuationValues(model, earlierValue, context)
+        return serializer.readProtoBufWithEarlier(length, reader, context, earlier).toDataObject()
+    }
 }

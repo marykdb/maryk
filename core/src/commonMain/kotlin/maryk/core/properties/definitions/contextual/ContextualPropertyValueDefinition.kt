@@ -4,12 +4,9 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.models.migration.readsLegacyTransportStorage
 import maryk.core.models.migration.ReleasedTransportFingerprintException
 import maryk.core.models.migration.writesReleasedTransportForFingerprint
-import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsContextualEncodable
-import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.acceptsProtoBufWireType
-import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.ProtoBuf
@@ -21,6 +18,8 @@ import maryk.core.protobuf.writeKeyWithLength
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
+import maryk.core.properties.definitions.emptyTransportCollection
+import maryk.core.properties.definitions.isTransportCollection
 
 /** A complete contextual property value, including an explicitly empty collection. */
 data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : Any>(
@@ -37,11 +36,8 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null
 
-    private fun IsSerializablePropertyDefinition<T, CXI>.needsEnvelope() =
-        this is IsCollectionDefinition<*, *, *, *> || this is IsMapDefinition<*, *, *>
-
-    private fun rejectReleasedAppend(definition: IsSerializablePropertyDefinition<T, CXI>, context: CX?) {
-        if (rejectAmbiguousLegacyCollectionReads && definition.needsEnvelope() && context.writesReleasedTransportForFingerprint()) {
+    private fun rejectReleasedAppend(definition: IsSerializablePropertyDefinition<T, CXI>, context: CX?, innerContext: CXI?) {
+        if (rejectAmbiguousLegacyCollectionReads && definition.isTransportCollection(innerContext) && context.writesReleasedTransportForFingerprint()) {
             throw ReleasedTransportFingerprintException("Released collection-valued incrementing-map appends do not retain element boundaries")
         }
     }
@@ -62,21 +58,23 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
 
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?): Int {
         val definition = contextualResolver(context)
-        rejectReleasedAppend(definition, context)
-        return if (definition.needsEnvelope()) definition.calculateTransportByteLengthWithKey(1, value, cacher, contextTransformer(context))
+        val innerContext = contextTransformer(context)
+        rejectReleasedAppend(definition, context, innerContext)
+        return if (definition.isTransportCollection(innerContext)) definition.calculateTransportByteLengthWithKey(1, value, cacher, innerContext)
         else {
             @Suppress("UNCHECKED_CAST")
-            (definition as IsValueDefinition<T, CXI>).calculateTransportByteLength(value, cacher, contextTransformer(context))
+            (definition as IsValueDefinition<T, CXI>).calculateTransportByteLength(value, cacher, innerContext)
         }
     }
 
     override fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (Byte) -> Unit, context: CX?) {
         val definition = contextualResolver(context)
-        rejectReleasedAppend(definition, context)
-        if (definition.needsEnvelope()) definition.writeTransportBytesWithKey(1, value, cacheGetter, writer, contextTransformer(context))
+        val innerContext = contextTransformer(context)
+        rejectReleasedAppend(definition, context, innerContext)
+        if (definition.isTransportCollection(innerContext)) definition.writeTransportBytesWithKey(1, value, cacheGetter, writer, innerContext)
         else {
             @Suppress("UNCHECKED_CAST")
-            (definition as IsValueDefinition<T, CXI>).writeTransportBytes(value, cacheGetter, writer, contextTransformer(context))
+            (definition as IsValueDefinition<T, CXI>).writeTransportBytes(value, cacheGetter, writer, innerContext)
         }
     }
 
@@ -88,9 +86,9 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
 
     override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?): Int {
         val definition = contextualResolver(context)
-        rejectReleasedAppend(definition, context)
         val innerContext = contextTransformer(context)
-        return if (definition.needsEnvelope()) {
+        rejectReleasedAppend(definition, context, innerContext)
+        return if (definition.isTransportCollection(innerContext)) {
             calculateKeyAndContentLength(LENGTH_DELIMITED, index.toUInt(), cacher) {
                 definition.calculateTransportByteLengthWithKey(1, value, cacher, innerContext)
             }
@@ -99,9 +97,9 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
 
     override fun writeTransportBytesWithKey(index: Int, value: T, cacheGetter: WriteCacheReader, writer: (Byte) -> Unit, context: CX?) {
         val definition = contextualResolver(context)
-        rejectReleasedAppend(definition, context)
         val innerContext = contextTransformer(context)
-        if (definition.needsEnvelope()) {
+        rejectReleasedAppend(definition, context, innerContext)
+        if (definition.isTransportCollection(innerContext)) {
             writeKeyWithLength(LENGTH_DELIMITED, index.toUInt(), writer, cacheGetter)
             definition.writeTransportBytesWithKey(1, value, cacheGetter, writer, innerContext)
         } else definition.writeTransportBytesWithKey(index, value, cacheGetter, writer, innerContext)
@@ -110,7 +108,7 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?): T {
         val definition = contextualResolver(context)
         val innerContext = contextTransformer(context)
-        if (!definition.needsEnvelope()) return definition.readTransportBytes(length, reader, innerContext, earlierValue)
+        if (!definition.isTransportCollection(innerContext)) return definition.readTransportBytes(length, reader, innerContext, earlierValue)
         if (rejectAmbiguousLegacyCollectionReads && context.readsLegacyTransportStorage()) {
             throw ParseException("Legacy collection-valued incrementing-map appends have ambiguous element boundaries; reconstruct the log from a known source or restore a fresh snapshot")
         }
@@ -122,11 +120,8 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
             reader()
         }
         @Suppress("UNCHECKED_CAST")
-        var value: T = when (definition) {
-            is IsCollectionDefinition<*, *, *, *> -> (definition as IsCollectionDefinition<Any, Collection<Any>, CXI, IsSubDefinition<Any, CXI>>).newMutableCollection(innerContext) as T
-            is IsMapDefinition<*, *, *> -> mutableMapOf<Any, Any>() as T
-            else -> throw ParseException("Unsupported collection replacement definition")
-        }
+        var value = definition.emptyTransportCollection(innerContext) as? T
+            ?: throw ParseException("Unsupported collection replacement definition")
         while (consumed < length) {
             val key = ProtoBuf.readKey(boundedReader)
             if (key.tag == 1u) {

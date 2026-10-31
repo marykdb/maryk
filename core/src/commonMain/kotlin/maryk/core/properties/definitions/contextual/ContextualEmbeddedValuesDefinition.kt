@@ -5,6 +5,7 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.TypedValuesDataModel
+import maryk.core.models.serializers.readProtoBufWithEarlier
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.buildJsonString
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
@@ -62,7 +63,7 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
         context: CX?,
         earlierValue: Values<IsValuesDataModel>?
     ) =
-        contextualResolver(context).Serializer.readProtoBuf(length, reader, context)
+        contextualResolver(context).Serializer.readProtoBufWithEarlier(length, reader, context, earlierValue)
 }
 
 fun <DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.embedContextual(

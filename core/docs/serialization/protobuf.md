@@ -82,13 +82,18 @@ as well as packed floating value objects. There is no added encryption or backup
 A later complete entry for the same map key replaces the earlier entry, including
 collection and embedded values. Key/value field order within an entry does not
 change this behavior. Repeated collection or map value fields within one entry
-still accumulate to form that entry's value. This does not change writer bytes or
-stored values; it prevents a decoder from merging two separate map entries.
+still accumulate to form that entry's value. Embedded message fragments retain
+earlier fields and append repeated collection elements, including inside typed
+values. Embedded objects are constructed after the entry's fragments are read,
+so required fields can be distributed across those fragments. This does not change
+writer bytes or stored values; it prevents a decoder from merging two separate map entries.
 
 Repeated typed fields continue a payload only while their case remains the same.
 A different case discards the earlier payload. Contextual readers forward these
 continuations, and context-transforming writers use the resolved definition's
-field tag, wire type and length. Readers check wire types at model, typed-value
+field tag, wire type and length. Continued embedded reads restore captured context
+and preserve serializer validation hooks without modifying the earlier value.
+Readers check wire types at model, typed-value
 and collection-envelope boundaries.
 
 ### Complete collection values and empty presence
@@ -99,6 +104,8 @@ length-delimited envelope containing the property's ordinary entries at tag 1;
 entries accumulate within that envelope. An empty envelope represents an empty
 replacement, while an absent value in a nullable Change pair still means removal.
 Scalar reference-pair encodings retain their existing tags and bytes.
+Transparent contextual wrappers around lists, sets and maps use the same envelope;
+wrapping an already complete value codec does not add another envelope.
 
 Ordinary model values need separate presence for empty nonpacked collections and
 maps: no ordinary entries would otherwise be indistinguishable from an absent
@@ -114,7 +121,9 @@ markers also have zero-length, length-delimited payloads. Nonempty values and
 storage value formats are unchanged; no datastore value migration is required.
 
 Maryk-aware readers restore these markers to empty collections and reject malformed
-marker lengths or conflicting earlier values. Older Maryk readers and generated
+marker lengths or conflicting values in either order within one encoded message.
+An empty embedded fragment contributes no collection elements when merged with
+another fragment. Older Maryk readers and generated
 Proto3 clients skip the presence marker as an unknown field and still observe an
 absent property. Upgrade both transport endpoints when empty versus absent matters. Older readers
 cannot restore contextual empty defaults and reject the previously unsupported

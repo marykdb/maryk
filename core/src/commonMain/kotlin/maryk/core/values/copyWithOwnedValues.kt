@@ -28,11 +28,14 @@ fun <DM : IsValuesDataModel> Values<DM>.copyWithOwnedValues(): Values<DM> =
 @Suppress("UNCHECKED_CAST")
 internal fun copyValueWithOwnedContent(value: Any): Any = when (value) {
     is Values<*> -> value.copyWithOwnedValues()
+    is ObjectValues<*, *> -> ObjectValues(value.dataModel, MutableValueItems(value.mapTo(ArrayList(value.size)) { (index, item) ->
+        ValueItem(index, copyValueWithOwnedContent(item))
+    }), value.context)
     is MutableTypedValue<*, *> -> MutableTypedValue(value.type, copyValueWithOwnedContent(value.value))
     is TypedValue<*, *> -> value.type(copyValueWithOwnedContent(value.value))
-    is List<*> -> value.map { it?.let(::copyValueWithOwnedContent) }
+    is List<*> -> value.mapTo(ArrayList(value.size)) { it?.let(::copyValueWithOwnedContent) }
     is Set<*> -> value.mapTo(linkedSetOf()) { it?.let(::copyValueWithOwnedContent) }
-    is Map<*, *> -> value.entries.associate { (key, item) -> key to item?.let(::copyValueWithOwnedContent) }
+    is Map<*, *> -> value.entries.associateTo(LinkedHashMap(value.size)) { (key, item) -> key to item?.let(::copyValueWithOwnedContent) }
     is ByteArray -> value.copyOf()
     else -> value
 }

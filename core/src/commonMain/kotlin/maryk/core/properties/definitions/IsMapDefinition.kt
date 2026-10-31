@@ -26,6 +26,7 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.protobuf.addProtoByteLength
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken.EndObject
@@ -225,6 +226,7 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         val map = earlierValue as MutableMap<K, V>? ?: mutableMapOf()
         var key: K? = null
         var value: V? = null
+        var embeddedValue: ObjectValues<Any, *>? = null
         var emptyMarker = false
 
         while (lengthToGo > 0) {
@@ -253,12 +255,14 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
                     if (valueLength > lengthToGo) {
                         throw ParseException("Map value exceeds declared length")
                     }
-                    value = valueDefinition.readTransportBytes(
-                        valueLength,
-                        countingReader,
-                        context,
-                        value
-                    )
+                    if (valueDefinition is IsEmbeddedObjectDefinition<*, *, *, *>) {
+                        @Suppress("UNCHECKED_CAST")
+                        embeddedValue = (valueDefinition as IsEmbeddedObjectDefinition<Any, *, CX, *>).readTransportBytesToValues(
+                            valueLength, countingReader, context, embeddedValue,
+                        )
+                    } else {
+                        value = valueDefinition.readTransportBytes(valueLength, countingReader, context, value)
+                    }
                 }
                 EMPTY_COLLECTION_TAG_OFFSET + 2u -> {
                     val empty = valueDefinition.emptyTransportCollection(context)
@@ -279,8 +283,10 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
             throw ParseException("Map entry did not match declared length")
         }
 
+        @Suppress("UNCHECKED_CAST")
+        val completedValue = embeddedValue?.toDataObject() as V? ?: value
         map[key ?: throw ParseException("Map entry is missing a key")] =
-            value ?: throw ParseException("Map entry is missing a value")
+            completedValue ?: throw ParseException("Map entry is missing a value")
 
         return map
     }

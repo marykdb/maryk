@@ -20,6 +20,7 @@ import maryk.core.properties.definitions.acceptsProtoBufWireType
 import maryk.core.properties.definitions.validateValueType
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.readTransportBytesToValues
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -43,6 +44,8 @@ import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.UnknownYamlTag
 import maryk.yaml.YamlWriter
+import maryk.core.values.AbstractValues
+import maryk.core.values.copyValueWithOwnedContent
 
 private fun IsDefinitionWrapper<*, *, *, *>.transportIndex(): Int {
     require(index <= Short.MAX_VALUE.toUInt()) {
@@ -359,6 +362,19 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
      */
     internal fun readProtoBufToMap(length: Int, reader: () -> Byte, context: CX? = null): IsValueItems {
         val valueMap = MutableValueItems()
+        val continuation = protoBufContinuations.lastOrNull()?.takeIf { !it.consumed && it.reader === reader }
+        if (continuation != null) {
+            if ((continuation.previous as? AbstractValues<*, *>)?.dataModel != model) {
+                throw ParseException("Continued ProtoBuf values belong to another model")
+            }
+            continuation.consumed = true
+            for ((index, value) in continuation.previous) {
+                valueMap[index] = copyValueWithOwnedContent(value)
+                model[index]?.capture(context, valueMap[index]!!)
+            }
+        }
+        val emptyCollections = mutableSetOf<UInt>()
+        val seenFields = mutableSetOf<UInt>()
         var byteCounter = 0
 
         val byteReader = {
@@ -374,7 +390,9 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                 valueMap,
                 ProtoBuf.readKey(byteReader),
                 byteReader,
-                context
+                context,
+                emptyCollections,
+                seenFields
             ) {
                 length - byteCounter
             }
@@ -416,6 +434,8 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         key: ProtoBufKey,
         byteReader: () -> Byte,
         context: CX?,
+        emptyCollections: MutableSet<UInt>,
+        seenFields: MutableSet<UInt>,
         remainingLength: () -> Int
     ) {
         if (key.tag > EMPTY_COLLECTION_TAG_OFFSET && key.tag < EMPTY_COLLECTION_TAG_OFFSET * 2u) {
@@ -427,9 +447,11 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                 if (key.wireType != LENGTH_DELIMITED || readProtoBufValueLength(key, byteReader, remainingLength) != 0) {
                     throw ParseException("Empty collection marker must be length-delimited with zero length")
                 }
-                if (values[index] != null) throw ParseException("Empty collection marker conflicts with an earlier value")
-                values[index] = empty
-                requireNotNull(wrapper).capture(context, empty)
+                if (!seenFields.add(index)) throw ParseException("Empty collection marker conflicts with an earlier value")
+                // An empty fragment contributes no elements to a continued embedded message.
+                if (values[index] == null) values[index] = empty
+                emptyCollections.add(index)
+                requireNotNull(wrapper).capture(context, values[index]!!)
                 return
             }
         }
@@ -439,6 +461,8 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         if (propertyDefinition == null) {
             skipUnknownField(key, byteReader, remainingLength)
         } else {
+            if (key.tag in emptyCollections) throw ParseException("Empty collection marker conflicts with another value")
+            seenFields.add(key.tag)
             if (!propertyDefinition.acceptsProtoBufWireType(key.wireType, context)) {
                 throw ParseException("Unexpected wire type ${key.wireType} for property '${dataObjectPropertyDefinition.name}'")
             }
@@ -449,7 +473,8 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                         propertyDefinition.readTransportBytesToValues(
                             valueLength,
                             byteReader,
-                            context
+                            context,
+                            values[key.tag]
                         )
                     else ->
                         propertyDefinition.readTransportBytes(

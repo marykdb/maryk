@@ -8,6 +8,7 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.TypedValuesDataModel
 import maryk.core.models.validate
+import maryk.core.models.serializers.readProtoBufWithEarlier
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitionType.Embed
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -118,7 +119,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
         context: IsPropertyContext?,
         earlierValue: Values<DM>?
     ) =
-        this.typedDataModel.Serializer.readProtoBuf(length, reader, context)
+        this.typedDataModel.Serializer.readProtoBufWithEarlier(length, reader, context, earlierValue)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

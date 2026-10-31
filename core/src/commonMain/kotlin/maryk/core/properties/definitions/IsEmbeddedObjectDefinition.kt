@@ -5,6 +5,9 @@ import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
+import maryk.core.models.serializers.IsObjectDataModelSerializer
+import maryk.core.models.serializers.continuationValues
+import maryk.core.models.serializers.readProtoBufWithEarlier
 
 /** Interface for property definitions containing embedded DataObjects of [DO] and context [CX]. */
 interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsTypedObjectDataModel<DO, *, CXI, CX>, in CXI : IsPropertyContext, CX : IsPropertyContext> :
@@ -22,8 +25,8 @@ interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsTypedObjectDataModel<D
     override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
         this.readJsonToValues(reader, context).toDataObject()
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?, earlierValue: DO?) =
-        this.readTransportBytesToValues(length, reader, context).toDataObject()
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?, earlierValue: DO?): DO =
+        readTransportBytesToValues(length, reader, context, earlierValue).toDataObject()
 
     /** Read ProtoBuf into ObjectValues */
     fun readTransportBytesToValues(length: Int, reader: () -> Byte, context: CXI?) =
@@ -42,4 +45,21 @@ interface IsEmbeddedObjectDefinition<DO : Any, out DM : IsTypedObjectDataModel<D
 
         return compatible
     }
+}
+
+/** Continue an embedded message without constructing a possibly incomplete data object. */
+@Suppress("UNCHECKED_CAST")
+internal fun <DO : Any, CXI : IsPropertyContext, CX : IsPropertyContext>
+    IsEmbeddedObjectDefinition<DO, *, CXI, CX>.readTransportBytesToValues(
+    length: Int,
+    reader: () -> Byte,
+    context: CXI?,
+    earlierValue: Any?,
+): ObjectValues<DO, IsObjectDataModel<DO>> {
+    val serializer = dataModel.Serializer as IsObjectDataModelSerializer<DO, IsObjectDataModel<DO>, CXI, CX>
+    val innerContext = serializer.transformContext(context)
+    val earlier = serializer.continuationValues(dataModel, earlierValue as DO?, innerContext)
+    return serializer.readProtoBufWithEarlier(
+        length, reader, innerContext, earlier,
+    )
 }

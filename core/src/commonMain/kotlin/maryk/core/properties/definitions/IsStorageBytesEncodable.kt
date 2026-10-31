@@ -11,10 +11,14 @@ interface IsStorageBytesEncodable<T : Any> {
     /** Write a [value] to bytes with [writer] */
     fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
-    /** Read storage [bytes] from [offset] until [length] */
-    fun fromStorageBytes(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size): T {
+    /** Read [length] storage bytes from [offset], defaulting to the remaining array tail. */
+    fun fromStorageBytes(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset): T {
+        require(offset >= 0 && length >= 0 && offset <= bytes.size - length) {
+            "Storage byte slice is outside the array"
+        }
         var index = offset
         return this.readStorageBytes(length) {
+            require(index - offset < length) { "Storage value exceeds its byte slice" }
             bytes[index++]
         }
     }

@@ -22,6 +22,10 @@ For Kotlin request/response objects, use `writeObjectAsJson`,
 models needed to resolve request and response types. See the format guides below
 for concrete examples.
 
+For scalar storage slices, `fromStorageBytes(bytes, offset)` reads the remaining
+array tail. Pass `length` explicitly when the array also contains a suffix. Invalid
+slice bounds are rejected before decoding, and readers cannot consume adjacent bytes.
+
 ## Choosing a Format
 
 - Internal hot paths or store transport: ProtoBuf.

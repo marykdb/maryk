@@ -33,6 +33,7 @@ import kotlin.math.floor
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 /** Boundary values and a fixed bit grammar make storage normalization and transport agree. */
 class ScalarStorageIntegrityGrammarTest {
@@ -146,6 +147,23 @@ class ScalarStorageIntegrityGrammarTest {
         }
     }
 
+    @Test
+    fun storageSlicesRejectInvalidBoundsAndCannotReadTheirNeighbors() {
+        val string = StringDefinition()
+        val bytes = byteArrayOf(1, 2, 3, 4)
+        for ((offset, length) in listOf(-1 to 1, 0 to -1, 5 to 0, 3 to 2, Int.MAX_VALUE to 1, 1 to Int.MAX_VALUE)) {
+            assertFailsWith<IllegalArgumentException> { string.fromStorageBytes(bytes, offset, length) }
+        }
+        assertEquals("", string.fromStorageBytes(bytes, offset = bytes.size))
+        assertFailsWith<IllegalArgumentException> { string.fromStorageBytes(bytes, offset = -1) }
+        val greedy = object : IsStorageBytesEncodable<Byte> {
+            override fun readStorageBytes(length: Int, reader: () -> Byte): Byte { reader(); return reader() }
+            override fun calculateStorageByteLength(value: Byte) = 1
+            override fun writeStorageBytes(value: Byte, writer: (Byte) -> Unit) = writer(value)
+        }
+        assertFailsWith<IllegalArgumentException> { greedy.fromStorageBytes(bytes, 1, 1) }
+    }
+
     private fun <T : Any> verify(definition: IsSimpleValueDefinition<T, IsPropertyContext>, values: List<T>, expected: (T) -> T = { it }) {
         for (value in values) {
             val message = "${definition.propertyDefinitionTypeName()} $value"
@@ -156,6 +174,9 @@ class ScalarStorageIntegrityGrammarTest {
             assertEquals(storage.size, offset, message)
             assertValueEquals(definition, expected(value), stored, "$message storage value")
             assertContentEquals(storage, definition.toStorageBytes(stored), "$message storage fixed point")
+            val prefixed = byteArrayOf(0, -1, 42) + storage
+            assertValueEquals(definition, expected(value), definition.fromStorageBytes(prefixed, offset = 3), "$message tail slice")
+            assertValueEquals(definition, expected(value), definition.fromStorageBytes(prefixed + byteArrayOf(99), 3, storage.size), "$message bounded slice")
 
             val cache = WriteCache()
             val transport = ByteArray(definition.calculateTransportByteLength(value, cache))

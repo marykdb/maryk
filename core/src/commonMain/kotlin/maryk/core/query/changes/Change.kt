@@ -4,13 +4,17 @@ import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.ReferenceValuePairsDataModel
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.graph.projectSelectionValue
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.pairs.IsReferenceValueOrNullPair
+import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.values.ObjectValues
 
@@ -24,8 +28,15 @@ data class Change internal constructor(
     constructor(vararg referenceValuePair: IsReferenceValueOrNullPair<*>?) : this(referenceValuePair.filterNotNull() as List<ReferenceNullPair<Any>>)
 
     override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): Change? {
-        val filtered = referenceValuePairs.filter {
-            select.contains(it.reference)
+        val filtered = referenceValuePairs.mapNotNull { pair ->
+            val value = pair.value
+            if (!select.contains(pair.reference)) null
+            else if (value == null) pair
+            else {
+                @Suppress("UNCHECKED_CAST")
+                val reference = pair.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                ReferenceValuePair(reference, projectSelectionValue(value, reference, select))
+            }
         }
         return if (filtered.isEmpty()) null else Change(filtered)
     }

@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.graph.projectSelectionValue
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -28,8 +29,22 @@ data class IncMapAddition(
     constructor(vararg valueChanges: IncMapKeyAdditions<*, out Any>) : this(valueChanges.toList() as List<IncMapKeyAdditions<out Comparable<Any>, out Any>>)
 
     override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): IncMapAddition? {
-        val filtered = additions.filter {
-            select.contains(it.reference)
+        val filtered = additions.mapNotNull { untyped ->
+            @Suppress("UNCHECKED_CAST")
+            val addition = untyped as IncMapKeyAdditions<Comparable<Any>, Any>
+            if (!select.contains(addition.reference)) return@mapNotNull null
+            val keys = addition.addedKeys ?: return@mapNotNull addition
+            val definition = addition.reference.propertyDefinition
+            val selected = keys.indices.filter { select.contains(definition.valueRef(keys[it], addition.reference)) }
+            if (selected.isEmpty()) return@mapNotNull null
+            addition.copy(
+                addedKeys = selected.map(keys::get),
+                addedValues = addition.addedValues?.let { values ->
+                    selected.map { index ->
+                        projectSelectionValue(values[index], definition.valueRef(keys[index], addition.reference), select)
+                    }
+                },
+            )
         }
         return if (filtered.isEmpty()) null else IncMapAddition(filtered)
     }

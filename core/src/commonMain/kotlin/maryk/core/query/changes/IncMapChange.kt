@@ -32,7 +32,9 @@ data class IncMapChange internal constructor(
 
     override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): IncMapChange? {
         val filtered = valueChanges.filter {
-            select.contains(it.reference)
+            // A partial map cannot safely allocate keys from its projected contents.
+            // Committed updates also carry IncMapAddition with the actual source keys.
+            select.contains(it.reference.propertyDefinition.anyValueRef(it.reference))
         }
         return if (filtered.isEmpty()) null else IncMapChange(filtered)
     }

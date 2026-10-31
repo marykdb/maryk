@@ -5,7 +5,8 @@ import maryk.core.models.IsDataModel
 import maryk.core.models.IsTypedDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.graph.IsPropRefGraph
-import maryk.core.properties.graph.PropRefGraph
+import maryk.core.properties.graph.selectionReference
+import maryk.core.properties.graph.projectSelectionValue
 import maryk.core.properties.types.MutableTypedValue
 import maryk.core.properties.types.TypedValue
 import kotlin.jvm.JvmInline
@@ -37,15 +38,8 @@ interface IsValueItemsImpl : IsValueItems {
 
     override fun copySelecting(select: IsPropRefGraph<*>) = MutableValueItems(
         list.mapNotNullTo(ArrayList()) { valueItem ->
-            when {
-                !select.contains(valueItem.index) -> null
-                valueItem.value is Values<*> -> {
-                    (select.selectNodeOrNull(valueItem.index) as? PropRefGraph<*, *>)?.let { subSelect ->
-                        ValueItem(valueItem.index, valueItem.value.filterWithSelect(subSelect))
-                    } ?: valueItem
-                }
-                else -> valueItem
-            }
+            val nodes = select.properties.filter { it.index == valueItem.index }
+            if (nodes.isEmpty()) null else ValueItem(valueItem.index, projectSelectionValue(valueItem.value, nodes.first().selectionReference(), select))
         }
     )
 

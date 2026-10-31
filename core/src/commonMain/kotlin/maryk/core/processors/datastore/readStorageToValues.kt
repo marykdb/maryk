@@ -429,6 +429,10 @@ private fun readQualifierOfType(
                 }
 
                 val valueReference = mapDefinition.valueRef(key, mapReference)
+                if (select?.contains(valueReference) == false) {
+                    addToCache(offset - 1) { _, _ -> }
+                    return null
+                }
 
                 // Begin to read map value
                 if (qualifierLength <= offset) {

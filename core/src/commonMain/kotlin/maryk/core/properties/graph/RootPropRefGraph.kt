@@ -4,6 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.serializers.requireJsonToken
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
@@ -16,7 +17,6 @@ import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.MapKey
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.graph.PropRefGraphType.TypeGraph
-import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
@@ -70,7 +70,7 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
             },
             fromSerializable = { value: TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode> ->
                 when (value.type) {
-                    PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
+                    PropRef -> graphPropertyDefinition(value.value)
                     Graph -> value.value as IsPropRefGraphNode<*>
                     MapKey -> value.value as IsPropRefGraphNode<*>
                     TypeGraph -> value.value as TypePropRefGraph<*, *, *>
@@ -81,7 +81,7 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
         override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Companion>): RootPropRefGraph<*> =
             RootPropRefGraph<IsRootDataModel>(
                 // Protobuf omits an empty repeated field; an empty selection is meaningful.
-                properties = values<List<IsPropRefGraphNode<IsRootDataModel>>?>(1u).orEmpty()
+                properties = values<List<IsPropRefGraphNode<IsRootDataModel>>?>(1u).orEmpty().sortedBy { it.index }
             )
 
         override val Serializer = object: ObjectDataModelSerializer<RootPropRefGraph<*>, Companion, ContainsDataModelContext<*>, GraphContext>(this) {
@@ -150,6 +150,7 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
                     currentToken = reader.nextToken()
                 }
 
+                reader.requireJsonToken(JsonToken.EndArray)
                 return create {
                     this@Companion.properties -= propertiesList
                 }

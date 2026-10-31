@@ -3,6 +3,7 @@ package maryk.core.properties.graph
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.serializers.requireJsonToken
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -20,7 +21,6 @@ import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.query.RequestContext
@@ -28,6 +28,7 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken.EndObject
 import maryk.json.JsonToken.EndArray
 import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.StartArray
@@ -73,6 +74,7 @@ data class TypePropRefGraph<
                 }
             ),
             capturer = { context, value ->
+                requireLocalGraphReference(value)
                 @Suppress("UNCHECKED_CAST")
                 context.reference = value as? IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>
             },
@@ -134,7 +136,7 @@ data class TypePropRefGraph<
             },
             fromSerializable = { value: TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode> ->
                 when (value.type) {
-                    PropRefGraphType.PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
+                    PropRefGraphType.PropRef -> graphPropertyDefinition(value.value)
                     PropRefGraphType.Graph -> value.value as IsPropRefGraphNode<*>
                     PropRefGraphType.MapKey -> value.value as GraphMapItem<*, *>
                     PropRefGraphType.TypeGraph -> value.value as TypePropRefGraph<*, *, *>
@@ -146,7 +148,7 @@ data class TypePropRefGraph<
             TypePropRefGraph<IsValuesDataModel, IsValuesDataModel, TypeEnum<Values<IsValuesDataModel>>>(
                 parent = values(1u),
                 type = values(2u) as TypeEnum<Values<IsValuesDataModel>>,
-                properties = values(3u)
+                properties = values<List<IsPropRefGraphNode<IsValuesDataModel>>>(3u).sortedBy { it.index }
             )
 
         override val Serializer = object: ObjectDataModelSerializer<TypePropRefGraph<*, *, *>, Companion, ContainsDataModelContext<*>, GraphContext>(this) {
@@ -243,8 +245,11 @@ data class TypePropRefGraph<
                     currentToken = reader.nextToken()
                 }
 
-                reader.nextToken() // end type object
-                reader.nextToken() // end outer object
+                reader.requireJsonToken(EndArray)
+                reader.nextToken()
+                reader.requireJsonToken(EndObject)
+                reader.nextToken()
+                reader.requireJsonToken(EndObject)
 
                 return create {
                     parent -= parentValue

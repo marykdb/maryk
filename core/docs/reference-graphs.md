@@ -27,6 +27,17 @@ val graph = User.graph {
 
 This graph can then be supplied to a request through the `select` parameter.
 
+Multiple branches for the same property are combined. For example, two map-key
+branches select both entries, and separate embedded branches select the union of
+their child fields. Selecting the whole property includes all its children.
+Serialized property names are local to their graph branch. For example,
+`details.first` is represented as `[{"details":["first"]}]`, rather than a flattened
+`["details.first"]` reference. Nonlocal references are rejected so an ancestor
+cannot be dropped and its child index interpreted as a different root property.
+
+Selections apply to current and historical reads, live snapshots, and replacement
+values in live updates.
+
 ## Embedded graphs
 
 For embedded data models, create a sub-graph by calling `graph` on the embedded definition:
@@ -59,6 +70,10 @@ val graph = User.graph {
     )
 }
 ```
+
+Map-key selections use the map's declared key codec in JSON and YAML. Brackets
+inside string keys are preserved, and simple key types such as geographic points
+and value objects use the same textual representation as their definitions.
 
 To retrieve a whole map entry without selecting its fields, reference that entry:
 
@@ -107,3 +122,8 @@ val graph = User.graph {
 ```
 
 This graph combines basic properties, map keys, type-specific selections, and nested embedded graphs.
+
+Incrementing-map updates for selected keys use resolved additions with the
+allocated datastore keys. Allocation commands are excluded from partial-map
+projections because the client does not hold the complete map needed to allocate
+the same next key. Unselected additions are omitted.

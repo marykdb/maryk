@@ -3,6 +3,7 @@ package maryk.core.query.changes
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.ReferenceValuePairsDataModel
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.graph.projectSelectionValue
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.query.pairs.ReferenceValuePair
@@ -18,8 +19,9 @@ data class Check internal constructor(
     constructor(vararg referenceValuePair: ReferenceValuePair<*>) : this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): Check? {
-        val filtered = referenceValuePairs.filter {
-            select.contains(it.reference)
+        val filtered = referenceValuePairs.mapNotNull { pair ->
+            if (!select.contains(pair.reference)) null
+            else pair.copy(value = projectSelectionValue(pair.value, pair.reference, select))
         }
         return if (filtered.isEmpty()) null else Check(filtered)
     }

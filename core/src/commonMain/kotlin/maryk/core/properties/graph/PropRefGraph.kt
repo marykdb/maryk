@@ -4,11 +4,11 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.BaseDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.serializers.requireJsonToken
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
-import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
@@ -21,8 +21,6 @@ import maryk.core.properties.graph.PropRefGraphType.MapKey
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.graph.PropRefGraphType.TypeGraph
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IsMapReference
-import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
@@ -79,6 +77,7 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
                 }
             ),
             capturer = { context, value ->
+                requireLocalGraphReference(value)
                 context.subDataModel =
                     (value.propertyDefinition as EmbeddedValuesDefinitionWrapper<*, *>).dataModel
             },
@@ -126,7 +125,7 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
             },
             fromSerializable = { value: TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode> ->
                 when (value.type) {
-                    PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
+                    PropRef -> graphPropertyDefinition(value.value)
                     Graph -> value.value as IsPropRefGraphNode<*>
                     MapKey -> value.value as GraphMapItem<*, *>
                     TypeGraph -> value.value as TypePropRefGraph<*, *, *>
@@ -137,7 +136,7 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
         override fun invoke(values: ObjectValues<PropRefGraph<*, *>, Companion>): PropRefGraph<*, *> =
             PropRefGraph<IsValuesDataModel, IsValuesDataModel>(
                 parent = values(1u),
-                properties = values(2u)
+                properties = values<List<IsPropRefGraphNode<IsValuesDataModel>>>(2u).sortedBy { it.index }
             )
 
         override val Serializer = object: ObjectDataModelSerializer<PropRefGraph<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(this) {
@@ -211,11 +210,9 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
                             val multiTypeDefinition =
                                 properties.valueDefinition as IsMultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
 
+                            val type = if ((currentToken.value as? String)?.contains('[') == true) MapKey else PropRef
                             propertiesValue.add(
-                                TypedValue(
-                                    PropRef,
-                                    multiTypeDefinition.definition(PropRef)!!.readJson(reader, context)
-                                )
+                                TypedValue(type, multiTypeDefinition.definition(type)!!.readJson(reader, context))
                             )
                         }
                         else -> throw ParseException("JSON value should be a String or an Object")
@@ -224,7 +221,9 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
                     currentToken = reader.nextToken()
                 }
 
+                reader.requireJsonToken(EndArray)
                 reader.nextToken()
+                reader.requireJsonToken(EndObject)
 
                 return create {
                     parent -= parentValue
@@ -281,16 +280,8 @@ internal fun readGraphNodeFromJson(
 
     // Check if this is a map key with sub graph
     if (fieldValue.contains('[')) {
-        val (name, keyAsString) = fieldValue.split("[", "]")
-        val mapReference = context?.dataModel?.getPropertyReferenceByName(name, context) as? IsMapReference<*, *, *, *>
-            ?: throw ParseException("Expected MapReference")
+        val (mapReference, key) = readGraphMapKey(fieldValue, context)
         GraphMapItem.mapReference.capture(context, mapReference)
-        @Suppress("UNCHECKED_CAST")
-        val key = when (val mapDef = mapReference.comparablePropertyDefinition) {
-            is IsMapDefinition<*, *, *> -> mapDef.keyDefinition.fromString(keyAsString) as Comparable<Any>
-            else -> throw ParseException("Unknown MapReference type")
-        }
-        GraphMapItem.key.capture(context, key)
 
         if (reader.nextToken() !is StartArray) {
             throw ParseException("JSON value should be an Array")
@@ -303,7 +294,7 @@ internal fun readGraphNodeFromJson(
         while (currentToken != EndArray && currentToken !is Stopped) {
             when (currentToken) {
                 is StartObject -> {
-                    val newContext = GraphContext(context.subDataModel ?: context.dataModel)
+                    val newContext = GraphContext(context?.subDataModel ?: context?.dataModel)
                     propertiesValue.add(readGraphNodeFromJson(reader, newContext))
                 }
                 is Value<*> -> {
@@ -324,15 +315,12 @@ internal fun readGraphNodeFromJson(
             currentToken = reader.nextToken()
         }
 
+        reader.requireJsonToken(EndArray)
         if (reader.nextToken() !is EndObject) {
             throw ParseException("JSON value should end with an Object")
         }
 
-        val values = GraphMapItem.create {
-            this.mapReference -= mapReference
-            this.key -= key
-            this.properties -= propertiesValue
-        }
+        val values = graphMapValues(mapReference, key, propertiesValue, context)
 
         return TypedValue(MapKey, GraphMapItem.invoke(values))
     }
@@ -371,7 +359,9 @@ internal fun readGraphNodeFromJson(
                 currentToken = reader.nextToken()
             }
 
-            reader.nextToken() // consume EndObject
+            reader.requireJsonToken(EndArray)
+            reader.nextToken()
+            reader.requireJsonToken(EndObject)
 
             val values = PropRefGraph.create {
                 parent -= parentValue
@@ -422,6 +412,7 @@ internal fun readGraphNodeFromJson(
                 currentToken = reader.nextToken()
             }
 
+            reader.requireJsonToken(EndArray)
             if (reader.nextToken() !is EndObject) {
                 throw ParseException("JSON value should end with an Object")
             }

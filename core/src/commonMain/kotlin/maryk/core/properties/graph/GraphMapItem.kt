@@ -18,7 +18,6 @@ import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.references.IsMapReference
-import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
@@ -90,6 +89,7 @@ data class GraphMapItem<K : Any, DM : IsDataModel> internal constructor(
                 }
             ),
             capturer = { context, value ->
+                requireLocalGraphReference(value)
                 @Suppress("UNCHECKED_CAST")
                 val mapRef = value as IsMapReference<Comparable<Any>, Any, IsPropertyContext, IsMapDefinitionWrapper<Comparable<Any>, Any, Any, IsPropertyContext, Any>>
                 context.reference = mapRef
@@ -143,7 +143,7 @@ data class GraphMapItem<K : Any, DM : IsDataModel> internal constructor(
             },
             fromSerializable = { value: TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode> ->
                 when (value.type) {
-                    PropRefGraphType.PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
+                    PropRefGraphType.PropRef -> graphPropertyDefinition(value.value)
                     PropRefGraphType.Graph -> value.value as IsPropRefGraphNode<*>
                     PropRefGraphType.MapKey -> value.value as GraphMapItem<*, *>
                     PropRefGraphType.TypeGraph -> value.value as TypePropRefGraph<*, *, *>
@@ -154,7 +154,7 @@ data class GraphMapItem<K : Any, DM : IsDataModel> internal constructor(
         override fun invoke(values: ObjectValues<GraphMapItem<*, *>, Companion>): GraphMapItem<*, *> = GraphMapItem<Any, IsDataModel>(
             mapReference = values(1u),
             key = values(2u),
-            properties = values<List<IsPropRefGraphNode<IsDataModel>>>(3u)
+            properties = values<List<IsPropRefGraphNode<IsDataModel>>>(3u).sortedBy { it.index }
         )
 
         override val Serializer = object : ObjectDataModelSerializer<GraphMapItem<*, *>, Companion, ContainsDataModelContext<*>, GraphContext>(this) {
@@ -165,10 +165,10 @@ data class GraphMapItem<K : Any, DM : IsDataModel> internal constructor(
                 skip: List<IsDefinitionWrapper<*, *, *, GraphMapItem<*, *>>>?
             ) {
                 if (obj.properties.isEmpty()) {
-                    writer.writeString("${obj.mapReference.name}[${obj.key}]")
+                    writer.writeString(obj.jsonMapKeyName(context))
                 } else {
                     writer.writeStartObject()
-                    writer.writeFieldName("${obj.mapReference.name}[${obj.key}]")
+                    writer.writeFieldName(obj.jsonMapKeyName(context))
                     writePropertiesToJson(obj.properties, writer, context)
                     writer.writeEndObject()
                 }
@@ -178,25 +178,17 @@ data class GraphMapItem<K : Any, DM : IsDataModel> internal constructor(
                 reader: IsJsonLikeReader,
                 context: GraphContext?
             ): ObjectValues<GraphMapItem<*, *>, Companion> {
-                val tokenToParse: JsonToken.Value<*> = reader.currentToken as? JsonToken.Value<*>
-                    ?: throw ParseException("Expected value token")
-
-                val (name, keyAsString) = tokenToParse.value.toString().split("[", "]")
-
-                val mapReference = context?.dataModel?.getPropertyReferenceByName(name, context) as? IsMapReference<*, *, *, *>
-                    ?: throw ParseException("Expected MapReference")
-
-                @Suppress("UNCHECKED_CAST")
-                val key = when (val mapDef = mapReference.comparablePropertyDefinition) {
-                    is IsMapDefinition<*, *, *> -> mapDef.keyDefinition.fromString(keyAsString) as Comparable<Any>
-                    else -> throw ParseException("Unknown MapReference type")
+                if (reader.currentToken == JsonToken.StartDocument) reader.nextToken()
+                if (reader.currentToken is JsonToken.StartObject) {
+                    val node = readGraphNodeFromJson(reader, context)
+                    val graph = node.value as? GraphMapItem<*, *> ?: throw ParseException("Expected map selection")
+                    return graphMapValues(graph.mapReference, graph.key,
+                        requireNotNull(properties.toSerializable).invoke(graph.properties, context)!!, context)
                 }
-
-                return create {
-                    this.mapReference -= mapReference
-                    this.key -= key
-                    this.properties -= emptyList()
-                }
+                val name = (reader.currentToken as? JsonToken.Value<*>)?.value as? String
+                    ?: throw ParseException("Expected map selection string or object")
+                val key = readGraphMapKey(name, context)
+                return graphMapValues(key.reference, key.key, emptyList(), context)
             }
         }
     }

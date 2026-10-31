@@ -7,7 +7,6 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.MAP
-import maryk.core.protobuf.ProtoBuf
 import maryk.core.values.AbstractValues
 import maryk.lib.exceptions.ParseException
 
@@ -24,98 +23,13 @@ open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> i
     CanContainMapItemReference<Map<K, V>, IncMapDefinitionWrapper<K, V, Any, CX, *>, AbstractValues<*, *>>,
     HasEmbeddedPropertyReference<Map<K, V>>,
     IsMapReference<K, V, CX, IncMapDefinitionWrapper<K, V, Any, CX, *>> {
-    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference {
-        if (name.isEmpty()) throw ParseException("Incrementing map reference name cannot be empty")
-
-        return when (name[0]) {
-            '@' -> {
-                if (name.length == 1) {
-                    throw ParseException("Incrementing map value reference requires a key")
-                }
-                MapValueReference(
-                    propertyDefinition.keyDefinition.fromString(
-                        name.substring(1)
-                    ),
-                    propertyDefinition.definition,
-                    this
-                )
-            }
-            '#' -> {
-                if (name.length == 1) {
-                    throw ParseException("Incrementing map key reference requires a key")
-                }
-                MapKeyReference(
-                    propertyDefinition.keyDefinition.fromString(
-                        name.substring(1)
-                    ),
-                    propertyDefinition.definition,
-                    this
-                )
-            }
-            '*' -> {
-                if (name.length != 1) {
-                    throw ParseException("Wildcard incrementing map value reference cannot contain extra characters: $name")
-                }
-                MapAnyValueReference(
-                    propertyDefinition.definition,
-                    this
-                )
-            }
-            '~' -> {
-                if (name.length != 1) {
-                    throw ParseException("Wildcard incrementing map key reference cannot contain extra characters: $name")
-                }
-                MapAnyKeyReference(
-                    propertyDefinition.definition,
-                    this
-                )
-            }
-            else -> throw ParseException("Unknown Incrementing map type ${name[0]}")
-        }
-    }
+    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference =
+        super<IsMapReference>.getEmbedded(name, context)
 
     override fun getEmbeddedRef(
         reader: () -> Byte,
         context: IsPropertyContext?
-    ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
-        val protoKey = ProtoBuf.readReferenceKey(reader)
-        val index = protoKey.tag
-        return when (index) {
-            0u -> {
-                MapValueReference(
-                    this.propertyDefinition.keyDefinition.readTransportBytes(
-                        ProtoBuf.getLength(protoKey.wireType, reader),
-                        reader
-                    ),
-                    this.propertyDefinition.definition,
-                    this
-                )
-            }
-            1u -> {
-                MapKeyReference(
-                    this.propertyDefinition.keyDefinition.readTransportBytes(
-                        ProtoBuf.getLength(protoKey.wireType, reader),
-                        reader
-                    ),
-                    this.propertyDefinition.definition,
-                    this
-                )
-            }
-            2u -> {
-                MapAnyValueReference(
-                    this.propertyDefinition.definition,
-                    this
-                )
-            }
-            4u -> {
-                MapAnyKeyReference(
-                    this.propertyDefinition.definition,
-                    this
-                )
-            }
-            else -> throw ParseException("Unknown Key reference type ${protoKey.tag}")
-        }
-    }
+    ): IsPropertyReference<*, IsPropertyDefinition<*>, *> = super<IsMapReference>.getEmbeddedRef(reader, context)
 
     override fun getEmbeddedStorageRef(
         reader: () -> Byte,

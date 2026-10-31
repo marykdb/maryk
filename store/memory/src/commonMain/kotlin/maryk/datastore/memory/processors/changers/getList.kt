@@ -1,7 +1,6 @@
 package maryk.datastore.memory.processors.changers
 
 import maryk.core.processors.datastore.readStorageToList
-import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.lib.extensions.compare.compareTo
@@ -18,7 +17,7 @@ internal fun <T : Any> getList(
     var valueIndex = index
     @Suppress("UNCHECKED_CAST")
     return readStorageToList(
-        reference as ListReference<T, *>,
+        reference,
         getQualifier = { handler ->
             val qualifier = values.getOrNull(index)?.reference
             if (qualifier != null && qualifier.matchesRangePart(0, prefix)) {

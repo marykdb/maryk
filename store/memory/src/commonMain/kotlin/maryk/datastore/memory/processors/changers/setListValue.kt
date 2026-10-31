@@ -4,7 +4,6 @@ import maryk.core.clock.HLC
 import maryk.core.processors.datastore.ValueWriter
 import maryk.core.processors.datastore.writeListToStorage
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Bytes
 import maryk.datastore.memory.records.DataRecordNode
@@ -20,13 +19,11 @@ internal fun <T : Any> setListValue(
     version: HLC,
     keepAllVersions: Boolean
 ): Boolean {
-    @Suppress("UNCHECKED_CAST")
-    val listReference = reference as ListReference<T, *>
     val prefix = reference.toStorageByteArray()
     val expected = mutableListOf<Pair<ByteArray, Any>>()
     val writer: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, value -> expected += qualifier to value }
     writeListToStorage(prefix.size, reference::writeStorageBytes, writer,
-        listReference.propertyDefinition.definition, newList)
+        reference.comparablePropertyDefinition, newList)
     val expectedReferences = expected.mapTo(hashSetOf()) { Bytes(it.first) }
 
     var changed = originalCount != newList.size

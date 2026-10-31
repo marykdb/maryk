@@ -10,7 +10,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.readStorageToList
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.shared.hasStoredValuePayload
@@ -23,7 +23,7 @@ import maryk.foundationdb.Transaction
 internal fun <T : Any> Transaction.getList(
     tableDirs: IsTableDirectories,
     key: Key<*>,
-    reference: ListReference<T, *>,
+    reference: TypedPropertyReference<out List<T>>,
     decryptValue: DecryptValue? = null,
 ): MutableList<T> {
     val prefix = packKey(tableDirs.tablePrefix, key.bytes, reference.toStorageByteArray())

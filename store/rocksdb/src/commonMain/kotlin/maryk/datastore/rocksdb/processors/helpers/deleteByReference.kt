@@ -4,10 +4,7 @@ import maryk.core.exceptions.StorageException
 import maryk.core.models.emptyValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.definitions.EmbeddedValuesDefinition
-import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
-import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
@@ -44,11 +41,12 @@ internal fun <T : Any> deleteByReference(
     reference: TypedPropertyReference<T>,
     referenceAsBytes: ByteArray,
     version: ByteArray,
+    isReplacement: Boolean = false,
     handlePreviousValue: ((ByteArray, T?) -> Unit)?
 ): Boolean {
-    if (reference is ListItemReference<*, *>) {
+    if (!isReplacement && reference is ListItemReference<*, *>) {
         @Suppress("UNCHECKED_CAST")
-        val listReference = reference.parentReference as ListReference<Any, *>
+        val listReference = reference.parentReference as TypedPropertyReference<List<Any>>
         val original = getList(transaction, columnFamilies, readOptions, key, listReference)
         if (reference.index >= original.size.toUInt()) return false
         val updated = original.toMutableList().apply { removeAt(reference.index.toInt()) }
@@ -57,7 +55,7 @@ internal fun <T : Any> deleteByReference(
     }
     val referenceToCompareTo = key.bytes + referenceAsBytes
 
-    var shouldHandlePrevValue = true
+    var shouldHandlePrevValue = !isReplacement
 
     // Value to delete
     @Suppress("UNCHECKED_CAST")
@@ -68,13 +66,13 @@ internal fun <T : Any> deleteByReference(
         } else {
             // With delete the prev value for complex types needs to be set to check final and required states
             // Only current values are checked on content
-            when (reference) {
+            if (isReplacement) Unit as T else when (reference) {
                 is IsMapReference<*, *, *, *> -> mapOf<Any, Any>() as T
                 is ListReference<*, *> -> listOf<Any>() as T
                 is SetReference<*, *> -> setOf<Any>() as T
                 is EmbeddedValuesPropertyRef<*, *> -> reference.propertyDefinition.definition.dataModel.emptyValues() as T
                 is MapValueReference<*, *, *> -> {
-                    val mapReference = reference.parentReference as IsMapReference<Any, Any, IsPropertyContext, IsMapDefinitionWrapper<Any, Any, Any, IsPropertyContext, *>>
+                    val mapReference = reference.parentReference as TypedPropertyReference<Map<Any, Any>>
                     createCountUpdater(
                         transaction,
                         columnFamilies,
@@ -84,33 +82,16 @@ internal fun <T : Any> deleteByReference(
                         version,
                         -1
                     ) { newCount ->
-                        mapReference.propertyDefinition.definition.validateSize(newCount) { mapReference }
+                        (reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>).validateSize(newCount) { mapReference }
                     }
                     // Map values can be set to null to be deleted.
                     shouldHandlePrevValue = false
 
-                    when (val valueDefinition = mapReference.propertyDefinition.definition.valueDefinition) {
-                        is IsStorageBytesEncodable<*> ->
-                            valueDefinition.fromStorageBytes(b, o + 1, l - 1) as T
-                        is EmbeddedValuesDefinition<*> ->
-                            valueDefinition.dataModel.emptyValues() as T
-                        is IsMapDefinition<*, *, *> -> mapOf<Any, Any>() as T
-                        is IsListDefinition<*, *> -> listOf<Any>() as T
-                        is IsSetDefinition<*, *> -> setOf<Any>() as T
-                        is IsMultiTypeDefinition<*, *, *> -> {
-                            var readIndex = o
-                            val reader = {
-                                b[readIndex++]
-                            }
-                            readValue(valueDefinition, reader) {
-                                l - readIndex
-                            } as T
-                        }
-                        else -> throw StorageException("Unknown map type")
-                    }
+                    // Entry deletion has no value validation callback, so do not decode an unused payload.
+                    Unit as T
                 }
                 is SetItemReference<*, *> -> {
-                    val setReference = reference.parentReference as SetReference<Any, IsPropertyContext>
+                    val setReference = reference.parentReference as TypedPropertyReference<Set<Any>>
                     createCountUpdater(
                         transaction,
                         columnFamilies,
@@ -120,7 +101,7 @@ internal fun <T : Any> deleteByReference(
                         version,
                         -1
                     ) { newCount ->
-                        setReference.propertyDefinition.definition.validateSize(newCount) { setReference }
+                        (setReference.comparablePropertyDefinition as IsSetDefinition<Any, IsPropertyContext>).validateSize(newCount) { setReference }
                     }
                     // Map values can be set to null to be deleted.
                     shouldHandlePrevValue = false

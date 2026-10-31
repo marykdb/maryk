@@ -34,6 +34,7 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
         is MutableList<*> -> when (reference) {
             is ListItemReference<*, *> -> {
                 val listIndex = reference.index.toListIndex()
+                if (listIndex !in newValue.indices) throw SubObjectChangeException
                 @Suppress("UNCHECKED_CAST")
                 val changedValue = valueChanger(
                     (originalValue as? List<Any>)?.getOrNull(listIndex),

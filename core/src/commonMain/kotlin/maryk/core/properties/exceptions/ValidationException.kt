@@ -18,7 +18,10 @@ import maryk.core.properties.exceptions.ValidationExceptionType.TOO_MANY_ITEMS
 import maryk.core.properties.exceptions.ValidationExceptionType.UMBRELLA
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceWithParent
+import maryk.core.protobuf.WriteCache
 import maryk.core.query.RequestContext
+import maryk.lib.bytes.calculateUTF8ByteLength
 
 /** Validation Exception with newMessage for properties */
 abstract class ValidationException internal constructor(
@@ -41,7 +44,7 @@ internal fun <DO : ValidationException> IsObjectDataModel<DO>.addReference(
 ) =
     this.contextual(
         index = 1u,
-        getter = getter,
+        getter = { value -> serializableValidationReference(getter(value)) },
         definition = ContextualPropertyReferenceDefinition<RequestContext>(
             required = false,
             contextualResolver = {
@@ -54,6 +57,21 @@ internal fun <DO : ValidationException> IsObjectDataModel<DO>.addReference(
             context.reference = value as IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>
         }
     )
+
+/** Invalid key/member text cannot itself be encoded in a validation response. */
+internal fun serializableValidationReference(reference: AnyPropertyReference?): AnyPropertyReference? {
+    var candidate = reference
+    while (candidate != null) {
+        try {
+            candidate.completeName.calculateUTF8ByteLength()
+            candidate.calculateTransportByteLength(WriteCache())
+            return candidate
+        } catch (_: IllegalArgumentException) {
+            candidate = (candidate as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
+        }
+    }
+    return null
+}
 
 internal val mapOfValidationExceptionDefinitions = mapOf(
     ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = { AlreadyExistsException }),

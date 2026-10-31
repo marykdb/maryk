@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors.helpers
 
 import maryk.core.processors.datastore.writeListToStorage
-import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
@@ -12,7 +12,7 @@ internal fun <T : Any> FoundationDBDataStore.setListValue(
     tr: Transaction,
     tableDirs: IsTableDirectories,
     key: Key<*>,
-    reference: ListReference<T, *>,
+    reference: TypedPropertyReference<out List<T>>,
     newList: List<T>,
     originalCount: Int,
     versionBytes: ByteArray

@@ -138,6 +138,11 @@ String notation:
 - `map.~` = any map key
 - `map.*` = any map value
 
+Validation errors for proposed incrementing-map additions use `map.^0` for the
+first item in the request's addition list. Nested errors retain child segments,
+such as `map.^0.@1` for an item in an added list. These references identify request
+inputs; persisted entries use `map.@key` with the allocated key instead.
+
 ## Referring to specific values in sets
 
 Items in sets can be selected by value

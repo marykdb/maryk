@@ -101,5 +101,5 @@ data class IndexableScanRanges internal constructor(
             range.start.isNotEmpty() && range.startInclusive && range.endInclusive &&
             range.end?.contentEquals(range.start) == true &&
             (hasExactPrefixExpansion(range.start) || hasAnchoredExactPrefix(range.start))
-        ) range.start.size else valueSize
+        ) minOf(range.start.size, valueSize) else valueSize
 }

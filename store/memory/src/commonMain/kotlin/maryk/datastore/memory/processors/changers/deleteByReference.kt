@@ -5,6 +5,8 @@ import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.emptyValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
 import maryk.core.properties.enum.MultiTypeEnum
@@ -35,15 +37,16 @@ internal fun <T : Any> deleteByReference(
     reference: TypedPropertyReference<out T>,
     version: HLC,
     keepAllVersions: Boolean,
+    isReplacement: Boolean = false,
     handlePreviousValue: ((ByteArray, T?) -> Unit)? = null
 ): Boolean {
-    if (reference is TypedValueReference<*, *, *>) {
+    if (!isReplacement && reference is TypedValueReference<*, *, *>) {
         throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
     }
 
-    if (reference is ListItemReference<*, *>) {
+    if (!isReplacement && reference is ListItemReference<*, *>) {
         @Suppress("UNCHECKED_CAST")
-        val listReference = reference.parentReference as ListReference<Any, IsPropertyContext>
+        val listReference = reference.parentReference as TypedPropertyReference<List<Any>>
         val original = getList(values, listReference) ?: return false
         if (reference.index >= original.size.toUInt()) return false
 
@@ -57,7 +60,7 @@ internal fun <T : Any> deleteByReference(
         it.reference compareTo referenceToCompareTo
     }
 
-    var shouldHandlePrevValue = true
+    var shouldHandlePrevValue = !isReplacement
 
     // Get previous value and convert if of complex type
     @Suppress("UNCHECKED_CAST")
@@ -69,13 +72,13 @@ internal fun <T : Any> deleteByReference(
         } else {
             // With delete the prev value for complex types needs to be set to check final and required states
             // Only current values are checked on content
-            when (reference) {
+            if (isReplacement) Unit as T else when (reference) {
                 is IsMapReference<*, *, *, *> -> mapOf<Any, Any>() as T
                 is ListReference<*, *> -> listOf<Any>() as T
                 is SetReference<*, *> -> setOf<Any>() as T
                 is EmbeddedValuesPropertyRef<*, *> -> reference.propertyDefinition.definition.dataModel.emptyValues() as T
                 is MapValueReference<*, *, *> -> {
-                    val mapReference = reference.parentReference as IsMapReference<Any, Any, IsPropertyContext, IsMapDefinitionWrapper<Any, Any, Any, IsPropertyContext, *>>
+                    val mapReference = reference.parentReference as TypedPropertyReference<Map<Any, Any>>
                     createCountUpdater(
                         values,
                         mapReference as IsPropertyReference<Map<*, *>, IsPropertyDefinition<Map<*, *>>, out Any>,
@@ -83,14 +86,14 @@ internal fun <T : Any> deleteByReference(
                         -1,
                         keepAllVersions
                     ) { newCount ->
-                        mapReference.propertyDefinition.definition.validateSize(newCount) { mapReference }
+                        (reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>).validateSize(newCount) { mapReference }
                     }
                     // Map values can be set to null to be deleted.
                     shouldHandlePrevValue = false
                     it
                 }
                 is SetItemReference<*, *> -> {
-                    val setReference = reference.parentReference as SetReference<Any, IsPropertyContext>
+                    val setReference = reference.parentReference as TypedPropertyReference<Set<Any>>
                     createCountUpdater(
                         values,
                         setReference as IsPropertyReference<Set<*>, IsPropertyDefinition<Set<*>>, out Any>,
@@ -98,7 +101,7 @@ internal fun <T : Any> deleteByReference(
                         -1,
                         keepAllVersions
                     ) { newCount ->
-                        setReference.propertyDefinition.definition.validateSize(newCount) { setReference }
+                        (setReference.comparablePropertyDefinition as IsSetDefinition<Any, IsPropertyContext>).validateSize(newCount) { setReference }
                     }
                     // Set values can be set to null to be deleted.
                     shouldHandlePrevValue = false

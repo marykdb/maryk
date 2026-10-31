@@ -46,9 +46,9 @@ internal fun handleMapAdditionCount(
 ) {
     @Suppress("UNCHECKED_CAST")
     val mapDef = reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
-    mapDef.keyDefinition.validateWithRef(reference.key, reference.key) {
+    mapDef.keyDefinition.validateWithRef(null, reference.key) {
         @Suppress("UNCHECKED_CAST")
-        mapDef.keyRef(reference.key, reference.parentReference as MapReference<Any, Any, IsPropertyContext>)
+        mapDef.keyRef(reference.key, reference.parentReference)
     }
 
     @Suppress("UNCHECKED_CAST")

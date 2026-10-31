@@ -32,6 +32,8 @@ import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.ObjectDeleteReference
 import maryk.core.properties.references.ReferenceType
@@ -82,12 +84,24 @@ fun <DM : IsRootDataModel> DM.readStorageToValues(
     return Values(this, mutableValuesItems)
 }
 
-/** Read a complete list subtree, including embedded and typed item descendants. */
+/** Preserve the original root-list overload for existing binary callers. */
 fun <T : Any> readStorageToList(
     reference: ListReference<T, *>,
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     processValue: ValueReader,
 ): MutableList<T>? {
+    val genericReference: TypedPropertyReference<out List<T>> = reference
+    return readStorageToList(genericReference, getQualifier, processValue)
+}
+
+/** Read a complete list subtree through a property, map value or active typed case. */
+fun <T : Any> readStorageToList(
+    reference: TypedPropertyReference<out List<T>>,
+    getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
+    processValue: ValueReader,
+): MutableList<T>? {
+    val definition = reference.propertyDefinition.let { if (it is IsDefinitionWrapper<*, *, *, *>) it.definition else it }
+    if (definition !is IsListDefinition<*, *>) throw TypeException("Expected a list definition for $reference")
     val prefix = reference.toStorageByteArray()
     var list: MutableList<T>? = null
     var count: Int? = null
@@ -102,7 +116,7 @@ fun <T : Any> readStorageToList(
             }
             first = false
         }
-        readQualifierOfType(reader, length, prefix.size, 0, reference.propertyDefinition.definition,
+        readQualifierOfType(reader, length, prefix.size, 0, definition,
             0u, LIST, null, reference, { _, value ->
                 @Suppress("UNCHECKED_CAST")
                 list = value as MutableList<T>

@@ -17,6 +17,9 @@ Property definitions need to be required and values can thus not be null.
 - `minSize` - default unset. Minimum size of list
 - `maxSize` - default unset. Maximum size of list
 
+A final list can be initialized when it is absent. A delta that changes an
+already initialized final list is rejected; a no-op preserves its revision.
+
 ## Other options
 - `default` - the default value to be used if value was not set.
 - `valueDefinition` - definition of values contained

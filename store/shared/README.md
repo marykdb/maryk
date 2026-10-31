@@ -3,6 +3,25 @@
 Common datastore layer used by all store engines.
 Not intended as a standalone store.
 
+Write validation runs inside the backend mutation boundary. Typed replacements
+validate their declared case, and changes retain predecessor-dependent `final`
+and `typeIsFinal` checks. Collection deltas respect the targeted property's
+`final` flag; an initialized final map, collection or embedded value also protects
+its descendants. Duplicate set additions and empty allocation requests are no-ops.
+Supplied values, new map keys and changed collection sizes are validated when
+a record is soft-deleted as well. Output-only change records are rejected as
+ordinary write commands; replication resolves them before applying stored values.
+
+Collection changes work through map values and active typed cases as well as
+model properties. Structural ancestors must exist, and list item references
+must stay within the enclosing list. Replacements preserve enclosing collection
+sizes and sibling positions. A complex map entry replacement can initialize its
+immediate map property; it cannot create missing outer objects or map entries.
+Resolved replication allocations can initialize an absent incrementing map and
+retain its next local allocation key. Scalar typed index references are read-only;
+change the tagged value through its multi type parent. A set item qualifier can
+be deleted or assigned its existing value, but cannot receive a different item.
+
 ## What it contains
 
 - Separate atomic write-set and transaction capabilities, sharing each built-in

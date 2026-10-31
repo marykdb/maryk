@@ -81,34 +81,26 @@ data class ListChange internal constructor(
                     val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
                     return if (currentRef == null) {
-                        when (newValue) {
-                            is MutableList<*> -> {
-                                listValueChanges.deleteValues?.forEach { newValue.remove(it) }
-                                listValueChanges.addValuesAtIndex?.let {
-                                    for ((index, value) in it) {
-                                        @Suppress("UNCHECKED_CAST")
-                                        (newValue as MutableList<Any>).add(index.toListIndex(),
-                                            mutableValueCreator(value, preserveValues = true) ?: value)
-                                    }
-                                }
-                                listValueChanges.addValuesToEnd?.let {
-                                    @Suppress("UNCHECKED_CAST")
-                                    (newValue as MutableList<Any>).addAll(it.map { value ->
-                                        mutableValueCreator(value, preserveValues = true) ?: value
-                                    })
-                                }
-                            }
-                            null -> throw RequestException("Cannot set list changes on non existing value")
+                        @Suppress("UNCHECKED_CAST")
+                        val list = when (newValue) {
+                            is MutableList<*> -> newValue as MutableList<Any>
+                            null -> mutableListOf()
                             else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
                         }
-                        null
+                        listValueChanges.deleteValues?.forEach { list.remove(it) }
+                        listValueChanges.addValuesAtIndex?.forEach { (index, value) ->
+                            list.add(index.toListIndex(), mutableValueCreator(value, preserveValues = true) ?: value)
+                        }
+                        listValueChanges.addValuesToEnd?.forEach { value ->
+                            list.add(mutableValueCreator(value, preserveValues = true) ?: value)
+                        }
+                        if (newValue == null && list.isNotEmpty()) list else null
                     } else {
-                        deepValueChanger(
-                            originalValue,
-                            newValue,
-                            currentRef,
-                            ::valueChanger
-                        )
+                        try {
+                            deepValueChanger(originalValue, newValue, currentRef, ::valueChanger)
+                        } catch (_: SubObjectChangeException) {
+                            throw RequestException("Collection delta requires its parent value to exist")
+                        }
                         null // Deeper change so no overwrite
                     }
                 } finally {

@@ -268,7 +268,12 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                 newValue.value
             ) {
                 @Suppress("UNCHECKED_CAST")
-                refGetter() as IsPropertyReference<T, IsPropertyDefinition<T>, *>?
+                if (definition is IsSimpleValueDefinition<*, *>) {
+                    refGetter() as IsPropertyReference<T, IsPropertyDefinition<T>, *>?
+                } else {
+                    this.typedValueRef(newValue.type, refGetter() as CanHaveComplexChildReference<*, *, *, *>?)
+                        as IsPropertyReference<T, IsPropertyDefinition<T>, *>
+                }
             }
         }
     }

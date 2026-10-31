@@ -1,9 +1,12 @@
 package maryk.core.properties.references
 
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsEmbeddedDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.protobuf.ProtoBuf
@@ -20,12 +23,42 @@ class IncMapAddIndexReference<K : Any, V : Any, CX : IsPropertyContext> internal
         mapDefinition.valueDefinition, parentReference
     ),
     CanContainMapItemReference<V, IsPropertyDefinition<V>, Map<K, V>>,
+    CanContainListItemReference<V, IsPropertyDefinition<V>, Map<K, V>>,
+    CanContainSetItemReference<V, IsPropertyDefinition<V>, Map<K, V>>,
+    HasEmbeddedPropertyReference<V>,
     IsPropertyReferenceWithParent<V, IsPropertyDefinition<V>, CanContainMapItemReference<*, *, *>, Map<K, V>> {
+    init {
+        require(index >= 0) { "Map addition index cannot be negative" }
+    }
+
     override val completeName by lazy {
         this.parentReference?.let {
             "${it.completeName}.^$index"
         } ?: "^$index"
     }
+
+    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference =
+        when (propertyDefinition) {
+            is IsEmbeddedDefinition<*> -> propertyDefinition.resolveReferenceByName(name, this)
+            is IsMultiTypeDefinition<*, *, *> -> propertyDefinition.resolveReferenceByName(name, this)
+            else -> readCollectionReference(name)
+                ?: throw DefNotFoundException("Map addition cannot contain embedded name reference ($name)")
+        }
+
+    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference =
+        when (propertyDefinition) {
+            is IsEmbeddedDefinition<*> -> propertyDefinition.resolveReference(reader, this)
+            is IsMultiTypeDefinition<*, *, *> -> propertyDefinition.resolveReference(reader, this)
+            else -> readCollectionReference(reader, context)
+                ?: throw DefNotFoundException("Map addition cannot contain embedded transport references")
+        }
+
+    override fun getEmbeddedStorageRef(
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        referenceType: ReferenceType,
+        isDoneReading: () -> Boolean,
+    ): AnyPropertyReference = throw RequestException("Map addition references do not have storage references")
 
     override fun resolveFromAny(value: Any): Any {
         throw RequestException("Cannot be resolved on the map itself. Should be on the incrementing map change addition list")

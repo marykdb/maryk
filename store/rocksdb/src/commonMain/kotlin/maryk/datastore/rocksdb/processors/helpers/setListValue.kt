@@ -1,7 +1,7 @@
 package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.processors.datastore.writeListToStorage
-import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
@@ -12,7 +12,7 @@ internal fun <T : Any> setListValue(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     key: Key<*>,
-    reference: ListReference<T, *>,
+    reference: TypedPropertyReference<out List<T>>,
     newList: List<T>,
     originalCount: Int,
     version: ByteArray

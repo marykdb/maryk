@@ -5,6 +5,7 @@ import maryk.core.models.emptyValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
@@ -13,6 +14,7 @@ import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.MultiTypePropertyReference
@@ -89,7 +91,7 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
         }
         is ListItemReference<*, *> -> {
             @Suppress("UNCHECKED_CAST")
-            val listRef = reference.parentReference as ListReference<Any, *>
+            val listRef = reference.parentReference as TypedPropertyReference<List<Any>>
             val original = tr.getList(tableDirs, key, listRef,
                 { modelId, value, offset, length, recordKey, qualifier -> decryptValueIfNeeded(modelId, recordKey, qualifier, value, offset, length) })
             if (reference.index >= original.size.toUInt()) {
@@ -99,23 +101,18 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
             val newList = original.toMutableList().apply { removeAt(reference.index.toListIndex()) }
             // Validate list size/content before writing
             @Suppress("UNCHECKED_CAST")
-            listRef.propertyDefinition.validate(
-                previousValue = original,
-                newValue = newList,
-                parentRefFactory = {
-                    (listRef as IsPropertyReferenceWithParent<Any, *, *, *>).parentReference
-                }
-            )
+            listRef.propertyDefinition.validateWithRef(original, newList) { listRef }
             val changed = setListValue(tr, tableDirs, key, listRef, newList, original.size, versionBytes)
             return changed
         }
         is SetItemReference<*, *> -> {
             @Suppress("UNCHECKED_CAST")
-            val setRef = reference.parentReference as SetReference<Any, IsPropertyContext>
+            val setRef = reference.parentReference as TypedPropertyReference<Set<Any>>
             tr.get(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes)).awaitResult() ?: return false
             // Decrement count
+            @Suppress("UNCHECKED_CAST")
             withCountUpdate(tr, tableDirs, key, setRef, -1, versionBytes) { newCount ->
-                setRef.propertyDefinition.validateSize(newCount) { setRef }
+                (setRef.comparablePropertyDefinition as IsSetDefinition<Any, IsPropertyContext>).validateSize(newCount) { setRef }
             }
 
             // Delete single item

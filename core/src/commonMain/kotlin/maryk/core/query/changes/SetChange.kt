@@ -1,6 +1,9 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.RequestException
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
 import maryk.core.models.serializers.ReferenceMappedDataModelSerializer
@@ -31,10 +34,17 @@ data class SetChange internal constructor(
     }
 
     override fun validate(addException: (e: ValidationException) -> Unit) {
-        val typedSetValueChanges = setValueChanges.filterIsInstance<SetValueChanges<Any>>()
-        typedSetValueChanges.forEach {
-            it.reference.comparablePropertyDefinition.validateWithRef(null, it.addValues) {
-                it.reference
+        for (change in setValueChanges) {
+            @Suppress("UNCHECKED_CAST")
+            val definition = change.reference.comparablePropertyDefinition as IsSetDefinition<Any, IsPropertyContext>
+            for (value in change.addValues.orEmpty()) {
+                try {
+                    definition.valueDefinition.validateWithRef(null, value) {
+                        definition.itemRef(value, change.reference as CanContainSetItemReference<*, *, *>)
+                    }
+                } catch (exception: ValidationException) {
+                    addException(exception)
+                }
             }
         }
     }
@@ -52,24 +62,20 @@ data class SetChange internal constructor(
                     val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
                     return if (currentRef == null) {
-                        when (newValue) {
-                            is MutableSet<*> -> {
-                                setValueChanges.addValues?.let {
-                                    @Suppress("UNCHECKED_CAST")
-                                    (newValue as MutableSet<Any>).addAll(it)
-                                }
-                            }
-                            null -> throw RequestException("Cannot set set changes on non existing value")
+                        @Suppress("UNCHECKED_CAST")
+                        val set = when (newValue) {
+                            is MutableSet<*> -> newValue as MutableSet<Any>
+                            null -> mutableSetOf()
                             else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
                         }
-                        null
+                        setValueChanges.addValues?.let { set.addAll(it) }
+                        if (newValue == null && set.isNotEmpty()) set else null
                     } else {
-                        deepValueChanger(
-                            originalValue,
-                            newValue,
-                            currentRef,
-                            ::valueChanger
-                        )
+                        try {
+                            deepValueChanger(originalValue, newValue, currentRef, ::valueChanger)
+                        } catch (_: SubObjectChangeException) {
+                            throw RequestException("Collection delta requires its parent value to exist")
+                        }
                         null // Deeper change so no overwrite
                     }
                 } finally {

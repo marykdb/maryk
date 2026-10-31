@@ -26,7 +26,7 @@ interface IsListDefinition<T : Any, CX : IsPropertyContext> :
     override fun getItemPropertyRefCreator(index: UInt, item: T) =
         { parentRef: AnyPropertyReference? ->
             @Suppress("UNCHECKED_CAST")
-            this.itemRef(index, parentRef as ListReference<T, CX>?) as IsPropertyReference<Any, *, *>
+            this.itemRef(index, parentRef as CanContainListItemReference<*, *, *>?) as IsPropertyReference<Any, *, *>
         }
 
     override fun validateCollectionForExceptions(
@@ -37,7 +37,7 @@ interface IsListDefinition<T : Any, CX : IsPropertyContext> :
         newValue.forEachIndexed { index, item ->
             validator(item) {
                 @Suppress("UNCHECKED_CAST")
-                this.itemRef(index.toUInt(), refGetter() as ListReference<T, CX>?)
+                this.itemRef(index.toUInt(), refGetter() as CanContainListItemReference<*, *, *>?)
             }
         }
     }

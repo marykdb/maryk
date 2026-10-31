@@ -133,15 +133,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                         }
                     }
                 }
-                val materializedChanges = materializeChanges(objectChange.changes, currentValues, persistedMaxima)
-                val checkExceptions = evaluateChecks(materializedChanges.appliedChanges, currentValues)
+                val materializedChanges = materializeChanges(objectChange.changes, currentValues, persistedMaxima, ignoreIfVersionNotNewer)
+                val checkExceptions = evaluateChecks(materializedChanges.appliedChanges, currentValues, ignoreIfVersionNotNewer)
                 if (checkExceptions.isNotEmpty()) {
                     statuses += ValidationFail(checkExceptions)
                     return@transaction
                 }
 
-                val valuesToChange = seedMissingRootMaps(currentValues, materializedChanges.appliedChanges)
-                val changedValues = valuesToChange.change(materializedChanges.appliedChanges)
+                val changedValues = applyMaterializedChanges(currentValues, materializedChanges.appliedChanges, ignoreIfVersionNotNewer)
                 val softDeleteChange = objectChange.changes
                     .filterIsInstance<ObjectSoftDeleteChange>()
                     .lastOrNull()

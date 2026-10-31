@@ -10,7 +10,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.readStorageToList
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -26,7 +26,7 @@ internal fun <T : Any> getList(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     key: Key<*>,
-    reference: ListReference<T, *>
+    reference: TypedPropertyReference<out List<T>>
 ): MutableList<T> {
     val prefix = reference.toStorageByteArray(key.bytes)
     dbAccessor.getIterator(readOptions, columnFamilies.table).use { iterator ->

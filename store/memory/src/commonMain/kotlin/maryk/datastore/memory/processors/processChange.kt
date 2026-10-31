@@ -28,12 +28,16 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.TypeEnum
+import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IncMapReference
+import maryk.core.properties.references.TypedPropertyReference
+import maryk.core.properties.references.CanContainListItemReference
+import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
@@ -51,6 +55,7 @@ import maryk.core.properties.references.toListIndex
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.IncMapAddition
@@ -85,6 +90,9 @@ import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.DeletedValue
+import maryk.datastore.shared.findStoredFinalParent
+import maryk.datastore.shared.requireWritableValueReference
+import maryk.datastore.shared.requireStoredReferenceParents
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.hasActiveStoredType
 import maryk.datastore.shared.diffIndexValues
@@ -184,8 +192,26 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             }
         }
 
+        fun hasStoredValue(reference: AnyPropertyReference) = getValue<Any>(newValueList, reference.toStorageByteArray()) != null
+
+        fun requireParents(reference: AnyPropertyReference, allowMissingMapParent: Boolean = false) = requireStoredReferenceParents(reference,
+            allowMissingMapParent = allowMissingMapParent,
+            hasValue = ::hasStoredValue,
+            readCount = { parent -> getValue<Int>(newValueList, parent.toStorageByteArray())?.value },
+        )
+
         var isChanged = false
         val setChanged = { didChange: Boolean -> if (didChange) isChanged = true }
+
+        fun trackChange(reference: AnyPropertyReference): (Boolean) -> Unit {
+            val parent = findStoredFinalParent(reference, ::hasStoredValue)
+            return { didChange ->
+                if (didChange) {
+                    if (parent != null) throw AlreadySetException(parent)
+                    isChanged = true
+                }
+            }
+        }
 
         val outChanges = mutableListOf<IsChange>()
 
@@ -235,11 +261,15 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                         for (pair in change.referenceValuePairs) {
                             @Suppress("UNCHECKED_CAST")
                             val reference = pair.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                            val setChanged = trackChange(reference)
                             if (pair.value == null && !hasActiveType(reference)) continue
                             requireActiveType(reference)
-                            if (pair.value != null && reference is TypedValueReference<*, *, *> &&
-                                reference.comparablePropertyDefinition is IsSimpleValueDefinition<*, *>) {
-                                throw RequestException("Simple type values must be changed through the multi type parent.")
+                            requireWritableValueReference(reference, pair.value, ::hasStoredValue)
+                            if (pair.value != null) {
+                                val canInitializeMap = pair.value is Map<*, *> || pair.value is List<*> ||
+                                    pair.value is Set<*> || pair.value is Values<*> || pair.value is TypedValue<*, *> ||
+                                    (advanceVersionOnNoOp && reference is MapValueReference<*, *, *> && reference.parentReference is IncMapReference<*, *, *>)
+                                requireParents(reference, canInitializeMap)
                             }
                             when (val value = pair.value) {
                                 null -> {
@@ -297,10 +327,10 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         continue
                                     }
 
-                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
+                                    if (!hadPrevValue) checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
 
                                     // Delete all existing values in placeholder
-                                    deleteByReference(newValueList, mapReference, version, keepAllVersions)
+                                    deleteByReference(newValueList, mapReference, version, keepAllVersions, isReplacement = true)
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
@@ -343,10 +373,10 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         continue
                                     }
 
-                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
+                                    if (!hadPrevValue) checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
 
                                     // Delete all existing values in placeholder
-                                    deleteByReference(newValueList, reference, version, keepAllVersions)
+                                    deleteByReference(newValueList, reference, version, keepAllVersions, isReplacement = true)
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
@@ -389,10 +419,10 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         continue
                                     }
 
-                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
+                                    if (!hadPrevValue) checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
 
                                     // Delete all existing values in placeholder
-                                    deleteByReference(newValueList, reference, version, keepAllVersions)
+                                    deleteByReference(newValueList, reference, version, keepAllVersions, isReplacement = true)
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
@@ -415,27 +445,23 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeReference = reference as IsPropertyReference<TypedValue<MultiTypeEnum<Any>, Any>, IsPropertyDefinition<TypedValue<MultiTypeEnum<Any>, Any>>, *>
 
-                                    // Previous value to find
-                                    var prevValue: TypedValue<MultiTypeEnum<Any>, *>? = null
-                                    // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference(
-                                        newValueList,
-                                        multiTypeReference,
-                                        version,
-                                        keepAllVersions
-                                    ) { _, prevTypedValue ->
-                                        prevValue = prevTypedValue
+                                    val previous = when (val marker = getValue<Any>(newValueList, reference.toStorageByteArray())?.value) {
+                                        is TypedValue<*, *> -> marker
+                                        is MultiTypeEnum<*> -> marker.invoke(Unit)
+                                        else -> null
                                     }
-
                                     @Suppress("UNCHECKED_CAST")
                                     multiTypeDefinition.validateWithRef(
-                                        if (hadPrevValue) prevValue else null,
+                                        previous as TypedValue<MultiTypeEnum<Any>, Any>?,
                                         value as TypedValue<MultiTypeEnum<Any>, Any>
                                     ) { multiTypeReference }
+                                    val hadPrevValue = deleteByReference(
+                                        newValueList, multiTypeReference, version, keepAllVersions, isReplacement = true,
+                                    )
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
-                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
+                                    if (!hadPrevValue) checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
 
                                     writeTypedValueToStorage(
                                         reference.calculateStorageByteLength(),
@@ -462,7 +488,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         newValueList,
                                         valuesReference,
                                         version,
-                                        keepAllVersions
+                                        keepAllVersions,
+                                        isReplacement = true,
                                     )
 
                                     @Suppress("UNCHECKED_CAST")
@@ -482,7 +509,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         Unit
                                     )
 
-                                    checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
+                                    if (!hadPrevValue) checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
 
                                     value.writeToStorage(
                                         reference.calculateStorageByteLength(),
@@ -497,7 +524,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     ) { _, previousValue ->
                                         if (previousValue == null) {
                                             // Check if parent exists before trying to change
-                                            if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null) {
+                                            if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null &&
+                                                !(advanceVersionOnNoOp && reference is MapValueReference<*, *, *> && reference.parentReference is IncMapReference<*, *, *>)) {
                                                 getValue<Any>(
                                                     newValueList,
                                                     reference.parentReference!!.toStorageByteArray()
@@ -524,7 +552,9 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                     }
                     is ListChange -> {
                         for (listChange in change.listValueChanges) {
+                            val setChanged = trackChange(listChange.reference)
                             requireActiveType(listChange.reference)
+                            requireParents(listChange.reference)
                             val originalList = getList(newValueList, listChange.reference)
                             val list = originalList?.toMutableList() ?: mutableListOf()
                             val originalCount = list.size
@@ -550,13 +580,18 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
 
                             try {
                                 @Suppress("UNCHECKED_CAST")
-                                (listChange.reference as ListReference<Any, *>).propertyDefinition.validate(
-                                    previousValue = originalList,
-                                    newValue = list,
-                                    parentRefFactory = { (listChange.reference as? IsPropertyReferenceWithParent<Any, *, *, *>)?.parentReference }
-                                )
+                                val listDefinition = listChange.reference.comparablePropertyDefinition as IsListDefinition<Any, IsPropertyContext>
+                                @Suppress("UNCHECKED_CAST")
+                                listDefinition.validateWithRef(originalList, list) {
+                                    listChange.reference as TypedPropertyReference<List<Any>>
+                                }
                             } catch (e: ValidationException) {
                                 addValidationFail(e)
+                            }
+                            if (originalList == null && listChange.reference is MapValueReference<*, *, *>) {
+                                @Suppress("UNCHECKED_CAST")
+                                checkParentReference(listChange.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>,
+                                    newValueList, version, keepAllVersions, ::addValidationFail)
                             }
                             setListValue(
                                 newValueList,
@@ -571,14 +606,18 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                     is SetChange -> {
                         @Suppress("UNCHECKED_CAST")
                         for (setChange in change.setValueChanges) {
+                            val setChanged = trackChange(setChange.reference)
                             requireActiveType(setChange.reference)
-                            val setReference = setChange.reference as SetReference<Any, IsPropertyContext>
-                            val setDefinition = setReference.propertyDefinition
+                            requireParents(setChange.reference)
+                            val setReference = setChange.reference as TypedPropertyReference<Set<Any>>
+                            val setDefinition = setReference.comparablePropertyDefinition as IsSetDefinition<Any, IsPropertyContext>
+                            val hadSet = getValue<Any>(newValueList, setReference.toStorageByteArray()) != null
+                            val finalSetPresent = setDefinition.final && hadSet
                             var countChange = 0
                             setChange.addValues?.let {
                                 createValidationUmbrellaException({ setReference }) { addException ->
                                     for (value in it) {
-                                        val setItemRef = setDefinition.itemRef(value, setReference)
+                                        val setItemRef = setDefinition.itemRef(value, setReference as CanContainSetItemReference<*, *, *>)
                                         try {
                                             setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef }
                                             setValue(
@@ -587,7 +626,10 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                                 value,
                                                 version
                                             ) { _, prevValue ->
-                                                prevValue ?: countChange++ // Only count up when value did not exist
+                                                if (prevValue == null) {
+                                                    if (finalSetPresent) throw AlreadySetException(setReference)
+                                                    countChange++
+                                                }
                                             }.also(setChanged)
                                         } catch (e: ValidationException) {
                                             addException(e)
@@ -596,7 +638,12 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                 }
                             }
 
-                            createCountUpdater(
+                            if (countChange != 0 && !hadSet && setReference is MapValueReference<*, *, *>) {
+                                @Suppress("UNCHECKED_CAST")
+                                checkParentReference(setReference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>,
+                                    newValueList, version, keepAllVersions, ::addValidationFail)
+                            }
+                            if (countChange != 0) createCountUpdater(
                                 newValueList,
                                 setChange.reference,
                                 version,
@@ -610,11 +657,17 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                     is IncMapChange -> {
                         @Suppress("UNCHECKED_CAST")
                         for (valueChange in change.valueChanges) {
+                            val setChanged = trackChange(valueChange.reference)
                             requireActiveType(valueChange.reference)
+                            requireParents(valueChange.reference)
                             val incMapReference = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
                             val incMapDefinition = incMapReference.propertyDefinition
 
                             valueChange.addValues?.let { addValues ->
+                                if (addValues.isEmpty()) return@let
+                                if (incMapDefinition.final && getValue<Any>(newValueList, incMapReference.toStorageByteArray()) != null) {
+                                    throw AlreadySetException(incMapReference)
+                                }
                                 createValidationUmbrellaException({ incMapReference }) { addException ->
                                     for ((index, value) in addValues.withIndex()) {
                                         try {
@@ -788,12 +841,12 @@ private fun checkParentReference(
                     reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
                 @Suppress("UNCHECKED_CAST")
                 mapDefinition.keyDefinition.validateWithRef(
-                    reference.key,
+                    null,
                     reference.key
                 ) {
                     mapDefinition.keyRef(
                         reference.key,
-                        reference.parentReference as MapReference<Any, Any, IsPropertyContext>
+                        reference.parentReference
                     )
                 }
             } catch (e: ValidationException) {
@@ -808,7 +861,7 @@ private fun checkParentReference(
                 keepAllVersions
             ) {
                 @Suppress("UNCHECKED_CAST")
-                (reference as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
+                (reference as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { reference.parentReference as TypedPropertyReference<Map<Any, Any>> }
             }
         }
 

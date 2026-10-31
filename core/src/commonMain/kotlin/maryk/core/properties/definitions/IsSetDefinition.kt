@@ -28,7 +28,7 @@ interface IsSetDefinition<T : Any, CX : IsPropertyContext> :
         item: T
     ) = { parentRef: AnyPropertyReference? ->
         @Suppress("UNCHECKED_CAST")
-        this.itemRef(item, parentRef as SetReference<T, CX>?) as IsPropertyReference<Any, *, *>
+        this.itemRef(item, parentRef as CanContainSetItemReference<*, *, *>?) as IsPropertyReference<Any, *, *>
     }
 
     override fun validateCollectionForExceptions(
@@ -39,7 +39,7 @@ interface IsSetDefinition<T : Any, CX : IsPropertyContext> :
         for (it in newValue) {
             validator(it) {
                 @Suppress("UNCHECKED_CAST")
-                this.itemRef(it, refGetter() as SetReference<T, CX>?)
+                this.itemRef(it, refGetter() as CanContainSetItemReference<*, *, *>?)
             }
         }
     }

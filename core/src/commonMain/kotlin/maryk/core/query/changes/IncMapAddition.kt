@@ -71,33 +71,28 @@ data class IncMapAddition(
                     val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
                     return if (currentRef == null) {
-                        when (newValue) {
-                            is MutableMap<*, *> -> {
-                                if (addition.addedValues == null) {
-                                    throw RequestException("addedValues need to be set on IncMapAddition, maybe the RequestContext of the request was not used for the response?")
-                                }
-                                if (addition.addedValues.size != addition.addedKeys?.size) {
-                                    throw RequestException("addedValues and addedKeys on IncMapAddition need to be of the same size")
-                                }
-
-                                for (index in (0..addition.addedKeys.lastIndex)) {
-                                    val value = addition.addedValues[index]
-                                    @Suppress("UNCHECKED_CAST")
-                                    (newValue as MutableMap<Any, Any>)[addition.addedKeys[index]] =
-                                        mutableValueCreator(value, preserveValues = true) ?: value
-                                }
-                            }
-                            null -> throw RequestException("Cannot set Incrementing map changes on non existing value")
+                        @Suppress("UNCHECKED_CAST")
+                        val map = when (newValue) {
+                            is MutableMap<*, *> -> newValue as MutableMap<Any, Any>
+                            null -> mutableMapOf()
                             else -> throw RequestException("Unsupported value type: $newValue for ref: $currentRef")
                         }
-                        null
+                        val values = addition.addedValues
+                            ?: throw RequestException("addedValues need to be set on IncMapAddition")
+                        val keys = addition.addedKeys
+                            ?: throw RequestException("addedKeys need to be set on IncMapAddition")
+                        if (values.size != keys.size) throw RequestException("addedValues and addedKeys need the same size")
+                        for (index in keys.indices) {
+                            val value = values[index]
+                            map[keys[index]] = mutableValueCreator(value, preserveValues = true) ?: value
+                        }
+                        if (newValue == null && map.isNotEmpty()) map else null
                     } else {
-                        deepValueChanger(
-                            originalValue,
-                            newValue,
-                            currentRef,
-                            ::valueChanger
-                        )
+                        try {
+                            deepValueChanger(originalValue, newValue, currentRef, ::valueChanger)
+                        } catch (_: SubObjectChangeException) {
+                            throw RequestException("Map addition requires its parent value to exist")
+                        }
                         null // Deeper change so no overwrite
                     }
                 } finally {

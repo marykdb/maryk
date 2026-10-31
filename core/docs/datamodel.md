@@ -47,6 +47,10 @@ Person.validate(johnSmith)
 val key = Person.key(johnSmith)
 ```
 
+`Values.copyWithValue(index, value)` replaces one complete root value, including
+an embedded record. Fields omitted from a replacement stay absent. Passing `Unit`
+removes that root. `Values.copy { ... }` retains its existing embedded patch behavior.
+
 `create { ... }` and `Values.copy { ... }` use a nested collector per execution
 thread on JVM, Android and Native. Builders on different threads cannot write into
 each other's values. Nested builders keep their own default policy, and exceptions

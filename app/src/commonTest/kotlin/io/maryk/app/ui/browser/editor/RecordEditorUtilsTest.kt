@@ -3,6 +3,7 @@ package io.maryk.app.ui.browser.editor
 import maryk.core.models.RootDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.ObjectDataModel
+import maryk.core.models.DataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -22,6 +23,7 @@ import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.incrementingMap
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.embed
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.MultiTypeEnum
@@ -50,6 +52,20 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class RecordEditorUtilsTest {
+    @Test
+    fun replacingEmbeddedEditorValuesKeepsDeletedChildrenDeleted() {
+        val originalLeaf = EditorReplacementLeaf.create(setDefaults = false) {
+            first with "remove"
+            second with "old"
+        }
+        val replacement = EditorReplacementLeaf.create(setDefaults = false) { second with "new" }
+        val original = EditorReplacementRecord.create(setDefaults = false) { leaf with originalLeaf }
+        val updated = copyWithValue(original, EditorReplacementRecord.leaf.index, replacement)
+        assertEquals(replacement, updated.get { leaf })
+        assertEquals(originalLeaf, original.get { leaf })
+        assertNull(copyWithValue(updated, EditorReplacementRecord.leaf.index, null).get { leaf })
+    }
+
     @Test
     fun defaultMapKeyReturnsNullForExhaustedEnumKeys() {
         val definition = EnumDefinition(enum = KeyOption)
@@ -667,4 +683,13 @@ private object IncMapObjectModel : RootDataModel<IncMapObjectModel>(
         valueDefinition = EmbeddedObjectDefinition(dataModel = { PendingEntry }),
         required = false,
     )
+}
+
+private object EditorReplacementLeaf : DataModel<EditorReplacementLeaf>() {
+    val first by string(1u, required = false)
+    val second by string(2u, required = false)
+}
+
+private object EditorReplacementRecord : RootDataModel<EditorReplacementRecord>() {
+    val leaf by embed(1u, dataModel = { EditorReplacementLeaf }, required = false)
 }

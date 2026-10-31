@@ -144,9 +144,7 @@ internal fun <DM : IsValuesDataModel> copyWithValue(
     newValue: Any?,
 ): Values<DM> {
     val payload = newValue ?: Unit
-    return values.copy {
-        ValuesCollectorContext.add(ValueItem(index, payload))
-    }
+    return values.copyWithValue(index, payload)
 }
 
 @Suppress("UNCHECKED_CAST")

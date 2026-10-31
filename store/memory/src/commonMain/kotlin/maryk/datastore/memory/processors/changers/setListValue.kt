@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Bytes
 import maryk.datastore.memory.records.DataRecordNode
+import maryk.datastore.memory.processors.canonicalStoredValue
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchesRangePart
 
@@ -21,7 +22,9 @@ internal fun <T : Any> setListValue(
 ): Boolean {
     val prefix = reference.toStorageByteArray()
     val expected = mutableListOf<Pair<ByteArray, Any>>()
-    val writer: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, value -> expected += qualifier to value }
+    val writer: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, definition, value ->
+        expected += qualifier to canonicalStoredValue(definition, value)
+    }
     writeListToStorage(prefix.size, reference::writeStorageBytes, writer,
         reference.comparablePropertyDefinition, newList)
     val expectedReferences = expected.mapTo(hashSetOf()) { Bytes(it.first) }

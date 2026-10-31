@@ -313,8 +313,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     ) { mapReference }
 
                                     val expectedValues = mutableListOf<Pair<ByteArray, Any?>>()
-                                    val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
-                                        expectedValues.add(qualifier to mapValue)
+                                    val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, definition, mapValue ->
+                                        expectedValues.add(qualifier to canonicalStoredValue(definition, mapValue))
                                     }
                                     writeMapToStorage(
                                         reference.calculateStorageByteLength(),
@@ -359,8 +359,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
                                     val expectedValues = mutableListOf<Pair<ByteArray, Any?>>()
-                                    val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
-                                        expectedValues.add(qualifier to mapValue)
+                                    val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, definition, mapValue ->
+                                        expectedValues.add(qualifier to canonicalStoredValue(definition, mapValue))
                                     }
                                     writeListToStorage(
                                         reference.calculateStorageByteLength(),
@@ -405,8 +405,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
                                     val expectedValues = mutableListOf<Pair<ByteArray, Any?>>()
-                                    val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
-                                        expectedValues.add(qualifier to mapValue)
+                                    val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, definition, mapValue ->
+                                        expectedValues.add(qualifier to canonicalStoredValue(definition, mapValue))
                                     }
                                     writeSetToStorage(
                                         reference.calculateStorageByteLength(),
@@ -898,12 +898,12 @@ private fun createValueWriter(
     newValueList: MutableList<DataRecordNode>,
     version: HLC,
     keepAllVersions: Boolean
-): ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
+): ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, definition, mapValue ->
     val valueIndex = newValueList.binarySearch {
         it.reference compareTo qualifier
     }
     setValueAtIndex(
-        newValueList, valueIndex, qualifier, mapValue, version, keepAllVersions
+        newValueList, valueIndex, qualifier, canonicalStoredValue(definition, mapValue), version, keepAllVersions
     )
 }
 

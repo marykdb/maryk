@@ -4,6 +4,7 @@ import maryk.core.clock.HLC
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
+import maryk.datastore.memory.processors.canonicalStoredValue
 import maryk.lib.extensions.compare.compareTo
 
 /**
@@ -22,7 +23,7 @@ internal fun <T : Any> setValue(
 ): Boolean = setValue(
     values,
     reference.toStorageByteArray(),
-    value,
+    canonicalStoredValue(reference.propertyDefinition, value, reference),
     version,
     keepAllVersions,
     validate

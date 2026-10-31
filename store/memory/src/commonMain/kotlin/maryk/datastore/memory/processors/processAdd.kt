@@ -63,7 +63,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         }
 
         objectToAdd.writeToStorage { _, reference, definition, value ->
-            val dataRecordValue = DataRecordValue(reference, value, version)
+            val dataRecordValue = DataRecordValue(reference, canonicalStoredValue(definition, value), version)
             if (!isDeleted && (definition is IsComparableDefinition<*, *>) && definition.unique) {
                 @Suppress("UNCHECKED_CAST")
                 val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>

@@ -44,6 +44,13 @@ The `.use { ... }` scope closes the store automatically.
 - Data is lost on close/shutdown.
 - Not suitable as persistent production storage.
 
+Decoded cells retain the same precision as persistent storage: Time and
+DateTime use their declared precision, GeoPoint uses seven decimal places,
+Decimal uses its declared scale, and Float32 uses 32-bit precision on every
+target. This also applies to collection members, typed values, allocation
+results and packed value objects. Enum cells resolve their stored numeric ID.
+Replacements with the same stored values remain no-ops.
+
 ## Options
 
 - `keepAllVersions`: Keep historic values/indexes/uniques for `toVersion`, changes, and history queries.

@@ -1,5 +1,7 @@
 package maryk.datastore.indexeddb.processors
 
+import maryk.core.properties.definitions.validateValueWithRef
+import maryk.core.properties.definitions.validateValueType
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -82,6 +84,11 @@ internal fun <DM : IsRootDataModel> materializeChanges(
     observe(currentValues)
 
     for (change in changes) {
+        if (change is Change) {
+            for (pair in change.referenceValuePairs) {
+                pair.reference.comparablePropertyDefinition.validateValueType(pair.value) { pair.reference }
+            }
+        }
         if (change !is Change && change !is Check && change !is ListChange && change !is SetChange &&
             change !is IncMapChange && change !is ObjectSoftDeleteChange) {
             throw RequestException("Unsupported operation $change")
@@ -103,7 +110,7 @@ internal fun <DM : IsRootDataModel> materializeChanges(
             @Suppress("UNCHECKED_CAST")
             val reference = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
             for ((index, value) in addValues.withIndex()) {
-                reference.propertyDefinition.valueDefinition.validateWithRef(null, value) {
+                reference.propertyDefinition.valueDefinition.validateValueWithRef(null, value) {
                     reference.propertyDefinition.addIndexRef(index, reference)
                 }
             }
@@ -174,7 +181,7 @@ private fun <DM : IsRootDataModel> validateStagedChange(
                 val previous = staged[reference]
                 val definition = reference.comparablePropertyDefinition
                 if (pair.value != null) {
-                    definition.validateWithRef(null, pair.value) { reference }
+                    definition.validateValueWithRef(null, pair.value) { reference }
                 }
                 if (pair.value == null && reference is ListItemReference<*, *>) {
                     val parent = reference.parentReference
@@ -200,7 +207,7 @@ private fun <DM : IsRootDataModel> validateStagedChange(
         }
         is ListChange -> for (part in change.listValueChanges) {
             if (before[part.reference] == after[part.reference]) continue
-            part.reference.propertyDefinition.validateWithRef(null, after[part.reference]) { part.reference }
+            part.reference.propertyDefinition.validateValueWithRef(null, after[part.reference]) { part.reference }
             validateChangedCollectionPaths(part.reference, before, after)
             if (part.reference.propertyDefinition.final && before[part.reference] != null && before[part.reference] != after[part.reference]) {
                 throw AlreadySetException(part.reference)
@@ -208,7 +215,7 @@ private fun <DM : IsRootDataModel> validateStagedChange(
         }
         is SetChange -> for (part in change.setValueChanges) {
             if (before[part.reference] == after[part.reference]) continue
-            part.reference.propertyDefinition.validateWithRef(null, after[part.reference]) { part.reference }
+            part.reference.propertyDefinition.validateValueWithRef(null, after[part.reference]) { part.reference }
             validateChangedCollectionPaths(part.reference, before, after)
             if (part.reference.propertyDefinition.final && before[part.reference] != null && before[part.reference] != after[part.reference]) {
                 throw AlreadySetException(part.reference)
@@ -243,7 +250,7 @@ private fun <DM : IsRootDataModel> validateChangedCollectionPaths(
     }
     if (reference is MapValueReference<*, *, *> && before[reference] == null && after[reference] != null) {
         val entry = reference as MapValueReference<Any, Any, IsPropertyContext>
-        entry.mapDefinition.keyDefinition.validateWithRef(null, entry.key) {
+        entry.mapDefinition.keyDefinition.validateValueWithRef(null, entry.key) {
             entry.mapDefinition.keyRef(entry.key, entry.parentReference)
         }
     }

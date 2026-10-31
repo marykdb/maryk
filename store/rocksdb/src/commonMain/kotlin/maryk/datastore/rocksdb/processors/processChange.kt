@@ -1,5 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
+import maryk.core.properties.definitions.validateValueWithRef
+import maryk.core.properties.definitions.validateValueType
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
@@ -395,6 +397,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                         for (pair in change.referenceValuePairs) {
                             @Suppress("UNCHECKED_CAST")
                             val reference = pair.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                            reference.comparablePropertyDefinition.validateValueType(pair.value) { reference }
                             val setChanged = trackChange(reference)
                             if (pair.value == null && !hasActiveType(reference)) continue
                             if (pair.value != null) requireActiveType(reference)
@@ -429,7 +432,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                         deleteByReference(transaction, columnFamilies, defaultReadOptions, key, reference, referenceAsBytes, versionBytes) { _, previousValue ->
                                             @Suppress("UNCHECKED_CAST")
                                             val propertyReference = reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
-                                            propertyReference.propertyDefinition.validateWithRef(
+                                            propertyReference.propertyDefinition.validateValueWithRef(
                                                 previousValue = previousValue,
                                                 newValue = null,
                                                 refGetter = { propertyReference }
@@ -460,8 +463,8 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     val hadPrevValue = hasCurrentComplexValue(currentValues, key.bytes, reference)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    mapDefinition.validateWithRef(
-                                        if (hadPrevValue) mapOf() else null,
+                                    mapDefinition.validateValueWithRef(
+                                        if (hadPrevValue) mapOf<Any, Any>() else null,
                                         value as Map<Any, Any>
                                     ) { mapReference }
 
@@ -505,8 +508,8 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     val hadPrevValue = hasCurrentComplexValue(currentValues, key.bytes, reference)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    listDefinition.validateWithRef(
-                                        if (hadPrevValue) listOf() else null,
+                                    listDefinition.validateValueWithRef(
+                                        if (hadPrevValue) listOf<Any>() else null,
                                         value as List<Any>
                                     ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
@@ -550,8 +553,8 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     val hadPrevValue = hasCurrentComplexValue(currentValues, key.bytes, reference)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    setDefinition.validateWithRef(
-                                        if (hadPrevValue) setOf() else null,
+                                    setDefinition.validateValueWithRef(
+                                        if (hadPrevValue) setOf<Any>() else null,
                                         value as Set<Any>
                                     ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
@@ -606,7 +609,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                         }
                                     }
                                     @Suppress("UNCHECKED_CAST")
-                                    multiTypeDefinition.validateWithRef(
+                                    multiTypeDefinition.validateValueWithRef(
                                         previous as TypedValue<MultiTypeEnum<Any>, Any>?,
                                         value as TypedValue<MultiTypeEnum<Any>, Any>
                                     ) { multiTypeReference }
@@ -644,7 +647,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     val hadPrevValue = hasCurrentComplexValue(currentValues, key.bytes, reference)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    valuesDefinition.validateWithRef(
+                                    valuesDefinition.validateValueWithRef(
                                         if (hadPrevValue) valuesDefinition.dataModel.emptyValues() else null,
                                         value as Values<IsValuesDataModel>
                                     ) { valuesReference }
@@ -714,7 +717,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                                 allowMissingParent = advanceVersionOnNoop && reference is MapValueReference<*, *, *> && reference.parentReference is IncMapReference<*, *, *>)
                                         }
 
-                                        reference.propertyDefinition.validateWithRef(
+                                        reference.propertyDefinition.validateValueWithRef(
                                             previousValue = previousValue,
                                             newValue = value,
                                             refGetter = { reference }
@@ -778,7 +781,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                 val hadList = transaction.getValue(columnFamilies, defaultReadOptions, null,
                                     listReference.toStorageByteArray(key.bytes)) { bytes, offset, length -> readStoredCount(bytes, offset, length) } != null
                                 val previousList = originalList.takeIf { hadList }
-                                listDefinition.validateWithRef(previousList, list) { listReference }
+                                listDefinition.validateValueWithRef(previousList, list) { listReference }
 
                                 if (!hadList && listReference is MapValueReference<*, *, *>) {
                                     @Suppress("UNCHECKED_CAST")
@@ -865,7 +868,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     for (value in it) {
                                         val setItemRef = setDefinition.itemRef(value, setReference as CanContainSetItemReference<*, *, *>)
                                         try {
-                                            setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>? }
+                                            setDefinition.valueDefinition.validateValueWithRef(null, value) { setItemRef as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>? }
 
                                             val keyAndReference = setItemRef.toStorageByteArray(key.bytes)
 
@@ -937,7 +940,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                 createValidationUmbrellaException({ incMapReference }) { addException ->
                                     for ((index, value) in addValues.withIndex()) {
                                         try {
-                                            incMapDefinition.valueDefinition.validateWithRef(null, value) { incMapDefinition.addIndexRef(index, incMapReference) }
+                                            incMapDefinition.valueDefinition.validateValueWithRef(null, value) { incMapDefinition.addIndexRef(index, incMapReference) }
                                         } catch (e: ValidationException) {
                                             addException(e)
                                         }
@@ -1165,7 +1168,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.checkParentReference(
             val mapDefinition =
                 reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
             @Suppress("UNCHECKED_CAST")
-            mapDefinition.keyDefinition.validateWithRef(
+            mapDefinition.keyDefinition.validateValueWithRef(
                 null,
                 reference.key
             ) {

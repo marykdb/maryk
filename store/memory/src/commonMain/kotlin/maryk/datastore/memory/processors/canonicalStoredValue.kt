@@ -1,5 +1,6 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.DecimalDefinition
 import maryk.core.properties.definitions.EnumDefinition
@@ -14,7 +15,6 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
 import maryk.lib.exceptions.ParseException
@@ -35,11 +35,7 @@ internal fun <T : Any> canonicalStoredValue(definition: IsPropertyDefinition<*>,
         definition !is ValueObjectDefinition<*, *>) return value
     val codec = definition as IsStorageBytesEncodable<T>
     return try {
-        if (definition is EnumDefinition<*>) {
-            (definition as IsPropertyDefinition<T>).validateWithRef(null, value) {
-                reference as IsPropertyReference<T, IsPropertyDefinition<T>, *>?
-            }
-        }
+        definition.validateValueWithRef(null, value) { reference }
         val bytes = codec.toStorageBytes(value)
         var offset = 0
         codec.readStorageBytes(bytes.size) { bytes[offset++] }

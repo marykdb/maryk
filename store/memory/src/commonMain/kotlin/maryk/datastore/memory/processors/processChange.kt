@@ -1,5 +1,7 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.properties.definitions.validateValueWithRef
+import maryk.core.properties.definitions.validateValueType
 import maryk.datastore.memory.records.haveSameStoredValue
 
 import maryk.core.clock.HLC
@@ -261,6 +263,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                         for (pair in change.referenceValuePairs) {
                             @Suppress("UNCHECKED_CAST")
                             val reference = pair.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                            reference.comparablePropertyDefinition.validateValueType(pair.value) { reference }
                             val setChanged = trackChange(reference)
                             if (pair.value == null && !hasActiveType(reference)) continue
                             requireActiveType(reference)
@@ -277,7 +280,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     val deletionReference = reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
                                     deleteByReference(newValueList, deletionReference, version, keepAllVersions) { _, previousValue ->
                                         try {
-                                            deletionReference.propertyDefinition.validateWithRef(
+                                            deletionReference.propertyDefinition.validateValueWithRef(
                                                 previousValue = previousValue,
                                                 newValue = null,
                                                 refGetter = { deletionReference }
@@ -307,8 +310,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
-                                    mapDefinition.validateWithRef(
-                                        if (hadPrevValue) mapOf() else null,
+                                    mapDefinition.validateValueWithRef(
+                                        if (hadPrevValue) mapOf<Any, Any>() else null,
                                         value as Map<Any, Any>
                                     ) { mapReference }
 
@@ -353,8 +356,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
-                                    listDefinition.validateWithRef(
-                                        if (hadPrevValue) listOf() else null,
+                                    listDefinition.validateValueWithRef(
+                                        if (hadPrevValue) listOf<Any>() else null,
                                         value as List<Any>
                                     ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
@@ -399,8 +402,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
-                                    setDefinition.validateWithRef(
-                                        if (hadPrevValue) setOf() else null,
+                                    setDefinition.validateValueWithRef(
+                                        if (hadPrevValue) setOf<Any>() else null,
                                         value as Set<Any>
                                     ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
@@ -451,7 +454,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         else -> null
                                     }
                                     @Suppress("UNCHECKED_CAST")
-                                    multiTypeDefinition.validateWithRef(
+                                    multiTypeDefinition.validateValueWithRef(
                                         previous as TypedValue<MultiTypeEnum<Any>, Any>?,
                                         value as TypedValue<MultiTypeEnum<Any>, Any>
                                     ) { multiTypeReference }
@@ -493,7 +496,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     )
 
                                     @Suppress("UNCHECKED_CAST")
-                                    valuesDefinition.validateWithRef(
+                                    valuesDefinition.validateValueWithRef(
                                         if (hadPrevValue) valuesDefinition.dataModel.emptyValues() else null,
                                         value as Values<IsValuesDataModel>
                                     ) { valuesReference }
@@ -537,7 +540,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         }
 
                                         try {
-                                            reference.propertyDefinition.validateWithRef(
+                                            reference.propertyDefinition.validateValueWithRef(
                                                 previousValue = previousValue,
                                                 newValue = value,
                                                 refGetter = { reference }
@@ -582,7 +585,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                 @Suppress("UNCHECKED_CAST")
                                 val listDefinition = listChange.reference.comparablePropertyDefinition as IsListDefinition<Any, IsPropertyContext>
                                 @Suppress("UNCHECKED_CAST")
-                                listDefinition.validateWithRef(originalList, list) {
+                                listDefinition.validateValueWithRef(originalList, list) {
                                     listChange.reference as TypedPropertyReference<List<Any>>
                                 }
                             } catch (e: ValidationException) {
@@ -619,7 +622,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     for (value in it) {
                                         val setItemRef = setDefinition.itemRef(value, setReference as CanContainSetItemReference<*, *, *>)
                                         try {
-                                            setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef }
+                                            setDefinition.valueDefinition.validateValueWithRef(null, value) { setItemRef }
                                             setValue(
                                                 newValueList,
                                                 setItemRef,
@@ -671,7 +674,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                 createValidationUmbrellaException({ incMapReference }) { addException ->
                                     for ((index, value) in addValues.withIndex()) {
                                         try {
-                                            incMapDefinition.valueDefinition.validateWithRef(null, value) { incMapDefinition.addIndexRef(index, incMapReference) }
+                                            incMapDefinition.valueDefinition.validateValueWithRef(null, value) { incMapDefinition.addIndexRef(index, incMapReference) }
                                         } catch (e: ValidationException) {
                                             addException(e)
                                         }
@@ -840,7 +843,7 @@ private fun checkParentReference(
                 val mapDefinition =
                     reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
                 @Suppress("UNCHECKED_CAST")
-                mapDefinition.keyDefinition.validateWithRef(
+                mapDefinition.keyDefinition.validateValueWithRef(
                     null,
                     reference.key
                 ) {

@@ -11,6 +11,8 @@ import maryk.datastore.test.assertAnonymousCollectionMutations
 import maryk.datastore.test.assertCollectionTargetsRespectListBounds
 import maryk.datastore.test.assertDeletedCollectionConstraints
 import maryk.datastore.test.assertDecimalWriteIntegrity
+import maryk.datastore.test.assertErasedTypeWriteIntegrity
+import maryk.datastore.test.assertStringRangeIntegrity
 import maryk.datastore.test.assertEnumWriteIntegrity
 import maryk.datastore.test.assertImmutableWriteIntegrity
 import maryk.datastore.test.assertIndexBoundsHandleShortRows
@@ -96,5 +98,13 @@ class ValueIntegrityTest {
     @Test
     fun enumValuesMustBeReadableByTheirDefinition() = runTest(timeout = 3.minutes) {
         for (history in listOf(false, true)) withStore(history) { assertEnumWriteIntegrity(it) }
+    }
+    @Test
+    fun erasedWritesCannotBypassTheirDeclaredTypes() = runTest(timeout = 3.minutes) {
+        for (history in listOf(false, true)) withStore(history) { assertErasedTypeWriteIntegrity(it) }
+    }
+    @Test
+    fun indexedStringRangesMatchTableScans() = runTest(timeout = 3.minutes) {
+        for (history in listOf(false, true)) withStore(history) { assertStringRangeIntegrity(it) }
     }
 }

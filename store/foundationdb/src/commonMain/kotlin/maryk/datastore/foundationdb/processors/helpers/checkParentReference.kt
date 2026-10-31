@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb.processors.helpers
 
+import maryk.core.properties.definitions.validateValueWithRef
 import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.toVarBytes
@@ -46,7 +47,7 @@ internal fun handleMapAdditionCount(
 ) {
     @Suppress("UNCHECKED_CAST")
     val mapDef = reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
-    mapDef.keyDefinition.validateWithRef(null, reference.key) {
+    mapDef.keyDefinition.validateValueWithRef(null, reference.key) {
         @Suppress("UNCHECKED_CAST")
         mapDef.keyRef(reference.key, reference.parentReference)
     }

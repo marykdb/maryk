@@ -23,12 +23,25 @@ import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.date
+import maryk.core.properties.definitions.dateTime
+import maryk.core.properties.definitions.time
+import maryk.core.properties.definitions.geoPoint
+import maryk.core.properties.definitions.fixedBytes
+import maryk.core.properties.definitions.flexBytes
+import maryk.core.properties.definitions.reference
+import maryk.core.properties.definitions.valueObject
+import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.properties.definitions.DateDefinition
+import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.invoke
 import maryk.core.properties.types.Decimal
 import maryk.core.properties.enum.IndexedEnumComparable
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
@@ -44,6 +57,8 @@ import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
+import maryk.core.query.filters.LessThan
+import maryk.core.query.filters.GreaterThan
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
@@ -67,6 +82,7 @@ import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.MarykTypeEnum.T4
 import maryk.test.models.MarykTypeEnum.T5
 import maryk.test.models.MarykTypeEnum.T6
+import maryk.test.models.TestValueObject
 
 enum class ReadableIntegrityOption(override val index: UInt) : IndexedEnumComparable<ReadableIntegrityOption> {
     Known(1u), Omitted(2u);
@@ -99,6 +115,20 @@ object ValueIntegrityRecord : RootDataModel<ValueIntegrityRecord>(
     val option by enum(23u, enum = ReadableIntegrityOption, required = false)
     val optionMembers by set(24u, valueDefinition = EnumDefinition(enum = ReadableIntegrityOption), required = false)
     val optionEntries by map(25u, keyDefinition = EnumDefinition(enum = ReadableIntegrityOption), valueDefinition = StringDefinition(), required = false)
+    val flag by boolean(26u, required = false)
+    val day by date(27u, required = false)
+    val instant by dateTime(28u, required = false)
+    val clock by time(29u, required = false)
+    val location by geoPoint(30u, required = false)
+    val fixed by fixedBytes(31u, byteSize = 4, required = false)
+    val flex by flexBytes(32u, required = false)
+    val linked by reference(33u, dataModel = { FixedKeyIntegrityRecord }, required = false)
+    val packed by valueObject(34u, dataModel = TestValueObject, required = false)
+    val flags by list(35u, valueDefinition = BooleanDefinition(), required = false)
+    val days by map(36u, keyDefinition = DateDefinition(), valueDefinition = BooleanDefinition(), required = false)
+    val flagSet by set(37u, valueDefinition = BooleanDefinition(), required = false)
+    val allocatedFlags by incrementingMap(38u, keyNumberDescriptor = UInt32, valueDefinition = BooleanDefinition(), required = false)
+    val integer by number(39u, type = SInt32, required = false)
     val allocatedText by incrementingMap(14u, keyNumberDescriptor = UInt32, valueDefinition = StringDefinition(minSize = 3u), required = false)
     val allocatedLists by incrementingMap(15u, keyNumberDescriptor = UInt32,
         valueDefinition = ListDefinition(valueDefinition = StringDefinition(minSize = 3u)), required = false)
@@ -114,6 +144,81 @@ object FixedKeyIntegrityRecord : RootDataModel<FixedKeyIntegrityRecord>(
 }
 
 val validatedIntegrityModels = mapOf(1u to ValueIntegrityRecord, 2u to FixedKeyIntegrityRecord, 3u to AnonymousCollectionRecord)
+
+suspend fun assertErasedTypeWriteIntegrity(store: IsDataStore) {
+    val model = ValueIntegrityRecord
+    val original = model.create {
+        label with "original"
+        text with "valid"
+        entries with emptyMap<String, String>()
+        flags with emptyList<Boolean>()
+        flagSet with emptySet<Boolean>()
+        allocatedFlags with emptyMap<UInt, Boolean>()
+    }
+    val added = assertIs<AddSuccess<ValueIntegrityRecord>>(store.execute(model.add(original)).statuses.single())
+    val invalidValues = listOf<Pair<UInt, Any>>(
+        2u to 42, 3u to "wrong", 4u to "wrong", 5u to "wrong", 6u to "wrong", 7u to "wrong",
+        20u to "wrong", 23u to "wrong",
+    ) + (26u..34u).map { it to "wrong" } + listOf(
+        35u to listOf("wrong"), 36u to mapOf("wrong" to true), 37u to setOf("wrong"),
+        38u to mapOf(1u to "wrong"), 39u to "wrong", 35u to listOf(null),
+        26u to listOf(1), 27u to mapOf("bad" to 1), 29u to listOf(1),
+        2u to listOf(1), 3u to listOf(true), 37u to mapOf("bad" to 1),
+    )
+    for ((index, invalid) in invalidValues) {
+        val rejectedAdd = store.execute(model.add(original.copyWithValue(index, invalid)))
+        assertIs<ValidationFail<ValueIntegrityRecord>>(rejectedAdd.statuses.single(), "add $index: $rejectedAdd")
+        @Suppress("UNCHECKED_CAST")
+        val reference = model[index]!!.ref() as IsPropertyReference<Any, IsValueDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
+        val response = store.execute(model.change(added.key.change(
+            Change(model.ref { label } with "must roll back", reference with invalid),
+        )))
+        assertIs<ValidationFail<ValueIntegrityRecord>>(response.statuses.single(), "change $index: $response")
+        assertValidationResponseCanTravel(response)
+        val current = store.execute(model.get(added.key)).values.single()
+        assertEquals(original, current.values)
+        assertEquals(added.version, current.lastVersion)
+        assertEquals(emptyList(), store.execute(model.scan(where = Equals(model.ref { label } with "must roll back"))).values)
+    }
+    @Suppress("UNCHECKED_CAST")
+    val wrongList = listOf("wrong") as List<Boolean>
+    @Suppress("UNCHECKED_CAST")
+    val wrongSet = setOf("wrong") as Set<Boolean>
+    for (delta in listOf(
+        ListChange(model.ref { flags }.change(addValuesToEnd = wrongList)),
+        SetChange(model.ref { flagSet }.change(addValues = wrongSet)),
+        IncMapChange(model.ref { allocatedFlags }.change(addValues = wrongList)),
+    )) {
+        val response = store.execute(model.change(added.key.change(Change(model.ref { label } with "must roll back"), delta)))
+        assertIs<ValidationFail<ValueIntegrityRecord>>(response.statuses.single(), delta.toString())
+        assertValidationResponseCanTravel(response)
+        val current = store.execute(model.get(added.key)).values.single()
+        assertEquals(original, current.values)
+        assertEquals(added.version, current.lastVersion)
+    }
+}
+
+suspend fun assertStringRangeIntegrity(store: IsDataStore) {
+    val model = ValueIntegrityRecord
+    val texts = listOf("", "\u0000", "a", "a\u0000", "\uD800\uDC00", "\uE000", "\uFFFF", "é", "e\u0301")
+    for (value in texts) {
+        assertIs<AddSuccess<ValueIntegrityRecord>>(store.execute(model.add(model.create {
+            label with value
+            text with value
+            entries with emptyMap<String, String>()
+        })).statuses.single())
+    }
+    for (bound in texts) {
+        for (less in listOf(false, true)) {
+            val indexed = if (less) LessThan(model.ref { label } with bound) else GreaterThan(model.ref { label } with bound)
+            val table = if (less) LessThan(model.ref { text } with bound) else GreaterThan(model.ref { text } with bound)
+            val expected = store.execute(model.scan(where = table, allowTableScan = true)).values.map { it.values { label } }.toSet()
+            assertEquals(texts.filter { if (less) it < bound else it > bound }.toSet(), expected)
+            val actual = store.execute(model.scan(where = indexed, order = model.ref { label }.ascending())).values.map { it.values { label } }.toSet()
+            assertEquals(expected, actual, "${if (less) "less" else "greater"} than $bound")
+        }
+    }
+}
 
 suspend fun assertEnumWriteIntegrity(store: IsDataStore) {
     val model = ValueIntegrityRecord

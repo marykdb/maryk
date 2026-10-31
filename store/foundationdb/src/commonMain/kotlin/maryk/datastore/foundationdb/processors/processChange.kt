@@ -1,5 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
+import maryk.core.properties.definitions.validateValueWithRef
+import maryk.core.properties.definitions.validateValueType
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
 import maryk.core.clock.HLC
@@ -471,6 +473,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                             pairLoop@ for (pair in change.referenceValuePairs) {
                                 @Suppress("UNCHECKED_CAST")
                                 val reference = pair.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                                reference.comparablePropertyDefinition.validateValueType(pair.value) { reference }
                                 val setChanged = trackChange(reference)
                                 if (pair.value == null && !hasActiveType(reference)) continue
                                 if (pair.value != null) requireActiveType(reference)
@@ -497,7 +500,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                                 versionBytes
                                             ) { prevValue ->
                                                 try {
-                                                    ref.propertyDefinition.validateWithRef(previousValue = prevValue, newValue = null) { ref }
+                                                    ref.propertyDefinition.validateValueWithRef(previousValue = prevValue, newValue = null) { ref }
                                                 } catch (e: ValidationException) { addValidation(e) }
                                             }
                                             if (didChange) setChanged(true)
@@ -512,7 +515,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         val hadPrev = hasCurrentComplexValue(current, reference)
                                         try {
                                             @Suppress("UNCHECKED_CAST")
-                                            mapDef.validateWithRef(if (hadPrev) mapOf() else null, value as Map<Any, Any>) { reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
+                                            mapDef.validateValueWithRef(if (hadPrev) mapOf<Any, Any>() else null, value as Map<Any, Any>) { reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
                                         } catch (e: ValidationException) {
                                             addValidation(e)
                                             continue@pairLoop
@@ -538,7 +541,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         val hadPrev = hasCurrentComplexValue(current, reference)
                                         try {
                                             @Suppress("UNCHECKED_CAST")
-                                            listDef.validateWithRef(if (hadPrev) listOf() else null, value as List<Any>) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
+                                            listDef.validateValueWithRef(if (hadPrev) listOf<Any>() else null, value as List<Any>) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
                                         } catch (e: ValidationException) {
                                             addValidation(e)
                                             continue@pairLoop
@@ -563,7 +566,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         val hadPrev = hasCurrentComplexValue(current, reference)
                                         try {
                                             @Suppress("UNCHECKED_CAST")
-                                            setDef.validateWithRef(if (hadPrev) setOf() else null, value as Set<Any>) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
+                                            setDef.validateValueWithRef(if (hadPrev) setOf<Any>() else null, value as Set<Any>) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
                                         } catch (e: ValidationException) {
                                             addValidation(e)
                                             continue@pairLoop
@@ -602,7 +605,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         }
                                         try {
                                             @Suppress("UNCHECKED_CAST")
-                                            multiDefinition.validateWithRef(previous, value as TypedValue<MultiTypeEnum<Any>, Any>) {
+                                            multiDefinition.validateValueWithRef(previous, value as TypedValue<MultiTypeEnum<Any>, Any>) {
                                                 reference as IsPropertyReference<TypedValue<MultiTypeEnum<Any>, Any>, IsPropertyDefinition<TypedValue<MultiTypeEnum<Any>, Any>>, *>
                                             }
                                         } catch (e: ValidationException) {
@@ -636,7 +639,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                             @Suppress("UNCHECKED_CAST")
                                             try {
                                                 val valuesRef = reference as IsPropertyReference<Values<IsValuesDataModel>, IsPropertyDefinition<Values<IsValuesDataModel>>, *>
-                                                valuesDef.validateWithRef(
+                                                valuesDef.validateValueWithRef(
                                                     if (hadPrev) valuesDef.dataModel.emptyValues() else null,
                                                     value as Values<IsValuesDataModel>
                                                 ) { valuesRef }
@@ -700,7 +703,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                                 }
                                             }
 
-                                            reference.propertyDefinition.validateWithRef(previousValue = previousValue, newValue = value) { reference }
+                                            reference.propertyDefinition.validateValueWithRef(previousValue = previousValue, newValue = value) { reference }
 
                                             val writer = createValueWriter(
                                                 dataModelId,
@@ -761,7 +764,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         readStoredCount(bytes, offset, length)
                                     } != null
                                     val previousList = originalList.takeIf { hadList }
-                                    listDefinition.validateWithRef(previousList, list) { listRef }
+                                    listDefinition.validateValueWithRef(previousList, list) { listRef }
 
                                     if (!hadList && listRef is MapValueReference<*, *, *>) {
                                         handleMapAdditionCount(tr, tableDirs, key, listRef, versionBytes)
@@ -792,7 +795,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         for (value in adds) {
                                             val setItemRef = setDef.itemRef(value, setRef as CanContainSetItemReference<*, *, *>)
                                             try {
-                                                setDef.valueDefinition.validateWithRef(null, value) { setItemRef as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>? }
+                                                setDef.valueDefinition.validateValueWithRef(null, value) { setItemRef as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>? }
 
                                                 val existed = tr.getValue(
                                                     tableDirs,
@@ -849,7 +852,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                     createValidationUmbrellaException({ incMapRef }) { addException ->
                                         for ((i, v) in addValues.withIndex()) {
                                             try {
-                                                incDef.valueDefinition.validateWithRef(null, v) { incDef.addIndexRef(i, incMapRef) }
+                                                incDef.valueDefinition.validateValueWithRef(null, v) { incDef.addIndexRef(i, incMapRef) }
                                             } catch (e: ValidationException) { addException(e) }
                                         }
                                     }

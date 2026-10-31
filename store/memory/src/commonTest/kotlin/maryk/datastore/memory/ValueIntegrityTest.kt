@@ -8,6 +8,8 @@ import maryk.datastore.test.assertAnonymousCollectionMutations
 import maryk.datastore.test.assertCollectionTargetsRespectListBounds
 import maryk.datastore.test.assertDeletedCollectionConstraints
 import maryk.datastore.test.assertDecimalWriteIntegrity
+import maryk.datastore.test.assertErasedTypeWriteIntegrity
+import maryk.datastore.test.assertStringRangeIntegrity
 import maryk.datastore.test.assertEnumWriteIntegrity
 import maryk.datastore.test.assertImmutableWriteIntegrity
 import maryk.datastore.test.assertIndexBoundsHandleShortRows
@@ -119,6 +121,20 @@ class ValueIntegrityTest {
         for (history in listOf(false, true)) {
             val store = InMemoryDataStore.open(dataModelsById = validatedIntegrityModels, keepAllVersions = history)
             try { assertEnumWriteIntegrity(store) } finally { store.close() }
+        }
+    }
+    @Test
+    fun erasedWritesCannotBypassTheirDeclaredTypes() = runTest {
+        for (history in listOf(false, true)) {
+            val store = InMemoryDataStore.open(dataModelsById = validatedIntegrityModels, keepAllVersions = history)
+            try { assertErasedTypeWriteIntegrity(store) } finally { store.close() }
+        }
+    }
+    @Test
+    fun indexedStringRangesMatchTableScans() = runTest {
+        for (history in listOf(false, true)) {
+            val store = InMemoryDataStore.open(dataModelsById = validatedIntegrityModels, keepAllVersions = history)
+            try { assertStringRangeIntegrity(store) } finally { store.close() }
         }
     }
 }

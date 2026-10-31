@@ -1,5 +1,8 @@
 package maryk.datastore.shared.encryption
 
+import maryk.lib.bytes.calculateUTF8ByteLength
+import kotlin.text.CharacterCodingException
+
 /**
  * Versioned keyring envelope.
  *
@@ -12,17 +15,23 @@ class KeyringFieldEncryptionProvider(
     val activeKeyId: String,
     providers: Map<String, FieldEncryptionProvider>,
     private val legacyProvider: FieldEncryptionProvider? = providers[activeKeyId],
-    private val tokenReadKeyIds: List<String> = providers.keys.toList(),
+    tokenReadKeyIds: List<String> = providers.keys.toList(),
 ) : ContextualFieldEncryptionProvider, SensitiveIndexTokenProvider {
     private val providers = providers.toMap()
+    private val tokenReadKeyIds = tokenReadKeyIds.toList()
 
     init {
-        require(activeKeyId.encodeToByteArray().size in 1..MAX_KEY_ID_BYTES) {
+        require(activeKeyId.calculateUTF8ByteLength() in 1..MAX_KEY_ID_BYTES) {
             "activeKeyId must encode to 1..$MAX_KEY_ID_BYTES bytes"
         }
         require(this.providers.containsKey(activeKeyId)) { "No provider registered for active key `$activeKeyId`" }
-        require(tokenReadKeyIds.isNotEmpty()) { "tokenReadKeyIds cannot be empty" }
-        require(tokenReadKeyIds.all(this.providers::containsKey)) { "Every token read key must be registered" }
+        this.providers.keys.forEach { id ->
+            require(id.calculateUTF8ByteLength() in 1..MAX_KEY_ID_BYTES) {
+                "Key ids must encode to 1..$MAX_KEY_ID_BYTES bytes"
+            }
+        }
+        require(this.tokenReadKeyIds.isNotEmpty()) { "tokenReadKeyIds cannot be empty" }
+        require(this.tokenReadKeyIds.all(this.providers::containsKey)) { "Every token read key must be registered" }
     }
 
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray {
@@ -54,7 +63,9 @@ class KeyringFieldEncryptionProvider(
             "Invalid encrypted payload key id"
         }
         val payloadOffset = offset + KEYRING_HEADER_SIZE + keyIdSize
-        val keyId = value.copyOfRange(offset + KEYRING_HEADER_SIZE, payloadOffset).decodeToString()
+        val keyId = requireNotNull(decodeKeyId(value, offset + KEYRING_HEADER_SIZE, payloadOffset)) {
+            "Encrypted payload key id is not valid UTF-8"
+        }
         val provider = providers[keyId]
             ?: throw IllegalArgumentException("Encrypted payload uses unavailable key `$keyId`")
         return provider.decrypt(value, payloadOffset, length - KEYRING_HEADER_SIZE - keyIdSize)
@@ -102,7 +113,9 @@ class KeyringFieldEncryptionProvider(
             "Invalid encrypted payload key id"
         }
         val payloadOffset = offset + KEYRING_HEADER_SIZE + keyIdSize
-        val keyId = value.copyOfRange(offset + KEYRING_HEADER_SIZE, payloadOffset).decodeToString()
+        val keyId = requireNotNull(decodeKeyId(value, offset + KEYRING_HEADER_SIZE, payloadOffset)) {
+            "Encrypted payload key id is not valid UTF-8"
+        }
         val provider = providers[keyId] as? ContextualFieldEncryptionProvider
             ?: throw IllegalArgumentException("Encrypted payload uses unavailable contextual key `$keyId`")
         return provider.decrypt(context, value, payloadOffset, length - KEYRING_HEADER_SIZE - keyIdSize)
@@ -114,10 +127,7 @@ class KeyringFieldEncryptionProvider(
         if (value[offset + KEYRING_MAGIC.size] != KEYRING_PAYLOAD_VERSION) return null
         val keyIdSize = value[offset + KEYRING_MAGIC.size + 1].toUByte().toInt()
         if (keyIdSize !in 1..MAX_KEY_ID_BYTES || length <= KEYRING_HEADER_SIZE + keyIdSize) return null
-        return value.copyOfRange(
-            offset + KEYRING_HEADER_SIZE,
-            offset + KEYRING_HEADER_SIZE + keyIdSize,
-        ).decodeToString()
+        return decodeKeyId(value, offset + KEYRING_HEADER_SIZE, offset + KEYRING_HEADER_SIZE + keyIdSize)
     }
 
     fun needsReEncryption(value: ByteArray, offset: Int = 0, length: Int = value.size - offset): Boolean =
@@ -149,6 +159,12 @@ class KeyringFieldEncryptionProvider(
     private fun activeTokenProvider(): SensitiveIndexTokenProvider =
         providers.getValue(activeKeyId) as? SensitiveIndexTokenProvider
             ?: throw IllegalStateException("Active provider does not derive deterministic tokens")
+
+    private fun decodeKeyId(value: ByteArray, start: Int, end: Int): String? = try {
+        value.decodeToString(start, end, throwOnInvalidSequence = true)
+    } catch (_: CharacterCodingException) {
+        null
+    }
 
     private fun validateRange(value: ByteArray, offset: Int, length: Int) {
         require(offset >= 0 && length >= 0 && offset <= value.size - length) { "Invalid value range" }

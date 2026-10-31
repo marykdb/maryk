@@ -4,10 +4,62 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class KeyringFieldEncryptionProviderTest {
+    @Test
+    fun unencodableKeyIdsCannotProduceUnreadableCiphertext() {
+        for (id in listOf(0xD800.toChar().toString(), 0xDC00.toChar().toString())) {
+            assertFailsWith<IllegalArgumentException> {
+                KeyringFieldEncryptionProvider(id, mapOf(id to XorProvider(1)))
+            }
+        }
+    }
+
+    @Test
+    fun malformedKeyIdBytesCannotSelectAReplacementCharacterKey() = runTest {
+        val keyring = KeyringFieldEncryptionProvider("\uFFFD", mapOf("\uFFFD" to XorProvider(1)))
+        val envelope = keyring.encrypt(byteArrayOf(42))
+        // Three bytes still occupy the declared key-id length, but no longer form UTF-8.
+        val keyIdOffset = envelope.size - 1 - "\uFFFD".encodeToByteArray().size
+        envelope[keyIdOffset] = 0xED.toByte()
+        envelope[keyIdOffset + 1] = 0xA0.toByte()
+        envelope[keyIdOffset + 2] = 0x80.toByte()
+        assertNull(keyring.keyId(envelope))
+        assertFailsWith<IllegalArgumentException> { keyring.decrypt(envelope) }
+    }
+
+    @Test
+    fun contextualCiphertextsRejectMalformedKeyIds() = runTest {
+        val cipher = AesGcmHmacSha256EncryptionProvider(ByteArray(32) { 1 }, ByteArray(32) { 2 })
+        val keyring = KeyringFieldEncryptionProvider("\uFFFD", mapOf("\uFFFD" to cipher))
+        val context = FieldEncryptionContext(1u, byteArrayOf(2), byteArrayOf(3))
+        val plain = byteArrayOf(42)
+        val envelope = keyring.encrypt(context, plain)
+        assertContentEquals(plain, keyring.decrypt(context, envelope))
+        val offset = envelope.size - cipher.encrypt(context, plain).size - "\uFFFD".encodeToByteArray().size
+        envelope[offset] = 0xED.toByte()
+        envelope[offset + 1] = 0xA0.toByte()
+        envelope[offset + 2] = 0x80.toByte()
+        assertNull(keyring.keyId(envelope))
+        assertFailsWith<IllegalArgumentException> { keyring.decrypt(context, envelope) }
+    }
+
+    @Test
+    fun tokenReadKeyConfigurationIsOwned() = runTest {
+        val reads = mutableListOf("old")
+        val keyring = KeyringFieldEncryptionProvider("current", mapOf(
+            "old" to XorProvider(1), "current" to XorProvider(2),
+        ), tokenReadKeyIds = reads)
+        reads.clear()
+        val candidates = keyring.deriveDeterministicTokenCandidates(1u, byteArrayOf(1), byteArrayOf(42))
+        assertEquals(2, candidates.size)
+        assertContentEquals(byteArrayOf(1), candidates.last())
+    }
+
     @Test
     fun readsLegacyAndPreviousKeysAndWritesActiveKey() = runTest {
         val old = XorProvider(1)

@@ -30,7 +30,8 @@ Not intended as a standalone store.
   - Field encryption: AES-GCM
   - Deterministic sensitive lookup tokens: HMAC-SHA256
 - Additive key rotation:
-  - `KeyringFieldEncryptionProvider` writes versioned key-id envelopes and reads
+  - `KeyringFieldEncryptionProvider` rejects unencodable key IDs, owns its token-read
+    configuration, writes versioned key-id envelopes and reads
     active, previous, and legacy ciphertext. Existing unwrapped MKE2 ciphertext
     requires a contextual `legacyProvider` during adoption.
   - Deterministic-token candidate derivation and candidate-aware unique reads support

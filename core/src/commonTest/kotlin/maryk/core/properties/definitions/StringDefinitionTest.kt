@@ -18,6 +18,23 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class StringDefinitionTest {
+    @Test
+    fun validationRejectsUnrepresentableUtf16() {
+        val invalid = listOf(
+            charArrayOf(0xD800.toChar()).concatToString(),
+            charArrayOf(0xDC00.toChar()).concatToString(),
+            "before" + 0xD800.toChar() + "after",
+        )
+        for (value in invalid) {
+            val error = assertFailsWith<InvalidValueException> {
+                StringDefinition().validateWithRef(newValue = value)
+            }
+            // A rejected value must not make its validation response unencodable.
+            error.value.calculateUTF8ByteLength()
+        }
+        StringDefinition().validateWithRef(newValue = "valid\u0000🚀\uFFFD")
+    }
+
 
     private val stringsToTest = mapOf(
         "" to "",

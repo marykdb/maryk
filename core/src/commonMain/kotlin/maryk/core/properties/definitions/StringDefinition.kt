@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.serializableValidationReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -63,6 +64,18 @@ data class StringDefinition(
         newValue: String?,
         refGetter: () -> IsPropertyReference<String, IsPropertyDefinition<String>, *>?
     ) {
+        if (newValue != null) {
+            try {
+                newValue.calculateUTF8ByteLength()
+            } catch (error: IllegalArgumentException) {
+                val reference = try {
+                    serializableValidationReference(refGetter())
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+                throw InvalidValueException(reference, "String is not UTF-8 encodable: ${error.message}")
+            }
+        }
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
 
         when {

@@ -3,8 +3,40 @@ package maryk.lib.bytes
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
+import kotlin.text.CharacterCodingException
+import maryk.lib.recyclableByteArray
 
 class StringTest {
+    @Test
+    fun malformedUtf8IsRejectedAtEveryBufferSize() {
+        val malformed = listOf("80", "c0af", "e080af", "eda080", "f4908080", "c2", "f09f98")
+        for (padding in listOf(0, recyclableByteArray.size + 1)) for (hex in malformed) {
+            val bytes = ByteArray(padding) { 0x61 } + hex.hexToByteArray()
+            var index = 0
+            assertFailsWith<CharacterCodingException>("padding=$padding bytes=$hex") {
+                initString(bytes.size) { bytes[index++] }
+            }
+        }
+    }
+
+    @Test
+    fun byteSuppliersCanDecodeNestedStrings() {
+        val outer = "outer text".encodeToByteArray()
+        val inner = "inner".encodeToByteArray()
+        for (nestedAt in listOf(0, 1, inner.size, outer.lastIndex)) {
+            var index = 0
+            expect("outer text") {
+                initString(outer.size) {
+                    if (index == nestedAt) {
+                        var nestedIndex = 0
+                        expect("inner") { initString(inner.size) { inner[nestedIndex++] } }
+                    }
+                    outer[index++]
+                }
+            }
+        }
+    }
+
     private val stringsAndBytes = mapOf(
         "546573744d6172796b4d6f64656c" to "TestMarykModel",
         "e0b889e0b8b1e0b899e0b89fe0b8b1e0b887e0b984e0b8a1e0b988e0b980e0b882e0b989e0b8b2e0b983e0b888" to "ฉันฟังไม่เข้าใจ"

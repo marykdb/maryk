@@ -57,7 +57,10 @@ val def = StringDefinition(
 ```
 
 ## Storage/Transport Byte representation
-Strings are stored as UTF-8 encoded bytes. With transport the LENGTH_DELIMITED wiretype is used
+Strings are stored as UTF-8 encoded bytes. Transport uses the LENGTH_DELIMITED wire type.
+Malformed UTF-8 is rejected during decoding. Writes reject lone UTF-16 surrogates,
+including strings nested in collections and embedded values. Valid supplementary
+characters, NUL characters and the explicit replacement character U+FFFD are preserved.
 
 ## String representation
 String

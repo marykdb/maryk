@@ -1,6 +1,6 @@
 package maryk.lib.bytes
 
-import maryk.lib.recyclableByteArray
+private const val INITIAL_STRING_BUFFER_SIZE = 10_000
 
 private const val MIN_SUPPLEMENTARY_CODE_POINT = 0x010000
 
@@ -26,18 +26,8 @@ fun fromCodePoint(value: Int): String {
 fun initString(length: Int, reader: () -> Byte): String {
     require(length >= 0) { "String byte length cannot be negative: $length" }
 
-    return if (length > recyclableByteArray.size) {
-        initLargeString(length, reader)
-    } else {
-        for (index in 0 until length) {
-            recyclableByteArray[index] = reader()
-        }
-        recyclableByteArray.decodeToString(0, length)
-    }
-}
-
-private fun initLargeString(length: Int, reader: () -> Byte): String {
-    var bytes = ByteArray(recyclableByteArray.size)
+    // The byte supplier may perform nested decoding. Each invocation owns its buffer.
+    var bytes = ByteArray(minOf(length, INITIAL_STRING_BUFFER_SIZE))
     var index = 0
     while (index < length) {
         if (index == bytes.size) {
@@ -46,7 +36,7 @@ private fun initLargeString(length: Int, reader: () -> Byte): String {
         }
         bytes[index++] = reader()
     }
-    return bytes.decodeToString(0, length)
+    return bytes.decodeToString(0, length, throwOnInvalidSequence = true)
 }
 
 /**

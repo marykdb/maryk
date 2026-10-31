@@ -1,5 +1,6 @@
 package maryk.yaml
 
+import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
 import maryk.json.JsonToken.EndComplexFieldName
 import maryk.json.JsonToken.EndObject
@@ -200,13 +201,18 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
  * Reads until first token and returns it
  */
 internal fun <P: IsYamlCharWithIndentsReader> P.flowMapReader(tag: TokenType?, indentToAdd: Int): JsonToken {
-    read()
     return FlowMapReader(
         yamlReader = this.yamlReader,
         parentReader = this,
         indentToAdd = indentToAdd
     ).let {
         this.currentReader = it
+        // An enclosing tag or anchor must not turn a dangling opener into an empty value.
+        try {
+            read()
+        } catch (_: ExceptionWhileReadingJson) {
+            throw InvalidYamlContent("Unclosed flow map")
+        }
         it.readUntilToken(0, tag)
     }
 }

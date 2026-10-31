@@ -30,28 +30,24 @@ class UpdateListenerForGet<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
     override fun addValues(key: Key<DM>, values: Values<DM>): Int? {
         if (!keyIndex.contains(key)) return null
         if (keyIndex.isPresent(key)) return matchingKeys.value.indexOf(key)
-        val insertionIndex = keyIndex.insertionIndex(matchingKeys.value, key)
-
-        matchingKeys.value = buildList {
-            addAll(matchingKeys.value)
-            add(insertionIndex, key)
-        }
         keyIndex.add(key)
-        return insertionIndex
+        matchingKeys.value = keyIndex.orderedPresentKeys()
+        return matchingKeys.value.indexOf(key)
     }
 
     override fun removeKey(key: Key<DM>): Int = super.removeKey(key).also { index ->
-        if (index >= 0) keyIndex.remove(key)
+        if (index >= 0) {
+            matchingKeys.value = matchingKeys.value.filterNot { it == key }
+            keyIndex.remove(key)
+        }
     }
 
     override suspend fun changeOrder(
         change: Change<DM>,
         changedHandler: suspend (Int?, Boolean) -> Unit
     ) {
-        val keyIndex = matchingKeys.value.indexOfFirst { it compareTo change.key == 0 }
-
-        if (keyIndex >= 0) {
-            changedHandler(if (keyIndex >= 0) keyIndex else null, false)
+        matchingKeys.value.forEachIndexed { index, key ->
+            if (key == change.key) changedHandler(index, false)
         }
     }
 }
@@ -60,14 +56,11 @@ internal class OrderedKeyIndex<K>(
     requestedKeys: List<K>,
     presentKeys: List<K>,
 ) {
-    private val requestedOrder = buildMap {
-        requestedKeys.forEachIndexed { index, key ->
-            if (key !in this) put(key, index)
-        }
-    }
-    private val present = presentKeys.filterTo(mutableSetOf(), requestedOrder::containsKey)
+    private val requestedKeys = requestedKeys.toList()
+    private val requested = requestedKeys.toHashSet()
+    private val present = presentKeys.filterTo(mutableSetOf(), requested::contains)
 
-    fun contains(key: K): Boolean = requestedOrder.containsKey(key)
+    fun contains(key: K): Boolean = key in requested
 
     fun isPresent(key: K): Boolean = key in present
 
@@ -79,15 +72,5 @@ internal class OrderedKeyIndex<K>(
         present -= key
     }
 
-    fun insertionIndex(currentKeys: List<K>, key: K): Int {
-        val targetOrder = requestedOrder.getValue(key)
-        var low = 0
-        var high = currentKeys.size
-        while (low < high) {
-            val middle = (low + high) ushr 1
-            val middleOrder = requestedOrder[currentKeys[middle]] ?: Int.MAX_VALUE
-            if (middleOrder < targetOrder) low = middle + 1 else high = middle
-        }
-        return low
-    }
+    fun orderedPresentKeys(): List<K> = requestedKeys.filter { it in present }
 }

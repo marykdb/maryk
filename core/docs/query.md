@@ -306,6 +306,10 @@ To select a subset of values in the query, use `select` with a [graph](reference
 It is possible to filter the results with [filters](filters.md) or include soft-deleted results by
 passing `filterSoftDeleted=false`.
 
+Results retain request order, including repeated keys. A live get subscription
+updates every occurrence independently. Removing a key removes all its occurrences;
+if it later matches again, its entries return to their original requested positions.
+
 You can also view the objects at a certain version with `toVersion`
 if the store supports viewing past versions.
 
@@ -385,6 +389,9 @@ storage-layout migration. Changes to validation, defaults, or unindexed properti
 remain compatible.
 For multi-entry indexes, cursor paging emits each record once through its first
 eligible entry in the requested direction.
+Live scans retain this rule as records change: a row whose first eligible entry
+falls before the cursor stays excluded even if it has another entry after it.
+The cursor record itself remains excluded if its index values later move.
 Aggregations apply to the current page; combine page results in the application
 when a total across every page is needed.
 

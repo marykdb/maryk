@@ -18,6 +18,8 @@ import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.resolveCursor
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.query.responses.FetchByTableScan
@@ -72,6 +74,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
 
     internal val usesTableScan get() = scanType is TableScan
     internal val usesIndexScan get() = scanType is IndexScan
+    private val continuation = (request as? ScanRequest<DM>)?.resolveCursor()
 
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
     private val indexStartBoundary = when (response) {
@@ -133,6 +136,8 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         update: Update<DM>,
         dataStore: IsDataStore
     ) {
+        // Cursor paging excludes the cursor record even if it later moves.
+        if (continuation?.key?.bytes?.contentEquals(update.key.bytes) == true) return
         if (scanType is IndexScan) {
             update.process(this, dataStore, sendFlow)
             return
@@ -277,15 +282,23 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
 
     internal fun resolveIndexKey(values: Values<DM>, keyBytes: ByteArray): ByteArray? {
         val indexScan = scanType as? IndexScan ?: return null
+        if (continuation?.key?.bytes?.contentEquals(keyBytes) == true) return null
 
-        val matchingIndexKeys = visibleIndexKeys(indexScan.index.toStorageByteArraysForIndex(values, keyBytes))
+        // A cursor page uses each row's canonical entry across the query range.
+        // Choosing an entry after applying the cursor can repeat a straddling row
+        // whose canonical entry belonged to an earlier page.
+        val matchingIndexKeys = visibleIndexKeys(
+            indexScan.index.toStorageByteArraysForIndex(values, keyBytes),
+            applyStartBoundary = continuation == null,
+        )
 
         if (matchingIndexKeys.isEmpty()) return null
 
-        return when (scanType.direction) {
+        val indexKey = when (scanType.direction) {
             ASC -> matchingIndexKeys.minWithOrNull { a, b -> a compareTo b }
             DESC -> matchingIndexKeys.maxWithOrNull { a, b -> a compareTo b }
         }
+        return indexKey?.takeIf(::isWithinIndexStartBoundary)
     }
 
     internal fun compareIndexKeys(first: ByteArray, second: ByteArray): Int = when ((scanType as IndexScan).direction) {
@@ -342,14 +355,19 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
 
                 // Check if there are index changes for index needed to order this request
                 when {
-                    relevantIndexChanges.isEmpty() -> { // Nothing changed
+                    relevantIndexChanges.isEmpty() && currentValues == null -> { // Nothing changed
                         if (existingIndex >= 0) {
                             changedHandler(existingIndex, false)
                         }
                     }
                     else -> { // Was changed in order
-                        val indexKey = currentValues?.let { resolveIndexKey(it, change.key.bytes) }
-                            ?: resolveIndexKeyFromChanges(existingIndexKey, relevantIndexChanges)
+                        // A current snapshot resolving to null means the row left
+                        // the range; an older index delta must not add it back.
+                        val indexKey = if (currentValues != null) {
+                            resolveIndexKey(currentValues, change.key.bytes)
+                        } else {
+                            resolveIndexKeyFromChanges(existingIndexKey, relevantIndexChanges)
+                        }
 
                         // check if key is valid according to filters
                         if (indexKey != null) {
@@ -455,7 +473,15 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         }
     }
 
-    private fun visibleIndexKeys(indexKeys: List<ByteArray>): List<ByteArray> =
+    private fun isWithinIndexStartBoundary(indexKey: ByteArray): Boolean =
+        indexStartBoundary?.let { boundary ->
+            when (scanType.direction) {
+                ASC -> indexKey compareTo boundary >= 0
+                DESC -> indexKey compareTo boundary <= 0
+            }
+        } ?: true
+
+    private fun visibleIndexKeys(indexKeys: List<ByteArray>, applyStartBoundary: Boolean = true): List<ByteArray> =
         indexKeys.filter { indexKey ->
             val matchesRange = indexScanRange?.let { range ->
                 resolveIndexValueSize(indexKey)?.let { valueSize ->
@@ -466,16 +492,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                 } == true
             } ?: true
 
-            if (!matchesRange) {
-                false
-            } else {
-                indexStartBoundary?.let { boundary ->
-                    when (scanType.direction) {
-                        ASC -> indexKey compareTo boundary >= 0
-                        DESC -> indexKey compareTo boundary <= 0
-                    }
-                } ?: true
-            }
+            matchesRange && (!applyStartBoundary || isWithinIndexStartBoundary(indexKey))
         }
 
     private fun resolveIndexValueSize(indexKey: ByteArray): Int? {

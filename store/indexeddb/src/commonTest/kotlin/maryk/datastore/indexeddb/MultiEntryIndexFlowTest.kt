@@ -4,12 +4,30 @@ import kotlinx.coroutines.test.runTest
 import maryk.datastore.test.assertMultiEntryIndexFlowRefill
 import maryk.datastore.test.assertScanUpdatesOldRecordRefill
 import maryk.datastore.test.assertFrozenIndexFlowBoundary
+import maryk.datastore.test.assertIndexCursorFlowMembership
+import maryk.datastore.test.IndexCursorFlowChange
 import maryk.datastore.test.IndexFlowBoundaryOrigin
 import maryk.test.models.AnyValueMapIndexModel
 import kotlin.test.Test
 import kotlin.random.Random
 
 class MultiEntryIndexFlowTest {
+    @Test
+    fun incrementalChangesRetainCursorMembership() = runTest {
+        installIndexedDbForTests()
+        for (descending in listOf(false, true)) for (scenario in IndexCursorFlowChange.entries) {
+            val store = IndexedDbDataStore.open(
+                "cursor-membership-$descending-$scenario-${Random.nextInt()}",
+                mapOf(1u to AnyValueMapIndexModel), keepAllVersions = true,
+            )
+            try {
+                assertIndexCursorFlowMembership(store, descending, scenario)
+            } finally {
+                store.close()
+            }
+        }
+    }
+
     @Test
     fun refillPreservesDistinctRowsAndTheirOrder() = runTest() {
         installIndexedDbForTests()

@@ -20,6 +20,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
+import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.RemovalUpdate
@@ -32,6 +33,63 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
 enum class IndexFlowBoundaryOrigin { IncludedStartKey, MovedExcludedStartKey, ProjectedCursor }
+enum class IndexCursorFlowChange { StraddlingRowChanges, CursorRowMoves, VisibleRowCrossesCursor }
+
+/** Incremental updates must obey the same canonical-entry cursor rule as finite scans. */
+suspend fun assertIndexCursorFlowMembership(store: IsDataStore, descending: Boolean, scenario: IndexCursorFlowChange) =
+    withContext(Dispatchers.Default.limitedParallelism(1)) {
+        val keys = listOf("a", "b", "c", "d", "straddle").associateWith { name ->
+            assertIs<AddSuccess<AnyValueMapIndexModel>>(store.execute(AnyValueMapIndexModel.add(
+                AnyValueMapIndexModel.create {
+                    this.name with name
+                    mapValues with if (name == "straddle") mapOf("0" to "v", "z" to "v") else mapOf(name to "v")
+                },
+            )).statuses.single()).key
+        }
+        val boundary = keys.getValue(if (descending) "c" else "b")
+        val visible = keys.getValue(if (descending) "b" else "c")
+        val barrier = keys.getValue(if (descending) "a" else "d")
+        val reference = AnyValueMapIndexModel.ref { mapValues.anyKey() }
+        val order = if (descending) reference.descending() else reference.ascending()
+        val cursor = assertNotNull(store.execute(AnyValueMapIndexModel.scan(
+            startKey = boundary, order = order, limit = 1u,
+        )).nextCursor)
+        val request = AnyValueMapIndexModel.scan(cursor = cursor, order = order, limit = 10u)
+        val events = Channel<IsUpdateResponse<AnyValueMapIndexModel>>(Channel.UNLIMITED)
+        val collector = launch { store.executeFlow(request).collect { events.send(it) } }
+        try {
+            val initial = assertIs<InitialValuesUpdate<AnyValueMapIndexModel>>(withTimeout(10.seconds) { events.receive() })
+            assertEquals(listOf(visible, barrier), initial.values.map { it.key })
+            // Neither a straddling row nor the cursor row belongs to the next page,
+            // even though each has an index entry beyond the frozen boundary.
+            val excludedChange = when (scenario) {
+                IndexCursorFlowChange.CursorRowMoves -> boundary.change(Change(AnyValueMapIndexModel.ref { mapValues } with
+                    mapOf((if (descending) "a" else "y") to "moved")))
+                IndexCursorFlowChange.StraddlingRowChanges -> keys.getValue("straddle").change(
+                    Change(AnyValueMapIndexModel.ref { name } with "changed straddle"))
+                IndexCursorFlowChange.VisibleRowCrossesCursor -> visible.change(
+                    Change(AnyValueMapIndexModel.ref { mapValues } with mapOf("0" to "v", "z" to "v")))
+            }
+            assertIs<ChangeSuccess<AnyValueMapIndexModel>>(store.execute(
+                AnyValueMapIndexModel.change(excludedChange),
+            ).statuses.single())
+            // A visible update is an actor-order barrier for the excluded changes.
+            assertIs<ChangeSuccess<AnyValueMapIndexModel>>(store.execute(AnyValueMapIndexModel.change(
+                barrier.change(Change(AnyValueMapIndexModel.ref { name } with "visible barrier")),
+            )).statuses.single())
+            if (scenario == IndexCursorFlowChange.VisibleRowCrossesCursor) {
+                val removal = assertIs<RemovalUpdate<AnyValueMapIndexModel>>(withTimeout(10.seconds) { events.receive() })
+                assertEquals(visible, removal.key)
+            }
+            val change = assertIs<ChangeUpdate<AnyValueMapIndexModel>>(withTimeout(10.seconds) { events.receive() })
+            assertEquals(barrier, change.key)
+            val expected = if (scenario == IndexCursorFlowChange.VisibleRowCrossesCursor) listOf(barrier) else listOf(visible, barrier)
+            assertEquals(expected, store.execute(request).values.map { it.key })
+        } finally {
+            collector.cancelAndJoin()
+            events.close()
+        }
+    }
 
 /** Refill retains a frozen origin even after its start record disappears or moves. */
 suspend fun assertFrozenIndexFlowBoundary(

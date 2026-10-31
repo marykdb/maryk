@@ -361,13 +361,16 @@ abstract class AbstractDataStore(
             try {
                 cleanup()
             } catch (error: Throwable) {
-                // Coroutine stacktrace recovery can copy an exception while
-                // retaining the original as its cause. Match this store's
-                // shutdown signal, rather than its exception type or message.
-                val shutdown = closeCause.value
-                if (shutdown == null || error !== shutdown && error.cause !== shutdown) throw error
+                if (!isShutdownSignal(error)) throw error
             }
         }
+    }
+
+    private fun isShutdownSignal(error: Throwable): Boolean {
+        // Coroutine stacktrace recovery can copy an exception while retaining
+        // the original as its cause. Match only this store's shutdown signal.
+        val shutdown = closeCause.value ?: return false
+        return error === shutdown || error.cause === shutdown
     }
 
     protected open fun onUpdateListenerAdded(dataModelId: UInt) {}
@@ -603,15 +606,21 @@ abstract class AbstractDataStore(
     override suspend fun closeAllListeners() {
         if (isClosed) return
 
-        waitForInit()
+        try {
+            waitForInit()
 
-        if (isClosed) return
+            if (isClosed) return
 
-        val listenersRemoved = CompletableDeferred<Unit>()
-        awaitPendingResponse(listenersRemoved) {
-            mutableUpdateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
+            val listenersRemoved = CompletableDeferred<Unit>()
+            awaitPendingResponse(listenersRemoved) {
+                mutableUpdateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
+            }
+            onAllUpdateListenersRemoved()
+        } catch (error: Throwable) {
+            // Closing the store also closes every listener, including removals
+            // waiting for initialization or for the update actor's acknowledgement.
+            if (!isShutdownSignal(error)) throw error
         }
-        onAllUpdateListenersRemoved()
     }
 
     /** Fail live listeners when a backend cannot safely continue an incremental stream. */

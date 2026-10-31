@@ -5,6 +5,7 @@ import maryk.datastore.shared.IsDataStore
 import maryk.datastore.test.LaggedSnapshotRecord
 import maryk.datastore.test.assertLaggedRefillPosition
 import maryk.datastore.test.assertSameKeyRefillPreservesChanges
+import maryk.datastore.test.assertRepeatedGetOccurrences
 import maryk.datastore.test.assertLaggedSnapshotFlowMatrix
 import maryk.datastore.test.assertLaggedUpdateHistorySnapshotOrder
 import maryk.datastore.test.assertUpdateHistoryRevisionTies
@@ -14,6 +15,13 @@ import kotlin.random.Random
 import kotlin.time.Duration.Companion.minutes
 
 class LaggedSnapshotFlowTest {
+    @Test
+    fun repeatedGetKeysRetainEveryOccurrence() = runTest(timeout = 3.minutes) {
+        for (history in listOf(false, true)) for (filtered in listOf(false, true)) for (projected in listOf(false, true)) {
+            withStore(history) { assertRepeatedGetOccurrences(it, filtered, projected) }
+        }
+    }
+
     private suspend fun withStore(history: Boolean, block: suspend (IsDataStore) -> Unit) {
         val store = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",

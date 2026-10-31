@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
+import maryk.core.query.filters.singleReferenceInFilter
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
@@ -72,7 +73,7 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     }
 
     // True if the listener filters on mutable values
-    val filterContainsMutableValues: Boolean = request.where?.singleReference {
+    val filterContainsMutableValues: Boolean = request.dataModel.singleReferenceInFilter(request.where) {
         !it.propertyDefinition.required || !it.propertyDefinition.final
     } != null
 

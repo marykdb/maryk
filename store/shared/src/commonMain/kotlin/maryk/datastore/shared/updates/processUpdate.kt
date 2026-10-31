@@ -31,6 +31,7 @@ import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.values.Values
+import maryk.core.values.copyWithOwnedValues
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.datastore.shared.updates.Update.Change
@@ -49,34 +50,46 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
     if (request !is IsChangesRequest<*, *> || request.fromVersion <= version) {
         when (this) {
             is Addition<DM> -> {
-                if (!isDeleted || !request.filterSoftDeleted) {
-                    if (values.matches(request.where)) {
-                        val insertIndex = updateListener.addValues(key, values, version)
-                        if (insertIndex != null) {
+                // Referenced and named predicates use datastore filter semantics.
+                // The read can also include newer commits, so publish and cover
+                // that complete snapshot instead of replaying its queued deltas.
+                val addition = if (request.where != null) {
+                    dataStore.execute(dataModel.get(
+                        key,
+                        select = null,
+                        where = request.where,
+                        filterSoftDeleted = request.filterSoftDeleted,
+                    )).values.singleOrNull()
+                } else if (!isDeleted || !request.filterSoftDeleted) {
+                    ValuesWithMetaData(key, values, version, version, isDeleted)
+                } else null
+                if (addition != null) {
+                    val insertIndex = updateListener.addValues(key, addition.values, addition.lastVersion)
+                    if (insertIndex != null) {
+                        if (request.where != null) updateListener.includeSnapshot(key, addition.lastVersion)
+                        sharedFlow.sendAddition(updateListener,
+                            AdditionUpdate(
+                                key = key,
+                                version = addition.lastVersion,
+                                firstVersion = addition.firstVersion,
+                                insertionIndex = insertIndex,
+                                values = addition.values.filterWithSelect(request.select),
+                                isDeleted = addition.isDeleted
+                            )
+                        )
+
+                        // Remove any values after the limit
+                        if (updateListener is UpdateListenerForScan<DM, *> && updateListener.matchingKeys.value.size.toUInt() > updateListener.request.limit) {
+                            val keyToRemove = updateListener.getLast()
+                            updateListener.removeKey(keyToRemove)
+
                             sharedFlow.send(
-                                AdditionUpdate(
-                                    key = key,
-                                    version = version,
-                                    firstVersion = version,
-                                    insertionIndex = insertIndex,
-                                    values = values.filterWithSelect(request.select),
-                                    isDeleted = isDeleted
+                                RemovalUpdate(
+                                    key = keyToRemove,
+                                    version = addition.lastVersion,
+                                    reason = NotInRange
                                 )
                             )
-
-                            // Remove any values after the limit
-                            if (updateListener is UpdateListenerForScan<DM, *> && updateListener.matchingKeys.value.size.toUInt() > updateListener.request.limit) {
-                                val keyToRemove = updateListener.getLast()
-                                updateListener.removeKey(keyToRemove)
-
-                                sharedFlow.send(
-                                    RemovalUpdate(
-                                        key = keyToRemove,
-                                        version = version,
-                                        reason = NotInRange
-                                    )
-                                )
-                            }
                         }
                     }
                 }
@@ -149,7 +162,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                     if (addition != null) {
                         updateListener.addValues(addition.key, addition.values, addition.lastVersion)?.let { insertionIndex ->
                             updateListener.includeSnapshot(addition.key, addition.lastVersion)
-                            sharedFlow.send(
+                            sharedFlow.sendAddition(updateListener,
                                 AdditionUpdate(
                                     key = addition.key,
                                     values = addition.values.filterWithSelect(request.select),
@@ -255,13 +268,29 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
     }
 }
 
+/** One addition per requested occurrence, including interleaved repeated get keys. */
+private suspend fun <DM : IsRootDataModel> SendChannel<IsUpdateResponse<DM>>.sendAddition(
+    listener: UpdateListener<DM, *>,
+    addition: AdditionUpdate<DM>,
+) {
+    val indices = if (listener is UpdateListenerForGet<DM, *>) {
+        listener.matchingKeys.value.mapIndexedNotNull { index, key -> index.takeIf { key == addition.key } }
+    } else listOf(addition.insertionIndex)
+    for (index in indices) {
+        send(addition.copy(
+            insertionIndex = index,
+            values = addition.values.copyWithOwnedValues(),
+        ))
+    }
+}
+
 private fun <DM : IsRootDataModel> Change<DM>.createChangeUpdate(
     select: RootPropRefGraph<DM>?,
     orderChanged: Boolean,
     newIndex: Int
 ): ChangeUpdate<DM>? {
     // Filter now in search of possible delete
-    val filteredChanges = changes.filterWithSelect(select)
+    val filteredChanges = changes.filterWithSelect(select).map { it.copyWithOwnedValues() }
 
     // Only send ChangeUpdate if order has changed or there are changes with are not just index changes
     // IndexChanges are covered with orderChanged check so filteredChanges need to contain more than IndexChanges

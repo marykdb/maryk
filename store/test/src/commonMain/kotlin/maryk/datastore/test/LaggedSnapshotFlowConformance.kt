@@ -38,6 +38,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.processUpdateResponse
@@ -63,7 +64,77 @@ object LaggedSnapshotRecord : RootDataModel<LaggedSnapshotRecord>(
 }
 
 enum class LaggedSnapshotQuery { Get, Table, Index }
-enum class LaggedSnapshotScenario { Enter, Reincarnate, ExitAndReturn, RefillExisting, RefillPendingAdd }
+enum class LaggedSnapshotScenario { Enter, Reincarnate, ExitAndReturn, RefillExisting, RefillPendingAdd, AddThenChange }
+
+/** Repeated get keys are independent result occurrences in their requested positions. */
+suspend fun assertRepeatedGetOccurrences(store: IsDataStore, filtered: Boolean, projected: Boolean) =
+    withContext(Dispatchers.Default.limitedParallelism(1)) {
+        val model = LaggedSnapshotRecord
+        fun key(id: Int) = model.key(ByteArray(model.Meta.keyByteSize).also { it[it.lastIndex] = id.toByte() })
+        val subject = key(1)
+        val other = key(2)
+        val barrierKey = key(3)
+        fun values(item: String) = model.create {
+            enabled with "yes"
+            items with listOf(item)
+            rank with item
+        }
+        for ((key, item) in listOf(subject to "subject", other to "other", barrierKey to "barrier")) {
+            assertIs<AddSuccess<LaggedSnapshotRecord>>(store.execute(model.add(key to values(item))).statuses.single())
+        }
+        val where = Equals(model.ref { enabled } with "yes").takeIf { filtered }
+        val select = model.graph { listOf(items) }.takeIf { projected }
+        val request = model.get(subject, other, subject, barrierKey, subject, where = where, select = select)
+        val fullRequest = model.get(subject, other, subject, barrierKey, subject, where = where)
+        val listener = UpdateListenerForGet(request, store.execute(fullRequest))
+        val events = Channel<IsUpdateResponse<LaggedSnapshotRecord>>(Channel.UNLIMITED)
+        val collector = launch { listener.getFlow().collect { events.send(it) } }
+        suspend fun change(key: Key<LaggedSnapshotRecord>, vararg changes: IsChange): Update.Change<LaggedSnapshotRecord> {
+            val result = assertIs<ChangeSuccess<LaggedSnapshotRecord>>(store.execute(model.change(key.change(*changes))).statuses.single())
+            return Update.Change(model, key, result.version, changes.toList() + result.changes.orEmpty())
+        }
+        fun append(item: String) = ListChange(model.ref { items }.change(addValuesToEnd = listOf(item)))
+        try {
+            var image = assertIs<InitialValuesUpdate<LaggedSnapshotRecord>>(withTimeout(10.seconds) { events.receive() }).values
+            assertEquals(listOf(subject, other, subject, barrierKey, subject), image.map { it.key })
+            suspend fun assertCurrent() {
+                val barrier = change(barrierKey, append("barrier"))
+                listener.process(barrier, store)
+                withTimeout(10.seconds) {
+                    do {
+                        val event = events.receive()
+                        image = processUpdateResponse(event, image)
+                    } while (event.version != barrier.version)
+                }
+                val expected = store.execute(fullRequest).values.map { it.copy(values = it.values.filterWithSelect(select)) }
+                assertEquals(expected.map { it.key }, listener.matchingKeys.value)
+                assertEquals(expected, image, "filtered=$filtered/projected=$projected/history=${store.keepAllVersions}")
+            }
+            listener.process(change(subject, append("changed")), store)
+            assertCurrent()
+            listener.process(change(subject, ObjectSoftDeleteChange(true)), store)
+            assertCurrent()
+            listener.process(change(subject, ObjectSoftDeleteChange(false)), store)
+            assertCurrent()
+            if (filtered) {
+                listener.process(change(subject, Change(model.ref { enabled } with "no")), store)
+                assertCurrent()
+                listener.process(change(subject, Change(model.ref { enabled } with "yes")), store)
+                assertCurrent()
+            }
+            val deletion = assertIs<DeleteSuccess<LaggedSnapshotRecord>>(store.execute(model.delete(subject, hardDelete = true)).statuses.single())
+            listener.process(Update.Deletion(model, subject, deletion.version, true), store)
+            assertCurrent()
+            val recreated = values("recreated")
+            val addition = assertIs<AddSuccess<LaggedSnapshotRecord>>(store.execute(model.add(subject to recreated)).statuses.single())
+            listener.process(Update.Addition(model, subject, addition.version, recreated), store)
+            assertCurrent()
+        } finally {
+            collector.cancelAndJoin()
+            listener.close()
+            events.close()
+        }
+    }
 
 /** A refill of the removed key still has to publish every intervening edit. */
 suspend fun assertSameKeyRefillPreservesChanges(
@@ -157,7 +228,7 @@ suspend fun assertLaggedSnapshotFlow(
     if (refill) {
         add(anchor, values("yes", "anchor", "a"))
         if (scenario == LaggedSnapshotScenario.RefillExisting) add(subject, values("yes", "a", "b"))
-    } else add(subject, values("no", "a", "b"))
+    } else if (scenario != LaggedSnapshotScenario.AddThenChange) add(subject, values("no", "a", "b"))
 
     val select = model.graph { listOf(items) }.takeIf { projected }
     val where = Equals(model.ref { enabled } with "yes")
@@ -181,6 +252,10 @@ suspend fun assertLaggedSnapshotFlow(
         var image = processUpdateResponse(withTimeout(10.seconds) { events.receive() }, emptyList())
         val queued = mutableListOf<Update<LaggedSnapshotRecord>>()
         when (scenario) {
+            LaggedSnapshotScenario.AddThenChange -> {
+                queued += add(subject, values("yes", "a", "b"))
+                queued += change(subject, append("b"))
+            }
             LaggedSnapshotScenario.Enter -> {
                 queued += change(subject, enabled("yes"))
                 queued += change(subject, append("b"))

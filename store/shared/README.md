@@ -36,10 +36,23 @@ be deleted or assigned its existing value, but cannot receive a different item.
   updates and initial history replay. Deleted creations remain excluded from normal
   reads and active indexes until an explicit later undelete.
 - Shared update/listener flow behavior.
+- Get listeners preserve repeated keys and request order across edits, filter
+  changes, deletion and re-creation. Each occurrence receives its own update.
+- Incremental addition and change payloads own their built-in collection values,
+  so editing one received payload cannot alter another listener's notification.
+- Filtered live additions use datastore reads so referenced predicates match
+  ordinary queries. Named search predicates, including nested logical filters,
+  re-evaluate membership when records change. Snapshot revisions prevent queued
+  deltas from replaying changes already included in a fetched addition.
+- Geographic predicates track mutable enclosing properties as well as their
+  location field, so removing or restoring an optional embedded object updates
+  the live result even when its location is final.
 - Flow completion includes listener cleanup. If store shutdown overlaps that
   cleanup, its shutdown acknowledgement does not replace the flow's cancellation
   or original failure. Other cleanup failures remain visible, and closing active
   requests still fails them with `StorageException`.
+- `closeAllListeners()` completes normally when store shutdown overlaps listener
+  removal. It remains cancellable while the store is open.
 - Shared versioning/query semantics.
 - Shared sensitive-field encryption contracts:
   - `maryk.datastore.shared.encryption.FieldEncryptionProvider`

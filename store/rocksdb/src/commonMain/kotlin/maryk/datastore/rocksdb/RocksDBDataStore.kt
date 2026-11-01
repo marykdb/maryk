@@ -1,5 +1,10 @@
 package maryk.datastore.rocksdb
 
+import maryk.datastore.shared.collectSensitiveReferences
+import maryk.datastore.shared.collectUniqueReferences
+import maryk.datastore.shared.mergeUniqueReferences
+import maryk.datastore.shared.SensitiveModelReferences
+
 import maryk.datastore.shared.RestoreVersionRequest
 import maryk.datastore.shared.applyRestoreVersion
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
@@ -54,7 +59,6 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.decodeVarUInt
 import maryk.core.extensions.bytes.toByteArray
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsValuesDataModel
 import maryk.core.models.migration.MigrationAuditEvent
 import maryk.core.models.migration.MigrationAuditEventType
 import maryk.core.models.migration.MigrationAuditLogStore
@@ -73,12 +77,10 @@ import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.models.migration.orderMigrationModelIds
-import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
@@ -169,7 +171,6 @@ import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
 import maryk.datastore.shared.ReplicationTombstoneCompactor
 import maryk.datastore.shared.SnapshotVersionProvider
-import maryk.datastore.shared.encryption.mayContainPropertyReference
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionContext
@@ -1608,132 +1609,6 @@ class RocksDBDataStore private constructor(
     private fun isSensitiveUniqueReference(modelId: UInt, reference: ByteArray): Boolean =
         sensitiveUniqueReferencesByModelId[modelId]?.any { it.contentEquals(reference) } == true
 
-    private fun collectSensitiveReferences(modelId: UInt, dataModel: IsRootDataModel): SensitiveModelReferences {
-        val sensitiveReferences = mutableListOf<ByteArray>()
-        val sensitiveUniqueReferences = mutableListOf<ByteArray>()
-        collectSensitiveReferencesRecursive(
-            modelId = modelId,
-            rootDataModel = dataModel,
-            dataModel = dataModel,
-            parentRef = null,
-            sensitiveReferences = sensitiveReferences,
-            sensitiveUniqueReferences = sensitiveUniqueReferences,
-            modelPath = mutableListOf()
-        )
-        return SensitiveModelReferences(sensitiveReferences, sensitiveUniqueReferences)
-    }
-
-    private fun collectUniqueReferences(dataModel: IsRootDataModel): List<ByteArray> {
-        val uniqueReferences = mutableListOf<ByteArray>()
-        collectUniqueReferencesRecursive(
-            dataModel = dataModel,
-            parentRef = null,
-            uniqueReferences = uniqueReferences,
-            modelPath = mutableListOf()
-        )
-        return uniqueReferences
-    }
-
-    private fun collectUniqueReferencesRecursive(
-        dataModel: IsValuesDataModel,
-        parentRef: AnyPropertyReference?,
-        uniqueReferences: MutableList<ByteArray>,
-        modelPath: MutableList<IsValuesDataModel>
-    ) {
-        if (modelPath.any { it === dataModel }) return
-        modelPath += dataModel
-        try {
-            dataModel.forEach { wrapper ->
-                val propertyReference = wrapper.ref(parentRef)
-                val definition = wrapper.definition
-                if (definition is IsComparableDefinition<*, *> && definition.unique) {
-                    uniqueReferences += propertyReference.toStorageByteArray()
-                }
-                if (definition is EmbeddedValuesDefinition<*>) {
-                    collectUniqueReferencesRecursive(
-                        dataModel = definition.dataModel,
-                        parentRef = propertyReference,
-                        uniqueReferences = uniqueReferences,
-                        modelPath = modelPath
-                    )
-                }
-            }
-        } finally {
-            modelPath.removeAt(modelPath.lastIndex)
-        }
-    }
-
-    private fun mergeUniqueReferences(
-        declaredReferences: List<ByteArray>,
-        storedReferences: List<ByteArray>
-    ) = buildList {
-        declaredReferences.forEach { add(it) }
-        storedReferences.forEach { storedReference ->
-            if (none { it.contentEquals(storedReference) }) {
-                add(storedReference)
-            }
-        }
-    }
-
-    private fun collectSensitiveReferencesRecursive(
-        modelId: UInt,
-        rootDataModel: IsRootDataModel,
-        dataModel: IsValuesDataModel,
-        parentRef: AnyPropertyReference?,
-        sensitiveReferences: MutableList<ByteArray>,
-        sensitiveUniqueReferences: MutableList<ByteArray>,
-        modelPath: MutableList<IsValuesDataModel>
-    ) {
-        if (modelPath.any { it === dataModel }) return
-        modelPath += dataModel
-        try {
-            dataModel.forEach { wrapper ->
-                val propertyReference = wrapper.ref(parentRef)
-                val reference = propertyReference.toStorageByteArray()
-                if (wrapper is IsSensitiveValueDefinitionWrapper<*, *, *, *> && wrapper.sensitive) {
-                    val isUnique = validateSensitiveWrapper(modelId, rootDataModel, dataModel, wrapper, propertyReference)
-                    sensitiveReferences += reference
-                    if (isUnique) {
-                        sensitiveUniqueReferences += reference
-                    }
-                }
-                val definition = wrapper.definition
-                if (definition is EmbeddedValuesDefinition<*>) {
-                    collectSensitiveReferencesRecursive(
-                        modelId = modelId,
-                        rootDataModel = rootDataModel,
-                        dataModel = definition.dataModel,
-                        parentRef = wrapper.ref(parentRef),
-                        sensitiveReferences = sensitiveReferences,
-                        sensitiveUniqueReferences = sensitiveUniqueReferences,
-                        modelPath = modelPath
-                    )
-                }
-            }
-        } finally {
-            modelPath.removeAt(modelPath.lastIndex)
-        }
-    }
-
-    private fun validateSensitiveWrapper(
-        modelId: UInt,
-        rootDataModel: IsRootDataModel,
-        dataModel: IsValuesDataModel,
-        wrapper: IsSensitiveValueDefinitionWrapper<*, *, *, *>,
-        propertyReference: AnyPropertyReference
-    ): Boolean {
-        val definition = wrapper.definition
-        val isUnique = (definition as? IsComparableDefinition<*, *>)?.unique == true
-        val indexed = rootDataModel.Meta.keyDefinition.mayContainPropertyReference(propertyReference) ||
-            rootDataModel.Meta.indexes?.any { it.mayContainPropertyReference(propertyReference) } == true
-        if (indexed) {
-            throw RequestException(
-                "Sensitive property ${dataModel.Meta.name}.${wrapper.name} (modelId=$modelId) cannot be used in a key or index. Use explicit blind-index field"
-            )
-        }
-        return isUnique
-    }
-
     private fun ByteArray.hasPrefix(prefix: ByteArray): Boolean {
         if (size < prefix.size) return false
         for (i in prefix.indices) {
@@ -1849,8 +1724,3 @@ class RocksDBDataStore private constructor(
 
 private const val INDEX_FORMAT_MIGRATION_DELETE_BATCH_SIZE = 1024
 private const val DEFAULT_MAX_CONCURRENT_READS = 4
-
-private data class SensitiveModelReferences(
-    val sensitiveReferences: List<ByteArray>,
-    val sensitiveUniqueReferences: List<ByteArray>,
-)

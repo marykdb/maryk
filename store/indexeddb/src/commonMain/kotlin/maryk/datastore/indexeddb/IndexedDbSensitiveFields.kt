@@ -1,25 +1,18 @@
 package maryk.datastore.indexeddb
 
+import maryk.datastore.shared.collectSensitiveReferences
+
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionContext
 import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
-import maryk.datastore.shared.encryption.mayContainPropertyReference
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.lib.bytes.combineToByteArray
-
-internal data class IndexedDbSensitiveModelReferences(
-    val sensitiveReferences: List<ByteArray>,
-    val sensitiveUniqueReferences: List<ByteArray>,
-)
 
 internal class IndexedDbSensitiveFieldSupport(
     dataModelsById: Map<UInt, IsRootDataModel>,
@@ -170,81 +163,6 @@ internal class IndexedDbSensitiveFieldSupport(
         combineToByteArray(ChangeLogContextReference, version.toBigEndianBytes()),
     )
 
-    private fun collectSensitiveReferences(modelId: UInt, dataModel: IsRootDataModel): IndexedDbSensitiveModelReferences {
-        val sensitiveReferences = mutableListOf<ByteArray>()
-        val sensitiveUniqueReferences = mutableListOf<ByteArray>()
-        collectSensitiveReferencesRecursive(
-            modelId = modelId,
-            rootDataModel = dataModel,
-            dataModel = dataModel,
-            parentRef = null,
-            sensitiveReferences = sensitiveReferences,
-            sensitiveUniqueReferences = sensitiveUniqueReferences,
-            modelPath = mutableListOf(),
-        )
-        return IndexedDbSensitiveModelReferences(sensitiveReferences, sensitiveUniqueReferences)
-    }
-
-    private fun collectSensitiveReferencesRecursive(
-        modelId: UInt,
-        rootDataModel: IsRootDataModel,
-        dataModel: IsValuesDataModel,
-        parentRef: AnyPropertyReference?,
-        sensitiveReferences: MutableList<ByteArray>,
-        sensitiveUniqueReferences: MutableList<ByteArray>,
-        modelPath: MutableList<IsValuesDataModel>,
-    ) {
-        if (modelPath.any { it === dataModel }) return
-        modelPath += dataModel
-
-        try {
-            dataModel.forEach { wrapper ->
-                val propertyReference = wrapper.ref(parentRef)
-                val reference = propertyReference.toStorageByteArray()
-                if (wrapper is IsSensitiveValueDefinitionWrapper<*, *, *, *> && wrapper.sensitive) {
-                    val isUnique = validateSensitiveWrapper(modelId, rootDataModel, dataModel, wrapper, propertyReference)
-                    sensitiveReferences += reference
-                    if (isUnique) {
-                        sensitiveUniqueReferences += reference
-                    }
-                }
-
-                val definition = wrapper.definition
-                if (definition is EmbeddedValuesDefinition<*>) {
-                    collectSensitiveReferencesRecursive(
-                        modelId = modelId,
-                        rootDataModel = rootDataModel,
-                        dataModel = definition.dataModel,
-                        parentRef = propertyReference,
-                        sensitiveReferences = sensitiveReferences,
-                        sensitiveUniqueReferences = sensitiveUniqueReferences,
-                        modelPath = modelPath,
-                    )
-                }
-            }
-        } finally {
-            modelPath.removeAt(modelPath.lastIndex)
-        }
-    }
-
-    private fun validateSensitiveWrapper(
-        modelId: UInt,
-        rootDataModel: IsRootDataModel,
-        dataModel: IsValuesDataModel,
-        wrapper: IsSensitiveValueDefinitionWrapper<*, *, *, *>,
-        propertyReference: AnyPropertyReference,
-    ): Boolean {
-        val definition = wrapper.definition
-        val isUnique = (definition as? IsComparableDefinition<*, *>)?.unique == true
-        val indexed = rootDataModel.Meta.keyDefinition.mayContainPropertyReference(propertyReference) ||
-            rootDataModel.Meta.indexes?.any { it.mayContainPropertyReference(propertyReference) } == true
-        if (indexed) {
-            throw RequestException(
-                "Sensitive property ${dataModel.Meta.name}.${wrapper.name} (modelId=$modelId) cannot be used in a key or index. Use explicit blind-index field"
-            )
-        }
-        return isUnique
-    }
 }
 
 private val ChangeLogContextReference = byteArrayOf(0) + "maryk-change-log-v1:".encodeToByteArray()

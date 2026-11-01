@@ -3,7 +3,6 @@ package maryk.core.models.migration
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Reversed
@@ -11,9 +10,6 @@ import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.componentDefinition
 import maryk.core.properties.definitions.index.encodeIndexComponent
 import maryk.core.properties.definitions.index.hasVariableIndexComponent
-import maryk.core.properties.definitions.index.toOrderedFloatingPointBytes
-import maryk.core.properties.types.numeric.Float32
-import maryk.core.properties.types.numeric.Float64
 
 /** Engine value and sort-key format, independent of application schema versions. */
 object StorageFormat {
@@ -55,12 +51,4 @@ fun IsIndexable.convertLegacyIndexBytes(bytes: ByteArray, keySize: Int): ByteArr
     for (component in components.asReversed()) component.size.writeVarBytes { output[offset++] = it }
     bytes.copyInto(output, offset, bytes.size - keySize)
     return output
-}
-
-/** Index-only NaN normalization; finite values already have ordered ordinary bytes. */
-internal fun NumberDefinition<*>.toOrderedNumberBytes(bytes: ByteArray): ByteArray {
-    if (type != Float32 && type != Float64) return bytes
-    var offset = 0
-    val value = readStorageBytes(bytes.size) { bytes[offset++] }
-    return requireNotNull(toOrderedFloatingPointBytes(value))
 }

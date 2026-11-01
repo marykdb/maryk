@@ -3,7 +3,6 @@ package maryk.core.properties.definitions.index
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeOrderedBytes
-import maryk.core.models.migration.toOrderedNumberBytes
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -53,6 +52,14 @@ internal fun NumberDefinition<*>.toOrderedFloatingPointBytes(value: Any, reverse
         Float64 -> (value as Double).writeOrderedBytes(writer)
     }
     return output
+}
+
+/** Index-only NaN normalization; finite values already have ordered ordinary bytes. */
+private fun NumberDefinition<*>.toOrderedNumberBytes(bytes: ByteArray): ByteArray {
+    if (type != Float32 && type != Float64) return bytes
+    var offset = 0
+    val value = readStorageBytes(bytes.size) { bytes[offset++] }
+    return requireNotNull(toOrderedFloatingPointBytes(value))
 }
 
 internal fun <T : Any> IsIndexablePropertyReference<T>.encodeIndexValue(value: T): ByteArray =

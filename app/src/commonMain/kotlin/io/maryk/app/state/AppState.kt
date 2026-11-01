@@ -1,5 +1,6 @@
 package io.maryk.app.state
 
+import maryk.core.query.createRequestContext
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -58,10 +59,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.graph
 import maryk.core.models.key
-import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Key
-import maryk.core.query.DefinitionsContext
-import maryk.core.query.RequestContext
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.requests.add
@@ -1510,10 +1508,7 @@ class BrowserState(
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatchingNonFatal {
-                    val context = RequestContext(
-                        DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
-                        dataModel = model,
-                    )
+                    val context = model.createRequestContext()
                     val snapshot = ImportSnapshot.read(filePath)
                     val detectedScope = detectImportScope(snapshot, format, context)
                     val versioned = detectVersionedImport(snapshot, format, context)

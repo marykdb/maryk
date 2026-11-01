@@ -1,5 +1,6 @@
 package io.maryk.cli
 
+import maryk.core.query.createRequestContext
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.asValues
@@ -236,10 +237,7 @@ data class LoadContext(
     private fun createRequestContext(
         reference: IsPropertyReference<*, IsPropertyDefinition<*>, *>? = null,
     ): RequestContext {
-        val definitionsContext = DefinitionsContext(
-            mutableMapOf(dataModel.Meta.name to DataModelReference(dataModel))
-        )
-        return RequestContext(definitionsContext, dataModel = dataModel).also {
+        return dataModel.createRequestContext().also {
             @Suppress("UNCHECKED_CAST")
             it.reference = reference as? IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>
         }

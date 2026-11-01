@@ -1,5 +1,6 @@
 package io.maryk.app.data
 
+import maryk.core.query.createRequestContext
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.emptyValues
@@ -10,7 +11,6 @@ import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSetDefinition
-import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyPropertyReference
@@ -23,7 +23,6 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.toListIndex
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.MutableTypedValue
-import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.Change
@@ -107,10 +106,7 @@ internal suspend fun importDataFromSnapshot(
     snapshot: ImportSnapshot,
     beforeWrite: () -> Unit = {},
 ): ImportResult {
-    val requestContext = RequestContext(
-        DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
-        dataModel = model,
-    )
+    val requestContext = model.createRequestContext()
     var imported = 0
     var failed = 0
     val records = mutableListOf<Pair<Key<IsRootDataModel>, Values<IsRootDataModel>>>()
@@ -173,10 +169,7 @@ internal suspend fun importVersionedDataFromSnapshot(
     snapshot: ImportSnapshot,
     beforeWrite: () -> Unit = {},
 ): ImportResult {
-    val requestContext = RequestContext(
-        DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
-        dataModel = model,
-    )
+    val requestContext = model.createRequestContext()
     var imported = 0
     var failed = 0
 

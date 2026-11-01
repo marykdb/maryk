@@ -1,11 +1,9 @@
 package io.maryk.cli.commands
 
+import maryk.core.query.createRequestContext
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
-import maryk.core.properties.definitions.contextual.DataModelReference
-import maryk.core.query.DefinitionsContext
-import maryk.core.query.RequestContext
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.shared.IsDataStore
@@ -82,10 +80,7 @@ class ChangesCommand : Command {
             )
         }
 
-        val requestContext = RequestContext(
-            DefinitionsContext(mutableMapOf(dataModel.Meta.name to DataModelReference(dataModel))),
-            dataModel = dataModel,
-        )
+        val requestContext = dataModel.createRequestContext()
         val yaml = buildString {
             val writer = YamlWriter { append(it) }
             ChangesResponse.Serializer.writeObjectAsJson(response, writer, requestContext)

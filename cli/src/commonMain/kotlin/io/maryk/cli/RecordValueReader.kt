@@ -1,11 +1,9 @@
 package io.maryk.cli
 
+import maryk.core.query.createRequestContext
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.DataModelReference
-import maryk.core.query.DefinitionsContext
-import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.Values
 import maryk.core.yaml.MarykYamlReader
@@ -199,10 +197,7 @@ private fun readRecordMetaValues(
     path: String,
     format: SaveFormat,
 ): LoadedRecordValues {
-    val requestContext = RequestContext(
-        DefinitionsContext(mutableMapOf(dataModel.Meta.name to DataModelReference(dataModel))),
-        dataModel = dataModel,
-    )
+    val requestContext = dataModel.createRequestContext()
 
     val metaValues = when (format) {
         SaveFormat.YAML -> {

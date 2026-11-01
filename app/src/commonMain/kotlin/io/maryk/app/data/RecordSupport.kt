@@ -1,11 +1,10 @@
 package io.maryk.app.data
 
+import maryk.core.query.createRequestContext
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.DataModelReference
-import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.DataObjectChange
@@ -109,10 +108,7 @@ internal fun applyChanges(
 }
 
 internal fun buildRequestContext(dataModel: IsRootDataModel): RequestContext {
-    val definitionsContext = DefinitionsContext(
-        mutableMapOf(dataModel.Meta.name to DataModelReference(dataModel))
-    )
-    return RequestContext(definitionsContext, dataModel = dataModel)
+    return dataModel.createRequestContext()
 }
 
 private fun formatStatus(

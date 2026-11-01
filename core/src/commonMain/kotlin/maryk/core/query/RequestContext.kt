@@ -5,8 +5,10 @@ import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.contextual.IsDataModelReference
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.changes.IncMapChange
@@ -167,3 +169,9 @@ class RequestContext(
     fun getCollectedIncMapChanges(): List<IncMapChange> =
         collectedIncMapChanges.orEmpty()
 }
+
+/** Create fresh parsing/serialization state with this root model registered by name. */
+fun IsRootDataModel.createRequestContext(): RequestContext = RequestContext(
+    DefinitionsContext(mutableMapOf(Meta.name to DataModelReference(this))),
+    dataModel = this,
+)

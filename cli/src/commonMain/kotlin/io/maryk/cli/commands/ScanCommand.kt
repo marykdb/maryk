@@ -1,13 +1,11 @@
 package io.maryk.cli.commands
 
+import maryk.core.query.createRequestContext
 import io.maryk.cli.ScanQueryParser
 import io.maryk.cli.ScanViewerInteraction
 import io.maryk.cli.terminalHeight
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
-import maryk.core.properties.definitions.contextual.DataModelReference
-import maryk.core.query.DefinitionsContext
-import maryk.core.query.RequestContext
 import maryk.core.query.requests.MAX_SCAN_LIMIT
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.rethrowIfFatal
@@ -60,10 +58,7 @@ class ScanCommand : Command {
             return CommandResult(lines = listOf("Scan parse error: ${options.errorMessage}"), isError = true)
         }
 
-        val requestContext = RequestContext(
-            DefinitionsContext(mutableMapOf(dataModel.Meta.name to DataModelReference(dataModel))),
-            dataModel = dataModel,
-        )
+        val requestContext = dataModel.createRequestContext()
 
         val startKey = options.startKey?.let { keyToken ->
             try {

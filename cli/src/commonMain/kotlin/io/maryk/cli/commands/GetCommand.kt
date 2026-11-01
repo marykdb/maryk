@@ -1,15 +1,13 @@
 package io.maryk.cli.commands
 
+import maryk.core.query.createRequestContext
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.asValues
-import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DefinitionsContext
-import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.get
@@ -225,10 +223,7 @@ class GetCommand : Command {
         val dataJson = serializer.writeJson(values)
         val dataProto = writeDataProto(serializer, values)
 
-        val definitionsContext = DefinitionsContext(
-            mutableMapOf(dataModel.Meta.name to DataModelReference(dataModel))
-        )
-        val requestContext = RequestContext(definitionsContext, dataModel = dataModel)
+        val requestContext = dataModel.createRequestContext()
         val metaValues = ValuesWithMetaData.asValues(valuesWithMetaData, requestContext)
 
         val metaYaml = buildString {

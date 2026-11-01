@@ -4,8 +4,10 @@ import kotlinx.datetime.LocalTime
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
-import maryk.core.properties.definitions.map
+import maryk.core.models.DataModel
+import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.map
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -13,6 +15,16 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ScanQueryParserTest {
+    @Test
+    fun nestedAndWholeParentSelectionsKeepTheirMeaning() {
+        val selected = assertNotNull(ScanQueryParser.parseSelectGraph(ToolSelectionRoot, listOf("details.first")))
+        assertTrue(selected.contains(ToolSelectionRoot.ref { details { first } }))
+        for (paths in listOf(listOf("details", "details.first"), listOf("details.first", "details"))) {
+            val whole = assertNotNull(ScanQueryParser.parseSelectGraph(ToolSelectionRoot, paths))
+            assertTrue(whole.contains(ToolSelectionRoot.ref { details { second } }))
+        }
+    }
+
     @Test
     fun parseSelectGraphKeepsDotsInsideMapKeys() {
         val graph = assertNotNull(
@@ -49,4 +61,13 @@ private object ScanParserModel : RootDataModel<ScanParserModel>() {
         keyDefinition = TimeDefinition(),
         valueDefinition = StringDefinition(),
     )
+}
+
+private object ToolSelectionDetails : DataModel<ToolSelectionDetails>() {
+    val first by string(1u)
+    val second by string(2u)
+}
+
+private object ToolSelectionRoot : RootDataModel<ToolSelectionRoot>() {
+    val details by embed(1u, dataModel = { ToolSelectionDetails })
 }

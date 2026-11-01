@@ -137,7 +137,9 @@ internal class MapItemsReader<out P : IsYamlCharWithIndentsReader>(
                 throw InvalidYamlContent("There should be whitespace after :")
             }
         } else if (this.state == KEY_FOUND) {
-            return createYamlValueToken(value, tag, isPlainStringReader)
+            // EOF may interrupt a scalar before readUntilToken's normal state update.
+            // Mark the value here too, so unwinding does not invent a missing value.
+            return createYamlValueToken(value, tag, isPlainStringReader).also(::setState)
         } else {
             this.yamlReader.pushToken(createYamlValueToken(null, Null, false))
             return this.checkAndCreateFieldName(value, isPlainStringReader)

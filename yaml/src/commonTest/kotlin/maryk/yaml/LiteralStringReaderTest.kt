@@ -4,6 +4,27 @@ import kotlin.test.Test
 
 class LiteralStringReaderTest {
     @Test
+    fun finalLiteralValueClosesItsMappingWithoutAnExtraNull() {
+        for (suffix in listOf("", "\n")) {
+            createYamlReader("text: |-\n  first\n  second$suffix").apply {
+                assertStartObject()
+                assertFieldName("text")
+                assertValue("first\nsecond")
+                assertEndObject()
+            }
+            createYamlReader("outer:\n  text: |-\n    first\n    second$suffix").apply {
+                assertStartObject()
+                assertFieldName("outer")
+                assertStartObject()
+                assertFieldName("text")
+                assertValue("first\nsecond")
+                assertEndObject()
+                assertEndObject()
+            }
+        }
+    }
+
+    @Test
     fun failOnLiteralStringWithoutBreak() {
         createYamlReader("  | test").apply {
             assertInvalidYaml()

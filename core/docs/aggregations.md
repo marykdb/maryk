@@ -34,56 +34,50 @@ arithmetic behavior. Existing record data and response schemas do not change.
 
 Aggregations can be added to any `Get` or `Scan` request through the `aggregations` property. Responses return the aggregated values alongside the requested objects.
 
-The sections below summarise each operator with short examples to demonstrate how they are used in Maryk.
+Build the `Aggregations` argument from the operators below. For example:
+
+```kotlin
+val aggregations = Aggregations("count" to ValueCount(Person.ref { email }))
+val response = dataStore.execute(Person.get(*keys.toTypedArray(), aggregations = aggregations))
+```
+
+The examples use illustrative models and property references.
 
 ## Value Based Operators
 
 ### ValueCount
 
-The **ValueCount** aggregation operator calculates the total number of values present for a specified property. This 
-operator is particularly useful when you want to know the total count of instances or occurrences for a specific attribute.
+Counts present values for a property.
 
-**Use case:** Count the number of users with a specified email address.
+**Use case:** Count users with a present email address.
 
 **Code example:**
 ```kotlin
-val getResponse = dataStore.execute(
-    Person.get(
-        *keys.toTypedArray(),
-        aggregations = Aggregations(
-            "count" to ValueCount(
-                Person.ref { email }
-            )
-        )
+val aggregations = Aggregations(
+    "count" to ValueCount(
+        Person.ref { email }
     )
 )
 ```
 
 ### Sum
 
-The **Sum** aggregation operator calculates the total sum of all numeric values for a specified property. This operator 
-is beneficial when you want to find the total quantity of a particular attribute.
+Sums numeric values for a property.
 
 **Use case:** Calculate the sum of order amounts for all customers.
 
 **Code example:**
 ```kotlin
-val getResponse = dataStore.execute(
-    Person.get(
-        *keys.toTypedArray(),
-        aggregations = Aggregations(
-            "total" to Sum(
-                Person.ref { orderAmount }
-            )
-        )
+val aggregations = Aggregations(
+    "total" to Sum(
+        Person.ref { orderAmount }
     )
 )
 ```
 
 ### Average
 
-The **Average** aggregation operator computes the average value of all numeric values for a specified property. This 
-operator is helpful when you want to find the central tendency of a particular attribute.
+Calculates the average numeric value for a property.
 
 Integer averages retain their existing integer-division behavior. Decimal
 averages retain the property scale and use round-half-to-even when the exact
@@ -93,118 +87,80 @@ result is between two representable values.
 
 **Code example:**
 ```kotlin
-val getResponse = dataStore.execute(
-    Person.get(
-        *keys.toTypedArray(),
-        aggregations = Aggregations(
-            "average" to Average(
-                Person.ref { age }
-            )
-        )
+val aggregations = Aggregations(
+    "average" to Average(
+        Person.ref { age }
     )
 )
 ```
 
 ### Min (Minimum)
 
-The **Min** aggregation operator finds the minimum value among all comparable values for a specified property. This
-operator is beneficial when you want to identify the smallest quantity of a given attribute.
+Returns the smallest comparable value.
 
 **Use case:** Find the earliest registration date of users.
 
 **Code example:**
 ```kotlin
-val getResponse = dataStore.execute(
-    Person.get(
-        *keys.toTypedArray(),
-        aggregations = Aggregations(
-            "min" to Min(
-                Person.ref { registrationDate }
-            )
-        )
+val aggregations = Aggregations(
+    "min" to Min(
+        Person.ref { registrationDate }
     )
 )
 ```
 
 ### Max (Maximum)
 
-The **Max** aggregation operator identifies the maximum value among all comparable values for a specified property.
-This operator is useful when you want to ascertain the highest quantity of a given attribute.
+Returns the largest comparable value.
 
 **Use case:** Find the latest registration date of users.
 
 **Code example:**
 ```kotlin
-val getResponse = dataStore.execute(
-    Person.get(
-        *keys.toTypedArray(),
-        aggregations = Aggregations(
-            "max" to Max(
-                Person.ref { registrationDate }
-            )
-        )
+val aggregations = Aggregations(
+    "max" to Max(
+        Person.ref { registrationDate }
     )
 )
 ```
 
 ### Stats
 
-The **Stats** aggregation operator provides a combination of different aggregation results, including sum, average, 
-min, max, and count for a specified property. This operator assists in gaining a comprehensive view of your data for the relevant attribute.
+Returns sum, average, minimum, maximum and count together.
 
 **Use case:** Retrieve a statistical summary of all orders for a specific product.
 
 **Code example:**
 ```kotlin
-val getResponse = dataStore.execute(
-    ProductOrder.get(
-        *keys.toTypedArray(),
-        aggregations = Aggregations(
-            "stats" to Stats(
-                ProductOrder.ref { orderId }
-            )
-        )
+val aggregations = Aggregations(
+    "stats" to Stats(
+        ProductOrder.ref { orderId }
     )
 )
 ```
 
 ## Bucket Based (Grouped) Operators
 
-Bucket-based operators are essential for categorizing and grouping your data based on specific attributes or criteria. 
-These operators help analyze large datasets by dividing them into smaller, more meaningful subsets. Maryk offers various 
-bucketing operators that allow you to group data by time, enum value, or object type.
-
-Using bucket-based operators alongside value-based operators enables deeper analysis of your data subsets (buckets). By 
-combining these operators, you can execute aggregated calculations like count, sum, average, min/max value, and combined
-stats within the specified groupings.
-
-In the following sections, we will cover each of these grouped operators, along with their use cases and code examples to
-demonstrate their usage within Maryk.
+Bucket operators group values by time, enum option or multi-type case. Each bucket can contain nested aggregations.
 
 ### DateHistogram
 
-The **DateHistogram** operator groups data into buckets based on specified time units, such as hours, weeks, months, or 
-years. This operator is useful for analyzing trends for a property over those specific time intervals.
+Groups values by time unit and applies nested aggregations to each bucket.
 
 **Use case:** Analyze the total amount and average order value received per day.
 
 **Code example:**
 ```kotlin
-val getResponse = dataStore.execute(
-    Order.get(
-        *keys.toTypedArray(),
-        aggregations = Aggregations(
-            "by day" to DateHistogram(
-                Order.ref { orderDate },
-                DateUnit.Days,
-                Aggregations(
-                    "total" to Sum(
-                        Order.ref { orderAmount }
-                    ),
-                    "average" to Average(
-                        Order.ref { orderAmount }
-                    )
-                )
+val aggregations = Aggregations(
+    "by day" to DateHistogram(
+        Order.ref { orderDate },
+        DateUnit.Days,
+        Aggregations(
+            "total" to Sum(
+                Order.ref { orderAmount }
+            ),
+            "average" to Average(
+                Order.ref { orderAmount }
             )
         )
     )
@@ -213,28 +169,21 @@ val getResponse = dataStore.execute(
 
 ### EnumValues
 
-The **EnumValues** operator groups data based on the enumerated values of a specified property. This operator helps 
-assess the distribution of your data for a given attribute with enumerated values, providing insights into the frequency 
-of each category.
+Groups values by enum option and applies nested aggregations to each bucket.
 
 **Use case:** Analyze the number of users and total revenue per account type.
 
 **Code example:**
 ```kotlin
-val getResponse = dataStore.execute(
-    User.get(
-        *keys.toTypedArray(),
-        aggregations = Aggregations(
-            "each enum" to EnumValues(
-                User.ref { accountType },
-                Aggregations(
-                    "count" to ValueCount(
-                        User.ref { accountId }
-                    ),
-                    "revenue" to Sum(
-                        User.ref { accountRevenue }
-                    )
-                )
+val aggregations = Aggregations(
+    "each enum" to EnumValues(
+        User.ref { accountType },
+        Aggregations(
+            "count" to ValueCount(
+                User.ref { accountId }
+            ),
+            "revenue" to Sum(
+                User.ref { accountRevenue }
             )
         )
     )
@@ -251,20 +200,15 @@ object types.
 
 **Code example:**
 ```kotlin
-val getResponse = dataStore.execute(
-    Data.get(
-        *keys.toTypedArray(),
-        aggregations = Aggregations(
-            "each type" to Types(
-                Reports.ref { multiType.type },
-                Aggregations(
-                    "total" to Sum(
-                        Reports.ref { itemCount }
-                    ),
-                    "average" to Average(
-                        Reports.ref { price }
-                    )
-                )
+val aggregations = Aggregations(
+    "each type" to Types(
+        Reports.ref { multiType.type },
+        Aggregations(
+            "total" to Sum(
+                Reports.ref { itemCount }
+            ),
+            "average" to Average(
+                Reports.ref { price }
             )
         )
     )
@@ -277,11 +221,7 @@ categories, providing easily understandable insights into your dataset as a whol
 
 ## Combining Multiple Aggregation Operators
 
-To demonstrate the powerful combination of multiple aggregation and bucket operators, consider a sales dataset 
-containing information about products sold, order timestamps, and customer account types. In this use case, we will 
-calculate the total and average sales amount for each month, segmented further by customer account types.
-
-**Use case:** Calculate the total and average sales amount per month for each customer account type.
+This example groups sales by month and account type, calculating totals and averages within each bucket.
 
 **Code example:**
 ```kotlin
@@ -317,10 +257,6 @@ val getResponse = dataStore.execute(
 )
 ```
 
-In the example above, we combine **DateHistogram** and **EnumValues** bucket operators with **Sum** and **Average** 
-value operators to create a comprehensive analysis of sales data. This enables us to better understand sales trends over 
-time and across different customer account types, providing valuable insights for informed decision-making.
-
 ## Performance Considerations
 
 When using aggregation operators on large datasets or deeply nested structures, performance can become a concern. Here 
@@ -332,12 +268,3 @@ are some tips to optimize performance and resource usage:
   processed and improve the overall performance of your aggregation queries.
 - **Consider denormalizing your data model:** If possible, restructure your data model to simplify or remove nested 
   structures, thus easing the complexity of your aggregation queries.
-
-## In Conclusion
-
-Utilizing both value-based and bucket-based operators in Maryk offers a diverse and powerful set of analytical tools 
-that can help you uncover valuable insights within your data. By combining these operators, you can explore different 
-aspects of your data, from granular details to overarching trends, effectively organizing them into manageable subsets.
-
-Harnessing the capabilities of these aggregation operators will allow you to efficiently analyze and understand the 
-complexities of your data while improving the overall knowledge you can extract from your stored information.

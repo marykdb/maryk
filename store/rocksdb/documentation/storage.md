@@ -52,11 +52,8 @@ distinct from the canonical one-byte zero count of a present empty collection.
 Incrementing-map tombstones retain allocated keys; allocation ignores anonymous
 collection markers and child qualifiers when advancing the numeric key.
 
-Multi-type discriminators define which child case is active. Mutations and
-checks consult the current staged discriminator before reading child cells;
-inactive writes reject and inactive deletions leave retained cells untouched.
-Simple case values are stored inline on the multi-type parent. Replace that
-parent with a `TypedValue` rather than writing an extra typed child qualifier.
+Active-case checks and parent replacement follow the
+[shared multi-type rules](../../shared/docs/store-behavior.md#multi-type-children).
   
 ## Index (latest)
 `INDEX_REF || VALUE_BYTES || KEY` → `VERSION`
@@ -95,3 +92,27 @@ Supports model-wide update scans ordered by latest change.
 
 `scanUpdates(order = null)` uses this family when `keepUpdateHistoryIndex = true`.
 Forward scan yields newest-first.
+
+## Opening storage format 2
+
+Read the [storage upgrade guide](../../shared/docs/storage-format-upgrades.md)
+for rollout, conversion and recovery requirements. The details below describe this
+engine's persisted layout.
+
+Opening maintenance flags and clock/history backfills follow the
+[shared opening contract](../../shared/docs/storage-format-upgrades.md#opening-maintenance).
+
+The transaction revision nonce now uses a separate metadata key from receipt
+IDs. The formerly colliding transaction ID `revision` remains valid. Only an exact
+16-byte legacy nonce is moved; receipt-sized values at that key are preserved.
+
+## Unique ownership and replication
+
+See [store behavior](../../shared/docs/store-behavior.md) for deletion, final unique
+ownership, replication ordering and deleted-inclusive scans.
+
+History exports decrypt sensitive cells with their model, record and property
+context, including after reopening. Portable restore can encrypt those values
+with the target store's provider. Stored collection changes export complete
+selected collection values at each affected version so list resizing and newly
+created nested containers replay without losing unchanged members.

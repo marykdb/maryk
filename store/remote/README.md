@@ -1,336 +1,87 @@
 # Remote Store (HTTP/SSH)
 
-Maryk Remote Store exposes a local Maryk store over HTTP and provides a `RemoteDataStore` client that implements `IsDataStore`.
-It lets the desktop App and programmatic clients connect to a store running elsewhere and still use the same request API.
+Expose a local Maryk store over HTTP and connect through `RemoteDataStore`, using
+the same typed request API as a local store. This is useful for the desktop App,
+remote tools and clients that share the server's model definitions.
 
 ## What it provides
 
-- **RemoteDataStore**: a client-side `IsDataStore` that sends serialized Maryk requests/responses over HTTP.
-- **RemoteStoreServer**: a small Ktor server that proxies requests to a local store.
-- **SSH tunneling**: optional local port forwarding for secure remote access.
+- `RemoteStoreServer`: a Ktor server over a local store.
+- `RemoteDataStore`: an `IsDataStore` client for HTTP/HTTPS.
+- Optional SSH forwarding through the system `ssh` binary.
 
-Platform notes:
-- Server runs with Ktor CIO on JVM and Kotlin/Native desktop targets.
-- Native client uses Ktor CIO and the system `ssh` binary for tunnels.
-
-## Update history
-
-The client transports `getUpdateHistory` and `scanUpdateHistory`, including
-their continuation cursors. The server must support these requests and its
-backing store must retain values and a ready update-history index. An older
-server does not gain the new request type through a client upgrade. See
-[history paging](../../core/docs/query.md#getscan-update-history).
-
-## Atomic backup restore
-
-The client negotiates version-group restore support through store information.
-Current clients send each complete source-version group to `/v1/restore-version`.
-The server checks every affected model and add/change/delete permission using the
-existing `ProcessUpdate` authorization operation before replaying the group.
-The backing store validates final unique ownership and commits the whole group
-atomically, preserving source versions. Old servers without this capability are
-rejected before replay instead of receiving individual updates. Upgrade both
-peers for this restore path; the portable backup format is version 3.
-
-Restore staging, group ceilings and disposable-target publication follow the
-[shared backup/restore contract](../shared/README.md#point-in-time-backup-and-restore).
-An interrupted HTTP response can leave the commit outcome uncertain; publish the
-target only after the complete restore succeeds.
+The server and client support JVM and Kotlin/Native desktop targets.
 
 ## Start a server
 
-CLI (recommended for local serving):
+Serve an existing local RocksDB store on loopback:
 
 ```text
 maryk --exec "serve rocksdb --dir ./data --host 127.0.0.1 --port 8210"
 ```
 
-Programmatic server:
-
-```kotlin
-val server = RemoteStoreServer(dataStore)
-server.start(host = "127.0.0.1", port = 8210, wait = true)
-```
-
-Non-loopback plaintext binds require an explicit insecure opt-in, even when authentication is configured. Keep the Maryk server loopback-bound behind TLS termination or use SSH tunneling:
-
-```kotlin
-server.start(
-    host = "127.0.0.1",
-    port = 8210,
-    wait = true,
-    config = RemoteStoreServerConfig(bearerToken = System.getenv("MARYK_BEARER_TOKEN")),
-)
-```
-
-If a deliberately plaintext LAN deployment must listen on every interface, the
-CLI opt-in belongs inside the `--exec` command:
-
-```text
-MARYK_BEARER_TOKEN=replace-with-a-secret maryk --exec "serve rocksdb --dir ./data --host 0.0.0.0 --port 8210 --bearer-token-env MARYK_BEARER_TOKEN --allow-insecure-remote-binding"
-```
-
-This authenticates requests but does not encrypt them. Prefer a loopback bind
-behind TLS or SSH whenever traffic crosses a machine boundary.
-
-Programmatic deployments can replace the shared token with an identity provider
-and authorize each decoded operation by principal, request type, and model:
-
-```kotlin
-RemoteStoreServerConfig(
-    authenticator = RemoteStoreAuthenticator { authorizationHeader ->
-        identityProvider.authenticate(authorizationHeader)
-    },
-    authorizer = RemoteStoreAuthorizer { request ->
-        acl.allows(
-            principal = request.principal,
-            operation = request.operation,
-            requestType = request.requestType,
-            modelName = request.modelName,
-        )
-    },
-)
-```
-
-Denied add/change/delete requests return an `AuthFail` status per input object.
-Denied reads and unsupported update shapes return HTTP 403. Authentication failures
-return HTTP 401.
-
-Change requests also require permission for their contents: soft deletion requires
-`Delete`, creation requires `Add`, and restoring a soft-deleted object requires
-`Change`. These checks also apply inside collected requests and execute batches.
-
-FoundationDB:
-
-```text
-maryk --exec "serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210"
-```
-
-Config file (simple key/value or YAML-style):
-
-```text
-# serve.conf
-store: rocksdb
-dir: ./data
-host: 127.0.0.1
-port: 8210
-bearer-token-file: ./maryk-token
-```
-
-```text
-maryk --exec "serve --config ./serve.conf"
-```
-
-Accepted config keys:
-- `store` or `type`: `rocksdb` | `foundationdb`
-- `dir` or `directory`: store path
-- `cluster` or `clusterFile`: FoundationDB cluster file
-- `host`: bind host (default `127.0.0.1`)
-- `port`: bind port (default `8210`)
-- `bearer-token-env`: name of an environment variable containing the credential
-- `bearer-token-file`: path to a UTF-8 credential file
-- `bearer-token-stdin`: read the credential from stdin (use a blank value in config)
-- `bearer-token`: literal credential retained for compatibility
-- `allow-insecure-remote-binding`: explicit unsafe opt-in for any non-loopback plaintext bind, including bearer or custom authentication
-
-Choose at most one token source. Prefer environment, file, or stdin to a literal
-command-line token; see the [CLI reference](../../cli/docs/commands.md#serve).
+For remote access, keep the server loopback-bound behind TLS termination or use
+SSH forwarding. Non-loopback plaintext binds require an explicit insecure opt-in,
+even with authentication. See [server configuration](docs/server.md) for tokens,
+authorization, FoundationDB and config files.
 
 ## Connect as a client
 
+Call `connect` from a coroutine and close the client when finished:
+
 ```kotlin
+import maryk.datastore.remote.RemoteDataStore
+import maryk.datastore.remote.RemoteStoreConfig
+
 val remote = RemoteDataStore.connect(
-    RemoteStoreConfig(
-        baseUrl = "https://store.example.test",
-        bearerToken = System.getenv("MARYK_BEARER_TOKEN"),
-        flowRetryPolicy = RemoteFlowRetryPolicy.Default,
-    )
+    RemoteStoreConfig(baseUrl = "http://127.0.0.1:8210"),
 )
+try {
+    // Execute typed requests for the models registered by the server.
+} finally {
+    remote.close()
+}
 ```
 
-Notes:
-- `RemoteDataStore.connect` is `suspend`; call it from a coroutine.
-- HTTP and HTTPS are supported. A bearer token over public plain HTTP is rejected by default before network I/O. Loopback HTTP and SSH tunnel connections remain allowed; passing `allowInsecureBearerTransport = true` to the two-argument `RemoteDataStore.connect` overload is the deliberate unsafe opt-in for a public plaintext connection.
-- `baseUrl` must not contain query params, fragments, user info, or leading/trailing whitespace.
-- For direct internet exposure, terminate TLS in a reverse proxy and forward to the loopback server.
-- Flow reconnect is opt-in to preserve legacy completion behavior. `Default` retries
-  five times with bounded exponential backoff. A reconnect obtains a fresh state and
-  delivers it at least once: it can repeat updates, and consumers must handle duplicates.
-  It does not provide durable or exactly-once replay.
-- Set `heartbeatTimeoutMillis` when the client must reconnect stalled connections.
-  Protocol-v2 clients negotiate server heartbeat frames; legacy clients never
-  receive them.
-
-Use it like any other store:
-
-```kotlin
-import maryk.core.query.responses.statuses.AddSuccess
-
-val add = remote.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "haha" }))
-val status = add.statuses.single() as? AddSuccess<SimpleMarykModel>
-    ?: error("Add failed: ${add.statuses.single()}")
-val get = remote.execute(SimpleMarykModel.get(status.key))
-```
-
-Stores with managed migrations also expose the shared `MigrationAdmin` API through
-the remote client. The desktop Operations → Migrations dialog uses the same
-endpoint; when the App connection has a bearer-token file configured, that token
-is sent with the administration request. Authorization callbacks receive one of
-`MigrationStatus`, `MigrationPause`, `MigrationResume`, or `MigrationCancel`, plus
-the target model name for control operations. The CLI currently manages migrations
-only on its directly connected local RocksDB or FoundationDB store; it does not
-connect to Remote Store endpoints.
-
-Execute several ordered requests in one round trip:
-
-```kotlin
-val responses = remote.execute(
-    Requests(
-        SimpleMarykModel.add(firstValues),
-        SimpleMarykModel.add(secondValues),
-    )
-)
-```
-
-`Requests.create(context = ...)` also supports Collect & Inject batches containing
-unresolved `Inject` values. Responses preserve request order. Execution is fail-fast
-and is not transactionally atomic.
-
-The `/info` response advertises atomic limit metadata whenever atomic requests
-are supported. Remote exposes it through `atomicCapabilities` and rejects count
-limits before sending the request. Advertising atomic support without its limits
-is invalid and prevents connection. Structured backend limit failures survive
-transport.
-
-An explicit `AtomicRequest` is transported as one batch member. The `/info`
-response advertises the backend's `supportsAtomicRequests` capability (absent
-means false for older servers). All participating models and semantic mutation
-permissions are checked before execution, including guards and soft-delete
-changes. The atomic request is forwarded once; Remote never decomposes it into
-ordinary requests. An outer `Requests` batch still has its existing sequential
-semantics. Retain the original atomic request and its ID when retrying an uncertain
-network outcome.
+Use matching model definitions on both peers. A newer client cannot add a missing
+server capability. See [client configuration and recovery](docs/client.md) for
+authenticated connections, batches, reconnect behavior and migration controls.
 
 ## SSH tunneling
 
-Remote store supports SSH port forwarding via the system `ssh` binary.
-Provide an SSH config and the client will open a local tunnel before connecting.
+Supply `RemoteSshConfig` to forward a local loopback port before connecting.
+See the [SSH example](docs/client.md#ssh-tunneling). Flow reconnection is opt-in;
+reconnecting obtains a fresh state and can repeat updates.
 
-```kotlin
-val remote = RemoteDataStore.connect(
-    RemoteStoreConfig(
-        baseUrl = "http://remote-host:8210",
-        ssh = RemoteSshConfig(
-            host = "remote-host",
-            user = "maryk",
-            remotePort = 8210,
-            localPort = 9821,
-            identityFile = "~/.ssh/id_ed25519",
-        )
-    )
-)
-```
+## Update history
 
-Notes:
-- `remotePort`/`remoteHost` default to the `baseUrl` host/port if omitted.
-- `localPort` can be omitted to auto-select a free port.
-- Uses `ssh -N -L 127.0.0.1:localPort:remoteHost:remotePort` with `ExitOnForwardFailure=yes`, so the forwarded port is never exposed on other local interfaces.
-- An SSH tunnel can safely connect to a loopback-bound server without bearer authentication.
+History requests require server support, retained versions and a ready history
+index. See [history requirements](docs/client.md#update-history).
 
-## HTTP protocol overview
+## Atomic backup restore
 
-All payloads are Maryk ProtoBuf bytes.
-Request requirements:
-- `Authorization: Bearer <token>` on every endpoint when server authentication is configured.
-- `Content-Type: application/x-maryk-protobuf` on all `POST` endpoints.
-- Empty request bodies are rejected.
-- Request body max size is 16 MiB.
-- Execute batches are limited to 256 requests. Query filters are limited to
-  1,024 work units and fetches to 128 aggregations.
-- Statically resolvable request type, work, and authorization checks are
-  preflighted for the full batch before execution. Mutation batches cannot
-  depend on an earlier collected result. Execution is not transactional:
-  datastore or response-encoding failures can still occur after an earlier
-  request has completed.
-- Each response frame is limited to 16 MiB; a batched execute response is limited
-  to 64 MiB total.
-- Flow updates use rendezvous delivery into the response writer, preventing an
-  additional application-level queue of updates from growing ahead of a slow client.
-
-- `GET /v1/info` → `RemoteStoreInfo` (definitions + model id map + capabilities)
-- `GET /v1/snapshot-version` → authoritative 8-byte point-in-time read boundary
-- `POST /v1/execute` → `Requests` in. Legacy single-request clients receive one
-  raw ProtoBuf response; clients requesting `X-Maryk-Execute-Protocol: 2`
-  receive length-prefixed response frames and may send batches.
-- `POST /v1/flow` → `Requests` (single fetch) in, stream of length-prefixed `UpdatesResponse`
-- `POST /v1/process-update` → `UpdateResponse` in, `ProcessResponse` out
-- `POST /v1/admin/migrations` → versioned migration status/control payloads
-
-Point-in-time export and backup require `GET /v1/snapshot-version`. Upgrade the
-Remote client and server together before relying on that guarantee: a newer
-client intentionally fails closed when an older server lacks the endpoint rather
-than exporting pages from different points in time.
-
-The info response advertises `supportsSnapshotVersion` from the actual backend,
-separately from `keepAllVersions`. SQL historical reads require both capabilities.
-An older info response without this flag defaults to unsupported; upgrade both
-client and server to advertise historical SQL support.
-
-Remote execute protocol changes require a matched client and server deployment.
-Upgrade both together before using `X-Maryk-Execute-Protocol: 2` batches or
-relying on their framed response contract. Mixed protocol generations are not a
-supported batch compatibility target; keep legacy single-request framing only as
-a transition aid.
-
-Streaming format:
-- Each message is `length (4 bytes, big-endian)` + `ProtoBuf payload`.
-- Legacy clients reject zero/negative lengths, truncated frames, trailing bytes,
-  and frames larger than 16 MiB.
-- Clients requesting `X-Maryk-Flow-Protocol: 2` accept zero-length heartbeat frames.
-  The payload frame format remains unchanged.
-
-## When to use
-
-- Serve a local RocksDB/FoundationDB store for remote tooling.
-- Connect the App or a programmatic client to a server-side store over HTTP or SSH.
-- Build future thin gateways without rewriting store logic.
-
-### Remote regular-expression filters
-
-`RegEx` and `MatchesRegEx` accept a bounded subset on the server: at most 256
-pattern characters, literal characters, outer `^`/`$` anchors, `.`, flat character
-classes, escaped literal punctuation or `\d`, `\D`, `\s`, `\S`, `\w`, `\W`,
-`\n`, `\r`, `\t`, `\f`, and at most one `*`, `+`, or `?` repetition of a
-consuming character atom. For example, `^garcia.*$` remains supported.
-
-Groups, alternation, counted repeats, backreferences, lookarounds, flags, nested or
-intersected classes, and multiple repetitions return HTTP 400 before datastore
-execution. The same check applies to nested filters, collected reads, flows, and
-mutation batches. This bounds backtracking in full-string matching; local trusted
-queries retain the complete regex API. Exact and prefix named search remain
-available through `Matches` and `MatchesPrefix`.
-
+Both peers and the backend must support atomic source-version replay. Restore
+into a disposable target and publish it only after complete success. See
+[restore and uncertain outcomes](docs/client.md#atomic-backup-restore).
 
 ## Serializable transaction scopes
 
-Remote carries normalized transaction journals through the same request protocol and reports the backend transaction capabilities through `/info`. The server authorizes every read and mutation in the journal before executing it. Unauthorized commit resolution reports an uncertain outcome because authorization failure cannot establish whether an earlier attempt committed. No server-side native transaction is held between RPC calls.
+Remote advertises its backend's transaction capability. Retain the transaction
+handle for uncertain commits; an outer ordinary request batch is sequential.
+See [transactions and authorization](docs/client.md#serializable-transaction-scopes).
 
-The [shared contract](../../core/docs/query.md#serializable-transactions) describes
-read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
-commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
-contracts outside an explicit transaction.
+## HTTP protocol overview
 
+Wire payloads use Maryk ProtoBuf. Deploy compatible peers, especially for NANOS
+DateTime and packed floating value objects. See the [protocol reference](docs/protocol.md)
+for endpoints, framing, negotiation and request/response limits.
 
-SQL reporting, metadata, embedded scalar writes, transactional upsert, bounded
-windows, joined mutations, correlated queries and complex map/collection expansion
-use the common SQL engine over this store's public requests. See the [SQL guide](../../sql/README.md) for supported
-syntax, execution strategies, transaction tooling and resource limits. The shared
-SQL conformance contract verifies these features through this adapter.
+### Remote regular-expression filters
 
-Models with floating-point fields inside packed value objects or NANOS DateTime
-properties require matching transport formats on the client and server. Store
-info advertises the format, and requests send `X-Maryk-Value-Storage-Format`;
-incompatible peers are rejected before decoding or applying requests. This also
-protects NANOS DateTime collections, whose released packed pairs can resemble
-one current framed value. Upgrade both peers together. Ordinary Float/Double
-Protobuf scalar fields retain their wire format.
+The server accepts a bounded regex subset. Unsupported patterns fail before
+execution; see [regex limits](docs/protocol.md#remote-regular-expression-filters).
+
+## When to use
+
+Use Remote to expose an existing RocksDB or FoundationDB store to clients and
+tooling. For optional SQL, follow the [SQL guide](../../sql/README.md).

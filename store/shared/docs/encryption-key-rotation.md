@@ -12,6 +12,9 @@ remain readable while rotation upgrades them.
 
 ## Key material is application-owned
 
+The keyring rejects unencodable key IDs and copies its token-read configuration
+so later caller changes cannot alter lookup candidates.
+
 The provider and keyring objects do not persist encryption keys. Load encryption
 and deterministic-token keys from durable secret storage before opening a store,
 and reconstruct the same key IDs and providers after every restart. Losing an
@@ -55,3 +58,9 @@ re-encryption operation: run one backend at a time, persist state after every
 batch, and make writes idempotent so a crash can safely replay the current batch.
 Keep the retained providers and token keys configured while historic rows and
 unique indexes are being rebuilt.
+
+Backend integration must preserve unique-index ownership during rebuilding.
+FoundationDB, RocksDB and IndexedDB identify existing unique rows before removing
+or historicizing retained-token entries; rows owned by another record remain
+untouched. Payloads, historic rows, unique-index rows and durable rotation state
+must follow the backend's own transaction or resumable job boundary.

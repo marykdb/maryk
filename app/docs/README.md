@@ -72,10 +72,8 @@ all changes together; RETURNING rows appear in the result table. Cancellation be
 commit discards staging. A submitted commit may be uncertain; confirm its outcome
 before retrying. Close the SQL modal and reload the record browser to view changed data.
 
-
 An uncertain SQL commit can be resolved with **Resolve commit**. The console blocks
 further writes until that retained commit has a confirmed outcome.
-
 
 The SQL console accepts BEGIN, COMMIT, ROLLBACK, SAVEPOINT, ROLLBACK TO and RELEASE
 in write mode. It displays active transaction state; queries and writes see staged
@@ -84,19 +82,9 @@ modal retains the SQL session. Disconnect rolls back staging,
 and unresolved or submitting writes must be finished or resolved before changing
 stores. Connection guards track the submitted operation even if time travel changes
 the console mode, and are checked again before accepting a new connection.
-SQL completion includes transaction commands, ON CONFLICT, window functions,
-UNNEST and the information_schema metadata tables. Collection columns are suggested
-inside UNNEST. See the [SQL guide](../../sql/README.md) for query and mutation examples.
-
-The SQL console supports named windows, bounded ROWS and numeric-offset RANGE
-frames, NTILE and frame value functions. UNNEST expands scalar collections,
-embedded record maps and nested collection paths. Enable write mode for
-UPDATE … FROM and DELETE … USING; these use the same serializable scope as other
-writes and reject multiple source matches for a target. RETURNING displays target
-values. Existing result, memory and execution limits apply. See the
-[SQL guide](../../sql/README.md) for examples and precise limitations.
-
-See [SQL](../../sql/README.md) for the supported language, types, and consistency guarantees.
+Completion includes SQL language features and suggests collection columns inside
+`UNNEST`. See the [query reference](../../sql/docs/queries.md) for supported syntax
+and the [write reference](../../sql/docs/writes.md) for mutations and conflict handling.
 
 ## Store types
 

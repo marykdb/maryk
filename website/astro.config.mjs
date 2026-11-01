@@ -63,6 +63,8 @@ export default defineConfig({
                         {label: 'Data Models', slug: 'data-modeling/datamodels'},
                         {label: 'Keys', slug: 'data-modeling/keys'},
                         {label: 'Index Design', slug: 'data-modeling/index-design'},
+                        {label: 'Index operators', slug: 'data-modeling/index-reference'},
+                        {label: 'Index query examples', slug: 'data-modeling/index-recipes'},
                         {label: 'Versioning', slug: 'data-modeling/versioning'},
                         {label: 'Properties', slug: 'data-modeling/properties'},
                         {label: 'Property References', slug: 'data-modeling/properties/references'},
@@ -99,11 +101,25 @@ export default defineConfig({
                     label: 'Querying',
                     items: [
                         {label: 'Overview', slug: 'querying'},
+                        {label: 'Reading and writing', slug: 'querying/reads-writes'},
+                        {label: 'History and revisions', slug: 'querying/history'},
+                        {label: 'Sync and live views', slug: 'querying/updates'},
+                        {label: 'Atomic requests', slug: 'querying/atomic'},
+                        {label: 'Transactions', slug: 'querying/transactions'},
                         {label: 'Selecting with Graphs', slug: 'querying/reference-graphs'},
                         {label: 'Filters', slug: 'querying/filters'},
                         {label: 'Aggregations', slug: 'querying/aggregations'},
                         {label: 'Collect & Inject', slug: 'querying/collect-inject'},
-                        {label: 'SQL (optional)', slug: 'querying/sql'},
+                        {
+                            label: 'SQL (optional)',
+                            collapsed: true,
+                            items: [
+                                {label: 'Overview', slug: 'querying/sql'},
+                                {label: 'Queries and values', slug: 'querying/sql/queries'},
+                                {label: 'Writes and transactions', slug: 'querying/sql/writes'},
+                                {label: 'Execution and limits', slug: 'querying/sql/execution'},
+                            ],
+                        },
                     ],
                 },
                 {
@@ -113,6 +129,7 @@ export default defineConfig({
                         {label: 'JSON', slug: 'serialization/json'},
                         {label: 'YAML', slug: 'serialization/yaml'},
                         {label: 'ProtoBuf', slug: 'serialization/protobuf'},
+                        {label: 'ProtoBuf compatibility', slug: 'serialization/protobuf-compatibility'},
                     ],
                 },
                 {
@@ -125,6 +142,10 @@ export default defineConfig({
                             items: [
                                 {label: 'Overview', slug: 'stores/shared'},
                                 {label: 'Encryption key rotation', slug: 'stores/shared/encryption-key-rotation'},
+                                {label: 'Backup and restore', slug: 'stores/shared/backup-restore'},
+                                {label: 'Store behavior', slug: 'stores/shared/store-behavior'},
+                                {label: 'Model migrations', slug: 'stores/shared/migrations'},
+                                {label: 'Storage format upgrades', slug: 'stores/shared/storage-format-upgrades'},
                             ],
                         },
                         {
@@ -141,6 +162,7 @@ export default defineConfig({
                                 {label: 'Overview', slug: 'stores/indexeddb'},
                                 {label: 'Architecture', slug: 'stores/indexeddb/architecture'},
                                 {label: 'Storage Layout', slug: 'stores/indexeddb/storage'},
+                                {label: 'Migrations', slug: 'stores/indexeddb/migrations'},
                             ],
                         },
                         {
@@ -159,6 +181,7 @@ export default defineConfig({
                             items: [
                                 {label: 'Overview', slug: 'stores/foundationdb'},
                                 {label: 'Architecture', slug: 'stores/foundationdb/architecture'},
+                                {label: 'Cluster-wide live updates', slug: 'stores/foundationdb/cluster-updates'},
                                 {label: 'Migrations', slug: 'stores/foundationdb/migrations'},
                                 {label: 'Local Testing', slug: 'stores/foundationdb/local-testing'},
                                 {label: 'Storage Layout', slug: 'stores/foundationdb/storage'},
@@ -169,6 +192,9 @@ export default defineConfig({
                             collapsed: true,
                             items: [
                                 {label: 'Overview', slug: 'stores/remote'},
+                                {label: 'Server configuration', slug: 'stores/remote/server'},
+                                {label: 'Clients and recovery', slug: 'stores/remote/client'},
+                                {label: 'HTTP protocol', slug: 'stores/remote/protocol'},
                             ],
                         },
                         {label: 'Store Test Suite', slug: 'stores/test'},

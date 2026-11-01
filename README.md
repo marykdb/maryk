@@ -20,19 +20,6 @@ Start with the [website](https://marykdb.github.io/maryk/) for the best reading 
 
 Use the [typed request API](https://marykdb.github.io/maryk/querying/) as your main API for application reads, writes, history, and sync. [SQL](https://marykdb.github.io/maryk/querying/sql/) is an optional layer for reporting, ad hoc queries, and tabular integrations; it is not required to use Maryk stores.
 
-## Platform Support
-
-Maryk is Kotlin Multiplatform. Platform support depends on the module:
-
-- Core modeling, validation, querying, SQL, JSON/YAML serialization, generator support, Memory Store, shared store logic, test models, and test helpers target JVM, Android, JS, WasmJS, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
-- IndexedDB Store targets JS browser and WasmJS browser for persistent browser storage.
-- File IO targets JVM, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
-- RocksDB Store targets JVM, Android, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native through the `rocksdb-multiplatform` bindings.
-- FoundationDB Store targets JVM, Linux x64 and ARM64, and macOS where the FoundationDB client library (`libfdb_c`) is available.
-- Remote Store targets JVM, Linux x64 and ARM64, and macOS.
-- CLI native binaries target Linux x64 and macOS, with JVM execution also available.
-- The desktop App runs on the JVM.
-
 ## Getting Started
 
 These docs describe the current source branch. When using a published artifact,
@@ -87,6 +74,19 @@ For a complete model → store → query flow, read [Getting Started](website/sr
 - [Remote Store](store/remote/README.md): expose a local Maryk store over HTTP and optionally SSH-tunnel it.
 
 See [store/README.md](store/README.md) for the decision guide.
+
+## Platform Support
+
+Maryk is Kotlin Multiplatform. Platform support depends on the module:
+
+- Core modeling, validation, querying, SQL, JSON/YAML serialization, generator support, Memory Store, shared store logic, test models, and test helpers target JVM, Android, JS, WasmJS, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
+- IndexedDB Store targets JS browser and WasmJS browser for persistent browser storage.
+- File IO targets JVM, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
+- RocksDB Store targets JVM, Android, Linux x64 and ARM64, Windows, iOS, macOS, watchOS, tvOS, and Android Native through the `rocksdb-multiplatform` bindings.
+- FoundationDB Store targets JVM, Linux x64 and ARM64, and macOS where the FoundationDB client library (`libfdb_c`) is available.
+- Remote Store targets JVM, Linux x64 and ARM64, and macOS.
+- CLI native binaries target Linux x64 and macOS, with JVM execution also available.
+- The desktop App runs on the JVM.
 
 ## Documentation Map
 

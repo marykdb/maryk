@@ -4,12 +4,6 @@ To filter on a property you need a property reference. For example, to find all 
 
 These operations can be defined in Kotlin or any of the serialization formats Maryk supports. 
 
-Nested references are cached with their parent reference. Repeated selection from
-the same parent reuses its child references, while separate parent instances keep
-separate caches. Shared property definitions do not retain transient collection
-item parents created while reading data, so repeated reads do not accumulate
-those parent chains in a model-wide cache.
-
 ## Example models
 
 This `Person` model has two top level fields (`firstName`, `lastName`) and an embedded `Address`:
@@ -187,13 +181,8 @@ They are not valid for `RootDataModel` index definitions.
 
 ## Stored reference identity
 
-Storage-reference decoding resolves the complete qualifier, including embedded
-leaves below map entries, list items, and multi-type collection cases. Invalid
-trailing components are rejected instead of silently returning a parent.
-Nested collection references include the anonymous index-zero collection tag
-already present in stored rows. This corrects reference lookup without changing
-cell encodings. The opening format upgrade retains the released descriptor
-encoding when matching and converting existing secondary-index prefixes.
+Storage references resolve the complete path, including embedded leaves below map
+entries, list items and multi-type cases. Invalid trailing components are rejected.
 
 Empty String map keys and set members retain their discriminated text form:
 `map.@`, `map.#`, and `set.#`. Bare property names must remain nonempty.

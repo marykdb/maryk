@@ -51,59 +51,15 @@ opens.
 Need remote access to this local RocksDB store? Expose it with the
 [Remote Store](../remote/README.md) via CLI `serve`.
 
-## Migrations and Version Updates
+## Migrations and version updates
 
-On open, the store compares stored model definitions with configured models and either applies compatible changes automatically or requires a migration for incompatible schema changes.
+Opening compares stored and configured model definitions. Compatible changes are
+handled automatically; incompatible changes require migration hooks. Group these
+under `migrationConfiguration = MigrationConfiguration(...)`. Use
+`versionUpdateHandler` for post-migration work.
 
-For the full migration model, hook contracts, runtime phases, control APIs, lease behavior, and operational guidance, see [Migrations](documentation/migrations.md).
-
-Group migration settings under `migrationConfiguration = MigrationConfiguration(...)`.
-Put `migrationHandler`, `migrationExpandHandler`, `migrationVerifyHandler`, and `migrationContractHandler` inside that configuration.
-
-```kotlin
-RocksDBDataStore.open(
-    // True if the data store should keep all past versions of the data
-    keepAllVersions = true,
-    keepUpdateHistoryIndex = true,
-    relativePath = "path/to/folder/on/disk/for/store", 
-    dataModelsById = mapOf(
-        1u to Account,
-        2u to Course
-    ),
-    migrationConfiguration = MigrationConfiguration(
-        migrationHandler = { context ->
-            val rocksDBDataStore = context.store
-            val storedDataModel = context.storedDataModel
-            val newDataModel = context.newDataModel
-            // example
-            when (newDataModel) {
-                is Account -> when (storedDataModel.version.major) {
-                    1.toUShort() -> {
-                        // Execute actions on rocksDBDataStore
-                        MigrationOutcome.Success
-                    }
-                    else -> MigrationOutcome.Fatal("Unsupported source version")
-                }
-                else -> MigrationOutcome.Fatal("Unsupported model")
-            }
-        }
-    ),
-    versionUpdateHandler = { rocksDBDataStore, storedDataModel, newDataModel ->
-        // example 
-        when (storedDataModel) {
-            null -> Unit // Do something when model did not exist before
-            else -> Unit
-        }
-    }
-)
-```
-
-### Lease Behavior
-
-RocksDB default lease is process-local (`RocksDBLocalMigrationLease`).
-- Prevents duplicate migration runners inside one process.
-- Cross-process migration lease is usually unnecessary for RocksDB because DB lock allows one opener.
-- You can still inject custom `migrationLease` for custom orchestration.
+See [Migrations](documentation/migrations.md) for examples, hook ordering, resumable phases,
+lease configuration and operational controls.
 
 ## Platform Support
 
@@ -162,37 +118,8 @@ Notes:
 
 A hard delete permanently removes a record's current and historic values, including when `keepAllVersions` is enabled. An earlier `toVersion` query cannot recover erased values. Use soft deletion when historical recovery is required.
 
-Undeleting a record claims its current unique values, including changes or removals
-made while it was deleted. Older historic claims are not restored. Sensitive
-unique values are checked against every configured token candidate before the
-active token is installed.
-Changes reconcile unique ownership against the final stored values. Removing
-embedded children or collection entries, including embedded leaves within map
-values, also releases their claims in the same transaction; conflicts leave the record and its indexes unchanged. Reconciliation
-reads the affected qualifier ranges, preserving unrelated encrypted cells. Soft
-deletion releases owner-matched claims without decrypting payloads. With history
-enabled, undelete can recover a damaged current cell's claim from its exact source
-version; it never substitutes an older historical value.
-
-An accepted replication change advances the record's source version even when
-the supplied value is unchanged. Older changes and deletions remain rejected
-after reopening the store.
-Replication replays committed values and resolved incrementing-map keys in their
-source operation order. Source checks and derived index/type notifications are
-not executed as new mutations. Missing allocation keys or values reject replay
-before that version is applied.
-
-History exports decrypt sensitive cells with their model, record and property
-context, including after reopening. Portable restore can encrypt those values
-with the target store's provider. Stored collection changes export complete
-selected collection values at each affected version so list resizing and newly
-created nested containers replay without losing unchanged members.
-
-Scans with `filterSoftDeleted = false` use primary-key table scans so multiple
-deleted records with the same formerly unique value remain visible. Table-scan
-permission and minimum key-range bounds still apply. Explicit secondary-index
-ordering with deleted records is rejected; use primary-key ordering.
-
+See [store behavior](../shared/docs/store-behavior.md) for undelete, unique
+ownership, replication ordering and scans that include deleted records.
 
 ## Serializable transaction scopes
 
@@ -204,52 +131,12 @@ commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existi
 contracts outside an explicit transaction.
 
 
-SQL reporting, metadata, embedded scalar writes, transactional upsert, bounded
-windows, joined mutations, correlated queries and complex map/collection expansion
-use the common SQL engine over this store's public requests. See the [SQL guide](../../sql/README.md) for supported
-syntax, execution strategies, transaction tooling and resource limits. The shared
-SQL conformance contract verifies these features through this adapter.
+For optional SQL queries, add the SQL module and follow the [SQL guide](../../sql/README.md).
 
-## Opening storage format 2
+## Upgrading existing stores
 
-Opening an older store performs one resumable, exclusive upgrade before
-application schema migrations or requests. There is one migration: the released,
-unversioned layout (legacy format 1) upgrades directly to storage format 2.
-Float/Double values and index components now share the ordered numeric encoding.
-The upgrade converts affected current/historical fields, collection qualifiers,
-packed value objects and unique lookups, including contextual encryption and
-sensitive unique tokens. Original versions, record IDs and references are kept.
-Unchanged cells and indexes whose descriptors and value encodings are unchanged
-are not rewritten.
-Legacy variable-width index entries gain escaped boundaries and UTF-16 string
-ordering. Index descriptors also convert fixed floating-point or packed-value map
-and set ancestor keys, including indexes whose leaf value is an unchanged integer.
-Primary keys whose bytes change require an explicit key/reference migration and
-fail preflight.
-
-The store metadata records `maryk.storage/format = 2` only after verification.
-Later opens read the stamp and skip the conversion and data scans. A durable
-checkpoint and temporary staged rows make interruption recoverable by reopening
-with the same stored source schemas. Sensitive unique token translations are
-also temporary and are deleted before publication. Complete pending application
-schema migrations with their original library before starting this upgrade.
-Legacy field encryption is not converted. Do not run old writers during the
-upgrade or downgrade afterward. Restart scans and replication subscriptions from
-a fresh snapshot; old scan cursors are rejected.
-
-Per-model `maryk.storage/maintenance` metadata separately records completion of
-clock repair and optional history/tombstone backfills. Later opens read these
-completion flags and the operational clock watermark, skipping old repair-marker
-checks and scans. Models first opened later and newly enabled history still get
-their required maintenance. This is engine metadata, independent of model schema
-versions, with no extra fields on application records.
-
-Retained transaction receipts keep their original request identity across this
-upgrade. Opening conversion tags released receipts explicitly; new receipts use
-the current request fingerprint. A retry compares against the appropriate codec
-before returning the retained response. If the released request encoding cannot
-be reproduced unambiguously, the store reports that identity cannot be proven
-and keeps the receipt instead of applying the transaction again.
-The transaction revision nonce now uses a separate metadata key from receipt
-IDs. The formerly colliding transaction ID `revision` remains valid. Only an exact
-16-byte legacy nonce is moved; receipt-sized values at that key are preserved.
+Opening a released store can run a resumable storage-format conversion before
+application schema migrations. Stop old writers, retain a recoverable source copy,
+and read the [storage upgrade guide](../shared/docs/storage-format-upgrades.md)
+before rollout. Some legacy collection/allocation states require authoritative
+recovery; do not remove upgrade metadata to bypass a failure.

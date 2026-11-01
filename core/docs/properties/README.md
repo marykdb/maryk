@@ -80,3 +80,9 @@ Values supplied through untyped model slots or mutation references must still
 match the declared property type. Validation checks collection members and typed
 payloads before conversion, serialization or storage, including non-null map keys and members.
 Rejected writes preserve the existing record and version.
+
+## Reading stored property bytes
+
+For scalar storage slices, `fromStorageBytes(bytes, offset)` reads the remaining
+array tail. Pass `length` explicitly when the array also contains a suffix. Invalid
+slice bounds are rejected before decoding, and readers cannot consume adjacent bytes.

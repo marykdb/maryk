@@ -120,8 +120,8 @@ internal fun nativeAccess(plan: BoundQuery, source: BoundSource): NativeAccess {
 internal suspend fun NativeAccess.filter(table: SqlTable, evaluator: SqlEvaluator): IsFilter? {
     val pushed = mutableListOf<IsFilter>()
     for (predicate in filters) {
-        // Store indexes order UTF-8 bytes; SQL text ordering is ordinal UTF-16. Equality is
-        // portable, but range pushdown can discard supplementary Unicode characters incorrectly.
+        // Keep text ranges local until the SQL adapter supports native text-range planning
+        // across its access paths. Text equality can still use native predicates.
         if (predicate.column.column.type == SqlType.TEXT && predicate.operator != "=") continue
         val value = evaluator.eval(predicate.expression)
         if (value == SqlValue.Null) continue

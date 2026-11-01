@@ -125,7 +125,7 @@ checkpoint: other pages can contain older records or concurrent writes.
 
 For an initial copy into another Maryk store with source versions and complete
 retained history, use the shared
-[backup and restore helpers](../../store/shared/README.md#point-in-time-backup-and-restore).
+[backup and restore helpers](../../store/shared/docs/backup-restore.md).
 
 If the client can miss long periods, keep enough history on the server to cover the expected offline window. If history was compacted or disabled, fall back to a fresh full scan.
 

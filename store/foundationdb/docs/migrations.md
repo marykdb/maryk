@@ -9,49 +9,19 @@ Preferred API:
 
 ## When migration is required
 
-On startup, the store compares stored model definitions with configured models.
-
-No migration required (automatic):
-- new model
-- safe property additions
-- compatible index additions (with backfill)
-- relaxed validation
-
-Migration required:
-- incompatible type changes
-- removals/renames without compatibility aliases
-- stricter constraints that break compatibility
+Follow the [shared migration contract](../../shared/docs/migrations.md) for schema
+compatibility, hook outcomes and target recovery.
 
 ## Handler contract
 
-All migration hooks receive `MigrationContext<FoundationDBDataStore>` and return `MigrationOutcome`:
-- `Success`
-- `Partial`
-- `Retry`
-- `Fatal`
-
-Available hooks:
-- `migrationExpandHandler`
-- `migrationHandler` (`Backfill`)
-- `migrationVerifyHandler`
-- `migrationContractHandler`
+Hooks receive `MigrationContext<FoundationDBDataStore>` and return `MigrationOutcome`.
+See [phases and outcomes](../../shared/docs/migrations.md#phases-and-outcomes) for hook ordering.
 
 ## Runtime phases
 
-Execution phases:
-1. `Expand`
-2. `Backfill`
-3. `Verify`
-4. `Contract`
-
-Progress is persisted via `MigrationState` per model (phase/status/attempt/cursor/message).
-Restart resumes from persisted state.
-
-Current handler hooks:
-- `Expand`: runs `migrationExpandHandler`
-- `Backfill`: runs `migrationHandler`
-- `Verify`: runs `migrationVerifyHandler`
-- `Contract`: runs `migrationContractHandler`
+Expand, Backfill, Verify and Contract run in order, with persisted progress.
+See [phases and outcomes](../../shared/docs/migrations.md#phases-and-outcomes) and
+[target identity](../../shared/docs/migrations.md#target-identity-and-recovery).
 
 For a compatible index addition, `versionUpdateHandler` runs while the model remains fenced as `Rebuilding`. Writes through the same `FoundationDBDataStore` are allowed only after each transaction proves ownership of that exact rebuild fence. Other open stores remain blocked until the hook succeeds and the definition and `Ready` epoch publish together.
 
@@ -110,23 +80,9 @@ Behavior:
 
 ## Operator APIs
 
-- `pendingMigrations()`
-- `migrationStatus(modelId)`
-- `migrationStatuses()`
-- `awaitMigration(modelId)`
-- `pauseMigration(modelId)`
-- `resumeMigration(modelId)`
-- `cancelMigration(modelId, reason)`
-
-`cancelMigration` is terminal for the current store instance: the model stays blocked and you must reopen the store to resume from persisted state.
-
-Operator semantics:
-- `awaitMigration(modelId)` returns normally when migration completes successfully.
-- `awaitMigration(modelId)` completes exceptionally with `MigrationException` if migration fails or is canceled.
-- `pauseMigration(modelId)` only affects pending/background progress. It does not interrupt a currently running phase step.
-- While paused, the model remains request-blocked.
-- `resumeMigration(modelId)` allows the next background loop iteration to continue from the persisted `MigrationState`.
-- After `cancelMigration`, the current store instance keeps the model blocked. Reopening the store resumes from the persisted phase/cursor.
+Use the [shared operator API](../../shared/docs/migrations.md#operator-controls)
+for status, waiting, pause, resume and cancellation. A canceled store instance
+must reopen to resume the persisted migration.
 
 ## Lease behavior (distributed)
 
@@ -202,19 +158,8 @@ FoundationDBDataStore.open(
 ```
 
 
-Pending application migrations are bound to the complete target schema, including
-dependent definitions and reference widths. The checkpoint and its target digest
-are persisted together. Reopening with the source schema or a different target,
-even one using the same version number, fails before opening callbacks run. Resume
-with the original target; changing a version string cannot authorize skipping
-completed phases.
+Pending target recovery follows the [shared contract](../../shared/docs/migrations.md#target-identity-and-recovery).
 
-Older unfinished checkpoints without a target digest cannot establish which schema
-already rewrote their rows. They require authoritative recovery of the intended
-target and progress; do not delete the checkpoint to bypass the guard. A final
-marker can be cleaned automatically only when the independently published schema
-proves that its target was completed. Normal state serialization and storage-format
-versions are unchanged.
 
 Already-open instances also check persisted migration progress inside their native
 read and write transactions. They reject access while a transition is pending and

@@ -127,3 +127,56 @@ Earlier changes are applied to a private value view before evaluating the next
 Check; a failed Check publishes no rows. Incrementing-map additions are materialized
 before this evaluation, and missing parent maps are seeded only for preceding value
 writes. Requests without Checks retain the direct materialization path.
+
+## Current values and allocation
+
+Soft deletion preserves the current snapshot payload even when history is
+disabled. Older deleted snapshots which omitted that payload fall back to their
+retained table cells for reads and filters; an empty cached snapshot does not
+erase the retained values.
+Self-contained journal entries preserve valid empty deleted records, and
+`getUpdates` retains deletion-at-creation even without historic snapshots.
+Mutation no-op detection compares ordinary encoded cells before encryption, so
+distinct Float32/Float64 NaN payloads retain their unique identities through
+changes as well as initial writes. The codecs keep distinct raw patterns they
+receive, and encoded cells and unique keys retain those bytes across reopen.
+
+The JavaScript target cannot guarantee arbitrary NaN payload identity through its
+`Number` values. In Chrome/V8, assigning a NaN to a numeric object field or array
+element can canonicalize its payload before Maryk constructs `Values` or a query
+filter. This input limitation does not indicate conversion of existing encoded
+cells. Use the Wasm target when storage and query round trips must retain supplied
+Float32/Float64 NaN payloads. Floating-point arithmetic may itself change NaN
+payloads, and a codec cannot recover bits already canonicalized by its caller.
+Finite values and signed zero retain the normal query and uniqueness contract.
+
+Incrementing-map allocation retains a per-record watermark in metadata. Removing
+the greatest entry or replacing the map does not reuse allocated keys after
+reopen. Watermarks commit with the mutation and are cleared by hard deletion.
+Allocation follows preceding value writes in the request and rejects numeric
+overflow before changing the record.
+
+## Opening storage format 2
+
+Read the [storage upgrade guide](../../shared/docs/storage-format-upgrades.md)
+for rollout, conversion and recovery requirements. The details below describe this
+engine's persisted layout.
+
+IndexedDB also converts opaque floating-point value-object bytes in its persisted
+Protobuf change logs and update-history payloads; ordinary Float/Double wire values
+remain unchanged. Current record snapshots in `k:modelId` are converted alongside
+the table rows and historic snapshots. Metadata-only current records and
+update-history deletion markers remain unchanged.
+The same opening upgrade reframes released nanosecond DateTime collection
+payloads in both log stores, including models without floating-point fields.
+Encrypted affected logs require their field encryption provider.
+Stored source schemas are decoded with their original codec so defaults and
+value-object bounds retain their meaning. Before completion, each root schema and
+its dependent definitions are rewritten atomically with a per-model source-schema
+format marker; reopening after an interrupted rewrite reads the correct codec.
+Index descriptors with fixed floating-point map or set ancestors are converted
+alongside their current, historic, and cleanup rows, even when their leaf value
+uses an unchanged integer encoding. Retained transaction receipts in metadata
+are tagged with the released codec so identical retries return their original
+response after upgrade and reopen. Ambiguous released request identities stop
+with an explicit recovery error rather than running another mutation.

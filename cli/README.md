@@ -39,35 +39,13 @@ Once running interactively, type `help` to see the available commands, or `help 
 
 ### Serving a store over HTTP
 
-Expose a local store via a lightweight Ktor server:
-
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
-serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
-MARYK_BEARER_TOKEN=replace-with-a-secret maryk serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token-env MARYK_BEARER_TOKEN
-serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token-file ./maryk-token
-printf '%s' 'replace-with-a-secret' | maryk serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token-stdin
-serve --config ./serve.conf
 ```
 
-Config file format (key/value or YAML-style):
-
-```text
-store: rocksdb
-dir: ./data
-host: 127.0.0.1
-port: 8210
-bearer-token-env: MARYK_BEARER_TOKEN
-```
-
-Note: `serve` works in JVM and native desktop binaries. Use exactly one of
-`--bearer-token-env <name>`, `--bearer-token-file <path>`, or
-`--bearer-token-stdin` (the same `bearer-token-env`, `bearer-token-file`, and
-blank `bearer-token-stdin:` config keys are supported). `--bearer-token <token>`
-remains available for compatibility but warns because command-line arguments can
-be visible to other local users and process monitors.
-Non-loopback plaintext binds require the explicit unsafe `--allow-insecure-remote-binding` opt-in, even with bearer authentication.
-Keep the Maryk server loopback-bound behind TLS termination or use SSH tunneling; bearer authentication does not encrypt traffic.
+Keep the server loopback-bound behind TLS termination or use SSH tunneling.
+Bearer authentication does not encrypt traffic. See the [serve reference](docs/commands.md#serve)
+for authentication, configuration files and remote-binding options.
 
 ## Development Notes
 
@@ -77,20 +55,8 @@ Keep the Maryk server loopback-bound behind TLS termination or use SSH tunneling
 
 ## Commands
 
-- `connect`: Connect to a store (`rocksdb` or `foundationdb`).
-- `serve`: Start an HTTP server that exposes a store (`rocksdb` or `foundationdb`).
-- `sql [options] <statement>`: Query the connected store; `--write` enables mutations and interactive transaction controls.
-- `disconnect`: Close the current store connection.
-- `list`: Show available data models.
-- `model [--with-deps] [--key-index-format] [<name|id>]`: Inspect a model's schema.
-- `model --all [--with-deps] [--key-index-format]`: Inspect all model schemas.
-- `add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]`: Add a new record from a file.
-- `get <model> <key> [--include-deleted] [subcommand ...]`: Fetch a record and open a viewer, or run a record action inline.
-- `undelete <model> <key> [--if-version <n>]`: Restore a soft-deleted record.
-- `changes <model> <key> [options]`: Show versioned changes for a record.
-- `scan <model> [options]`: Browse records in a scrolling list.
-
-Tip: run `help <command>` for detailed usage, options, and subcommands.
+Run `help` or `help <command>` for usage. The [command reference](docs/commands.md)
+covers connections, schema inspection, records, SQL and migrations.
 
 Example session:
 
@@ -102,79 +68,33 @@ scan Client --show info.name.firstNames,info.name.familyName
 
 ### Adding records
 
-Use `add` with a file produced by `save` (or authored manually):
-
 ```text
 add Client ./client.yaml
-add Client ./client.meta.yaml --meta
-add Client ./client.yaml --key AbCdEf123
 ```
 
-Notes:
-- `--meta` expects a metadata file saved via `save --meta`.
-- Multi-file saves (Kotlin or `--meta`) publish a complete revision under
-  `<dir>/.maryk-export/`; use `--legacy-direct` only for consumers that require
-  direct files in the selected directory.
-- If `--key` is omitted, the key is derived from the values (UUIDv4/UUIDv7 keys generate a new key).
-- `add` works in both interactive and one-shot mode.
-- YAML/JSON files can contain multiple objects to add in one call.
-- Use `-` as the file path to read from stdin.
+See [add](docs/commands.md#add) for metadata, explicit keys, batches and stdin.
 
 ## One-shot mode
 
-Run a single command without the interactive UI:
-
 ```text
 maryk --connect rocksdb --dir ./data --exec "list"
-maryk --connect rocksdb --dir ./data --exec "model Client"
-maryk --connect rocksdb --dir ./data --exec "add Client ./client.yaml"
-maryk --exec "serve rocksdb --dir ./data --port 8210"
 ```
 
-Notes:
-- `--connect` is optional for commands that do not require an existing connection (for example `serve` or `help`).
-- `--exec` is parsed the same way as CLI input (quoted arguments are supported).
-- Commands that open interactive viewers (`get` without a subcommand or `connect` without args) are rejected in one-shot mode.
-- `scan` in one-shot mode returns a single page (respecting `--limit`) as plain output.
-- Use `get <model> <key> <subcommand ...>` to run `save`, `load`, `set`, `unset`, `append`, `remove`, or `delete` without entering the viewer.
+See [one-shot mode](docs/commands.md#one-shot-mode) for supported commands and viewer restrictions.
 
 ## Interactive viewers
 
 ### Get viewer
 
-Commands: `save`, `load`, `set`, `unset`, `append`, `remove`, `delete`, `close` (when opened from a scan), `q/quit/exit`.
-Edits apply immediately and refresh the view.
-
-Inline edit parsing:
-- Values are parsed as Maryk YAML scalars for the referenced property type.
-- Strings do not require quotes, but quoting is recommended for values with spaces or YAML special characters.
-- Use `--if-version` to guard against concurrent updates.
+Open a record with `get <model> <key>`. Edits apply immediately.
+See [record controls](docs/commands.md#get-viewer) for editing, import and export.
 
 ### Scan viewer
 
-- Use Up/Down, PgUp/PgDn, Home/End to move.
-- `get` opens the selected record in a viewer. Use `close` there to return to the scan.
-- `show <ref,...>` controls which fields are displayed per row and updates the select graph.
-- `filter <expr>` adds filters in the same syntax as `scan --where`.
-- `save`, `load`, `delete` operate on the selected record.
-
-Scan options:
-- `--start-key <base64>` start scanning from a specific key.
-- `--limit <n>` page size per fetch (default 100).
-- `--include-start` / `--exclude-start` whether to include the start key.
-- `--to-version <n>` scan as of a historic version.
-- `--include-deleted` include soft-deleted records.
-- `--where <expr>` filter expression (Maryk YAML).
-- `--order <ref,...>` order by indexed references.
-- `--select <ref,...>` fetch only selected fields.
-- `--show <ref,...>` display these fields in each row.
-- `--max-chars <n>` max characters per row (default 160).
+Use `scan <model>` to browse records. See [scan controls and options](docs/commands.md#scan-viewer)
+for paging, filtering, selection and history.
 
 ## Docs
 
-See `cli/docs/README.md` and `cli/docs/commands.md` for detailed flows and options.
-
-If a SQL write reports an uncertain commit, the interactive session retains its
-transaction and blocks further SQL writes. Run `sql --resolve-commit` to resolve
-that exact transaction. A one-shot process cannot retain the handle after exit;
-its uncertain status must not be treated as proof that no rows changed.
+The [command reference](docs/commands.md) owns detailed usage and options.
+For SQL commit recovery, see [SQL commands](docs/commands.md#sql).

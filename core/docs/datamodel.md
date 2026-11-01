@@ -5,13 +5,6 @@ A DataModel is the blueprint for a record. It contains [property definitions](pr
 
 Every property in a DataModel has both a name and a unique integer index. The index must stay the same for the lifetime of the application and removes the need for reflection during serialisation, keeping processing fast.
 
-Referenced and embedded model names are part of schema identity. Changing a
-property to point at another model requires migration, including changing it to
-the containing model or another model already visited during compatibility
-checks. Recursive references do not waive this identity check.
-Changing the referenced model's key byte size also requires migration of its
-referencing properties; retained keys cannot be read using a different width.
-
 ### Example of a DataModel Representing a Person
 
 Consider a simple `Person` DataModel with first name, last name and date of birth.
@@ -47,17 +40,9 @@ Person.validate(johnSmith)
 val key = Person.key(johnSmith)
 ```
 
-`Values.copyWithValue(index, value)` replaces one complete root value, including
-an embedded record. Fields omitted from a replacement stay absent. Passing `Unit`
-removes that root. `Values.copy { ... }` retains its existing embedded patch behavior.
-
-`create { ... }` and `Values.copy { ... }` use a nested collector per execution
-thread on JVM, Android and Native. Builders on different threads cannot write into
-each other's values. Nested builders keep their own default policy, and exceptions
-restore the parent collector. The builder block is synchronous; finish it before
-passing its result to another thread. JS and Wasm use their single-threaded context.
-This protects value construction; it does not make a mutable result or datastore
-write atomic.
+Builder blocks (`create { ... }` and `Values.copy { ... }`) run synchronously.
+Finish construction before passing results to another thread; mutable results
+still need application-level synchronization.
 
 ## Basic DataModels
 
@@ -169,6 +154,14 @@ data class PersonRoleInPeriod(
     }
 }
 ```
+
+## Evolving model references
+
+Referenced and embedded model names are part of schema identity. Changing a
+property to point at another model requires migration, including changing it to
+the containing model. Recursive references follow the same identity rules.
+Changing the referenced model's key byte size also requires migration of its
+referencing properties; retained keys cannot be read using a different width.
 
 ## Creating Derived DataModels
 

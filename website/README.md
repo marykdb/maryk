@@ -8,7 +8,7 @@ Part of this site is generated from repository docs before every build. Other pa
 
 - Source of truth:
   - `core/docs/**`
-  - `sql/README.md`
+  - `sql/README.md` and `sql/docs/**`
   - `store/**/README.md` and `store/**/docs/**`
   - `store/rocksdb/documentation/**`
   - `generator/README.md`
@@ -17,7 +17,8 @@ Part of this site is generated from repository docs before every build. Other pa
 - Sync script: `scripts/sync-core-docs.mjs`
 - Generated targets: `src/content/docs/**`
 
-Do not hand-edit generated pages unless you also update their source files.
+Edit generated pages through their source files and run `yarn sync`.
+The mapping in `scripts/sync-core-docs.mjs` identifies which pages are generated.
 
 Hand-authored pages include the landing page, introduction pages, tutorials and tradeoff guidance. Edit those directly.
 
@@ -45,3 +46,9 @@ Preview:
 ```bash
 yarn preview
 ```
+
+## Generator checks
+
+Run `yarn test` after changing the sync script or its mappings, then `yarn build`.
+The tests cover source-relative links, generated routes and code-fence preservation.
+The build synchronizes sources and checks that the resulting MDX compiles.

@@ -8,64 +8,19 @@ Preferred API:
 
 ## When migration is required
 
-On open, the store compares persisted model definitions with configured models.
-
-No migration required (automatic):
-- new model
-- safe property additions
-- new indexes on compatible existing properties (index backfill)
-- relaxed validation
-
-Migration required:
-- incompatible property type changes
-- removals/renames without alternatives
-- stricter validation changes that break compatibility
+Follow the [shared migration contract](../../shared/docs/migrations.md) for schema
+compatibility, hook outcomes and target recovery.
 
 ## Handler contract
 
-All migration hooks receive `MigrationContext<RocksDBDataStore>` and return `MigrationOutcome`:
-- `Success`: phase complete
-- `Partial`: progress persisted, continue with provided cursor/message
-- `Retry`: retry same phase (optional delay)
-- `Fatal`: migration fails
-
-Available hooks:
-- `migrationExpandHandler`
-- `migrationHandler` (`Backfill`)
-- `migrationVerifyHandler`
-- `migrationContractHandler`
+Hooks receive `MigrationContext<RocksDBDataStore>` and return `MigrationOutcome`.
+See [phases and outcomes](../../shared/docs/migrations.md#phases-and-outcomes) for hook ordering.
 
 ## Runtime phases
 
-Runtime phase order:
-1. `Expand`
-2. `Backfill`
-3. `Verify`
-4. `Contract`
-
-Progress is persisted per model with `MigrationState` (phase, status, attempt, cursor, message, version range).
-If the process restarts, migration resumes from persisted state.
-
-Pending application migrations are bound to the complete target schema, including
-dependent definitions and reference widths. The checkpoint and its target digest
-are persisted together. Reopening with the source schema or a different target,
-even one using the same version number, fails before opening callbacks run. Resume
-with the original target; changing a version string cannot authorize skipping
-completed phases.
-
-Older unfinished checkpoints without a target digest cannot establish which schema
-already rewrote their rows. They require authoritative recovery of the intended
-target and progress; do not delete the checkpoint to bypass the guard. A final
-marker can be cleaned automatically only when the independently published schema
-proves that its target was completed. Normal state serialization and storage-format
-versions are unchanged.
-
-
-Current handler hooks:
-- `Expand`: runs `migrationExpandHandler`
-- `Backfill`: runs `migrationHandler`
-- `Verify`: runs `migrationVerifyHandler`
-- `Contract`: runs `migrationContractHandler`
+Expand, Backfill, Verify and Contract run in order, with persisted progress.
+See [phases and outcomes](../../shared/docs/migrations.md#phases-and-outcomes) and
+[target identity](../../shared/docs/migrations.md#target-identity-and-recovery).
 
 ## Dependency ordering and cycles
 
@@ -144,24 +99,9 @@ Behavior:
 
 ## Operator control API
 
-- `pendingMigrations()`
-- `migrationStatus(modelId)`
-- `migrationStatuses()`
-- `awaitMigration(modelId)`
-- `pauseMigration(modelId)`
-- `resumeMigration(modelId)`
-- `cancelMigration(modelId, reason)`
-
-These APIs are intended for operational tooling and rollout control.
-`cancelMigration` is terminal for the current store instance: the model stays blocked and you must reopen the store to resume from persisted state.
-
-Operator semantics:
-- `awaitMigration(modelId)` returns normally when migration completes successfully.
-- `awaitMigration(modelId)` completes exceptionally with `MigrationException` if migration fails or is canceled.
-- `pauseMigration(modelId)` only affects pending/background progress. It does not interrupt a currently running phase step.
-- While paused, the model remains request-blocked.
-- `resumeMigration(modelId)` allows the next background loop iteration to continue from the persisted `MigrationState`.
-- After `cancelMigration`, the current store instance keeps the model blocked. Reopening the store resumes from the persisted phase/cursor.
+Use the [shared operator API](../../shared/docs/migrations.md#operator-controls)
+for status, waiting, pause, resume and cancellation. A canceled store instance
+must reopen to resume the persisted migration.
 
 ## Lease behavior
 

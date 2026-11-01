@@ -73,11 +73,8 @@ collection markers and child qualifiers.
 
 Maryk’s value serialization is reused across storage engines. Simple types are written directly, and for wrappers (e.g. enums, typed values) the inner type bytes are composed accordingly.
 
-Multi-type discriminators define which child case is active. Mutations and
-checks consult the current staged discriminator before reading child cells;
-inactive writes reject and inactive deletions leave retained cells untouched.
-Simple case values are stored inline on the multi-type parent. Replace that
-parent with a `TypedValue` rather than writing an extra typed child qualifier.
+Active-case checks and parent replacement follow the
+[shared multi-type rules](../../shared/docs/store-behavior.md#multi-type-children).
 
 ## Versioning
 
@@ -178,3 +175,49 @@ When `keepUpdateHistoryIndex = true`, each add/change/delete also writes:
 - Value: empty
 
 This is used for `scanUpdates(order = null)` so a forward scan returns newest-first object updates.
+
+## Opening storage format 2
+
+Read the [storage upgrade guide](../../shared/docs/storage-format-upgrades.md)
+for rollout, conversion and recovery requirements. The details below describe this
+engine's persisted layout.
+
+Temporary staging includes both old and new keys. When this envelope exceeds
+FoundationDB's 100,000-byte value limit, the upgrade chunks it in a separate
+temporary metadata subspace. Chunks, their manifest and the checkpoint commit
+together; cleanup removes them before the format is published. This also permits
+conversion of floating collection qualifiers whose unchanged value is close to
+the native value limit.
+
+Stored source model definitions and their dependencies use the legacy transport
+reader during upgrade, preserving NANOS DateTime collection defaults. Before
+publication each source definition pair is rewritten with its own current-format
+marker in one guarded transaction. A restart can therefore distinguish rewritten
+schemas from remaining legacy pairs while the global upgrade is unfinished.
+This preserves source schemas and versions, including models not registered by
+the opener; application schema migrations still run afterward.
+Read-only schema discovery used by the App and CLI selects the same legacy/current
+reader from the store format and each source-pair marker before opening the store.
+
+Opening maintenance flags and clock/history backfills follow the
+[shared opening contract](../../shared/docs/storage-format-upgrades.md#opening-maintenance).
+
+FoundationDB cluster logs distinguish released and current transport payloads
+in an existing type bit, including packed floating value objects and NANOS
+DateTime collections. Released packed DateTime pairs are decoded using the
+recorded format, preserving every element even when their bytes also resemble
+one current framed value. Old queued payloads can be read without a queue rewrite
+or extra log-envelope bytes.
+
+FoundationDB stores the released receipt tag in its manifest and reconstructs
+the tagged logical receipt from unchanged 80,000-byte chunks. Manifest conversion
+uses the same staged opening-upgrade checkpoints as other format-sensitive
+metadata. Receipt limits include the fingerprint and current envelope, and the
+released manifest adds its envelope only once during reconstruction.
+
+## Unique ownership and replication
+
+See [store behavior](../../shared/docs/store-behavior.md) for deletion, final unique
+ownership, replication ordering and deleted-inclusive scans.
+
+Removing an optional encrypted value decrypts its previous value for validation before clearing the stored cell.

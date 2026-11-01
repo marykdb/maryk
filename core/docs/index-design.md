@@ -1,455 +1,121 @@
 # Index Design
 
-This guide explains how to think about indexes in Maryk and how the different index building blocks fit together.
-
-The main design choice is not "which operator should I use first?". The main design choice is:
-
-- do I need an ordered index
-- do I need a search index
-- or do I need both
-
-That distinction matters because those two index families solve different problems and should not be mixed mentally.
-
-Related guides:
-- [Data Models](datamodel.md)
-- [Keys](key.md)
-- [Filters](filters.md)
-- [Querying](query.md)
+Choose indexes from the application's filters, ordering and paging requirements.
+Use the [operator reference](index-reference.md) for constructor details and
+[index query examples](index-recipes.md) for filters and spatial candidates.
 
 ## Two index families
 
+| Access pattern | Index family | Typical operators |
+| --- | --- | --- |
+| Sort, exact lookup, prefix/range scan, ordered paging | Ordered | Property reference, `Multiple`, `Reversed`, `Normalize` |
+| Search terms across a named set of fields | Search | `AnyOf`, `Split`, `Normalize` |
+
 ### Ordered indexes
 
-An ordered index produces one index key per record.
-
-That key has a stable byte order. Because of that, ordered indexes are the right tool for:
-
-- sorting
-- exact lookup
-- prefix scans
-- range scans
-- pagination over a stable order
-
-If you think in terms of "sort by this, then by that" or "scan all values between A and B", you want an ordered index.
+Compose an ordered tuple in the same leading-field order as the query. Scalar
+indexes normally produce one key per record; collection indexes can fan out.
 
 ### Search indexes
 
-A search index can produce multiple index entries per record.
-
-That makes it useful for text-like search where one stored field should be searched as multiple terms, or where several fields should behave like one search surface.
-
-Search indexes are the right tool for:
-
-- token matching
-- search across multiple fields
-- normalized name search
-- query-box style lookup over several name/address/alias parts
-
-Search indexes are not ordering indexes. They are for matching, not for stable record order.
+Search indexes emit terms. Query the named surface with `Matches`, `MatchesPrefix`
+or `MatchesRegEx`. They do not provide the application's record sort order.
 
 ### Why the distinction matters
 
-Suppose you need both:
-
-- sort people by surname, then first name
-- search people by any name token
-
-Those are different access patterns.
-
-The ordered version wants something like:
-
-```kotlin
-Multiple(
-    Normalize(surname.ref()),
-    firstName.ref()
-)
-```
-
-The search version wants something like:
-
-```kotlin
-AnyOf(
-    "name",
-    surname.ref(),
-    firstName.ref(),
-    fullName.ref()
-).normalize().split(WordBoundary)
-```
-
-One record order. One search surface. Different indexes.
-
-If you try to use one for the other, semantics become confusing quickly.
+A catalog can need both ordered browsing and token search over the same fields.
+Define both when the access patterns require them; normalization alone is not tokenization.
 
 ## Ordered index building blocks
 
-These building blocks all belong to the ordered-index family.
-
 ### Reference
 
-```kotlin
-surname.ref()
-```
-
-This is the simplest ordered index part.
-
-It stores the property value as-is in index order. Use it when exact stored value semantics matter.
-
-Good for:
-- exact equality
-- normal prefix matching
-- range scans
-- straightforward ordering
+Use `surname.ref()` for the stored value. See [Reference](index-reference.md#reference).
 
 ### `Normalize`
 
-```kotlin
-Normalize(surname.ref())
-```
-
-`Normalize` is still an ordered index part. It does not make the index a search index by itself.
-
-It changes the stored index value before it is written. For strings this currently means search-oriented normalization such as:
-
-- lowercase folding
-- diacritic folding
-- punctuation and symbol cleanup
-- whitespace normalization/removal
-
-Use it when you want ordered lookups and scans to happen on normalized text instead of original text.
-
-Good for:
-- case-insensitive equality on an ordered index
-- accent-insensitive prefix/range scans
-- stable normalized sort order
-
-Do not confuse this with token search. `Normalize` changes one value into one normalized value.
+Transform a value before comparison or tokenization. See [Normalize](index-reference.md#normalize).
 
 ### `Reversed`
 
-```kotlin
-Reversed(createdAt.ref())
-```
-
-`Reversed` flips the ordering direction for one ordered index part.
-
-Use it when the natural query pattern is descending, for example:
-
-- newest first
-- highest score first
-- most recent version first
-
-It is still an ordered index. It just changes the byte ordering for that part.
+Reverse one component's order. See [Reversed](index-reference.md#reversed).
 
 ### `ReferenceToMax`
 
-```kotlin
-ReferenceToMax(updatedAt.ref())
-```
-
-`ReferenceToMax` is an ordered index helper for cases where you want a reference to sort toward the maximum end of the key space.
-
-Use it when you need special ordering behavior around max-oriented positioning of a reference value inside an ordered key.
-
-It belongs with ordered index composition, not search.
+Use max-oriented positioning for a reference component. See [ReferenceToMax](index-reference.md#referencetomax).
 
 ### `Multiple`
 
-```kotlin
-Multiple(
-    Normalize(surname.ref()),
-    firstName.ref()
-)
-```
-
-`Multiple` combines several ordered index parts into one tuple index.
-
-This is the main tool for compound ordered indexes.
-
-Good for:
-- order by A then B
-- exact lookup on leading parts
-- prefix scans on leading parts
-- range scans over a tuple
-
-Important:
-- `Multiple` still produces one index key per record
-- part order matters
-- leading parts decide which scans can use the index efficiently
+Compose ordered components; leading parts determine useful lookup ranges.
+See [Multiple](index-reference.md#multiple).
 
 ## Search index building blocks
 
-These building blocks are different. They are about emitting search values, not about stable sort order.
-
 ### `Split`
 
-```kotlin
-Split(Normalize(fullName.ref()), on = WordBoundary)
-```
-
-`Split` turns one string into multiple indexed values.
-
-That one step changes the nature of the index part: this is now search-oriented fan-out behavior.
-
-Current split options:
-- `SplitOn.Whitespace`
-- `SplitOn.WordBoundary`
-
-`SplitOn.Whitespace` only breaks on whitespace.
-
-`SplitOn.WordBoundary` is broader. It breaks on whitespace and common hyphen boundaries. That makes it better for names such as:
-
-- `García-López`
-- `Jean-Luc`
-- `van der Waals`
-
-Use `Split` when one stored field should be searchable as multiple terms.
+Emit terms with `Whitespace` or `WordBoundary` boundaries. See [Split](index-reference.md#split).
 
 ### `AnyOf`
 
-```kotlin
-AnyOf(
-    "name",
-    surname.ref(),
-    firstName.ref(),
-    fullName.ref()
-)
-```
-
-`AnyOf` combines several sources into one logical search index.
-
-Each child can emit one or more search values. The result is a single named search surface backed by several fields.
-
-Use it when the user thinks of several fields as one search box.
-
-Typical cases:
-- patient name search across family/given/text/prefix/suffix
-- address search across street/city/postcode
-- alias search across several alternate names
-
-If `AnyOf` has a name, it is queried through the named search filters:
-
-- `Matches`
-- `MatchesPrefix`
-- `MatchesRegEx`
-
-Important:
-- `AnyOf` is search-only semantics
-- named search index names should be unique per model
-- it should not be treated as a replacement for ordered tuple indexes
+Combine fields belonging to one search surface. See [AnyOf](index-reference.md#anyof).
 
 ## Composition patterns
 
 ### Ordered composition
 
-Use ordered building blocks together when the query model is still about record order or exact/prefix/range semantics.
-
-Example:
-
 ```kotlin
-Multiple(
-    Normalize(surname.ref()),
-    firstName.ref(),
-    Reversed(createdAt.ref())
-)
+Multiple(Normalize(surname.ref()), firstName.ref(), Reversed(createdAt.ref()))
 ```
 
-Read that as:
-
-- compare surname in normalized order
-- then compare first name in stored order
-- then compare created time in reverse order
-
-Still one index key. Still an ordered index.
+Compare normalized surname, then first name, then descending creation time.
 
 ### Search composition
 
-Use search building blocks when the query model is about terms instead of full field values.
-
-Example:
-
 ```kotlin
-AnyOf(
-    "name",
-    surname.ref(),
-    firstName.ref(),
-    fullName.ref()
-).normalize().split(WordBoundary)
+AnyOf("name", surname.ref(), firstName.ref(), fullName.ref())
+    .normalize().split(WordBoundary)
 ```
 
-Read that as:
-
-- take all these fields
-- normalize each field
-- split each field into terms
-- index those emitted terms under one named search surface
-
-This is no longer a sort index. It is a search index.
+Normalize and tokenize each child field under the `name` surface.
 
 ### Composable syntax
 
-These forms are equivalent:
-
-```kotlin
-AnyOf(
-    Split(Normalize(surname.ref()), on = WordBoundary),
-    Split(Normalize(firstName.ref()), on = WordBoundary),
-)
-```
-
-```kotlin
-AnyOf(
-    surname.ref().normalize().split(WordBoundary),
-    firstName.ref().normalize().split(WordBoundary),
-)
-```
-
-```kotlin
-AnyOf(
-    surname.ref(),
-    firstName.ref(),
-).normalize().split(WordBoundary)
-```
-
-The last form is distributive sugar. It means "apply these transforms to each child of `AnyOf`". It does not mean the fields are merged into one combined string first.
+Transforms on `AnyOf` apply to each child; they do not concatenate fields first.
+See [equivalent forms](index-reference.md#composable-syntax).
 
 ## Query semantics
 
 ### Ordered index queries
 
-Ordered indexes are used through normal property filters and order clauses.
-
-Examples:
-
-```kotlin
-Equals(
-    Person.ref { surname } with "garcia lopez"
-)
-```
-
-```kotlin
-Prefix(
-    Person.ref { surname } with "gar"
-)
-```
-
-```kotlin
-Orders(
-    Person.ref { surname }.ascending(),
-    Person.ref { firstName }.ascending()
-)
-```
-
-Those map naturally onto:
-
-- `Reference`
-- `Normalize`
-- `Reversed`
-- `ReferenceToMax`
-- `Multiple`
+Use property filters and order clauses. See [ordered queries](index-recipes.md#ordered-index-queries).
 
 ### Search index queries
 
-Named search indexes are queried explicitly through search filters.
-
-Examples:
-
-```kotlin
-Matches(
-    "name" with "garcia lopez"
-)
-```
-
-```kotlin
-MatchesPrefix(
-    "name" with "gar"
-)
-```
-
-```kotlin
-MatchesRegEx(
-    "name" with Regex("^gar.*$")
-)
-```
-
-This separation is intentional.
-
-Property filters mean:
-"match this property using property semantics"
-
-Named search filters mean:
-"search this named search surface using search semantics"
+Use the named search filters. See [search queries](index-recipes.md#search-index-queries).
 
 ### Geospatial candidate indexes
 
-`GeoHash(location.ref(), precisionBits = 32u)` narrows `GeoWithinBox` and
-`GeoWithinRadius` scans. It stores one stable geohash cell per record. The
-planner covers the query bounds with at most 256 byte-aligned prefixes,
-reducing precision when needed, and exact geometry removes false positives.
-Geohash ordering is spatial cell order; it does not provide distance sorting or
-nearest-neighbour ranking.
-
-That keeps ordered equality/prefix/range logic separate from token search logic.
+GeoHash narrows candidates for exact box/radius filters; it does not sort by distance.
+See [spatial candidates](index-recipes.md#geospatial-candidate-indexes).
 
 ## Design advice
 
 ### Define both index types when needed
 
-It is normal to define both an ordered index and a search index over similar fields.
-
-Example:
-
-```kotlin
-indexes = {
-    listOf(
-        Multiple(
-            Normalize(surname.ref()),
-            firstName.ref()
-        ),
-        AnyOf(
-            "name",
-            surname.ref(),
-            firstName.ref(),
-            fullName.ref()
-        ).normalize().split(WordBoundary)
-    )
-}
-```
-
-The first index supports ordered browsing and exact normalized matching.
-
-The second index supports token search.
+Use separate ordered and search indexes when both browsing and token search are required.
 
 ### Keep `AnyOf` focused
 
-Only group fields that belong to the same user-facing search surface.
-
-Good:
-- patient name parts
-- address parts
-- aliases
-
-Less good:
-- unrelated fields grouped just because they are strings
-
-If the search intent is different, define separate named search indexes.
+Group related name parts, addresses or aliases into their own user-facing surfaces.
 
 ### Use `Normalize` deliberately
 
-`Normalize` is useful in both families:
-
-- in ordered indexes, it gives normalized comparison and ordering
-- in search indexes, it gives stable emitted search terms
-
-But it does not change the index family by itself. `Normalize` alone is not token search.
+Normalization changes comparison values; adding `Split` changes term boundaries.
 
 ### Choose `SplitOn` based on semantics
 
-Use `Whitespace` when only spaces should separate terms.
-
-Use `WordBoundary` when hyphen-like name boundaries should also behave as term boundaries.
+`Whitespace` separates whitespace; `WordBoundary` also handles hyphen-like boundaries.
 
 ### Write regexes for transformed search terms
 
-`MatchesRegEx` runs against emitted search terms after index transforms.
-
-So if the search index uses `Normalize`, the regex should target normalized tokens, not the original stored text.
+Target emitted, normalized terms rather than the original stored string.

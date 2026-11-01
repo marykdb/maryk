@@ -47,51 +47,15 @@ Notes:
 - Always close the store (or wrap in your runtime's lifecycle) to release FDB resources.
 - Need remote access to this FoundationDB store? Expose it with the [Remote Store](../remote/README.md) via CLI `serve`.
 
-## Migrations and Update Handling
+## Migrations and version updates
 
-On startup, the engine checks stored model definitions against the running models. Compatible changes are applied automatically; incompatible changes require migration hooks. A `versionUpdateHandler` can perform post‑migration tasks.
+Opening compares stored and configured model definitions. Compatible changes are
+handled automatically; incompatible changes require migration hooks. Group these
+under `migrationConfiguration = MigrationConfiguration(...)`. Use
+`versionUpdateHandler` for post-migration work.
 
-For the full migration model, hook contracts, runtime phases, control APIs, lease behavior, and operational guidance, see [Migrations](./docs/migrations.md).
-
-Configure FoundationDBDataStore.open with:
-- pass migration settings as `migrationConfiguration = MigrationConfiguration(...)`
-- pass FoundationDB lease tuning as `migrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(...)`
-- pass cluster log settings as `clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(...)`
-- put `migrationHandler`, `migrationExpandHandler`, `migrationVerifyHandler`, and `migrationContractHandler` inside `migrationConfiguration`
-
-```kotlin
-suspend fun openStore() = FoundationDBDataStore.open(
-    keepAllVersions = true,
-    keepUpdateHistoryIndex = true,
-    directoryPath = listOf("maryk", "app"),
-    dataModelsById = mapOf(1u to Account),
-    migrationConfiguration = MigrationConfiguration(
-        migrationHandler = { context ->
-            val fdbStore = context.store
-            val storedModel = context.storedDataModel
-            val newModel = context.newDataModel
-            // return Success when handled
-            when (newModel) {
-                is Account -> MigrationOutcome.Success // example
-                else -> MigrationOutcome.Fatal("Unsupported model")
-            }
-        }
-    ),
-    versionUpdateHandler = { fdbStore, storedModel, newModel ->
-        // seed or backfill after a successful migration/update
-    }
-)
-```
-
-### Migration Lease Behavior
-
-FoundationDB default lease is distributed (`FoundationDBMigrationLease`):
-- Keyed per model in metadata subspace.
-- Owner token + TTL (`migrationLeaseConfiguration.migrationLeaseTimeoutMs`).
-- Background heartbeat (`migrationLeaseConfiguration.migrationLeaseHeartbeatMs`) renews lease while migration is active.
-- Allows takeover after TTL expiry if migrator dies.
-
-You can inject a custom `migrationLease` if needed.
+See [Migrations](docs/migrations.md) for examples, hook ordering, resumable phases,
+lease configuration and operational controls.
 
 ## Configuration
 
@@ -100,11 +64,6 @@ You can inject a custom `migrationLease` if needed.
 - `fdbClusterFilePath`: Optional path to an FDB cluster file; uses default environment if null.
 - `directoryPath`: Subspace root path under which model directories are created.
 - `databaseOptionsSetter`: Lambda executed once during startup on the underlying `DatabaseOptions`. Use this to enable tracing, tweak locality, or set transaction logging limits without forking Maryk.
-- `clusterUpdateLogConfiguration.enableClusterUpdateLog`: Persist each local write (add/change/delete) into an FDB-backed update log and tail that log back into this process to drive `executeFlow` listeners across a whole cluster (multi-writer, multi-reader). It cannot be enabled when a registered model contains sensitive properties because cluster-log payload encryption is not yet supported.
-- `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId`: Required when cluster update logging is enabled. Must be unique per node/process (cursor stored under `__updates__/v1/consumers/<id>`).
-- `clusterUpdateLogConfiguration.clusterUpdateLogOriginId`: Optional. Defaults to the consumer id. Used to skip “echo” of updates written by this same node when tailing.
-- `clusterUpdateLogConfiguration.clusterUpdateLogShardCount`: Number of log shards (per store root). Higher spreads write hot-spotting; tailers read per-shard cursors. The first enabled open persists this value; later opens must match it. Changing it requires an explicit offline log migration so backlog and retention GC remain reachable.
-- `clusterUpdateLogConfiguration.clusterUpdateLogRetention`: Time window to keep log entries (default 1 hour). A background job clears old ranges by timestamp.
 - `fieldEncryptionProvider`: Optional field-value encryption provider. Required when any model property is marked as sensitive (`sensitive = true`).
 
 Example: set custom transaction retry limits
@@ -168,43 +127,15 @@ Notes:
   erase existing plaintext key/index bytes or physical backups. Recover affected
   data into a fresh store with safe definitions, then securely retire old copies.
 
-## Cluster-Wide ExecuteFlow Updates (Optional)
+## Cluster-wide live updates
 
-By default, `executeFlow` only receives updates originating from the current process (in-memory update flow).
+By default, `executeFlow` receives updates from the current process. Enable the
+optional cluster update log to propagate updates across processes using the same
+cluster and `directoryPath`. It requires a stable consumer ID, and cannot be used
+with models containing sensitive properties. Retention limits catch-up after outages.
 
-Enable the cluster update log to propagate updates between multiple processes connected to the same FoundationDB cluster + `directoryPath`:
-
-```kotlin
-val store = FoundationDBDataStore.open(
-    directoryPath = listOf("maryk", "app"),
-    dataModelsById = mapOf(1u to Account),
-    clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
-        enableClusterUpdateLog = true,
-        clusterUpdateLogConsumerId = "node-1",
-    ),
-)
-```
-
-Typical use cases:
-- Multiple app nodes serving realtime subscriptions: any node write becomes visible to listeners on all nodes.
-- Read/write split: API nodes listen for updates while worker nodes write in background.
-- Service decomposition: independent services share one Maryk store root but still receive consistent update events.
-- Short catch-up after restart/outage: consumer cursor resumes inside retention window.
-
-Notes:
-- Models containing sensitive properties cannot use the cluster update log. Startup rejects this combination rather than persisting logical update payloads in plaintext.
-- Uses FDB itself (append-only, sharded) and writes the log entry in the same transaction as the data mutation.
-- Retention is time-based. If a node is offline longer than the retention window, it will resume at the retention cutoff (no replay beyond retention).
-- Cluster HLC sync:
-  - writers update `__updates__/v1/hlc_max/<shard>` using FDB atomic `BYTE_MAX` (8-byte big-endian HLC), so cluster max advances without read-modify-write contention or per-consumer marker growth.
-  - each node runs a background HLC syncer (independent from update listeners) which watches heads and refreshes the `hlc_max/*` values to keep local version generation safely at/above the cluster floor.
-- `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId` should be stable per node/process across restarts. Changing it creates a fresh cursor and can duplicate delivery for up to the retention window.
-- Log keys include `modelId` early, so consumers can range-scan only the models they care about.
-- Upgrading from the legacy HLC-ordered cluster log to the commit-ordered log is a coordinated operation: stop or quiesce every reader and writer, upgrade all binaries, then restart them. Consumers drain persisted legacy entries before storing a one-way commit-ordered cursor. Do not run mixed old/new binaries or roll back after that cursor is stored; old binaries cannot enforce or understand the transition.
-
-Observability:
-- `FoundationDBDataStore.getClusterUpdateLogStats()` exposes tail/GC counters, HLC sync counters/backoff, last activity timestamps, observed cluster HLC, and active listener counts per model.
-- Use it to detect stalled tailers (`lastDecodedAtUnixMs` / `lastTailAtUnixMs`), error spikes (`tailErrors` / `gcErrors`), or unnecessary tail load (`tailTransactions` growth).
+Follow [Cluster-wide live updates](docs/cluster-updates.md) for configuration,
+coordinated upgrades and monitoring.
 
 ## Operational Tips
 
@@ -230,41 +161,12 @@ Run module tests:
 If you use a non‑default cluster file for tests, ensure `fdb.cluster` is present (the test config references `./fdb.cluster`).
 Environment variable `FDB_CLUSTER_FILE` is set by Gradle to `store/foundationdb/fdb.cluster` for JVM tests.
 
-## License
-
-Maryk is licensed under the Apache 2.0 License. See the repository's LICENSE file for details.
-
-### Hard deletion and history
+## Hard deletion and history
 
 A hard delete permanently removes a record's current and historic values, including when `keepAllVersions` is enabled. An earlier `toVersion` query cannot recover erased values. Use soft deletion when historical recovery is required.
 
-Undeleting a record claims its current unique values, including changes or removals
-made while it was deleted. Older historic claims are not restored. Sensitive
-unique values are checked against every configured token candidate before the
-active token is installed.
-Changes reconcile unique ownership against the final stored values. Removing
-embedded children or collection entries, including embedded leaves within map
-values, also releases their claims in the same transaction; conflicts leave the record and its indexes unchanged. Reconciliation
-reads the affected qualifier ranges, preserving unrelated encrypted cells. Soft
-deletion releases owner-matched claims without decrypting payloads. Removing an
-optional encrypted value decrypts its previous value for validation before
-clearing the stored cell. With history
-enabled, undelete can recover a damaged current cell's claim from its exact source
-version; it never substitutes an older historical value.
-
-An accepted replication change advances the record's source version even when
-the supplied value is unchanged. Older changes and deletions remain rejected
-after reopening the store.
-Replication replays committed values and resolved incrementing-map keys in their
-source operation order. Source checks and derived index/type notifications are
-not executed as new mutations. Missing allocation keys or values reject replay
-before that version is applied.
-
-Scans with `filterSoftDeleted = false` use primary-key table scans so multiple
-deleted records with the same formerly unique value remain visible. Table-scan
-permission and minimum key-range bounds still apply. Explicit secondary-index
-ordering with deleted records is rejected; use primary-key ordering.
-
+See [store behavior](../shared/docs/store-behavior.md) for undelete, unique
+ownership, replication ordering and scans that include deleted records.
 
 ## Serializable transaction scopes
 
@@ -276,78 +178,16 @@ commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existi
 contracts outside an explicit transaction.
 
 
-SQL reporting, metadata, embedded scalar writes, transactional upsert, bounded
-windows, joined mutations, correlated queries and complex map/collection expansion
-use the common SQL engine over this store's public requests. See the [SQL guide](../../sql/README.md) for supported
-syntax, execution strategies, transaction tooling and resource limits. The shared
-SQL conformance contract verifies these features through this adapter.
+For optional SQL queries, add the SQL module and follow the [SQL guide](../../sql/README.md).
 
-## Opening storage format 2
+## Upgrading existing stores
 
-Opening an older store performs one resumable, exclusive upgrade before
-application schema migrations or requests. There is one migration: the released,
-unversioned layout (legacy format 1) upgrades directly to storage format 2.
-Float/Double values and index components now share the ordered numeric encoding.
-The upgrade converts affected current/historical fields, collection qualifiers,
-packed value objects and unique lookups, including contextual encryption and
-sensitive unique tokens. Original versions, record IDs and references are kept.
-Unchanged cells and indexes whose descriptors and value encodings are unchanged
-are not rewritten.
-Legacy variable-width index entries gain escaped boundaries and UTF-16 string
-ordering. Index descriptors also convert fixed floating-point or packed-value map
-and set ancestor keys, including indexes whose leaf value is an unchanged integer.
-Primary keys whose bytes change require an explicit key/reference migration and
-fail preflight.
+Opening a released store can run a resumable storage-format conversion before
+application schema migrations. Stop old writers, retain a recoverable source copy,
+and read the [storage upgrade guide](../shared/docs/storage-format-upgrades.md)
+before rollout. Some legacy collection/allocation states require authoritative
+recovery; do not remove upgrade metadata to bypass a failure.
 
-The store metadata records `maryk.storage/format = 2` only after verification.
-Later opens read the stamp and skip the conversion and data scans. A durable
-checkpoint and temporary staged rows make interruption recoverable by reopening
-with the same stored source schemas. Sensitive unique token translations are
-also temporary and are deleted before publication. Complete pending application
-schema migrations with their original library before starting this upgrade.
-Legacy field encryption is not converted. Do not run old writers during the
-upgrade or downgrade afterward. Restart scans and replication subscriptions from
-a fresh snapshot; old scan cursors are rejected.
+## License
 
-Temporary staging includes both old and new keys. When this envelope exceeds
-FoundationDB's 100,000-byte value limit, the upgrade chunks it in a separate
-temporary metadata subspace. Chunks, their manifest and the checkpoint commit
-together; cleanup removes them before the format is published. This also permits
-conversion of floating collection qualifiers whose unchanged value is close to
-the native value limit.
-
-Stored source model definitions and their dependencies use the legacy transport
-reader during upgrade, preserving NANOS DateTime collection defaults. Before
-publication each source definition pair is rewritten with its own current-format
-marker in one guarded transaction. A restart can therefore distinguish rewritten
-schemas from remaining legacy pairs while the global upgrade is unfinished.
-This preserves source schemas and versions, including models not registered by
-the opener; application schema migrations still run afterward.
-Read-only schema discovery used by the App and CLI selects the same legacy/current
-reader from the store format and each source-pair marker before opening the store.
-
-Per-model `maryk.storage/maintenance` metadata separately records completion of
-clock repair and optional history/tombstone backfills. Later opens read these
-completion flags and the operational clock watermark, skipping old repair-marker
-checks and scans. Models first opened later and newly enabled history still get
-their required maintenance. This is engine metadata, independent of model schema
-versions, with no extra fields on application records.
-
-FoundationDB cluster logs distinguish released and current transport payloads
-in an existing type bit, including packed floating value objects and NANOS
-DateTime collections. Released packed DateTime pairs are decoded using the
-recorded format, preserving every element even when their bytes also resemble
-one current framed value. Old queued payloads can be read without a queue rewrite
-or extra log-envelope bytes.
-
-Retained transaction receipts keep their original request identity across this
-upgrade. Opening conversion tags released receipts explicitly; new receipts use
-the current request fingerprint. A retry compares against the appropriate codec
-before returning the retained response. If the released request encoding cannot
-be reproduced unambiguously, the store reports that identity cannot be proven
-and keeps the receipt instead of applying the transaction again.
-FoundationDB stores the released receipt tag in its manifest and reconstructs
-the tagged logical receipt from unchanged 80,000-byte chunks. Manifest conversion
-uses the same staged opening-upgrade checkpoints as other format-sensitive
-metadata. Receipt limits include the fingerprint and current envelope, and the
-released manifest adds its envelope only once during reconstruction.
+Maryk is licensed under the Apache 2.0 License. See the repository's LICENSE file for details.

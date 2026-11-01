@@ -1,26 +1,26 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { map, rewriteLinks, syncDocs } from './sync-core-docs.mjs';
 
-test('shared write contracts resolve from module and architecture pages', () => {
-  for (const prefix of ['../../', '../../../']) {
-    for (const source of ['query.md', '../core/docs/query.md', '../../core/docs/query.md', '../../../core/docs/query.md']) {
-      for (const anchor of ['', '#atomic', '#serializable-transactions', '#choosing-a-write-boundary']) {
-        assert.equal(rewriteLinks(`[contract](${source}${anchor})`, prefix),
-          `[contract](${prefix}querying/${anchor})`);
-      }
+const repositoryRoot = fileURLToPath(new URL('../../', import.meta.url));
+const sourceFile = path => resolve(repositoryRoot, path);
+
+test('shared contracts resolve relative to module and architecture source files', () => {
+  for (const [source, href] of [
+    ['core/docs/README.md', 'query.md'],
+    ['store/README.md', '../core/docs/query.md'],
+    ['store/memory/README.md', '../../core/docs/query.md'],
+    ['store/indexeddb/docs/architecture.md', '../../../core/docs/query.md'],
+  ]) {
+    for (const anchor of ['', '#atomic', '#serializable-transactions', '#choosing-a-write-boundary']) {
+      assert.equal(rewriteLinks(`[contract](${href}${anchor})`, '../../', sourceFile(source)),
+        `[contract](../../querying/${anchor})`);
     }
-    for (const source of ['../sql/README.md', '../../sql/README.md']) {
-      assert.equal(rewriteLinks(`[SQL](${source})`, prefix), `[SQL](${prefix}querying/sql/)`);
-    }
-    assert.equal(rewriteLinks('[App](../app/docs/README.md#sql-queries-and-writes)', prefix),
-      `[App](${prefix}app/#sql-queries-and-writes)`);
-    assert.equal(rewriteLinks('[Generator](../../../generator/README.md#generate-proto3-schema)', prefix),
-      `[Generator](${prefix}generator/#generate-proto3-schema)`);
   }
 });
 
@@ -163,15 +163,64 @@ test('syncDocs fails when a mapped source has been removed', () => {
 });
 
 
-test('syncDocs rewrites backup and CLI credential links with their anchors', () => {
-  for (const prefix of ['../../', '../../../']) {
-    assert.equal(
-      rewriteLinks('[Backup](../../store/shared/README.md#point-in-time-backup-and-restore)', prefix),
-      `[Backup](${prefix}stores/shared/#point-in-time-backup-and-restore)`,
-    );
-    assert.equal(
-      rewriteLinks('[CLI](../../cli/docs/commands.md#serve)', prefix),
-      `[CLI](${prefix}cli/commands/#serve)`,
-    );
+test('the same local filename resolves to the correct backend and anchor', () => {
+  for (const [engine, folder] of [['rocksdb', 'documentation'], ['foundationdb', 'docs'], ['indexeddb', 'docs']]) {
+    assert.equal(rewriteLinks('[layout](storage.md#opening-storage-format-2)', '../../../',
+      sourceFile(`store/${engine}/${folder}/migrations.md`)),
+      `[layout](../../../stores/${engine}/storage/#opening-storage-format-2)`);
   }
+});
+
+test('extracted guides resolve from overviews and deep references', () => {
+  for (const guide of ['backup-restore', 'store-behavior', 'storage-format-upgrades', 'encryption-key-rotation']) {
+    for (const [source, href] of [
+      ['store/shared/README.md', `docs/${guide}.md`],
+      ['store/rocksdb/README.md', `../shared/docs/${guide}.md`],
+      ['core/docs/properties/types/number.md', `../../../../store/shared/docs/${guide}.md`],
+    ]) {
+      assert.equal(rewriteLinks(`[guide](${href}#requirements)`, '../../', sourceFile(source)),
+        `[guide](../../stores/shared/${guide}/#requirements)`);
+    }
+  }
+});
+
+test('source links retain anchors and ungenerated repository targets', () => {
+  const source = sourceFile('store/foundationdb/README.md');
+  assert.equal(rewriteLinks('[code](src/commonMain/kotlin/maryk/datastore/foundationdb/FoundationDBDataStore.kt#L20)', '../../', source),
+    '[code](https://github.com/marykdb/maryk/blob/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/FoundationDBDataStore.kt#L20)');
+  assert.equal(rewriteLinks('[code](src/commonMain/)', '../../', source),
+    '[code](https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/commonMain)');
+});
+
+test('external links, fragment links and fenced code examples remain unchanged', () => {
+  const md = '[web](https://example.com) [email](mailto:a@example.com) [here](#local)\n' +
+    '```markdown\n[example](query.md)\n```\n~~~markdown\n[example](query.md)\n~~~';
+  assert.equal(rewriteLinks(md, '../../', sourceFile('core/docs/README.md')), md);
+});
+
+
+test('syncDocs preserves tilde and longer backtick fences through every transform', () => {
+  const root = mkdtempSync(join(tmpdir(), 'maryk-docs-sync-'));
+  const siteRoot = join(root, 'website');
+  const coreDocs = join(root, 'core', 'docs');
+  mkdirSync(coreDocs, { recursive: true });
+  const examples = [
+    '~~~kotlin', 'val example = "<T>{value}"', '[example](query.md)', '~~~',
+    '````markdown', '```kotlin', '<T>{value}', '```', '[example](query.md)', '````',
+  ].join('\n');
+  writeFileSync(join(coreDocs, 'README.md'), `# Examples\n\n${examples}\n\n<T>{value} [query](query.md)\n`);
+  syncDocs({
+    siteRoot, repoRoot: root, coreDocs,
+    map: [['src/content/docs/data-modeling/index.mdx', 'README.md']],
+    removedTargets: [],
+  });
+  const generated = readFileSync(join(siteRoot, 'src/content/docs/data-modeling/index.mdx'), 'utf8');
+  assert.ok(generated.includes(examples));
+  assert.ok(generated.includes('&lt;T&gt;&#123;value&#125; [query](../querying/)'));
+});
+
+test('a closing fence requires an empty suffix and the matching marker', () => {
+  const md = '~~~~markdown\n~~~\n~~~~ still an example\n```\n[example](query.md)\n~~~~\n[query](query.md)';
+  assert.equal(rewriteLinks(md, '../', sourceFile('core/docs/README.md')),
+    md.replace('[query](query.md)', '[query](../querying/)'));
 });

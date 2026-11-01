@@ -9,6 +9,7 @@
   },
   "scripts": {
     "sync": "node scripts/sync-core-docs.mjs",
+    "test": "node --test scripts/sync-core-docs.test.mjs",
     "prebuild": "yarn sync",
     "predev": "yarn sync",
     "dev": "astro dev",

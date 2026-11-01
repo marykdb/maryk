@@ -70,5 +70,5 @@ val user2 = User.create {
 ```
 
 ## Transport Byte representation
-All fields of a DataObject are wrapped in a tag/value pair with LENGTH_DELIMITED
-wiretype and the value starts with the length of the total bytes of the DataObject
+Uses the [embedded-message encoding](../../serialization/protobuf.md#embedded-messages).
+The nested model determines the property indexes and wire types within the payload.

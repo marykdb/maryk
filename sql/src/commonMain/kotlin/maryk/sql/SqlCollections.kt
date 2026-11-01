@@ -31,7 +31,7 @@ private fun elementDefinition(definition: Any?): Any? = when (definition) {
 internal fun collectionColumns(definition: Any?, depth: Int = 0): List<CatalogColumn>? {
     if (depth >= 32) throw SqlLimitException("collectionDepth", 32uL, (depth + 1).toULong())
     val value = elementDefinition(definition) ?: return null
-    // Maryk storage does not encode complex list/set elements. Maps own nested qualifiers.
+    // SQL currently maps complex elements only for maps; list/set expansion is scalar-only.
     if (definition !is IsMapDefinition<*, *, *> && (value is IsEmbeddedValuesDefinition<*, *> || collectionDefinition(value))) return null
     val values = if (value is IsEmbeddedValuesDefinition<*, *>) {
         mutableListOf<CatalogColumn>().also { collectColumns(value.dataModel, emptyList(), "value.", false, it, 0) }

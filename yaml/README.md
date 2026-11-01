@@ -2,11 +2,6 @@
 
 A streaming YAML library written in Kotlin Multiplatform.
 
-Explicit flow maps (`{...}`) and sequences (`[...]`) require their closing
-delimiters. A dangling opener at end of input is rejected at the root, inside
-another collection, or after a tag or anchor. Implicit block collections retain
-their normal end-of-input behavior.
-
 ## Writing YAML
 
 The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) class provides methods for writing YAML constructions to the output.
@@ -114,6 +109,12 @@ pets:
 ```
 
 ## Reading YAML
+
+Explicit flow maps (`{...}`) and sequences (`[...]`) require their closing
+delimiters. A dangling opener at end of input is rejected at the root, inside
+another collection, or after a tag or anchor. Implicit block collections retain
+their normal end-of-input behavior.
+
 
 You can read YAML values by constructing a [`YamlReader`](src/commonMain/kotlin/maryk/yaml/YamlReader.kt) object. 
 The YamlReader reads YAML elements represented by tokens. The `YamlReader` takes a reader function that returns one character at a time.

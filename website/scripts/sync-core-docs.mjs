@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, unlinkSync, existsSync, rmSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, relative, sep } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -55,21 +55,44 @@ export const map = [
   ['src/content/docs/stores/index.mdx', '../store/README.md'],
   ['src/content/docs/stores/shared.mdx', '../store/shared/README.md'],
   ['src/content/docs/stores/shared/encryption-key-rotation.mdx', '../store/shared/docs/encryption-key-rotation.md'],
+  ['src/content/docs/stores/shared/backup-restore.mdx', '../store/shared/docs/backup-restore.md'],
+  ['src/content/docs/stores/shared/store-behavior.mdx', '../store/shared/docs/store-behavior.md'],
+  ['src/content/docs/stores/shared/storage-format-upgrades.mdx', '../store/shared/docs/storage-format-upgrades.md'],
   ['src/content/docs/stores/memory.mdx', '../store/memory/README.md'],
   ['src/content/docs/stores/indexeddb.mdx', '../store/indexeddb/README.md'],
   ['src/content/docs/stores/indexeddb/architecture.mdx', '../store/indexeddb/docs/architecture.md'],
   ['src/content/docs/stores/indexeddb/storage.mdx', '../store/indexeddb/docs/storage.md'],
+  ['src/content/docs/stores/indexeddb/migrations.mdx', '../store/indexeddb/docs/migrations.md'],
   ['src/content/docs/stores/rocksdb.mdx', '../store/rocksdb/README.md'],
   ['src/content/docs/stores/rocksdb/architecture.mdx', '../store/rocksdb/documentation/architecture.md'],
   ['src/content/docs/stores/rocksdb/migrations.mdx', '../store/rocksdb/documentation/migrations.md'],
   ['src/content/docs/stores/rocksdb/storage.mdx', '../store/rocksdb/documentation/storage.md'],
   ['src/content/docs/stores/foundationdb.mdx', '../store/foundationdb/README.md'],
   ['src/content/docs/stores/foundationdb/architecture.mdx', '../store/foundationdb/docs/architecture.md'],
+  ['src/content/docs/stores/foundationdb/cluster-updates.mdx', '../store/foundationdb/docs/cluster-updates.md'],
   ['src/content/docs/stores/foundationdb/migrations.mdx', '../store/foundationdb/docs/migrations.md'],
   ['src/content/docs/stores/foundationdb/storage.mdx', '../store/foundationdb/docs/storage.md'],
   ['src/content/docs/stores/foundationdb/local-testing.mdx', '../store/foundationdb/docs/local-testing.md'],
   ['src/content/docs/stores/remote.mdx', '../store/remote/README.md'],
   ['src/content/docs/stores/test.mdx', '../store/test/README.md'],
+
+  // Focused references linked from the module overviews.
+  ['src/content/docs/querying/atomic.mdx', 'query/atomic.md'],
+  ['src/content/docs/querying/transactions.mdx', 'query/transactions.md'],
+  ['src/content/docs/querying/sql/queries.mdx', '../sql/docs/queries.md'],
+  ['src/content/docs/querying/sql/writes.mdx', '../sql/docs/writes.md'],
+  ['src/content/docs/querying/sql/execution.mdx', '../sql/docs/execution.md'],
+  ['src/content/docs/serialization/protobuf-compatibility.mdx', 'serialization/protobuf-compatibility.md'],
+  ['src/content/docs/stores/remote/server.mdx', '../store/remote/docs/server.md'],
+  ['src/content/docs/stores/remote/client.mdx', '../store/remote/docs/client.md'],
+  ['src/content/docs/stores/remote/protocol.mdx', '../store/remote/docs/protocol.md'],
+
+  ['src/content/docs/querying/reads-writes.mdx', 'query/reads-writes.md'],
+  ['src/content/docs/querying/history.mdx', 'query/history.md'],
+  ['src/content/docs/querying/updates.mdx', 'query/updates.md'],
+  ['src/content/docs/data-modeling/index-reference.mdx', 'index-reference.md'],
+  ['src/content/docs/data-modeling/index-recipes.mdx', 'index-recipes.md'],
+  ['src/content/docs/stores/shared/migrations.mdx', '../store/shared/docs/migrations.md'],
 
   // CLI
   ['src/content/docs/cli/commands.mdx', '../cli/docs/commands.md'],
@@ -79,127 +102,53 @@ export const map = [
   ['src/content/docs/app.mdx', '../app/docs/README.md'],
 ];
 
-export function rewriteLinks(md, prefix) {
-    let out = md;
-    const withPrefix = (path) => `(${prefix}${path})`;
-    const propertiesPrefix = `(${prefix}data-modeling/properties/`;
-    // Shared contracts are linked from both module READMEs and deeper docs.
-    out = out.replace(/\((?:(?:\.\.\/)*core\/docs\/|(?:\.\.\/)*)query\.md(#[^)]*)?\)/g,
-      (_match, anchor = '') => withPrefix(`querying/${anchor}`));
-    out = out.replace(/\((?:\.\.\/)+sql\/README\.md(#[^)]*)?\)/g,
-      (_match, anchor = '') => withPrefix(`querying/sql/${anchor}`));
-    out = out.replace(/\((?:\.\.\/)+app\/docs\/README\.md(#[^)]*)?\)/g,
-      (_match, anchor = '') => withPrefix(`app/${anchor}`));
-    out = out.replace(/\((?:\.\.\/)+generator\/README\.md(#[^)]*)?\)/g,
-      (_match, anchor = '') => withPrefix(`generator/${anchor}`));
-    out = out.replace(/\((?:\.\.\/)+store\/shared\/README\.md(#[^)]*)?\)/g,
-      (_match, anchor = '') => withPrefix(`stores/shared/${anchor}`));
-    out = out.replace(/\((?:\.\.\/)+cli\/docs\/commands\.md(#[^)]*)?\)/g,
-      (_match, anchor = '') => withPrefix(`cli/commands/${anchor}`));
-    const pairs = [
-    ['(datamodel.md)', withPrefix('data-modeling/datamodels/')],
-    ['(properties/README.md)', withPrefix('data-modeling/properties/')],
-    ['(key.md)', withPrefix('data-modeling/keys/')],
-    ['(versioning.md)', withPrefix('data-modeling/versioning/')],
-    ['(query.md)', withPrefix('querying/')],
-    ['(reference-graphs.md)', withPrefix('querying/reference-graphs/')],
-    ['(filters.md)', withPrefix('querying/filters/')],
-    ['(aggregations.md)', withPrefix('querying/aggregations/')],
-    ['(collectAndInject.md)', withPrefix('querying/collect-inject/')],
-    ['(query.md#get)', withPrefix('querying/#get')],
-    ['(query.md#scan)', withPrefix('querying/#scan')],
-    ['(query.md#getscan-changes)', withPrefix('querying/#getscan-changes')],
-    ['(query.md#getscan-updates)', withPrefix('querying/#getscan-updates')],
-    ['(query.md#getscan-update-history)', withPrefix('querying/#getscan-update-history')],
-    ['(../../core/docs/query.md#getscan-update-history)', withPrefix('querying/#getscan-update-history')],
-    ['(index-design.md)', withPrefix('data-modeling/index-design/')],
-    ['(README.md)', withPrefix('serialization/')],
-    ['(serialization.md)', withPrefix('serialization/')],
-    ['(protobuf.md)', withPrefix('serialization/protobuf/')],
-    ['(serialization/protobuf.md)', withPrefix('serialization/protobuf/')],
-    ['(yaml.md)', withPrefix('serialization/yaml/')],
-    ['(json.md)', withPrefix('serialization/json/')],
-    ['(serialization/README.md)', withPrefix('serialization/')],
-    ['(../serialization/README.md)', withPrefix('serialization/')],
-    ['(serialization/yaml.md)', withPrefix('serialization/yaml/')],
-    ['(serialization/json.md)', withPrefix('serialization/json/')],
-    ['(serialization/yaml.md)', withPrefix('serialization/yaml/')],
-    ['(serialization/json.md)', withPrefix('serialization/json/')],
-    ['(properties/types/multiType.md)', withPrefix('data-modeling/properties/types/multi-type/')],
-    ['(decimal.md)', withPrefix('data-modeling/properties/types/decimal/')],
-    ['(types/multiType.md)', withPrefix('data-modeling/properties/types/multi-type/')],
-    ['(types/fixedBytes.md)', withPrefix('data-modeling/properties/types/fixedbytes/')],
-    ['(types/flexBytes.md)', withPrefix('data-modeling/properties/types/flexbytes/')],
-    ['(types/incrementingMap.md)', withPrefix('data-modeling/properties/types/incrementing-map/')],
-    ['(types/embeddedValues.md)', withPrefix('data-modeling/properties/types/embedded-values/')],
-    ['(types/valueObject.md)', withPrefix('data-modeling/properties/types/value-object/')],
-    ['(types/map.md#operations)', '(../types/map/#operations)'],
-    ['(types/list.md#operations)', '(../types/list/#operations)'],
-    ['(types/set.md#operations)', '(../types/set/#operations)'],
-    ['(../../../yaml/README.md)', '(https://github.com/marykdb/maryk/blob/main/yaml/README.md)'],
-    ['(../../../json/README.md)', '(https://github.com/marykdb/maryk/blob/main/json/README.md)'],
-    ['(../../yaml/README.md)', '(https://github.com/marykdb/maryk/blob/main/yaml/README.md)'],
-    ['(../../json/README.md)', '(https://github.com/marykdb/maryk/blob/main/json/README.md)'],
-    ['(../yaml/README.md)', '(https://github.com/marykdb/maryk/blob/main/yaml/README.md)'],
-    ['(../json/README.md)', '(https://github.com/marykdb/maryk/blob/main/json/README.md)'],
-    ['(../README.md)', withPrefix('data-modeling/properties/')],
-    ['(../datamodel.md)', withPrefix('data-modeling/datamodels/')],
-    ['(../../datamodel.md)', withPrefix('data-modeling/datamodels/')],
-    ['(operations.md)', withPrefix('data-modeling/properties/operations/')],
-    ['(references.md)', withPrefix('data-modeling/properties/references/')],
-    // Stores links
-    ['(./docs/storage.md)', withPrefix('stores/foundationdb/storage/')],
-    ['(./docs/architecture.md)', withPrefix('stores/foundationdb/architecture/')],
-    ['(./docs/migrations.md)', withPrefix('stores/foundationdb/migrations/')],
-    ['(./docs/local-testing.md)', withPrefix('stores/foundationdb/local-testing/')],
-    ['(docs/architecture.md)', withPrefix('stores/indexeddb/architecture/')],
-    ['(docs/storage.md)', withPrefix('stores/indexeddb/storage/')],
-    ['(documentation/storage.md)', withPrefix('stores/rocksdb/storage/')],
-    ['(documentation/architecture.md)', withPrefix('stores/rocksdb/architecture/')],
-    ['(documentation/migrations.md)', withPrefix('stores/rocksdb/migrations/')],
-    ['(./migrations.md)', '(../migrations/)'],
-    ['(../remote/README.md)', '(../remote/)'],
-    ['(../memory/README.md)', withPrefix('stores/memory/')],
-    ['(../rocksdb/README.md)', withPrefix('stores/rocksdb/')],
-    ['(../foundationdb/README.md)', withPrefix('stores/foundationdb/')],
-    ['(./remote/README.md)', '(./remote/)'],
-    // Map code links to GitHub full URLs (main branch)
-    ['(src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/)', '(https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/)'],
-    ['(src/commonMain/kotlin/maryk/datastore/foundationdb/processors/)', '(https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/)'],
-    ['(src/commonMain/kotlin/maryk/datastore/foundationdb/', '(https://github.com/marykdb/maryk/blob/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/'],
-    ['(../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
-    ['(../../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
-    ['(../../core/src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
-    ['(core/src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
-    // Add relative link variants
-    ['(../datamodel.md)', withPrefix('data-modeling/datamodels/')],
-    ['(../../datamodel.md)', withPrefix('data-modeling/datamodels/')],
-    ['(../properties/README.md)', withPrefix('data-modeling/properties/')],
-    ['(../../properties/README.md)', withPrefix('data-modeling/properties/')],
-    ['(../key.md)', withPrefix('data-modeling/keys/')],
-    ['(../../key.md)', withPrefix('data-modeling/keys/')],
-    ['(../versioning.md)', withPrefix('data-modeling/versioning/')],
-    ['(../../versioning.md)', withPrefix('data-modeling/versioning/')],
-    ['(../query.md)', withPrefix('querying/')],
-    ['(../../query.md)', withPrefix('querying/')],
-    ['(../reference-graphs.md)', withPrefix('querying/reference-graphs/')],
-    ['(../../reference-graphs.md)', withPrefix('querying/reference-graphs/')],
-    ['(../filters.md)', withPrefix('querying/filters/')],
-    ['(../../filters.md)', withPrefix('querying/filters/')],
-    ['(../aggregations.md)', withPrefix('querying/aggregations/')],
-    ['(../../aggregations.md)', withPrefix('querying/aggregations/')],
-    ['(../collectAndInject.md)', withPrefix('querying/collect-inject/')],
-    ['(../../collectAndInject.md)', withPrefix('querying/collect-inject/')],
-    ];
-  for (const [from, to] of pairs) out = out.replaceAll(from, to);
-  out = out.replaceAll('(properties/', propertiesPrefix);
-  out = out.replaceAll('(../properties/', propertiesPrefix);
-  out = out.replaceAll('(../../properties/', propertiesPrefix);
-  out = out.replace(/\((?!https?:\/\/)([^)#]+)\.md(#.*?)?\)/g, (_m, path, anchor) => {
-    const safeAnchor = anchor ?? '';
-    return `(${path}/${safeAnchor})`;
+function sourceFile(source, repositoryRoot, coreDocs) {
+  return source.startsWith('../')
+    ? resolve(repositoryRoot, source.slice(3))
+    : resolve(coreDocs, source);
+}
+
+function documentationRoutes(repositoryRoot, coreDocs, entries = map) {
+  return new Map(entries.map(([target, source]) => [
+    sourceFile(source, repositoryRoot, coreDocs),
+    target.replace(/^src\/content\/docs\//, '').replace(/(^|\/)index\.mdx$/, '$1').replace(/\.mdx$/, '/'),
+  ]));
+}
+
+/** Apply prose transforms while preserving fenced examples verbatim. */
+function outsideCodeFences(md, transform) {
+  let fence;
+  return md.split('\n').map(line => {
+    const marker = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (fence) {
+      if (marker && marker[1][0] === fence[0] && marker[1].length >= fence.length && !marker[2].trim()) {
+        fence = undefined;
+      }
+      return line;
+    }
+    if (marker) {
+      fence = marker[1];
+      return line;
+    }
+    return transform(line);
+  }).join('\n');
+}
+
+/** Resolve links from their repository source, using the same map that generates pages. */
+export function rewriteLinks(md, prefix, source, routes = documentationRoutes(repoRoot, coreDocs), repositoryRoot = repoRoot) {
+  return outsideCodeFences(md, line => {
+    return line.replace(/\]\(([^)\s]+)([^)]*)\)/g, (match, href, title) => {
+      if (/^(?:[a-z][a-z\d+.-]*:|[#/])/i.test(href)) return match;
+      const [, path, suffix = ''] = href.match(/^([^?#]*)(.*)$/);
+      const absolute = resolve(dirname(source), path);
+      const route = routes.get(absolute);
+      if (route !== undefined) return `](${prefix}${route}${suffix}${title})`;
+      const repositoryPath = relative(repositoryRoot, absolute).split(sep).join('/');
+      if (repositoryPath.startsWith('../') || repositoryPath === '..') return match;
+      const kind = path.endsWith('/') ? 'tree' : 'blob';
+      return `](https://github.com/marykdb/maryk/${kind}/main/${repositoryPath}${suffix}${title})`;
+    });
   });
-  return out;
 }
 
 export const removedTargets = [
@@ -211,9 +160,10 @@ export function syncDocs({
   siteRoot,
   repoRoot,
   coreDocs,
-  map,
+  map: entries,
   removedTargets,
 }) {
+  const routes = new Map([...documentationRoutes(repoRoot, coreDocs), ...documentationRoutes(repoRoot, coreDocs, entries)]);
   // Clean Astro cache to avoid stale references after renames.
   rmSync(resolve(siteRoot, '.astro'), { recursive: true, force: true });
 
@@ -222,12 +172,10 @@ export function syncDocs({
     if (existsSync(target)) unlinkSync(target);
   }
 
-  for (const [targetRel, srcRel] of map) {
+  for (const [targetRel, srcRel] of entries) {
     const target = resolve(siteRoot, targetRel);
     const targetMd = target.replace(/\.mdx$/, '.md');
-    const src = srcRel.startsWith('../')
-      ? resolve(repoRoot, srcRel.slice(3))
-      : resolve(coreDocs, srcRel);
+    const src = sourceFile(srcRel, repoRoot, coreDocs);
     let srcMd = readFileSync(src, 'utf8');
     // Extract title from source H1 if present
     const m = srcMd.match(/^#\s+(.+)$/m);
@@ -244,22 +192,13 @@ export function syncDocs({
     const depth = docsDir === '.' ? 0 : docsDir.split('/').length;
     const routeDepth = targetRel.endsWith('/index.mdx') ? depth : depth + 1;
     const prefix = '../'.repeat(routeDepth);
-    let md = rewriteLinks(srcMd, prefix);
-    // Escape raw angle brackets outside code fences to keep MDX happy.
-    const lines = md.split(/\r?\n/);
-    let inCode = false;
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i];
-      if (l.trim().startsWith('```')) { inCode = !inCode; continue; }
-      if (!inCode) {
-        lines[i] = l
-          .replaceAll('<', '&lt;')
-          .replaceAll('>', '&gt;')
-          .replaceAll('{', '&#123;')
-          .replaceAll('}', '&#125;');
-      }
-    }
-    md = lines.join('\n');
+    let md = rewriteLinks(srcMd, prefix, src, routes, repoRoot);
+    // Escape prose for MDX without changing examples inside either fence style.
+    md = outsideCodeFences(md, line => line
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('{', '&#123;')
+      .replaceAll('}', '&#125;'));
     const out = `${fm}\n${md.trim()}\n`;
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, out, 'utf8');

@@ -21,6 +21,9 @@ Recommended order for new users:
   - [Index Design](index-design.md): choose between ordered, normalized, and search-oriented indexes.
 - [Versioning](versioning.md): track and request historical value versions.
 - [Querying Data](query.md): typed reads and writes, atomic change sets and serializable transactions.
+  - [Reading and writing](query/reads-writes.md): CRUD requests and paging.
+  - [History](query/history.md): field changes and bounded revision pages.
+  - [Sync and live views](query/updates.md): update streams and replication.
   - [Choosing a write boundary](query.md#choosing-a-write-boundary): initial-state write sets versus ordered read/write scopes.
   - [Reference Graphs](reference-graphs.md): select specific properties to return.
   - [Filters](filters.md): filter operators for narrowing query results.

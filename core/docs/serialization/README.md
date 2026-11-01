@@ -22,10 +22,6 @@ For Kotlin request/response objects, use `writeObjectAsJson`,
 models needed to resolve request and response types. See the format guides below
 for concrete examples.
 
-For scalar storage slices, `fromStorageBytes(bytes, offset)` reads the remaining
-array tail. Pass `length` explicitly when the array also contains a suffix. Invalid
-slice bounds are rejected before decoding, and readers cannot consume adjacent bytes.
-
 ## Choosing a Format
 
 - Internal hot paths or store transport: ProtoBuf.
@@ -53,24 +49,12 @@ See the format pages for end‑to‑end code.
 - [JSON](json.md)
 - [ProtoBuf Transport](protobuf.md)
 
-## Floating-point text identity
+## Floating-point values
 
-JSON and YAML preserve raw NaN bits in ordinary Float32/Float64 values, including
-collection values, query operands and schema defaults. The standard positive
-canonical NaN keeps its existing `NaN` spelling. Other NaNs use `NaN:0x7fc00001`
-for Float32 or `NaN:0x7ff8000000000001` for Float64: exactly 8 or 16 hexadecimal
-digits encoding a NaN at the declared width. Finite nonzero values and infinity
-keep their existing spellings. Negative zero always uses `-0.0`, including on
-JavaScript where the native numeric string conversion drops its sign. This also
-preserves distinct signed-zero map keys and collection reference names. JSON
-quotes floating values as before.
-
-Older text readers do not understand the explicit raw-bit form; update both
-endpoints before exchanging it. Existing text containing only `NaN` cannot
-recover a discarded payload. ProtoBuf and stored numeric bytes are unchanged,
-so this adds no storage migration. Numeric map keys and set-item reference names
-keep canonical NaN identity. JavaScript may canonicalize a NaN before a serializer
-receives it; explicit text cannot recover bits already lost at that boundary.
+JSON and YAML retain signed zero and supported NaN bit patterns. Explicit NaN
+payload text requires compatible readers, and JavaScript may discard payload bits
+before serialization. See [floating-point text identity](json.md#floating-point-text-identity)
+for representations and compatibility limits.
 
 ## Related Topics
 

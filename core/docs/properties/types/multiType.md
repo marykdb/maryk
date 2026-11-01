@@ -106,6 +106,88 @@ val v2 = Values(YourModel) {
 
 ```
 
+## Design recipes
+
+Example — contact variants on a user:
+```kotlin
+object EmailContact : DataModel<EmailContact>() {
+    val address by string(index = 1u)
+    val verified by boolean(index = 2u)
+}
+
+object PhoneContact : DataModel<PhoneContact>() {
+    val number by string(index = 1u)
+    val country by string(index = 2u)
+}
+
+// Define a MultiType enum for contact variants
+sealed class ContactMT<T: Any>(index: UInt, override val definition: IsUsableInMultiType<T, IsPropertyContext>?) : IndexedEnumImpl<ContactMT<*>>(index), MultiTypeEnum<T> {
+    object Email: ContactMT<Values<EmailContact>>(1u, EmbeddedValuesDefinition(dataModel = { EmailContact }))
+    object Phone: ContactMT<Values<PhoneContact>>(2u, EmbeddedValuesDefinition(dataModel = { PhoneContact }))
+
+    companion object : MultiTypeEnumDefinition<ContactMT<out Any>>(ContactMT::class, values = { listOf(Email, Phone) })
+}
+
+object User : RootDataModel<User>() {
+    val name by string(index = 1u)
+    val contact by multiType(index = 2u, typeEnum = ContactMT)
+}
+```
+
+Read only fields for the email variant:
+```kotlin
+val g = User.graph {
+    listOf(name, contact.withTypeGraph(ContactMT.Email) { listOf(address, verified) })
+}
+```
+
+Polymorphic collections with MultiType:
+```kotlin
+object ImageAttachment : DataModel<ImageAttachment>() {
+    val url by string(index = 1u)
+    val width by number(index = 2u, type = SInt32)
+}
+
+object FileAttachment : DataModel<FileAttachment>() {
+    val name by string(index = 1u)
+    val bytes by flexBytes(index = 2u)
+}
+
+// MultiType enum for attachments
+sealed class AttachmentMT<T: Any>(index: UInt, override val definition: IsUsableInMultiType<T, IsPropertyContext>?) : IndexedEnumImpl<AttachmentMT<*>>(index), MultiTypeEnum<T> {
+    object Image: AttachmentMT<Values<ImageAttachment>>(1u, EmbeddedValuesDefinition(dataModel = { ImageAttachment }))
+    object File: AttachmentMT<Values<FileAttachment>>(2u, EmbeddedValuesDefinition(dataModel = { FileAttachment }))
+
+    companion object : MultiTypeEnumDefinition<AttachmentMT<out Any>>(AttachmentMT::class, values = { listOf(Image, File) })
+}
+
+object Message : RootDataModel<Message>() {
+    val text by string(index = 1u)
+    val attachments by map(
+        index = 2u,
+        keyDefinition = NumberDefinition(type = UInt32),
+        valueDefinition = MultiTypeDefinition(typeEnum = AttachmentMT),
+    )
+}
+
+// Fetch the bounded attachment map; its keys identify individual attachments.
+val g = Message.graph { listOf(text, attachments) }
+```
+
+Use a keyed map for structured or multi-type collection entries; public list/set
+elements must have a collection-compatible scalar or fixed-value definition.
+
+MultiType with keys: cluster by variant for fast scans using `Model.ref { property.type }` in the key. This keeps same‑type values together on disk.
+```kotlin
+object Activity : RootDataModel<Activity>(
+    keyDefinition = { Multiple(Activity.user.ref(), Reversed(Activity.timestamp.ref()), Activity.ref { item.type }) }
+) {
+    val user by reference(index = 1u, dataModel = { User }, final = true)
+    val timestamp by dateTime(index = 2u, final = true)
+    val item by multiType(index = 3u, typeEnum = ContactMT)
+}
+```
+
 ## Storage Byte representation
 Depends on the specific implementation. The type id is stored as UInt16 and the value in its
 native form.

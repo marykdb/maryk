@@ -28,6 +28,7 @@ Enable history only when the app needs `toVersion`, `getChanges`, `scanChanges`,
 
 - [Architecture](docs/architecture.md)
 - [Storage layout](docs/storage.md)
+- [Migrations and browser contexts](docs/migrations.md)
 
 ## Main Capabilities
 
@@ -59,10 +60,15 @@ continuation, and hard-delete retention limits.
   cursor, versions, and message. The next open resumes that phase through
   `MigrationContext.previousState`.
 - Migration callbacks can use normal requests after existing journal history has been compacted. Version-update callbacks run after required index backfills and can query the new indexes.
-- When another context changes a configured model or its dependencies, existing contexts reject further mutations and must reopen with the current models. This check runs under the writer fence and covers ordinary writes, imports, tombstone compaction and mutating transaction previews/commits; committed receipts remain resolvable. Reads, snapshots and listener lifecycles retain their existing behavior.
-- Pending migrations block established-context writes and require reopening with the matching target schema before any startup callback runs. Callbacks for a legitimate migration or resume can still use normal requests.
+- After a pending migration or schema change in another context, existing contexts
+  reject reads and writes and live listeners stop. Reopen with current models.
+  See [migration behavior](docs/migrations.md) for callback and resume rules.
 - Historic index scans process IndexedDB cursor pages, but still keep latest visible state per indexed row to handle historic tombstones correctly.
 - Browser quota, eviction, private browsing behavior, and blocked upgrades are browser operational concerns.
+
+JavaScript `Number` values can canonicalize NaN payloads before Maryk receives
+them. Use Wasm when arbitrary supplied NaN bit patterns must survive value and
+query round trips; see [numeric identity](docs/storage.md#current-values-and-allocation).
 
 ## Tests
 
@@ -106,91 +112,10 @@ use the common SQL engine over this store's public requests. See the [SQL guide]
 syntax, execution strategies, transaction tooling and resource limits. The shared
 SQL conformance contract verifies these features through this adapter.
 
-## Opening storage format 2
+## Upgrading existing stores
 
-Opening an older store performs one resumable, exclusive upgrade before
-application schema migrations or requests. There is one migration: the released,
-unversioned layout (legacy format 1) upgrades directly to storage format 2.
-Float/Double values and index components now share the ordered numeric encoding.
-The upgrade converts affected current/historical fields, collection qualifiers,
-packed value objects and unique lookups, including contextual encryption and
-sensitive unique tokens. Original versions, record IDs and references are kept.
-Unchanged cells and indexes with unchanged component and reference encodings are
-not rewritten.
-Legacy variable-width index entries gain escaped boundaries and UTF-16 string
-ordering. Primary keys whose bytes change require an explicit key/reference
-migration and fail preflight.
-
-IndexedDB also converts opaque floating-point value-object bytes in its persisted
-Protobuf change logs and update-history payloads; ordinary Float/Double wire values
-remain unchanged. Current record snapshots in `k:modelId` are converted alongside
-the table rows and historic snapshots. Metadata-only current records and
-update-history deletion markers remain unchanged.
-The same opening upgrade reframes released nanosecond DateTime collection
-payloads in both log stores, including models without floating-point fields.
-Encrypted affected logs require their field encryption provider.
-Stored source schemas are decoded with their original codec so defaults and
-value-object bounds retain their meaning. Before completion, each root schema and
-its dependent definitions are rewritten atomically with a per-model source-schema
-format marker; reopening after an interrupted rewrite reads the correct codec.
-Index descriptors with fixed floating-point map or set ancestors are converted
-alongside their current, historic, and cleanup rows, even when their leaf value
-uses an unchanged integer encoding. Retained transaction receipts in metadata
-are tagged with the released codec so identical retries return their original
-response after upgrade and reopen. Ambiguous released request identities stop
-with an explicit recovery error rather than running another mutation.
-
-Soft deletion preserves the current snapshot payload even when history is
-disabled. Older deleted snapshots which omitted that payload fall back to their
-retained table cells for reads and filters; an empty cached snapshot does not
-erase the retained values.
-Self-contained journal entries preserve valid empty deleted records, and
-`getUpdates` retains deletion-at-creation even without historic snapshots.
-Mutation no-op detection compares ordinary encoded cells before encryption, so
-distinct Float32/Float64 NaN payloads retain their unique identities through
-changes as well as initial writes. The codecs keep distinct raw patterns they
-receive, and encoded cells and unique keys retain those bytes across reopen.
-
-The JavaScript target cannot guarantee arbitrary NaN payload identity through its
-`Number` values. In Chrome/V8, assigning a NaN to a numeric object field or array
-element can canonicalize its payload before Maryk constructs `Values` or a query
-filter. This input limitation does not indicate conversion of existing encoded
-cells. Use the Wasm target when storage and query round trips must retain supplied
-Float32/Float64 NaN payloads. Floating-point arithmetic may itself change NaN
-payloads, and a codec cannot recover bits already canonicalized by its caller.
-Finite values and signed zero retain the normal query and uniqueness contract.
-
-Incrementing-map allocation retains a per-record watermark in metadata. Removing
-the greatest entry or replacing the map does not reuse allocated keys after
-reopen. Watermarks commit with the mutation and are cleared by hard deletion.
-Allocation follows preceding value writes in the request and rejects numeric
-overflow before changing the record.
-
-The store metadata records `maryk.storage/format = 2` only after verification.
-Later opens read the stamp and skip the conversion and data scans. A durable
-checkpoint and temporary staged rows make interruption recoverable by reopening
-with the same stored source schemas. Sensitive unique token translations are
-also temporary and are deleted before publication. Complete pending application
-schema migrations with their original library before starting this upgrade.
-Legacy field encryption is not converted. Do not run old writers during the
-upgrade or downgrade afterward. Restart scans and replication subscriptions from
-a fresh snapshot; old scan cursors are rejected.
-
-
-Pending application migrations are bound to the complete target schema, including
-dependent definitions and reference widths. The checkpoint and its target digest
-are persisted together. Reopening with the source schema or a different target,
-even one using the same version number, fails before opening callbacks run. Resume
-with the original target; changing a version string cannot authorize skipping
-completed phases.
-
-Older unfinished checkpoints without a target digest cannot establish which schema
-already rewrote their rows. They require authoritative recovery of the intended
-target and progress; do not delete the checkpoint to bypass the guard. A final
-marker can be cleaned automatically only when the independently published schema
-proves that its target was completed. Normal state serialization and storage-format
-versions are unchanged.
-
-Existing browser contexts reject both reads and writes after a pending migration
-or schema change. Read responses are checked again before publication, and stale
-live listeners stop before decoding another schema's journal entries.
+Opening a released store can run a resumable storage-format conversion before
+application schema migrations. Stop old writers, retain a recoverable source copy,
+and read the [storage upgrade guide](../shared/docs/storage-format-upgrades.md)
+before rollout. Some legacy collection/allocation states require authoritative
+recovery; do not remove upgrade metadata to bypass a failure.

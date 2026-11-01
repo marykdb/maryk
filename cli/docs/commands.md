@@ -78,18 +78,9 @@ back staging; resolve uncertain commits before disconnecting or replacing the
 connection. BEGIN fixes the table-scan policy for that transaction. One-shot
 transaction commands are rejected because they cannot retain a session.
 
-SQL also supports catalog discovery through information_schema.tables/columns/indexes,
-embedded scalar writes, ON CONFLICT, scalar RETURNING expressions, windows,
-correlated subqueries and UNNEST over model collections. See the
-[SQL guide](../../sql/README.md) for exact supported forms and limits.
-
-SQL supports named windows, bounded `ROWS` and numeric-offset `RANGE` frames,
-`NTILE` and frame value functions. Use `UNNEST` for scalar collections, embedded
-record maps and nested collection paths. Joined writes use `sql --write UPDATE …
-FROM … WHERE …` or `sql --write DELETE FROM … USING … WHERE …`. They run in a
-serializable transaction and reject duplicate source matches for a target. RETURNING
-contains target values. Existing scan policy and execution budgets still apply.
-See the [SQL guide](../../sql/README.md) for syntax, supported collection shapes and limits.
+See the [query reference](../../sql/docs/queries.md) for supported SQL syntax,
+including catalog discovery, windows and collection expansion, and the
+[write reference](../../sql/docs/writes.md) for joined mutations and conflict handling.
 
 ## Connect
 
@@ -131,8 +122,7 @@ remains available for compatibility but warns because command-line arguments can
 be visible to other local users and process monitors.
 
 Notes:
-- Uses ProtoBuf `Requests`/responses over HTTP.
-- Each response message is length-prefixed (4 bytes, big-endian).
+- Serves the [Remote HTTP protocol](../../store/remote/docs/protocol.md).
 - `serve` blocks the CLI session until the server is stopped.
 - `serve` is available in JVM and native desktop binaries.
 - Loopback is the default and requires no authentication.
@@ -207,6 +197,13 @@ Many commands take property references (for `set`, `show`, `select`, `order`, et
 - `addresses.@0` — list item at index 0
 - `addresses.*` — list/map wildcard
 - `moment.*ShiftMetaDataType.executor` — multi-type list/map with type name
+
+For `select`, nested paths such as `embeddedValues.value` build a graph. Selecting
+an entire parent includes its children, even when a child is also listed.
+Use `map[key]` for graph map-entry selection. Comma-separated path lists preserve
+commas inside brackets: `--select "entries[a,b].first,details.second"`.
+The App and CLI share the same parser.
+For `order`, `$key` selects primary-key order and `-$key` reverses it.
 
 ## Get viewer
 

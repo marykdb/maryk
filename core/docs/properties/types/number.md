@@ -44,6 +44,13 @@ integer range. `Decimal(scale = 0u)` is its exact whole-number form.
 - Map key or value
 - Inside List/Set
 
+## Numeric conversions
+
+Float32 parsing, conversions and arithmetic retain 32-bit precision on every
+target, including JavaScript, with correct rounding at midpoint boundaries.
+Conversions reject values outside the requested integer range: a Double at `2^63`
+cannot become `Long.MAX_VALUE`. UInt64 conversions support the full unsigned range.
+
 ## Validation Options
 - `required` - default true
 - `final` - default false
@@ -102,28 +109,9 @@ orders negatives, signed zeros, positives and infinities numerically. Ordinary
 storage preserves raw NaN payload bits; indexes normalize NaNs for Kotlin numeric
 comparison. Index writers encode directly from numeric values.
 
-Float32 text parsing, conversions and arithmetic use 32-bit precision on every
-target, including JavaScript. Native numeric conversions reject values outside
-the requested integer range; a Double at `2^63` cannot be accepted as
-`Long.MAX_VALUE`. UInt64 conversions use the full unsigned range.
-
-Float32 parsing also handles exact midpoint boundaries, including subnormals
-and overflow, without rounding through an intermediate Double incorrectly.
-Long-to-Float32 conversion uses the same rule on every target.
-
-Persistent stores perform one opening migration from the released, unversioned
-layout (legacy format 1) to storage format 2. The migration converts affected
-current/historical values, collection qualifiers, packed value objects, unique
-lookups and indexes. Unchanged cells and fixed-width non-floating indexes are
-kept. Record IDs, references and timestamps remain unchanged under the supported
-index/field-only upgrade. Existing primary keys whose bytes change require an
-explicit key/reference migration and fail preflight. Completion is recorded in
-store metadata; later opens skip conversion, with no per-record versions.
-
-Float/Double Protobuf scalar encoding stays unchanged. Packed value objects
-containing floating-point fields use the new bytes in serialization too; old
-IndexedDB logs are converted at opening, backup format 3 rejects older backups,
-and affected remote models require a matching value-object format.
+For existing stores and peers affected by the ordered-byte change, follow the
+[storage upgrade guide](../../../../store/shared/docs/storage-format-upgrades.md).
+Ordinary Float/Double ProtoBuf scalar encoding is unchanged.
 
 Raw NaN payloads are retained in stored bytes and byte-to-byte opening migrations.
 JavaScript engines can canonicalize a NaN when it crosses a `Number` return,

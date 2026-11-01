@@ -54,9 +54,14 @@ Change(
 
 [`Map`](types/map.md#operations), [`List`](types/list.md#operations) and [`Set`](types/set.md#operations) properties have specialised change operations documented on their respective pages.
 
+## Copying and replacing values
+
+`Values.copyWithValue(index, value)` replaces one complete root value, including
+an embedded record. Fields omitted from a replacement stay absent. Passing `Unit`
+removes that root. `Values.copy { ... }` retains its existing embedded patch behavior.
+
 ## Value ownership
 
 Each `emptyValues()` result owns its mutable item collection. The
 `copyWithOwnedValues()` extensions copy built-in `Values`, collection and typed
-value operands when a value or change must outlive its caller's buffers. Copies
-preserve mutable typed wrapper kinds where operation equality depends on them.
+value operands when a value or change must outlive its caller's buffers.

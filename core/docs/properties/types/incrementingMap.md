@@ -75,18 +75,6 @@ Depends on the specific implementation. The values are stored in their represent
 representation.
 
 ## Transport Byte representation
-Maps are encoded as multiple entries of tag/value pairs with the tag referring to the index
-of the map. The wire type is length delimited and the values are 2 tag/value pairs with the
-first one with `tag=1` the key and secondly the value with `tag=2`.
 
-Map encoding
-``` T L Tk Vk Tv Vv  T L Tk Vk Tv Vv ```
-
-- `T` is the tag index of the map
-- `L` is length of encoded key value pair
-- `Tk` is the tag for key and is 1
-- `Vk` is the value of the key
-- `Tv` is the tag for the value which is 2
-- `Vv` is the encoded value of the value
-
-(The encoded values could be encoded Length delimited and thus also contain lengths of the bytes)
+Uses the [map transport encoding](map.md#transport-byte-representation).
+Automatic key allocation changes how entries are created, not their wire representation.

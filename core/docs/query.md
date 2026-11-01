@@ -48,8 +48,8 @@ Start with `add`, `get`, and `scan`. Add filters, ordering, reference graphs, an
 ## Choosing a write boundary
 
 Atomic execution and transactions share the backend commit engine, but expose
-different contracts. Keep both entry points: a fixed, retryable write set is useful
-without an interactive read/write lifecycle.
+different contracts. Choose a fixed write set when values and guards are known;
+choose a transaction when reads determine the writes.
 
 | Requirement | Atomic request | Transaction scope |
 | --- | --- | --- |
@@ -77,687 +77,70 @@ scope, and `prepareAtomic` retains preselected targets for an atomic write set.
 
 ## Basic Query Actions
 
-Maryk exposes CRUD-style actions and query variants:
-
-- Add, Change, Delete – mutate objects.
-- Get, Scan – fetch current values.
-- Get/Scan Updates – stream additions, changes, removals over time.
-- Get/Scan Changes – fetch versioned changes per object from history.
-
 ### Add
 
-With [`AddRequest`](../src/commonMain/kotlin/maryk/core/query/requests/AddRequest.kt), objects can be
-added to a store. When applied, it will deliver an [`AddResponse`](../src/commonMain/kotlin/maryk/core/query/responses/AddResponse.kt)
-with a status on each object added.
+Insert model values and inspect the per-record statuses. Ordinary multi-record adds can partially succeed.
 
-**Example:**
-
-Kotlin:
-
-```kotlin
-val addRequest = Person.add(
-    Person.create {
-        firstName with "Jurriaan"
-        lastName with "Mous"
-    },
-    Person.create {
-        firstName with "John"
-        lastName with "Smith"
-    }
-)
-```
+See [Add](query/reads-writes.md#add).
 
 ### Change
 
-With [`ChangeRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ChangeRequest.kt), objects can be
-modified in a store. When applied, it will deliver an [`ChangeResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ChangeResponse.kt)
-with a status on each change.
+Change fields on existing records. Checks and ordered changes apply within each record mutation; use an explicit write boundary for several records.
 
-Refer to [property operations](properties/operations.md) to see how to apply
-changes to properties.
-
-`Values.toChanges()` preserves empty embedded values as well as populated ones.
-For creation replay, `RootDataModel.fromChanges(context, changes)` reconstructs
-missing embedded and map parents from the explicit references, in operation
-order, without inserting defaults or allocating incrementing-map keys. Ordinary
-`Values.change` and local mutation requests still require their parent values
-to exist before a child can be changed.
-Copying partial value items preserves unrelated fields. Changed typed values
-retain the same value equality as newly created typed values, including no-ops.
-
-**Example:**
-
-```kotlin
-val person1Key // Key of person 1 to change
-val person2Key // Key of person 2 to change
-
-val changeRequest = Person.change(
-    person1Key.change(
-        Check(Person.ref { firstName } with "Jane"),
-        Change(Person.ref { lastName } with "Doe")
-    ),
-    person2Key.change(
-        Change(Person.ref { lastName } with "Smith")
-    )
-)
-```
-
-Simplify references with Kotlin `run{}`:
-
-```kotlin
-val person1Key // Key of person 1 to change
-val person2Key // Key of person 2 to change
-
-val changeRequest = Person.run {
-    change(
-        person1Key.change(
-            Check(ref { firstName } with "Jane"),
-            Change(ref { lastName } with "Doe")
-        ),
-        person2Key.change(
-            Change(ref { lastName } with "Smith")
-        )
-    )
-}
-```
-
-A whole list, set or map can be replaced with `Change(ref with replacement)`.
-An empty replacement keeps the property present; a nullable `ref with null` removes
-it when allowed by the definition. `Check(ref with expectedCollection)` compares
-the complete collection, including an empty one. Checks see changes preceding them
-in the same ordered change request; a failing check rolls back that record's changes.
-These values also survive atomic request receipts, transaction journals and Remote
-transport. Use collection operations when changing individual members.
+See [Change](query/reads-writes.md#change).
 
 ### Delete
 
-With [`DeleteRequest`](../src/commonMain/kotlin/maryk/core/query/requests/DeleteRequest.kt),
-objects can be deleted from a store. The objects can be deleted by passing
-a list of object [`keys`](key.md). Objects can either be hard or soft deleted.
-With a hard delete, the data is permanently removed; with a soft delete (the default), it remains in the store but is
-not viewable unless specifically requested.
-When applied, it will deliver an [`DeleteResponse`](../src/commonMain/kotlin/maryk/core/query/responses/DeleteResponse.kt)
-with a status on each deletion.
+Soft-delete for later recovery, or hard-delete to erase retained values. A historical version cannot recover erased persistent rows.
 
-**Example:**
-
-```kotlin
-val person1Key // Key of person 1 to change
-val person2Key // Key of person 2 to change
-
-val deleteRequest = Person.delete(
-    person1Key,
-    person2Key,
-    hardDelete = true
-)
-```
+See [Delete](query/reads-writes.md#delete).
 
 ### Atomic
 
-Use `AtomicRequest` when several record mutations form one logical operation. The
-existing Add, Change, Delete, and Collect & Inject APIs keep their existing
-per-object or sequential behavior.
+Commit a known write set and its initial-state guards together. Retain the same request and ID to resolve an uncertain outcome.
 
-```kotlin
-import maryk.core.query.requests.atomicRequest
-import maryk.datastore.shared.executeAtomic
-
-val request = atomicRequest(changeSetId = mutationId) {
-    expectVersion(Dossier, dossierKey, dossierVersion)
-    val observationKey = add(Observation, observationValues)
-    add(Report, reportValues(observationKey))
-}
-val response = store.executeAtomic(request)
-```
-
-The builder performs no I/O. Additions allocate typed keys once, so another
-addition can reference them. Retain the constructed request for retries. Direct
-construction accepts existing single-record write requests:
-`AtomicRequest(id, Model.add(values), OtherModel.change(change))`.
-
-A supported store commits all members together, including values, deletion
-markers, indexes, unique ownership, retained history, applicable durable update
-logs, and the successful retry receipt. A validation or guard failure returns
-`AtomicStatus.Rejected` and no member mutation commits. Its `responses` contains
-only the failed member, identified by `failedRequestIndex` and `failedGuard`;
-it never reports staged successes as persisted results. `Committed` contains
-one response per mutation in request order. A store without the optional
-capability returns `Unsupported`; it never falls back to ordinary writes.
-
-`expectVersion` adds a read-only concurrency guard. `expect(model, key, Check(...))`
-checks property values; an empty `expect` checks physical record existence,
-including soft-deleted records. The direct request's `guards` accepts single-record,
-check-only Change requests. All guards, embedded `Check` changes, and version
-preconditions are evaluated against the initial state, before mutations. They
-remain protected through commit. An unchanged guard record is not given a new
-version or published as an update.
-
-Each mutation addresses one record, and a record can appear in the mutation
-list only once. At most 1,000 mutations and 1,000 guards are accepted. The encoded
-request and successful response are each limited to 1 MiB; receipts add a
-32-byte request digest. FoundationDB bounds affected transaction data to 4 MiB,
-with a 4.5-second native timeout setting and a retry limit of 10; each native attempt remains
-subject to FoundationDB's transaction lifetime and key/value limits. Receipts
-use a manifest and chunks of at most 80,000 bytes in the same transaction.
-The same receipt format is used for every request size.
-RocksDB and IndexedDB bound staged read/write work to 4 MiB. IndexedDB merges
-staged writes with pages of at most 256 stored rows, stopping at the requested
-result boundary; a scan may fetch at most 100,000 rows. Memory deep-copies only
-targeted records and affected index histories, with a shared budget of 100,000
-copied nodes per change set. Untouched records and histories are shared, while
-metadata lists are shallow-copied. These budgets never split a change set.
-
-`atomicCapabilities` on an `IsDataStore` reports these fixed ceilings, or `null`
-when atomic requests are unsupported. Implementations advertising atomic support
-must provide capability metadata. Backend-specific fields are optional; absence
-means that a corresponding ceiling is not advertised. A limit report is not a
-reservation or a promise that every request below those limits can commit.
-
-Budget rejections populate `AtomicResponse.failure` with `LimitExceeded`, the
-stable budget name, `maximum`, and `actual`. Budget names are `mutations`,
-`guards`, `requestBytes`, `responseBytes`, `workBytes`, `stagedNodes`, and
-`scanRows`. FoundationDB also advertises native storage-cell key/value byte
-ceilings and reports `transactionBytes`, `storageKeyBytes`, or `storageValueBytes`
-for definitive native size failures. Their `actual` count can be absent when
-the native API supplies only an error code. Reusing a committed ID with different contents reports
-`ChangeSetMismatch`. Member validation failures retain their existing structured
-response and index. `AtomicRequestLimitException` exposes count limits during
-construction. Other storage failures may still report `OutcomeUnknown`; a
-missing structured limit is not evidence of rollback.
-
-Supported members are Add, Change of an existing record, and soft Delete or
-restore. Nested atomic requests, reads/scans, Collect & Inject, hard deletes,
-and creation through Change are rejected at construction. Existing model
-validation applies. Unique claims are validated in mutation order; an exchange
-that requires a temporary unique collision is rejected as a whole. Typed
-references retain their existing validation semantics; this API does not add
-implicit foreign-key constraints or cascading deletes.
-
-A successful receipt is recorded in the same commit as the mutations. Repeating
-an identical request with the same `changeSetId` returns the original committed
-result without rerunning its now-stale guards. Reusing that ID with different
-contents is rejected. Receipts contain a SHA-256 request digest, rather than a
-copy of potentially sensitive input values, plus the successful operation
-responses. Receipts are retained until the store is destroyed; Memory retains
-them only for its open instance. `OutcomeUnknown` reports an unusable or ambiguous execution result. A timeout,
-cancellation, or lost connection is not evidence of rollback. Retry the original request with the original ID to
-establish its outcome; do not create a new ID for an uncertain retry.
-
-Mutated records share a Maryk HLC version; no-op records retain their previous
-version. The HLC is not a cross-writer commit-order token. Atomicity is scoped to
-one datastore: one Memory instance, RocksDB database, FoundationDB store root,
-or IndexedDB database. Durability follows the engine's existing configuration.
-Independent reads may straddle a commit, and existing record-level update
-streams and replication retain their existing delivery boundaries. Notifications
-are published only after commit, but they are not a grouped cross-model stream.
-
-Replication's `InitialChangesUpdate` carries each record's complete revisions in
-strictly increasing version order, with each version present once even when the
-record appears in multiple groups. Every revision must be at or below the update
-envelope's version. Stores reject violations of these version constraints before
-applying any prefix or advancing their clock. Independently delivered stale
-updates retain their existing no-op behavior.
+See [Atomic](query/atomic.md).
 
 ### Get
 
-With [`GetRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetRequest.kt),
-multiple specific objects can be queried by their [key](key.md).
-To select a subset of values in the query, use `select` with a [graph](reference-graphs.md).
-It is possible to filter the results with [filters](filters.md) or include soft-deleted results by
-passing `filterSoftDeleted=false`.
+Fetch known keys, optionally with a projection, filter or retained historical version. Repeated keys preserve request order.
 
-Results retain request order, including repeated keys. A live get subscription
-updates every occurrence independently. Removing a key removes all its occurrences;
-if it later matches again, its entries return to their original requested positions.
-
-You can also view the objects at a certain version with `toVersion`
-if the store supports viewing past versions.
-
-When applied, it will deliver an [`ValuesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ValuesResponse.kt)
-with a list of [`ValuesWithMetaData`](../src/commonMain/kotlin/maryk/core/query/ValuesWithMetaData.kt)
-containing the `key`, `object`, `firstVersion`, `lastVersion`, and `isDeleted`.
-
-**Example:**
-
-```kotlin
-val person1Key // Key of person 1 to change
-val person2Key // Key of person 2 to change
-
-val getRequest = Person.get(
-    person1Key,
-    person2Key
-)
-```
-
-With all parameters:
-
-```kotlin
-val person1Key // Key of person 1 to change
-val person2Key // Key of person 2 to change
-
-val getRequest = Person.run {
-    get(
-        person1Key,
-        person2Key,
-        where = And(
-            Equals(ref { firstName } with "Clark"),
-            Exists(ref { lastName })
-        ),
-        toVersion = 2uL,
-        filterSoftDeleted = false
-    )
-}
-```
+See [Get](query/reads-writes.md#get).
 
 ### Scan
 
-With [`ScanRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanRequest.kt),
-multiple objects can be queried by passing a `startKey` to scan from and filters on key parts to end it.
-To select a subset of values in the query, use `select` with a [graph](reference-graphs.md).
-It is possible to filter the results with [filters](filters.md), order, or limit the results (default= 100).
-You can also include soft-deleted results by passing `filterSoftDeleted=false`.
+Read a bounded page with filters, ordering and an opaque continuation cursor. A suitable key/index or explicit table-scan permission is required.
 
-Deleted-inclusive scans use primary-key table order, since deleted records no
-longer own current unique or secondary-index entries and several deleted records
-can retain the same unique value. Set `allowTableScan=true` when the primary-key
-filter does not meet the model's minimum scan range. Explicit secondary-index
-ordering with `filterSoftDeleted=false` is rejected rather than returning an
-incomplete page. Normal scans that filter deleted records retain indexed ordering.
-
-Additionally, you can view the objects at a certain version with `toVersion` if the store supports historical views.
-
-When applied, it will deliver an [`ValuesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ValuesResponse.kt)
-with a list of [`ValuesWithMetaData`](../src/commonMain/kotlin/maryk/core/query/ValuesWithMetaData.kt)
-containing the `key`, `object`, `firstVersion`, `lastVersion`, and `isDeleted`.
-
-An inclusive range bound on a composite-index part includes matching records
-with later index parts. Later predicates are checked on their actual parts rather
-than appended to the range boundary. This also preserves strict string comparisons:
-`GreaterThan("Jan")` includes `"Janne"`, while `LessThanEquals("Jan")` excludes it.
-These rules apply in either direction and to retained historical index reads.
-
-For pagination, pass `response.nextCursor` unchanged into the next scan. The opaque,
-versioned cursor stores both the primary key and the effective ordering boundary, so
-index pagination does not need to re-read the boundary record. It is bound to the
-model and query; changing the filter, order, selection, or historical version rejects
-the cursor. `startKey` remains supported for direct boundaries and legacy clients,
-but cannot be combined with `cursor`.
-The cursor also carries a fingerprint of the root-key and secondary-index storage
-layouts. A cursor created before a key or secondary-index layout change is rejected
-even when the model name and query are unchanged; start a fresh scan after the
-storage-layout migration. Changes to validation, defaults, or unindexed properties
-remain compatible.
-For multi-entry indexes, cursor paging emits each record once through its first
-eligible entry in the requested direction.
-Live scans retain this rule as records change: a row whose first eligible entry
-falls before the cursor stays excluded even if it has another entry after it.
-The cursor record itself remains excluded if its index values later move.
-Aggregations apply to the current page; combine page results in the application
-when a total across every page is needed.
-
-```kotlin
-val firstPage = dataStore.execute(Logs.scan(order = Logs.ref { timeStamp }, limit = 50u))
-val secondPage = firstPage.nextCursor?.let { cursor ->
-    dataStore.execute(Logs.scan(order = Logs.ref { timeStamp }, limit = 50u, cursor = cursor))
-}
-```
-
-```kotlin
-val timedKey // Key starting at a certain time
-
-val scanRequest = Logs.scan(
-    startKey = timedKey
-)
-```
-
-With all parameters:
-
-```kotlin
-val timedKey // Key starting at a certain time
-
-val scanRequest = Logs.run {
-    scan(
-        startKey = timedKey,
-        where = GreaterThanEquals(
-            ref { severity } with Severity.ERROR
-        ),
-        order = ref { timeStamp }.descending(),
-        filterSoftDeleted = false,
-        limit = 50,
-        toVersion = 2uL
-    )
-}
-```
+See [Scan](query/reads-writes.md#scan).
 
 ### Get/Scan Changes
 
-Use [`GetChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetChangesRequest.kt)
-and [`ScanChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanChangesRequest.kt)
-to fetch versioned changes as stored in the data store, grouped per object.
+Read retained field revisions. Multiple versions require `keepAllVersions`; ScanChanges restricts filters and ordering to immutable paths.
 
-Response shape: a [`ChangesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ChangesResponse.kt)
-containing a list of `DataObjectVersionedChange` entries with the object `key`, optional `sortingKey` (for index scans),
-and a list of `VersionedChanges` items. Each `VersionedChanges` contains a `version` and a list of field-level changes
-at that version (for example: `ObjectCreate`, `Change`, `ObjectDelete`).
-
-Notes:
-- Default `maxVersions` is 1; requesting more than 1 version or using `toVersion` requires the store to enable `keepAllVersions`.
-- Aggregations are not supported for changes requests.
-- For `ScanChanges`, filters cannot use mutable (non-final or non-required) properties. Ordering is allowed only on the
-  primary key order or on required, final properties. These checks include enclosing
-  properties and the underlying fields of named search indexes, including normalized
-  or split fields. A final child of an optional or mutable parent is not immutable.
-
-**Get changes with all parameters:**
-
-```kotlin
-val person1Key // Key representing person 1.
-val person2Key // Key representing person 2.
-
-val getRequest = Person.run {
-    getChanges(
-        person1Key,
-        person2Key,
-        select = graph { listOf(firstName, lastName) },
-        where = And(
-            Equals(ref { firstName } with "Clark"),
-            Exists(ref { lastName })
-        ),
-        fromVersion = 1000uL,
-        toVersion = 2000uL,
-        maxVersions = 100u,
-        filterSoftDeleted = false
-    )
-}
-```
-
-**Scan changes with all parameters:**
-
-```kotlin
-val timedKey // Key that indicates the starting point for scanning.
-
-val scanRequest = Logs.scanChanges(
-    startKey = timedKey,
-    select = graph { listOf(timeStamp, severity, message) },
-    where = GreaterThanEquals(Logs.ref { severity } with Severity.ERROR),
-    order = ref { timeStamp }.descending(),
-    limit = 50u,
-    includeStart = true,
-    fromVersion = 1000uL,
-    toVersion = 2000uL,
-    maxVersions = 100u,
-    filterSoftDeleted = false
-)
-```
+See [Get/Scan Changes](query/history.md#getscan-changes).
 
 ### Get/Scan Update History
 
-Use `getUpdateHistory(key, ...)` for one known record and `scanUpdateHistory(...)`
-for historical updates across a model. Both return an `UpdatesResponse` with
-newest-first `AdditionUpdate`, `ChangeUpdate`, or `RemovalUpdate` entries. A record
-may occur more than once. These are finite history queries, not live flows, and do
-not include an `OrderedKeysUpdate` header.
+Page through newest-first record-version entries. Enable both `keepAllVersions` and `keepUpdateHistoryIndex` and continue with `nextCursor`.
 
-`limit` counts matching `(key, version)` entries, rather than records or property
-versions. All selected changes at one record version are returned together.
-Both requests require `keepAllVersions` and a ready `keepUpdateHistoryIndex`.
-The get request filters the key before materializing record data. Current engines
-use the existing model-wide history index, so this does not promise a separate
-record-key index lookup or constant scan work.
-
-```kotlin
-import maryk.core.query.requests.getUpdateHistory
-import maryk.core.query.requests.scanUpdateHistory
-
-val query = Person.getUpdateHistory(
-    personKey,
-    limit = 25u,
-    filterSoftDeleted = false
-)
-val firstPage = store.execute(query)
-val secondPage = firstPage.nextCursor?.let { cursor ->
-    store.execute(query.copy(cursor = cursor))
-}
-
-val scanQuery = Person.scanUpdateHistory(limit = 25u)
-val firstScanPage = store.execute(scanQuery)
-val secondScanPage = firstScanPage.nextCursor?.let { cursor ->
-    store.execute(scanQuery.copy(cursor = cursor))
-}
-```
-
-`fromVersion` and `toVersion` are inclusive event-version bounds and must satisfy
-`fromVersion <= toVersion` when an upper bound is supplied. Filters are
-applied at each event's version; `select` limits the returned fields. Events with
-no selected changes are omitted, while creation and deletion events remain
-meaningful. Use `filterSoftDeleted = false` to include soft-delete transitions
-and revisions whose record is soft-deleted at that version.
-
-Forward `nextCursor` unchanged with the same request. A cursor binds the model,
-record key for get requests, selection, filters, and version bounds. The page
-size may change. Continuation is exclusive by version and then ascending record
-key, so records sharing a version are neither skipped nor repeated. The cursor
-also retains the first page's version ceiling, excluding later higher-version
-writes. `nextCursor == null` means no more matching entries were found; lookahead
-checks one additional matching entry before returning a cursor.
-
-A cursor does not retain erased history or isolate later imports of older
-versions. Hard deletion can remove earlier values permanently. Where a retained
-hard-delete marker exists, an unfiltered query can return its `RemovalUpdate`;
-filters requiring erased values cannot be evaluated in persistent stores.
-Memory can evaluate hard-delete filters against its archived pre-delete values.
-
-Creation entries contain selected values, and subsequent change entries contain
-deltas. History paging does not return a complete snapshot for every entry; use
-`get(key, toVersion = entry.version, ...)` for a retained point-in-time state.
+See [Get/Scan Update History](query/history.md#getscan-update-history).
 
 ### Get/Scan Updates
 
-You can request updates on objects ordered by version with
-[`GetUpdatesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetUpdatesRequest.kt)
-or [`ScanUpdatesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanUpdatesRequest.kt).
-`maxVersions` (default=1) bounds the history read for each selected record. In
-RocksDB and FoundationDB, it applies per stored property, so it is not a bound on
-the total number of returned record revisions. The current Memory and IndexedDB
-paths limit grouped non-creation revisions and handle creation separately.
-Use update-history requests when you need a page bounded by historical entries.
-Returning more than one version requires `keepAllVersions = true`.
+Read chronological synchronization events or use `executeFlow` for a current live view. Live views and finite history have different delivery and paging semantics.
 
-When applied, it will deliver an [`UpdatesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/UpdatesResponse.kt)
-with a list of [`IsUpdatesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/updates/IsUpdateResponse.kt)
-which are either `AdditionUpdate`, `ChangeUpdate`, `RemovalUpdate`, and always starts with `OrderedKeysUpdate`,
-reflecting the initial ordering of keys.
+See [Get/Scan Updates](query/updates.md#getscan-updates).
 
-This request type can also be used inside `executeFlow` to listen to updates as they happen in the data store.
+#### Applying replicated changes
 
-A live view may fetch a complete current row when a record enters its filter or
-refills its window. If that read includes newer queued commits, the addition uses
-the row's actual last version and already-included deltas are suppressed. This
-keeps list operations and other non-idempotent changes from being applied twice.
-If the removed key already matches again at a newer revision when the refill
-reads it, the listener emits a removal followed by that complete addition,
-preserving intervening edits. A refill at the change's exact revision retains
-the usual delta response.
-Ordering is derived from the same fetched values. Use finite history queries when
-every retained revision is needed instead of a current live view.
-
-When `FetchByUpdateHistoryIndex` supplies newest-first ordering, the initial
-`OrderedKeysUpdate.sortingKeys` contains each corresponding key's complete source
-version as eight unsigned big-endian bytes. These versions remain available when
-`select` omits the latest changed property. Live history windows compare source
-versions when adding or moving records, so an older queued event cannot displace
-a newer row already fetched by a listener. This uses the existing optional
-sorting field and does not change stored records.
-
-Live scans retain their original cursor boundary for additions and refills,
-including when deletion leaves the visible window empty. The public projection
-also remains unchanged while internal reads obtain values needed for ordering.
-
-When `ScanUpdates` uses the update-history index, rows are ordered by descending
-revision, then descending record key for tied revisions, including live updates.
-The separate finite `ScanUpdateHistory` cursor API retains its existing ascending
-key order within a tied revision.
-
-Optionally, you can pass an `orderedKeys` parameter to a `ScanUpdatesRequest`. This allows you to receive any changes to
-that list as well. This way, you are assured to receive hard-deleted values or added values that had their values
-changed,
-ensuring they are within range of the passed order/limit.
-
-**Get updates with all parameters:**
-
-```kotlin
-val person1Key // Key of person 1 to change
-val person2Key // Key of person 2 to change
-
-val getRequest = Person.run {
-    getUpdates(
-        person1Key,
-        person2Key,
-        select = graph {
-            listOf(
-                firstName,
-                lastName
-            )
-        },
-        where = And(
-            Equals(ref { firstName } with "Clark"),
-            Exists(ref { lastName })
-        ),
-        toVersion = 2000uL,
-        filterSoftDeleted = false,
-        fromVersion = 1000uL,
-        maxVersions = 100
-    )
-}
-```
-
-**Scan updates with all parameters:**
-
-```kotlin
-val timedKey // Key starting at a certain time
-
-val scanRequest = Logs.scanUpdates(
-    startKey = timedKey,
-    select = graph {
-        listOf(
-            timeStamp,
-            severity,
-            message
-        )
-    },
-    where = GreaterThanEquals(
-        Logs.ref { severity } with Severity.ERROR
-    ),
-    order = ref { timeStamp }.descending(),
-    filterSoftDeleted = false,
-    limit = 50,
-    fromVersion = 1000uL,
-    toVersion = 2000uL,
-    maxVersions = 100,
-    orderedKeys = listOf(log1Key, log2Key, log3Key)
-)
-
-```
-
+See [replication input validation](query/updates.md#applying-replicated-changes) for
+source-version ordering and envelope requirements.
 
 ## Serializable transactions
 
-Use `store.transaction { tx -> ... }` for an interactive read/write transaction,
-or `store.beginTransaction()` when the caller owns the lifecycle. Import these
-extensions from `maryk.datastore.shared`. Memory, RocksDB, FoundationDB and the
-native IndexedDB byte store implement the same contract; Remote forwards the
-backend's transaction capability.
+Use a transaction when reads determine the writes, or when a record must be
+changed repeatedly. Reads see prior staged writes; commit can report a conflict.
+Staged versions are provisional, and uncertain commits require the original handle.
 
-```kotlin
-import maryk.datastore.shared.transaction
-import maryk.core.query.responses.TransactionStatus
-
-val result = store.transaction { tx ->
-    val existing = tx.execute(Person.get(key)).response.values.single()
-    tx.execute(Person.change(key.change(Change(nameRef with "Updated"),
-        lastVersion = existing.lastVersion)))
-    tx.execute(Person.get(key)).response.values.single()
-}
-if (result.commit.status == TransactionStatus.Committed) {
-    useCommittedResult(result.value)
-}
-```
-
-The scope supports finite `Get`, `Scan`, `Add`, `Change` and `Delete` requests,
-including hard deletion and repeated writes to a record. Reads see earlier staged
-writes. Point reads, range predicates, empty scans and decisions based on other
-models are protected by a datastore-wide revision fence. A concurrent Maryk writer
-can cause an explicit `Conflict`, including a writer to an unrelated record.
-No changes are published when a preview, validation or conflict check fails.
-These conservative conflicts provide serializable isolation without keeping a
-native database transaction open while application code suspends.
-
-Each operation replays the bounded journal in private staging. `executeBatch`
-stages a group with one replay. This keeps the implementation common across stores
-but means many individual operations cost more than one grouped batch. Savepoints
-retain journal positions: `savepoint`, `rollbackTo` and `release` support nested
-work. A statement validation/limit failure can recover to an earlier savepoint;
-a revision conflict requires a new transaction. `rollback` discards staging.
-Read-only scopes use `transaction(readOnly = true)` or
-`beginTransaction(readOnly = true)`. A nested scope uses a savepoint.
-
-`tx.execute` returns a `TransactionStep` marked provisional. Its versions identify
-staged records and are rebound when later staged requests use `lastVersion`.
-Commit assigns ordered durable versions and returns mutation responses; update
-notifications are emitted in journal order after publication. Staged responses,
-including SQL RETURNING versions, must not be treated as committed receipts.
-The callback value can retain provisional metadata after commit; use the commit
-responses when durable mutation versions are needed.
-The ordered version range is checked before applying journal members. If it
-would overflow the store clock, the transaction aborts without publishing writes.
-The scoped callback runs on the shared datastore dispatcher. Ordinary store
-`execute` calls inside it join that scope. Replication and subscriptions belong
-outside the transaction.
-
-An atomic request executed through `tx.executeAtomic(...)`, or through the same
-built-in store inside its scoped callback, joins the outer journal. Its guards
-are checked before that group's writes against the current staged view. It returns
-`AtomicStatus.Staged`; the outer commit determines durability and recovery. The
-inner change-set ID does not create an independently committed retry receipt.
-
-The callback runs once by default. `transactionWithRetry` explicitly retries the
-whole callback after a conflict, up to three attempts with short backoff. Keep
-external side effects after a successful commit. `result.transaction` retains the
-handle for an uncertain outcome; call `resolveCommit()` on that handle. A submitted
-commit cannot be rolled back. Cancellation during a submitted scoped commit exposes
-`TransactionCancellationException.transaction` so it can be resolved later.
-Persistent stores record a successful receipt in the same native commit as the
-writes. Resolution resubmits the exact normalized journal: matching receipts
-return the original response before checking stale revisions, while a different
-journal with the same committed ID fails explicitly. An absent receipt alone
-never establishes rollback. Commit recovery may finish after the original scope
-deadline; it always resubmits the original request. If notification delivery fails
-after publication, live listeners terminate with an error so they cannot remain
-silently stale.
-
-`store.transactionCapabilities` is null for unsupported adapters. The fixed
-scope defaults are 30 seconds, 2,000 journal requests, 1,000 record mutations and
-64 savepoints. Request and response payloads are capped at 1 MiB. Both referenced
-read keys and cumulative returned read rows are capped at 100,000 and reported as
-`maxReadKeys` and `maxReadRows`. Individual Scan requests already enforce a
-100,000-row page limit; the transaction also bounds cumulative returned rows.
-Memory bounds copied staging nodes to 100,000; RocksDB and IndexedDB
-bound staging work to 4 MiB. FoundationDB bounds each native attempt to 4.5 seconds
-and 4 MiB, with its 10,000-byte key and 100,000-byte value ceilings. Its native
-transaction exists only for a replay attempt. These limits fail explicitly;
-no transaction is split into multiple commits. Receipts are retained without
-automatic expiry, so they also consume storage (or process memory in Memory).
-
-Submitted request values, keys and predicates are copied into the client journal.
-Changes to caller-owned collections cannot alter a previously staged operation.
-Check-only Change requests are allowed in read-only scopes. Record creation uses
-Add; generated replication changes are rejected before staging. A single mutation
-request targets each key once. Use separate requests or `executeBatch` for ordered
-repeated writes to one key; this prevents same-version changes from skipping a
-later write or check. Replication, live
-subscriptions and unresolved Remote Inject batches cannot join a transaction.
-
-`AtomicRequest` remains the one-shot convenience for a prepared write set with
-initial-state checks. It commits through this transaction engine. Its restricted
-write-set shape is distinct from the interactive transaction journal, and does
-not promise serializable protection for reads performed before submission.
+See [Serializable transactions](query/transactions.md) for an example, savepoints,
+retry policy, capabilities and recovery. These are distinct from snapshot reads.

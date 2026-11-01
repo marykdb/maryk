@@ -44,10 +44,6 @@ Prefix(
 Checks whether a value exists. Empty lists, sets, maps and embedded values still
 exist; an absent or deleted property does not.
 
-Storage integrations can use `matchesFilterWithPresence` to test stored existence
-markers separately from decoding comparison values. `matchesFilter` retains its
-value-based presence behavior.
-
 ```kotlin
 Exists(
     propertyReference1,

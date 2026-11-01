@@ -6,14 +6,13 @@ import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken.StartDocument
-import maryk.lib.exceptions.ParseException
 
 /** Does an Or comparison against given [filters]. If one returns true the entire result will be true. */
 data class Or(
@@ -46,47 +45,27 @@ data class Or(
                 writer: IsJsonLikeWriter,
                 context: RequestContext?,
                 skip: List<IsDefinitionWrapper<*, *, *, Or>>?
-            ) {
-                withFilterNesting(context) { filterContext ->
-                    filters.writeJsonValue(
-                        filters.getPropertyAndSerialize(obj, filterContext)
-                            ?: throw ParseException("Missing filters in Or"),
-                        writer,
-                        filterContext
-                    )
-                }
-            }
+            ) = writeFilterListJson(obj, writer, context)
 
             override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Or, Companion> {
-                if (reader.currentToken == StartDocument) {
-                    reader.nextToken()
-                }
-
-                return withFilterNesting(context) { filterContext ->
-                    create(filterContext) {
-                        filters -= filters.readJson(reader, filterContext)
-                    }
+                val filterContext = context ?: RequestContext(DefinitionsContext())
+                return create(filterContext) {
+                    filters -= readFilterListJson(FilterType.Or, reader, filterContext)
                 }
             }
 
             override fun calculateObjectProtoBufLength(dataObject: Or, cacher: WriteCacheWriter, context: RequestContext?) =
-                withFilterNesting(context) { filterContext ->
-                    super.calculateObjectProtoBufLength(dataObject, cacher, filterContext)
-                }
+                calculateFilterListProtoBufLength(dataObject, cacher, context)
 
             override fun writeObjectProtoBuf(
                 dataObject: Or,
                 cacheGetter: WriteCacheReader,
                 writer: (byte: Byte) -> Unit,
                 context: RequestContext?
-            ) = withFilterNesting(context) { filterContext ->
-                super.writeObjectProtoBuf(dataObject, cacheGetter, writer, filterContext)
-            }
+            ) = writeFilterListProtoBuf(dataObject, cacheGetter, writer, context)
 
             override fun readProtoBuf(length: Int, reader: () -> Byte, context: RequestContext?) =
-                withFilterNesting(context) { filterContext ->
-                    super.readProtoBuf(length, reader, filterContext)
-                }
+                readFilterListProtoBufValues(model, FilterType.Or, length, reader, context)
         }
     }
 }

@@ -2,8 +2,6 @@ package maryk.datastore.foundationdb.processors
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
@@ -19,6 +17,8 @@ import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
 import maryk.datastore.foundationdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricUnique
 import maryk.datastore.shared.hasStoredValuePayload
+import maryk.datastore.shared.isAffectedUniqueClaim
+import maryk.datastore.shared.uniqueClaimScopes
 import maryk.datastore.shared.UniqueException
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
@@ -39,7 +39,7 @@ internal fun FoundationDBDataStore.captureCurrentUniqueClaims(
         while (iterator.hasNext()) {
             val stored = iterator.nextBlocking()
             val reference = stored.key.copyOfRange(prefix.size, stored.key.size)
-            if (reference.isEmpty() || reference[0] == SOFT_DELETE_INDICATOR || !reference.isAffected(affectedReferences)) continue
+            if (reference.isEmpty() || reference[0] == SOFT_DELETE_INDICATOR || !reference.isAffectedUniqueClaim(affectedReferences)) continue
             var offset = 0
             val property = model.getPropertyReferenceByStorageBytes(reference.size, { reference[offset++] })
             if ((property.comparablePropertyDefinition as? IsComparableDefinition<*, *>)?.unique != true) continue
@@ -95,28 +95,5 @@ internal fun FoundationDBDataStore.reconcileCurrentUniqueClaims(
         createUniqueIndexIfNotExists(directories.modelId, directories.uniquePrefix, claim.reference, transaction)
         val active = claim.reference + claim.candidates.first()
         if (owner(active) == null) setUniqueIndexValue(transaction, directories, active, version, key)
-    }
-}
-
-private fun ByteArray.isAffected(references: List<ByteArray>?) = references == null || references.any { other ->
-    (0 until minOf(size, other.size)).all { this[it] == other[it] }
-}
-
-private fun IsRootDataModel.uniqueClaimScopes(references: List<ByteArray>?): List<ByteArray> {
-    if (references == null) return listOf(byteArrayOf())
-    val scopes = references.toMutableList()
-    for (reference in references) {
-        var offset = 0
-        var property: AnyPropertyReference? = getPropertyReferenceByStorageBytes(reference.size, { reference[offset++] })
-        while (property != null) {
-            if ((property.comparablePropertyDefinition as? IsComparableDefinition<*, *>)?.unique == true) {
-                scopes += property.toStorageByteArray()
-            }
-            property = (property as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
-        }
-    }
-    return scopes.sortedBy { it.size }.fold(mutableListOf<ByteArray>()) { selected, scope ->
-        if (selected.none { existing -> existing.indices.all { scope[it] == existing[it] } }) selected += scope
-        selected
     }
 }

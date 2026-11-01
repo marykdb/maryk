@@ -2,16 +2,8 @@
 
 package maryk.datastore.indexeddb
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.js.JsAny
@@ -740,92 +732,25 @@ private suspend fun <T> withBrowserWriteLock(
     databaseName: String,
     lockName: String,
     block: suspend (leaseOwnerId: String) -> T,
-): T {
-    if (!hasWebLocks()) {
-        return withIndexedDbWriteLease(database, databaseName, lockName, block)
-    }
-
-    return suspendCancellableCoroutine { continuation ->
-        requestWebLock(
-            lockName = lockName,
-            onAcquired = { release ->
-                if (!continuation.isActive) {
-                    releaseWebLock(release)
-                    return@requestWebLock
-                }
-                var released = false
-                fun releaseOnce() {
-                    if (!released) {
-                        released = true
-                        releaseWebLock(release)
-                    }
-                }
-                var blockJob: Job? = null
-                continuation.invokeOnCancellation {
-                    blockJob?.cancel()
-                    releaseOnce()
-                }
-                blockJob = CoroutineScope(continuation.context).launch {
-                    try {
-                        continuation.resume(withIndexedDbWriteLease(database, databaseName, lockName, block))
-                    } catch (cause: Throwable) {
-                        continuation.resumeWithException(cause)
-                    } finally {
-                        releaseOnce()
-                    }
-                }
-            },
-            onError = {
-                if (!continuation.isActive) return@requestWebLock
-                val fallbackJob = CoroutineScope(continuation.context).launch {
-                    try {
-                        continuation.resume(withIndexedDbWriteLease(database, databaseName, lockName, block))
-                    } catch (cause: Throwable) {
-                        continuation.resumeWithException(cause)
-                    }
-                }
-                continuation.invokeOnCancellation { fallbackJob.cancel() }
-            },
+): T = withIndexedDbWebLock(
+    webLocksAvailable = hasWebLocks(),
+    requestLock = { onAcquired, onError ->
+        requestWebLock(lockName, { release -> onAcquired { releaseWebLock(release) } }, onError)
+    },
+    withLease = {
+        val ownerId = createLeaseOwnerId()
+        withIndexedDbLease(
+            databaseName = databaseName,
+            ownerId = ownerId,
+            tryAcquire = { tryAcquireWriteLease(database, lockName, ownerId) },
+            awaitSignal = { awaitWriteLeaseSignal(databaseName) },
+            renew = { renewWriteLease(database, lockName, ownerId) },
+            release = { releaseWriteLease(database, lockName, ownerId) },
+            signalRelease = { signalWriteLeaseRelease(databaseName) },
+            block = block,
         )
-    }
-}
-
-private suspend fun <T> withIndexedDbWriteLease(
-    database: JsAny,
-    databaseName: String,
-    lockName: String,
-    block: suspend (leaseOwnerId: String) -> T,
-): T {
-    val ownerId = createLeaseOwnerId()
-    while (!tryAcquireWriteLease(database, lockName, ownerId)) {
-        awaitWriteLeaseSignal(databaseName)
-    }
-
-    return coroutineScope {
-        var leaseFailure: Throwable? = null
-        val renewal = launch {
-            while (isActive) {
-                delay(writeLeaseRenewIntervalMillis)
-                if (!renewWriteLease(database, lockName, ownerId)) {
-                    leaseFailure = IllegalStateException("Lost IndexedDB write lease for $databaseName")
-                    break
-                }
-            }
-        }
-
-        try {
-            val result = block(ownerId)
-            leaseFailure?.let { throw it }
-            result
-        } finally {
-            withContext(NonCancellable) {
-                renewal.cancelAndJoin()
-                releaseWriteLease(database, lockName, ownerId)
-                signalWriteLeaseRelease(databaseName)
-            }
-        }
-    }
-}
+    },
+)
 
 private suspend fun tryAcquireWriteLease(
     database: JsAny,
@@ -875,48 +800,6 @@ private suspend fun renewWriteLease(
         )
     },
 )
-
-private suspend fun awaitLeaseTransaction(
-    start: ((Boolean) -> Unit, (String) -> Unit, (() -> Unit) -> Unit) -> Unit,
-    onLateAcquire: () -> Unit = {},
-): Boolean = suspendCancellableCoroutine { continuation ->
-    var cancelTransaction: (() -> Unit)? = null
-    var transactionCompleted = false
-    var acquired = false
-    var lateAcquireHandled = false
-    fun releaseLateAcquire() {
-        if (!lateAcquireHandled) {
-            lateAcquireHandled = true
-            onLateAcquire()
-        }
-    }
-    continuation.invokeOnCancellation {
-        cancelTransaction?.invoke()
-        if (transactionCompleted && acquired) releaseLateAcquire()
-    }
-    start(
-        { didAcquire ->
-            transactionCompleted = true
-            acquired = didAcquire
-            if (continuation.isActive) {
-                continuation.resume(didAcquire) { _, _, _ ->
-                    if (didAcquire) releaseLateAcquire()
-                }
-            } else if (didAcquire) {
-                releaseLateAcquire()
-            }
-        },
-        { message ->
-            if (continuation.isActive) {
-                continuation.resumeWithException(IllegalStateException(message))
-            }
-        },
-        { cancel ->
-            cancelTransaction = cancel
-            if (!continuation.isActive) cancel()
-        },
-    )
-}
 
 private fun acquireOrRenewWriteLease(
     database: JsAny,
@@ -1131,7 +1014,6 @@ private fun postCommittedUpdate(channelName: String, senderId: String) {
 
 private const val writeLeaseStoreName = "__maryk_write_lease"
 private const val writeLeaseDurationMillis = 30_000
-private const val writeLeaseRenewIntervalMillis = 10_000L
 private const val writeLeaseRetryMillis = 100
 
 internal var indexedDbLeaseAcquisitionHandoffHook: (() -> Unit)? = null

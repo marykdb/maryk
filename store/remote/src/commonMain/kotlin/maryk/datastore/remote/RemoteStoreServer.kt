@@ -34,7 +34,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
-import io.ktor.utils.io.readRemaining
+import io.ktor.utils.io.readBuffer
 import io.ktor.utils.io.writeFully
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsObjectDataModel
@@ -1140,7 +1140,7 @@ private suspend fun readRequestBytes(
     val bytes = try {
         withTimeout(limits.requestBodyReadTimeoutMillis) {
             call.receiveChannel()
-                .readRemaining(MAX_REQUEST_BODY_BYTES.toLong() + 1L)
+                .readBuffer(MAX_REQUEST_BODY_BYTES.toLong() + 1L)
                 .readByteArray()
         }
     } catch (_: TimeoutCancellationException) {

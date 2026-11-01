@@ -22,12 +22,12 @@ kotlin {
         }
         jsTest {
             dependencies {
-                implementation(npm("fake-indexeddb", "6.2.5"))
+                implementation(npm("fake-indexeddb", "6.2.7"))
             }
         }
         wasmJsTest {
             dependencies {
-                implementation(npm("fake-indexeddb", "6.2.5"))
+                implementation(npm("fake-indexeddb", "6.2.7"))
             }
         }
     }

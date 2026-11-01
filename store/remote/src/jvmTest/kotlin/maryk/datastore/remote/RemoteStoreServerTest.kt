@@ -14,7 +14,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.cio.CIO as ServerCIO
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
-import io.ktor.utils.io.readRemaining
+import io.ktor.utils.io.readBuffer
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
@@ -897,7 +897,7 @@ class RemoteStoreServerTest {
                 setBody(validExecutePayload())
             }
             assertEquals(HttpStatusCode.OK, response.status)
-            val payload = response.bodyAsChannel().readRemaining().readByteArray()
+            val payload = response.bodyAsChannel().readBuffer().readByteArray()
             val decoded = RemoteStoreCodec.decode(
                 AddResponse.Serializer,
                 payload,

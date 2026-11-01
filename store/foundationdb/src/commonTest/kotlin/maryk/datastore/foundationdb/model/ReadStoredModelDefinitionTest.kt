@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.runBoundedIntegrationTest
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.test.models.ModelWithDependents
@@ -143,6 +144,28 @@ class ReadStoredModelDefinitionTest {
         assertEquals(setOf(1u, 2u), storedModels.keys)
         assertEquals(ModelWithDependents.Meta.name, storedModels[1u]?.Meta?.name)
         assertEquals(SimpleMarykModel.Meta.name, storedModels[2u]?.Meta?.name)
+    }
+
+    @Test
+    fun discoversHistorySettingWithoutOpeningOrChangingTheStore() = runBoundedIntegrationTest {
+        for (history in listOf(false, true)) {
+            val path = listOf("maryk", "test", "fdb-discover-history", Uuid.random().toString())
+            FoundationDBDataStore.open(
+                keepAllVersions = history,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = path,
+                dataModelsById = mapOf(1u to SimpleMarykModel),
+            ).close()
+            assertEquals(history, detectStoredKeepAllVersions(
+                "fdb.cluster", path, listOf(SimpleMarykModel.Meta.name)))
+        }
+    }
+
+    @Test
+    fun historyDiscoveryReturnsUnknownForMissingModelsOrDirectories() = runBoundedIntegrationTest {
+        val missing = listOf("maryk", "test", "missing-history", Uuid.random().toString())
+        assertNull(detectStoredKeepAllVersions("fdb.cluster", missing, emptyList()))
+        assertNull(detectStoredKeepAllVersions("fdb.cluster", missing, listOf(SimpleMarykModel.Meta.name)))
     }
 
     @Test

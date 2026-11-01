@@ -10,23 +10,17 @@ import io.maryk.cli.OptionSelectorInteraction.Selection
 import io.maryk.cli.RocksDbStoreConnection
 import io.maryk.cli.StoreType
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import maryk.core.models.RootDataModel
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.model.detectStoredKeepAllVersions
 import maryk.datastore.foundationdb.model.readStoredModelDefinitionsFromDirectory
 import maryk.datastore.shared.recoverNonFatal
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.runCatchingNonFatal
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.model.readStoredModelDefinitionsFromPath
-import maryk.foundationdb.FDB
-import maryk.foundationdb.TransactionContext
-import maryk.foundationdb.directory.DirectoryLayer
-import maryk.foundationdb.directory.DirectorySubspace
-import maryk.foundationdb.runSuspend
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.Options
-import kotlin.time.Duration.Companion.milliseconds
 
 class ConnectCommand(
     private val rocksDbConnector: RocksDbConnector = DefaultRocksDbConnector,
@@ -517,7 +511,7 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
             }
 
             val keepAllVersionsPreference = runBlocking {
-                detectKeepAllVersions(
+                detectStoredKeepAllVersions(
                     clusterFilePath = options.clusterFile,
                     directoryPath = options.directoryPath,
                     modelNames = effectiveModels.values.map { it.Meta.name },
@@ -554,52 +548,4 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
             )
         }
     }
-}
-
-private suspend fun detectKeepAllVersions(
-    clusterFilePath: String?,
-    directoryPath: List<String>,
-    modelNames: List<String>,
-): Boolean? {
-    val modelName = modelNames.firstOrNull() ?: return null
-    val fdb = FDB.selectAPIVersion(730)
-    val db = if (clusterFilePath != null) fdb.open(clusterFilePath) else fdb.open()
-
-    val tc: TransactionContext = db
-
-    try {
-        val rootDirectory: DirectorySubspace = try {
-            withTimeout(10_000.milliseconds) {
-                tc.runSuspend { tr ->
-                    DirectoryLayer.getDefault().open(tr, directoryPath).await()
-                }
-            }
-        } catch (e: Throwable) {
-            e.rethrowIfFatal()
-            return null
-        }
-
-        return try {
-            withTimeout(10_000.milliseconds) {
-                tc.runSuspend { tr ->
-                    rootDirectory.open(tr, listOf(modelName, "table_versioned")).await()
-                }
-            }
-            true
-        } catch (t: Throwable) {
-            t.rethrowIfFatal()
-            if (t.isNoSuchDirectory()) false else null
-        }
-    } finally {
-        db.close()
-    }
-}
-
-private fun Throwable.isNoSuchDirectory(): Boolean {
-    var current: Throwable? = this
-    while (current != null) {
-        if (current::class.simpleName == "NoSuchDirectoryException") return true
-        current = current.cause
-    }
-    return false
 }

@@ -38,6 +38,7 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.exceptions.ParseException
+import maryk.test.transportNaNFixture
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -124,7 +125,7 @@ class ContextualCollectionWireIntegrityTest {
             UInt32 to listOf(0u, 1u, UInt.MAX_VALUE),
             UInt64 to listOf(0uL, 1uL, ULong.MAX_VALUE),
             Float32 to listOf(-0.0f, Float.MIN_VALUE, Float.POSITIVE_INFINITY, Float.fromBits(0x7fc00001)),
-            Float64 to listOf(-0.0, Double.MIN_VALUE, Double.POSITIVE_INFINITY, Double.fromBits(0x7ff8000000000001L)),
+            Float64 to listOf(-0.0, Double.MIN_VALUE, Double.POSITIVE_INFINITY, transportNaNFixture),
         )
         assertEquals(NumberType.cases().map { it.descriptor() }.toSet(), cases.map { it.first }.toSet())
         for ((descriptor, samples) in cases) {
@@ -192,7 +193,7 @@ class ContextualCollectionWireIntegrityTest {
             }
         }
         val original = WrappedWireRecord.create {
-            values with listOf(-0.0, Double.fromBits(0x7ff8000000000001L))
+            values with listOf(-0.0, transportNaNFixture)
             tail with "retained"
         }
         val cache = WriteCache()
@@ -203,7 +204,7 @@ class ContextualCollectionWireIntegrityTest {
         val decoded = WrappedWireRecord.Serializer.readProtoBuf(bytes.size, { bytes[offset++] })
         assertEquals("retained", decoded.get { tail })
         assertEquals((-0.0).toRawBits(), decoded.get { values }!![0].toRawBits())
-        assertEquals(0x7ff8000000000001L, decoded.get { values }!![1].toRawBits())
+        assertEquals(transportNaNFixture.toRawBits(), decoded.get { values }!![1].toRawBits())
     }
 
     @Test

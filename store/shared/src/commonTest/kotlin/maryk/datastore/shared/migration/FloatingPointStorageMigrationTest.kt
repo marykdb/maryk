@@ -13,6 +13,7 @@ import maryk.datastore.shared.encryption.FieldEncryptionContext
 import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
 import maryk.datastore.shared.encryption.KeyringFieldEncryptionProvider
 import maryk.datastore.test.legacyFloatBytes
+import maryk.test.supportsRawNaNPayloads
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -45,42 +46,50 @@ class FloatingPointStorageMigrationTest {
         // writers from release 0.13.0 (1113a4851ab8b2c9bfa86756b6f07aa4a3327dbc).
         // Keep these literal: an inverse of today's writer would hide codec drift.
         val doubles = listOf(
-            "fff8000000000002" to "8007fffffffffffe",
-            "fff0000000000000" to "8010000000000000",
-            "bff0000000000000" to "c010000000000000",
-            "8000000000000000" to "0000000000000000",
-            "0000000000000000" to "0000000000000001",
-            "0000000000000001" to "0000000000000002",
-            "3ff0000000000000" to "3ff0000000000001",
-            "7ff0000000000000" to "7ff0000000000001",
-            "7ff8000000000001" to "7ff8000000000002",
-            "7ff8000000000002" to "7ff8000000000003",
+            Triple("fff8000000000002", "8007fffffffffffe", "0007fffffffffffd"),
+            Triple("fff0000000000000", "8010000000000000", "000fffffffffffff"),
+            Triple("bff0000000000000", "c010000000000000", "400fffffffffffff"),
+            Triple("8000000000000000", "0000000000000000", "7fffffffffffffff"),
+            Triple("0000000000000000", "0000000000000001", "8000000000000000"),
+            Triple("0000000000000001", "0000000000000002", "8000000000000001"),
+            Triple("3ff0000000000000", "3ff0000000000001", "bff0000000000000"),
+            Triple("7ff0000000000000", "7ff0000000000001", "fff0000000000000"),
+            Triple("7ff8000000000001", "7ff8000000000002", "fff8000000000001"),
+            Triple("7ff8000000000002", "7ff8000000000003", "fff8000000000002"),
         )
         val floats = listOf(
-            "ffc00002" to "803ffffe",
-            "ff800000" to "80800000",
-            "bf800000" to "c0800000",
-            "80000000" to "00000000",
-            "00000000" to "00000001",
-            "00000001" to "00000002",
-            "3f800000" to "3f800001",
-            "7f800000" to "7f800001",
-            "7fc00001" to "7fc00002",
-            "7fc00002" to "7fc00003",
+            Triple("ffc00002", "803ffffe", "003ffffd"),
+            Triple("ff800000", "80800000", "007fffff"),
+            Triple("bf800000", "c0800000", "407fffff"),
+            Triple("80000000", "00000000", "7fffffff"),
+            Triple("00000000", "00000001", "80000000"),
+            Triple("00000001", "00000002", "80000001"),
+            Triple("3f800000", "3f800001", "bf800000"),
+            Triple("7f800000", "7f800001", "ff800000"),
+            Triple("7fc00001", "7fc00002", "ffc00001"),
+            Triple("7fc00002", "7fc00003", "ffc00002"),
         )
         val migration = FloatingPointStorageMigration(1u, ReleasedFloatingModel, Metadata(), null)
-        for ((bits, released) in doubles) {
+        for ((bits, released, current) in doubles) {
             val qualifier = ReleasedFloatingModel.double.ref().toStorageByteArray()
             val encoded = migration.convertCell(ByteArray(16), qualifier, byteArrayOf(1) + released.hexToByteArray()).value
+            assertContentEquals(byteArrayOf(1) + current.hexToByteArray(), encoded)
             var offset = 1
-            assertEquals(bits.toULong(16).toLong(), NumberDefinition(type = Float64).readStorageBytes(8) { encoded[offset++] }.toRawBits())
+            val decoded = NumberDefinition(type = Float64).readStorageBytes(8) { encoded[offset++] }
+            val sourceBits = bits.toULong(16).toLong()
+            assertEquals(Double.fromBits(sourceBits).toBits(), decoded.toBits())
+            if (supportsRawNaNPayloads) assertEquals(sourceBits, decoded.toRawBits())
             assertContentEquals(qualifier + encoded, migration.convertUnique(qualifier + byteArrayOf(1) + released.hexToByteArray()))
         }
-        for ((bits, released) in floats) {
+        for ((bits, released, current) in floats) {
             val qualifier = ReleasedFloatingModel.float.ref().toStorageByteArray()
             val encoded = migration.convertCell(ByteArray(16), qualifier, byteArrayOf(1) + released.hexToByteArray()).value
+            assertContentEquals(byteArrayOf(1) + current.hexToByteArray(), encoded)
             var offset = 1
-            assertEquals(bits.toUInt(16).toInt(), NumberDefinition(type = Float32).readStorageBytes(4) { encoded[offset++] }.toRawBits())
+            val decoded = NumberDefinition(type = Float32).readStorageBytes(4) { encoded[offset++] }
+            val sourceBits = bits.toUInt(16).toInt()
+            assertEquals(Float.fromBits(sourceBits).toBits(), decoded.toBits())
+            if (supportsRawNaNPayloads) assertEquals(sourceBits, decoded.toRawBits())
             assertContentEquals(qualifier + encoded, migration.convertUnique(qualifier + byteArrayOf(1) + released.hexToByteArray()))
         }
     }

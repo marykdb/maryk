@@ -125,6 +125,13 @@ containing floating-point fields use the new bytes in serialization too; old
 IndexedDB logs are converted at opening, backup format 3 rejects older backups,
 and affected remote models require a matching value-object format.
 
+Raw NaN payloads are retained in stored bytes and byte-to-byte opening migrations.
+JavaScript engines can canonicalize a NaN when it crosses a `Number` return,
+object or collection boundary. The `Float`/`Double` API cannot recover payload
+bits already lost by the runtime; payload-specific primitive comparisons and
+unique values therefore require a runtime that preserves those bits. Signed zero
+and finite-value identity remain distinct on every target.
+
 Examples:
 
 ```

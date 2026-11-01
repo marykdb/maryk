@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.initInt
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
@@ -54,22 +55,29 @@ fun IsPropertyDefinition<*>.convertLegacyFloatingPointBytes(bytes: ByteArray): B
     return when (definition) {
         is NumberDefinition<*> -> {
             if (definition.type != Float32 && definition.type != Float64) return bytes
+            val width = if (definition.type == Float32) 4 else 8
+            require(bytes.size == width) { "Invalid legacy Float${width * 8} width" }
             val source = if (definition.reversedStorage == true) ByteArray(bytes.size) { bytes[it].toInt().inv().toByte() } else bytes
             var offset = 0
+            val result = ByteArray(bytes.size)
+            var writeOffset = 0
+            val write: (Byte) -> Unit = { byte ->
+                result[writeOffset++] = if (definition.reversedStorage == true) byte.toInt().inv().toByte() else byte
+            }
+            // Stay in integer space: decoding through a JS Number can destroy a NaN payload.
             when (definition.type) {
                 Float32 -> {
-                    require(bytes.size == 4) { "Invalid legacy Float32 width" }
                     val old = initInt({ source[offset++] }) - 1
                     val bits = old xor (old.inv() shr 31 or Int.MIN_VALUE)
-                    NumberDefinition(type = Float32, reversedStorage = definition.reversedStorage).toStorageBytes(Float.fromBits(bits))
+                    (if (bits < 0) bits.inv() else bits xor Int.MIN_VALUE).toUInt().writeBytes(write)
                 }
                 else -> {
-                    require(bytes.size == 8) { "Invalid legacy Float64 width" }
                     val old = initLong({ source[offset++] }) - 1
                     val bits = old xor (old.inv() shr 63 or Long.MIN_VALUE)
-                    NumberDefinition(type = Float64, reversedStorage = definition.reversedStorage).toStorageBytes(Double.fromBits(bits))
+                    (if (bits < 0) bits.inv() else bits xor Long.MIN_VALUE).toULong().writeBytes(write)
                 }
             }
+            result
         }
         is ValueObjectDefinition<*, *> -> {
             require(bytes.size == definition.byteSize) { "Invalid legacy value-object width" }

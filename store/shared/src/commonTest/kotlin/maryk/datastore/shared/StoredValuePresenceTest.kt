@@ -7,6 +7,8 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
+import maryk.test.distinctFloat32Fixtures
+import maryk.test.distinctFloat64Fixtures
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -37,9 +39,15 @@ class StoredValuePresenceTest {
         val double = NumberDefinition(type = Float64)
         val float = NumberDefinition(type = Float32)
         assertTrue(areSameStoredScalarValues(double, 1.5, 1.5))
-        assertFalse(areSameStoredScalarValues(double, Double.fromBits(0x7ff8000000000001L), Double.fromBits(0x7ff8000000000002L)))
-        assertTrue(areSameStoredScalarValues(double, Double.fromBits(0x7ff8000000000001L), Double.fromBits(0x7ff8000000000001L)))
-        assertFalse(areSameStoredScalarValues(float, Float.fromBits(0x7fc00001), Float.fromBits(0x7fc00002)))
-        assertTrue(areSameStoredScalarValues(float, Float.fromBits(0x7fc00001), Float.fromBits(0x7fc00001)))
+        for ((left, right) in distinctFloat64Fixtures) {
+            assertFalse(areSameStoredScalarValues(double, left, right))
+            assertTrue(areSameStoredScalarValues(double, left, left))
+        }
+        for ((left, right) in distinctFloat32Fixtures) {
+            assertFalse(areSameStoredScalarValues(float, left, right))
+            assertTrue(areSameStoredScalarValues(float, left, left))
+        }
+        assertTrue(areSameStoredScalarValues(double, Double.NaN, Double.NaN))
+        assertTrue(areSameStoredScalarValues(float, Float.NaN, Float.NaN))
     }
 }

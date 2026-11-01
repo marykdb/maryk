@@ -10,6 +10,8 @@ import maryk.core.properties.definitions.set
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.query.pairs.with
+import maryk.test.distinctFloat32Fixtures
+import maryk.test.distinctFloat64Fixtures
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -26,40 +28,53 @@ private object FloatingFilterValues : RootDataModel<FloatingFilterValues>() {
 class FloatingFilterIdentityTest {
     @Test
     fun ordinaryFloatingEqualityAndValueInUseTheDeclaredStorageWidth() {
-        val doubleA = Double.fromBits(0x7ff8000000000001L)
-        val doubleB = Double.fromBits(0x7ff8000000000002L)
-        val floatA = Float.fromBits(0x7fc00001)
-        val floatB = Float.fromBits(0x7fc00002)
-        val values = FloatingFilterValues.create { double with doubleA; float with floatA }
-        assertTrue(values.matches(Equals(FloatingFilterValues.ref { double } with doubleA)))
-        assertFalse(values.matches(Equals(FloatingFilterValues.ref { double } with doubleB)))
-        assertTrue(values.matches(ValueIn(FloatingFilterValues.ref { double } with setOf(doubleA))))
-        assertFalse(values.matches(ValueIn(FloatingFilterValues.ref { double } with setOf(doubleB))))
-        assertTrue(values.matches(Equals(FloatingFilterValues.ref { float } with floatA)))
-        assertFalse(values.matches(Equals(FloatingFilterValues.ref { float } with floatB)))
-        assertTrue(values.matches(ValueIn(FloatingFilterValues.ref { float } with setOf(floatA))))
-        assertFalse(values.matches(ValueIn(FloatingFilterValues.ref { float } with setOf(floatB))))
-        assertTrue(values.matches(Not(Equals(FloatingFilterValues.ref { double } with doubleB))))
-        val zero = FloatingFilterValues.create { double with 0.0; float with 0.0f }
-        assertFalse(zero.matches(Equals(FloatingFilterValues.ref { double } with -0.0)))
-        assertFalse(zero.matches(Equals(FloatingFilterValues.ref { float } with -0.0f)))
+        for ((doubles, floats) in distinctFloat64Fixtures.zip(distinctFloat32Fixtures)) {
+            val (doubleA, doubleB) = doubles
+            val (floatA, floatB) = floats
+            val values = FloatingFilterValues.create { double with doubleA; float with floatA }
+            assertTrue(values.matches(Equals(FloatingFilterValues.ref { double } with doubleA)))
+            assertFalse(values.matches(Equals(FloatingFilterValues.ref { double } with doubleB)))
+            assertTrue(values.matches(ValueIn(FloatingFilterValues.ref { double } with setOf(doubleA))))
+            assertFalse(values.matches(ValueIn(FloatingFilterValues.ref { double } with setOf(doubleB))))
+            assertTrue(values.matches(Equals(FloatingFilterValues.ref { float } with floatA)))
+            assertFalse(values.matches(Equals(FloatingFilterValues.ref { float } with floatB)))
+            assertTrue(values.matches(ValueIn(FloatingFilterValues.ref { float } with setOf(floatA))))
+            assertFalse(values.matches(ValueIn(FloatingFilterValues.ref { float } with setOf(floatB))))
+            assertTrue(values.matches(Not(Equals(FloatingFilterValues.ref { double } with doubleB))))
+            val zero = FloatingFilterValues.create { double with 0.0; float with 0.0f }
+            assertFalse(zero.matches(Equals(FloatingFilterValues.ref { double } with -0.0)))
+            assertFalse(zero.matches(Equals(FloatingFilterValues.ref { float } with -0.0f)))
+        }
     }
 
     @Test
     fun ordinaryListAndMapValuesKeepRawIdentityInAggregateAndScalarCallbacks() {
-        val valueA = Double.fromBits(0x7ff8000000000001L)
-        val valueB = Double.fromBits(0x7ff8000000000002L)
-        val values = FloatingFilterValues.create { sequence with listOf(valueA); mapped with mapOf("value" to valueA) }
-        assertTrue(values.matches(Equals(FloatingFilterValues.ref { sequence } with listOf(valueA))))
-        assertFalse(values.matches(Equals(FloatingFilterValues.ref { sequence } with listOf(valueB))))
-        assertTrue(values.matches(Equals(FloatingFilterValues.ref { sequence.any() } with valueA)))
-        assertFalse(values.matches(Equals(FloatingFilterValues.ref { sequence.any() } with valueB)))
-        assertTrue(values.matches(Equals(FloatingFilterValues.ref { mapped at "value" } with valueA)))
-        assertFalse(values.matches(Equals(FloatingFilterValues.ref { mapped at "value" } with valueB)))
-        assertFalse(values.matches(Equals(FloatingFilterValues.ref { mapped.anyValue() } with valueB)))
-        val ref = FloatingFilterValues.ref { mapped.anyValue() }
-        assertFalse(matchesFilter(Equals(ref with valueB), { _, matcher -> matcher(valueA) }))
-        assertFalse(matchesFilter(Equals(ref with valueB), { _, matcher -> matcher(listOf(valueA)) }))
+        for ((valueA, valueB) in distinctFloat64Fixtures) {
+            val values = FloatingFilterValues.create { sequence with listOf(valueA); mapped with mapOf("value" to valueA) }
+            assertTrue(values.matches(Equals(FloatingFilterValues.ref { sequence } with listOf(valueA))))
+            assertFalse(values.matches(Equals(FloatingFilterValues.ref { sequence } with listOf(valueB))))
+            assertTrue(values.matches(Equals(FloatingFilterValues.ref { sequence.any() } with valueA)))
+            assertFalse(values.matches(Equals(FloatingFilterValues.ref { sequence.any() } with valueB)))
+            assertTrue(values.matches(Equals(FloatingFilterValues.ref { mapped at "value" } with valueA)))
+            assertFalse(values.matches(Equals(FloatingFilterValues.ref { mapped at "value" } with valueB)))
+            assertFalse(values.matches(Equals(FloatingFilterValues.ref { mapped.anyValue() } with valueB)))
+            val ref = FloatingFilterValues.ref { mapped.anyValue() }
+            assertFalse(matchesFilter(Equals(ref with valueB), { _, matcher -> matcher(valueA) }))
+            assertFalse(matchesFilter(Equals(ref with valueB), { _, matcher -> matcher(listOf(valueA)) }))
+        }
+    }
+
+    @Test
+    fun canonicalNanMatchesAcrossScalarAndCollectionCallbacks() {
+        val values = FloatingFilterValues.create {
+            double with Double.NaN
+            float with Float.NaN
+            sequence with listOf(Double.NaN)
+        }
+        assertTrue(values.matches(Equals(FloatingFilterValues.ref { double } with Double.NaN)))
+        assertTrue(values.matches(ValueIn(FloatingFilterValues.ref { double } with setOf(Double.NaN))))
+        assertTrue(values.matches(Equals(FloatingFilterValues.ref { float } with Float.NaN)))
+        assertTrue(values.matches(Equals(FloatingFilterValues.ref { sequence.any() } with Double.NaN)))
     }
 
     @Test

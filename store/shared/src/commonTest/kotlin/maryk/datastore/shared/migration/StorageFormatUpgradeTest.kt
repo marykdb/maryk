@@ -13,7 +13,6 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.map
 import maryk.core.properties.types.numeric.Float64
-import maryk.datastore.test.legacyFloatBytes
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -289,8 +288,9 @@ class StorageFormatUpgradeTest {
     fun collidingLegacyNanCollectionKeysFailBeforeAnySourceRowsMove() = runTest {
         val store = Store(NanQualifierModel)
         val prefix = NanQualifierModel.values.ref().toStorageByteArray() + byteArrayOf(8)
-        val first = prefix + legacyFloatBytes(Double.fromBits(0x7ff8000000000001L))
-        val second = prefix + legacyFloatBytes(Double.NaN)
+        // Literal released bytes must stay distinct even when the JS engine canonicalizes NaN Numbers.
+        val first = prefix + "7ff8000000000002".hexToByteArray()
+        val second = prefix + "7ff8000000000001".hexToByteArray()
         store.data[first.toHexString()] = first to byteArrayOf(10)
         store.data[second.toHexString()] = second to byteArrayOf(11)
         assertFailsWith<MigrationException> { store.upgradeStorageFormat() }

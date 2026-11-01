@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.test.transportNaNFixture
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -95,7 +96,7 @@ class NestedCompositionIntegrityTest {
     private val first = CompositionLeaf.create(setDefaults = false) {
         first with "retained"
         items with listOf("before")
-        floating with Double.fromBits(0x7ff8000000000001L)
+        floating with transportNaNFixture
     }
     private val second = CompositionLeaf.create(setDefaults = false) {
         second with 42
@@ -105,7 +106,7 @@ class NestedCompositionIntegrityTest {
         first with "retained"
         second with 42
         items with listOf("before", "after")
-        floating with Double.fromBits(0x7ff8000000000001L)
+        floating with transportNaNFixture
     }
 
     @Test
@@ -125,7 +126,7 @@ class NestedCompositionIntegrityTest {
         assertEquals(leafCase(expected), read { typed })
         assertEquals(innerCase(leafCase(expected)), read { nested })
         val embedded = read { embedded }!!
-        assertEquals(0x7ff8000000000001L, embedded { floating }!!.toRawBits())
+        assertEquals(transportNaNFixture.toRawBits(), embedded { floating }!!.toRawBits())
     }
 
     @Test

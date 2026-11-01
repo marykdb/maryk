@@ -27,6 +27,8 @@ import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
+import maryk.test.distinctFloat32Fixtures
+import maryk.test.distinctFloat64Fixtures
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -45,12 +47,9 @@ private object RawUniqueRecord : RootDataModel<RawUniqueRecord>() {
 }
 
 class FloatingUniqueIdentityTest {
-    private val doubles = listOf(0x7ff8000000000001L, 0x7ff8000000000002L, 0x7ff8000000000003L).map(Double::fromBits)
-    private val floats = listOf(0x7fc00001, 0x7fc00002, 0x7fc00003).map(Float::fromBits)
-
     @Test
     fun float64UniqueClaimsRetainRawPayloadsThroughTheirLifecycle() = runTest {
-        exerciseLifecycle(doubles,
+        for (doubles in distinctFloat64Fixtures) exerciseLifecycle(doubles,
             create = { value -> RawUniqueRecord.create { double with value } },
             change = { value -> Change(RawUniqueRecord.ref { double } with value) },
             filter = { value -> Equals(RawUniqueRecord.ref { double } with value) },
@@ -60,7 +59,7 @@ class FloatingUniqueIdentityTest {
 
     @Test
     fun float32UniqueClaimsRetainRawPayloadsThroughTheirLifecycle() = runTest {
-        exerciseLifecycle(floats,
+        for (floats in distinctFloat32Fixtures) exerciseLifecycle(floats,
             create = { value -> RawUniqueRecord.create { float with value } },
             change = { value -> Change(RawUniqueRecord.ref { float } with value) },
             filter = { value -> Equals(RawUniqueRecord.ref { float } with value) },
@@ -70,7 +69,7 @@ class FloatingUniqueIdentityTest {
 
     @Test
     fun replacingEmbeddedAndMapSubtreesTransfersRawFloat64Claims() = runTest {
-        for (inMap in listOf(false, true)) {
+        for (doubles in distinctFloat64Fixtures) for (inMap in listOf(false, true)) {
             fun child(value: Double) = RawUniqueDetails.create { double with value }
             exerciseReplacement(doubles,
                 create = { value -> RawUniqueRecord.create {
@@ -88,7 +87,7 @@ class FloatingUniqueIdentityTest {
 
     @Test
     fun replacingEmbeddedAndMapSubtreesTransfersRawFloat32Claims() = runTest {
-        for (inMap in listOf(false, true)) {
+        for (floats in distinctFloat32Fixtures) for (inMap in listOf(false, true)) {
             fun child(value: Float) = RawUniqueDetails.create { float with value }
             exerciseReplacement(floats,
                 create = { value -> RawUniqueRecord.create {

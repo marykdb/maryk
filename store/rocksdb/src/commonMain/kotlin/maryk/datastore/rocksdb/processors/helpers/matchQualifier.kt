@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors.helpers
 
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
@@ -11,16 +10,14 @@ import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.SimpleTypedValueReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.MapAnyKeyReference
-import maryk.core.properties.references.SetAnyValueReference
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.helpers.matchedQualifier
+import maryk.datastore.shared.helpers.readFuzzyValue
 import maryk.datastore.shared.requiresStoredReferenceStructure
 import maryk.datastore.shared.hasStoredValuePayload
-import maryk.datastore.shared.isSkippableDataError
-import maryk.datastore.shared.rethrowIfFatal
 import maryk.rocksdb.ReadOptions
 
 /**
@@ -147,7 +144,7 @@ private fun <T : Any> DBAccessor.matchQualifierWithReader(
                         val matches = when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
                             null -> {
                                 @Suppress("UNCHECKED_CAST")
-                                val value = readFuzzyValue(reference, referenceBytes, refOffset, refLength)
+                                val value = (readFuzzyValue(reference, referenceBytes, refOffset, refLength) as T?)
                                     ?: if (requiresStoredReferenceStructure(actualReference)) {
                                         readFilterStructure(columnFamilies, readOptions, key.copyOfRange(keyOffset, keyOffset + keyLength), actualReference, toVersion, null) as T?
                                     } else getValue(columnFamilies, readOptions, toVersion,
@@ -176,60 +173,6 @@ private fun <T : Any> DBAccessor.matchQualifierWithReader(
             }
             return result == true
         }
-    }
-}
-
-private fun matchedQualifier(
-    key: ByteArray,
-    keyOffset: Int,
-    keyLength: Int,
-    referenceBytes: ByteArray,
-    refOffset: Int,
-    refLength: Int
-): ByteArray {
-    val qualifier = ByteArray(keyLength + refLength)
-    key.copyInto(qualifier, 0, keyOffset, keyOffset + keyLength)
-    referenceBytes.copyInto(qualifier, keyLength, refOffset, refOffset + refLength)
-    return qualifier
-}
-
-private fun <T : Any> readFuzzyValue(
-    reference: IsPropertyReference<T, *, *>,
-    referenceBytes: ByteArray,
-    refOffset: Int,
-    refLength: Int
-): T? {
-    val refEnd = refOffset + refLength
-
-    return try {
-        when (reference) {
-            is MapAnyKeyReference<*, *, *> -> {
-                val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
-                var readIndex = refOffset + parentLength
-                if (readIndex >= refEnd) return null
-
-                val keyLength = initIntByVar { referenceBytes[readIndex++] }
-                if (readIndex + keyLength > refEnd) return null
-
-                @Suppress("UNCHECKED_CAST")
-                (reference as MapAnyKeyReference<Any, Any, *>).readStorageBytes(keyLength) { referenceBytes[readIndex++] } as T
-            }
-            is SetAnyValueReference<*, *> -> {
-                val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
-                var readIndex = refOffset + parentLength
-                if (readIndex >= refEnd) return null
-
-                val valueLength = initIntByVar { referenceBytes[readIndex++] }
-                if (readIndex + valueLength > refEnd) return null
-
-                @Suppress("UNCHECKED_CAST")
-                (reference as SetAnyValueReference<Any, *>).readStorageBytes(valueLength) { referenceBytes[readIndex++] } as T
-            }
-            else -> null
-        }
-    } catch (error: Throwable) {
-        error.rethrowIfFatal()
-        if (error.isSkippableDataError()) null else throw error
     }
 }
 

@@ -151,10 +151,17 @@ class StorageFormatUpgradeTest {
         }
 
         override suspend fun get(namespace: Int, key: ByteArray) = tables[namespace][key.toHexString()]?.value
-        override suspend fun scan(namespace: Int, after: ByteArray?, limit: UInt) =
-            tables[namespace].values.sortedBy { it.key.toHexString() }
-                .filter { after == null || it.key.toHexString() > after.toHexString() }
+        override suspend fun scan(namespace: Int, after: ByteArray?, limit: UInt): List<StorageFormatRow> {
+            val afterKey = after?.toHexString()
+            // Reuse the map's encoded keys instead of encoding every comparison during
+            // exhaustive crash recovery. Hex ordering preserves unsigned byte ordering.
+            return tables[namespace].entries.asSequence()
+                .filter { afterKey == null || it.key > afterKey }
+                .sortedBy { it.key }
                 .take(limit.toInt())
+                .map { it.value }
+                .toList()
+        }
 
         override suspend fun convert(namespace: Int, row: StorageFormatRow): StorageFormatRow {
             val index = row.key.single().toUByte().toInt()

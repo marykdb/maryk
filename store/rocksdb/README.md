@@ -166,3 +166,21 @@ When passing caller-owned `rocksDBOptions`, Maryk preserves its write-buffer
 manager and statistics configuration. Configure those resources on the supplied
 options and retain them until the store closes. The shared table cache still
 uses `tuning.blockCacheBytes`.
+
+Migration, repair, and index-building reads avoid inserting scanned data blocks
+into the application cache. RocksDB may still cache small index/table metadata. Bounded prefix predicates preserve the request snapshot and pending
+transaction writes; historic comparator scans retain their own boundary logic.
+Iterator read failures propagate instead of appearing as successful exhaustion.
+
+`diagnostics()` returns approximate memory accounting, cache usage and pins,
+compaction backlog, immutable memtables, write-stop state, and cumulative cache
+and write-stall counters when Maryk owns the statistics configuration.
+`verifyStorageChecksums()` checks RocksDB's SST files on the IO dispatcher and throws on corruption.
+Call these while the store is open and coordinate them with store shutdown.
+
+`storageDiagnostics()` samples live SST file count/bytes, bytes by LSM level, and
+WAL file count/bytes on the IO dispatcher. These are separate live inventories,
+not an atomic filesystem snapshot or total directory size: obsolete files and
+other metadata are not included. WAL usage can remain significant even when SST
+compression is effective. Pinned cache usage may also include write-buffer
+reservations after application iterators have closed.

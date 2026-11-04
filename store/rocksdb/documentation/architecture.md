@@ -35,15 +35,15 @@ If `keepAllVersions = true`:
 Column family names are compact byte arrays: first byte is the `TableType` (1..8), followed by the varint-encoded model id. See `TableType.getDescriptor`.
 
 RocksDB options:
-- Checked iterators report native status on exhaustion and before closing.
-- Transactional range/prefix deletion uses total-order iterators and checks iterator status before staging each bounded batch of deletes. This includes pending writes and supports savepoint rollback without relying on non-transactional range tombstones.
-- Maintenance iterators and record reads disable cache filling. Request snapshots retain normal cache behavior. Eligible bytewise prefix predicates use scoped native iterator bounds, while historic comparator predicates keep their existing boundary checks.
-- Presence-only index and migration-marker checks use exact `keyExists` reads, avoiding value copies. Transactional checks retain transaction reads for pending-write visibility, conflict tracking, and atomic work accounting. `keyMayExist` is not treated as proof of presence.
-- Sequential readers explicitly enable RocksDB's total-order seeks, including snapshot readers, so scans can cross model-key prefixes. Record-local readers retain prefix-restricted seeks.
 - All column families share an explicitly owned LRU cache. Default-owned DB options also attach a shared write-buffer manager and statistics; caller-supplied DB options retain ownership of those settings. `RocksDBTuning` provides resource budgets without changing the existing `open` signature.
+- Maintenance iterators and record reads disable cache filling. Request snapshots retain normal cache behavior. Eligible bytewise prefix predicates use scoped native iterator bounds, while historic comparator predicates keep their existing boundary checks.
+- Checked iterators report native status on exhaustion and before closing. Diagnostics expose approximate memory accounting, cache counters, compaction backlog and write stalls; checksum verification runs on the IO dispatcher.
 - Column families use LZ4 compression, with Zstandard for the bottommost level. Each existing SST retains its own codec metadata; settings apply to new flush/compaction output without rewriting files at open. The bindings retain the codecs needed to read older Snappy and uncompressed files.
 - `Table` and `HistoricTable` use a fixed-length prefix extractor sized to the model key for efficient key‑range scans.
 - `Historic*` families use `VersionedComparator`, which sorts by key/qualifier first and version second, so qualifiers stay grouped.
+- Presence-only index and migration-marker checks use exact `keyExists` reads, avoiding value copies. Transactional checks retain transaction reads for pending-write visibility, conflict tracking, and atomic work accounting. `keyMayExist` is not treated as proof of presence.
+- Sequential readers explicitly enable RocksDB's total-order seeks, including snapshot readers, so scans can cross model-key prefixes. Record-local readers retain prefix-restricted seeks.
+- Transactional range/prefix deletion uses total-order iterators and checks iterator status before staging each bounded batch of deletes. This includes pending writes and supports savepoint rollback without relying on non-transactional range tombstones.
 
 ## Keys, Qualifiers, and Values
 

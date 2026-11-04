@@ -21,6 +21,51 @@ import kotlin.test.assertTrue
 
 class RocksDBOptimizationTest {
     @Test
+    fun budgetsDiagnosticsAndMaintenanceReads() = runTest {
+        val folder = createTestDBFolder("optimized-resources")
+        val store = RocksDBDataStore.open(
+            tuning = RocksDBTuning(blockCacheBytes = 16L * 1024 * 1024, memtableBudgetBytes = 4L * 1024 * 1024),
+            relativePath = folder, dataModelsById = mapOf(1u to Log), keepAllVersions = true,
+        )
+        try {
+            val families = store.getColumnFamilies(1u)
+            assertFalse(store.maintenanceReadOptions.fillCache())
+            assertTrue(store.maintenanceReadOptions.totalOrderSeek())
+            store.createReadContext().use { assertTrue(it.sequentialReadOptions.fillCache()) }
+            repeat(1000) { store.db.put(families.keys, probeKey(it * 2), ByteArray(64)) }
+            FlushOptions().setWaitForFlush(true).use { store.db.flush(it, families.keys) }
+            repeat(1000) { assertFalse(store.db.keyExists(families.keys, probeKey(it * 2 + 1))) }
+            val diagnostics = store.diagnostics()
+            assertTrue(diagnostics.memtableBudgetManaged)
+            assertEquals(16L * 1024 * 1024, diagnostics.blockCacheCapacityBytes)
+            assertTrue(diagnostics.memtableBytes >= 0)
+            assertTrue(diagnostics.pendingCompactionBytes >= 0)
+            assertTrue(diagnostics.blockCacheUsageBytes > 0)
+            store.verifyStorageChecksums()
+        } finally {
+            store.close()
+            deleteFolder(folder)
+        }
+        assertFailsWith<IllegalStateException> { store.diagnostics() }
+        assertFailsWith<IllegalStateException> { store.verifyStorageChecksums() }
+    }
+
+    @Test
+    fun customDbOptionsRetainCallerOwnership() = runTest {
+        val folder = createTestDBFolder("optimized-custom-options")
+        DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true).use { options ->
+            val store = RocksDBDataStore.open(relativePath = folder, dataModelsById = mapOf(1u to Log), rocksDBOptions = options)
+            try {
+                assertFalse(store.diagnostics().memtableBudgetManaged)
+            } finally {
+                store.close()
+            }
+            assertTrue(options.isOwningHandle())
+        }
+        deleteFolder(folder)
+    }
+
+    @Test
     fun boundedIterationPreservesSnapshotsAndPendingWrites() = runTest {
         val folder = createTestDBFolder("bounded-snapshot")
         val store = RocksDBDataStore.open(relativePath = folder, dataModelsById = mapOf(1u to Log))
@@ -90,4 +135,6 @@ class RocksDBOptimizationTest {
             deleteFolder(folder)
         }
     }
+
+    private fun probeKey(index: Int) = "probe-${index.toString().padStart(6, '0')}".encodeToByteArray()
 }

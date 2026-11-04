@@ -1636,6 +1636,53 @@ class RocksDBDataStore private constructor(
         return true
     }
 
+    /** Call while the store is open; counters are cumulative and are not reset by sampling. */
+    fun diagnostics(): RocksDBDiagnostics {
+        check(!resourcesClosed.value) { "Datastore is closed" }
+        val memory = approximateMemoryUsage(listOf(db), listOf(blockCache.cache))
+        fun sum(property: String) = storageUpgradeHandles.sumOf { db.getLongProperty(it, property) }
+        val counters = ownStatistics?.let { statistics ->
+            mapOf(
+                "blockCacheHits" to statistics.getTickerCount(TickerType.BLOCK_CACHE_HIT),
+                "blockCacheMisses" to statistics.getTickerCount(TickerType.BLOCK_CACHE_MISS),
+                "writeStallMicros" to statistics.getTickerCount(TickerType.STALL_MICROS),
+            )
+        } ?: emptyMap()
+        return RocksDBDiagnostics(
+            blockCacheCapacityBytes = tuning.blockCacheBytes,
+            blockCacheUsageBytes = blockCache.cache.getUsage(),
+            blockCachePinnedBytes = blockCache.cache.getPinnedUsage(),
+            memtableBytes = memory.getValue(MemoryUsageType.kMemTableTotal),
+            unflushedMemtableBytes = memory.getValue(MemoryUsageType.kMemTableUnFlushed),
+            tableReaderBytes = memory.getValue(MemoryUsageType.kTableReadersTotal),
+            pendingCompactionBytes = sum("rocksdb.estimate-pending-compaction-bytes"),
+            immutableMemtables = sum("rocksdb.num-immutable-mem-table"),
+            writeStopped = storageUpgradeHandles.any { db.getLongProperty(it, "rocksdb.is-write-stopped") != 0L },
+            memtableBudgetManaged = managesMemtableBudget,
+            counters = counters,
+        )
+    }
+
+    /** Samples disk inventories on the IO dispatcher without scanning application records. */
+    suspend fun storageDiagnostics(): RocksDBStorageDiagnostics = withContext(Dispatchers.IO) {
+        check(!resourcesClosed.value) { "Datastore is closed" }
+        val files = db.getLiveFilesMetaData()
+        val logs = db.getSortedWalFiles()
+        RocksDBStorageDiagnostics(
+            liveSstFiles = files.size,
+            liveSstBytes = files.sumOf { it.size() },
+            liveSstBytesByLevel = files.groupBy { it.level() }.mapValues { (_, levelFiles) -> levelFiles.sumOf { it.size() } },
+            walFiles = logs.size,
+            walBytes = logs.sumOf { it.sizeFileBytes() },
+        )
+    }
+
+    /** Checks the SST files currently owned by RocksDB; corruption is reported as an exception. */
+    suspend fun verifyStorageChecksums() = withContext(Dispatchers.IO) {
+        check(!resourcesClosed.value) { "Datastore is closed" }
+        db.verifyChecksum()
+    }
+
     fun pendingMigrations(): Map<UInt, String> = pendingMigrationsInternal()
 
     fun migrationStatus(modelId: UInt): MigrationRuntimeStatus = migrationStatusInternal(modelId)

@@ -35,6 +35,8 @@ If `keepAllVersions = true`:
 Column family names are compact byte arrays: first byte is the `TableType` (1..8), followed by the varint-encoded model id. See `TableType.getDescriptor`.
 
 RocksDB options:
+- All column families share an explicitly owned LRU cache. Default-owned DB options also attach a shared write-buffer manager and statistics; caller-supplied DB options retain ownership of those settings. `RocksDBTuning` provides resource budgets without changing the existing `open` signature.
+- Column families use LZ4 compression, with Zstandard for the bottommost level. Each existing SST retains its own codec metadata; settings apply to new flush/compaction output without rewriting files at open. The bindings retain the codecs needed to read older Snappy and uncompressed files.
 - `Table` and `HistoricTable` use a fixed-length prefix extractor sized to the model key for efficient key‑range scans.
 - `Historic*` families use `VersionedComparator`, which sorts by key/qualifier first and version second, so qualifiers stay grouped.
 

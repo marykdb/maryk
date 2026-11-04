@@ -72,6 +72,19 @@ For a deeper dive into how data is laid out and how queries execute, check the [
 - `keepAllVersions`: Keep historic table/index/unique column families for time-travel and change-history reads.
 - `keepUpdateHistoryIndex`: Add an `UpdateHistory` column family keyed by change version + key for historical paging. `ScanUpdates` may select records through this index, but its emitted synchronization events remain chronological.
 
+## Compression
+
+Column families use LZ4 for general compression and Zstandard for the bottommost
+level, following [RocksDB's compression guidance](https://github.com/facebook/rocksdb/wiki/Compression)
+for balancing CPU and storage costs. This is
+a general-purpose default, not a measured optimum for every workload.
+
+Existing Snappy-compressed and uncompressed SST files remain readable. No rewrite
+is required to open a store: new flushes and normal compactions gradually apply
+the new settings. No compression migration or forced compaction runs at startup.
+Any other binary opening newly written files must also support LZ4 and Zstandard;
+this does not guarantee downgrade compatibility with older codec-limited builds.
+
 ## Update history
 
 For finite, newest-first revision pages, use `getUpdateHistory(key, ...)` or
@@ -140,3 +153,16 @@ application schema migrations. Stop old writers, retain a recoverable source cop
 and read the [storage upgrade guide](../shared/docs/storage-format-upgrades.md)
 before rollout. Some legacy collection/allocation states require authoritative
 recovery; do not remove upgrade metadata to bypass a failure.
+
+## Resource budgets and diagnostics
+
+`open(...)` retains its existing signature. To tune resources, use the overload
+with `tuning = RocksDBTuning(...)`. Defaults share a 64 MiB LRU block cache across
+all column families and use a 32 MiB write-buffer budget. Memtable reservations
+are charged to that cache; these numbers must not be summed as independent
+allocations. They are engine budgets, not a strict process-memory limit.
+
+When passing caller-owned `rocksDBOptions`, Maryk preserves its write-buffer
+manager and statistics configuration. Configure those resources on the supplied
+options and retain them until the store closes. The shared table cache still
+uses `tuning.blockCacheBytes`.

@@ -190,6 +190,13 @@ import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.Statistics
+import maryk.rocksdb.TickerType
+import maryk.rocksdb.MemoryUsageType
+import maryk.rocksdb.approximateMemoryUsage
+import maryk.rocksdb.getSortedWalFiles
+import maryk.rocksdb.StatsLevel
+import maryk.rocksdb.setWriteBufferManager
 import maryk.rocksdb.OptimisticTransactionDB
 import maryk.rocksdb.Options
 import maryk.rocksdb.WriteOptions
@@ -211,6 +218,7 @@ class RocksDBDataStore private constructor(
     val versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
     val fieldEncryptionProvider: FieldEncryptionProvider? = null,
     maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
+    private val tuning: RocksDBTuning = RocksDBTuning(),
 ) : AbstractDataStore(
     dataModelsById = dataModelsById,
     coroutineContext = Dispatchers.IO,
@@ -260,12 +268,19 @@ class RocksDBDataStore private constructor(
     private val indexKeyFormatMigrationMutex = Mutex()
     private val storeMetaMutex = Mutex()
 
-    private val blockCache = RocksDBBlockCache()
+    private val blockCache = RocksDBBlockCache(tuning)
+    private val ownStatistics = if (rocksDBOptions == null && tuning.enableStatistics) Statistics().apply {
+        setStatsLevel(StatsLevel.EXCEPT_DETAILED_TIMERS)
+    } else null
+    private val managesMemtableBudget = rocksDBOptions == null
 
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
     private val ownRocksDBOptions: DBOptions? =
         if (rocksDBOptions == null) {
-            DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true)
+            DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true).apply {
+                setWriteBufferManager(blockCache.writeBufferManager)
+                ownStatistics?.let { setStatistics(it) }
+            }
         } else null
 
     internal val db: OptimisticTransactionDB
@@ -306,6 +321,7 @@ class RocksDBDataStore private constructor(
         } catch (throwable: Throwable) {
             ownRocksDBOptions?.close()
             blockCache.close()
+            ownStatistics?.close()
             throw throwable
         }
 
@@ -1264,6 +1280,7 @@ class RocksDBDataStore private constructor(
         defaultReadOptions.close()
         sequentialReadOptions.close()
         ownRocksDBOptions?.close()
+        ownStatistics?.close()
     }
 
     internal fun getColumnFamilies(dbIndex: UInt) =
@@ -1698,6 +1715,29 @@ class RocksDBDataStore private constructor(
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
             maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
         ): RocksDBDataStore {
+            return open(
+                tuning = RocksDBTuning(), keepAllVersions = keepAllVersions,
+                keepUpdateHistoryIndex = keepUpdateHistoryIndex, relativePath = relativePath,
+                dataModelsById = dataModelsById, rocksDBOptions = rocksDBOptions,
+                onlyCheckModelVersion = onlyCheckModelVersion, migrationConfiguration = migrationConfiguration,
+                versionUpdateHandler = versionUpdateHandler, fieldEncryptionProvider = fieldEncryptionProvider,
+                maxConcurrentReads = maxConcurrentReads,
+            )
+        }
+
+        suspend fun open(
+            tuning: RocksDBTuning,
+            keepAllVersions: Boolean = true,
+            keepUpdateHistoryIndex: Boolean = false,
+            relativePath: String,
+            dataModelsById: Map<UInt, IsRootDataModel>,
+            rocksDBOptions: DBOptions? = null,
+            onlyCheckModelVersion: Boolean = false,
+            migrationConfiguration: MigrationConfiguration<RocksDBDataStore> = MigrationConfiguration(),
+            versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
+            fieldEncryptionProvider: FieldEncryptionProvider? = null,
+            maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
+        ): RocksDBDataStore {
             return RocksDBDataStore(
                 keepAllVersions = keepAllVersions,
                 keepUpdateHistoryIndex = keepUpdateHistoryIndex,
@@ -1709,6 +1749,7 @@ class RocksDBDataStore private constructor(
                 versionUpdateHandler = versionUpdateHandler,
                 fieldEncryptionProvider = fieldEncryptionProvider,
                 maxConcurrentReads = maxConcurrentReads,
+                tuning = tuning,
             ).apply {
                 try {
                     initAsync()

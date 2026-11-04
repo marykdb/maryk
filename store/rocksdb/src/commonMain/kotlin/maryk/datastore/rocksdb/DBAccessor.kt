@@ -15,6 +15,9 @@ open class DBAccessor(
     open fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray): ByteArray? =
         dataStore.db.get(columnFamilyHandle, readOptions, key)
 
+    internal open fun keyExists(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray): Boolean =
+        dataStore.db.keyExists(columnFamilyHandle, readOptions, key)
+
     open fun getIterator(readOptions: ReadOptions, columnFamilyHandle: ColumnFamilyHandle) =
         DBIterator(
             dataStore.db.newIterator(columnFamilyHandle, readOptions)

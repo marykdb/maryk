@@ -37,7 +37,7 @@ internal class RocksDBReadContext private constructor(
                 defaultReadOptions = ReadOptions()
                 defaultReadOptions.setPrefixSameAsStart(true)
                 defaultReadOptions.setSnapshot(snapshot)
-                sequentialReadOptions = ReadOptions()
+                sequentialReadOptions = ReadOptions().setTotalOrderSeek(true)
                 sequentialReadOptions.setSnapshot(snapshot)
                 return RocksDBReadContext(
                     db,

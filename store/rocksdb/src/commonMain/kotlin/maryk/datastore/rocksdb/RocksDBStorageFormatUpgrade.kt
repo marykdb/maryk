@@ -55,7 +55,7 @@ internal suspend fun RocksDBDataStore.upgradeRocksStorageFormat(
         Triple(modelId, type, handle)
     }
     val storedModels = loadStoredModelDefinitions(familyInfo.filter { it.second == TableType.Model }) { (id, _, handle) ->
-        if (db.get(handle, modelMigrationStateKey) != null) {
+        if (db.keyExists(handle, modelMigrationStateKey)) {
             throw MigrationException("Finish the pending schema migration for model $id with its source-format version before upgrading storage")
         }
         readStoredModelDefinition(db, handle, context)
@@ -68,7 +68,7 @@ internal suspend fun RocksDBDataStore.upgradeRocksStorageFormat(
             throw MigrationException("Model $id uses a primary key whose storage encoding changes; an explicit key/reference migration is required")
         }
     }
-    val rebuildLegacyIndexes = storeMeta.indexKeyFormatVersion < 2 || db.get(metadata, LegacyIndexRebuildKey) != null
+    val rebuildLegacyIndexes = storeMeta.indexKeyFormatVersion < 2 || db.keyExists(metadata, LegacyIndexRebuildKey)
     val namespaces = familyInfo.filter { (id, type, _) ->
         val model = models[id]
         when (type) {
@@ -89,7 +89,7 @@ internal suspend fun RocksDBDataStore.upgradeRocksStorageFormat(
         override suspend fun get(namespace: Int, key: ByteArray) = db.get(handle(namespace), key)
         override suspend fun scan(namespace: Int, after: ByteArray?, limit: UInt): List<StorageFormatRow> {
             val rows = mutableListOf<StorageFormatRow>()
-            db.newIterator(handle(namespace), sequentialReadOptions).use { iterator ->
+            DBIterator(db.newIterator(handle(namespace), maintenanceReadOptions)).use { iterator ->
                 if (after == null && namespace == receiptNamespace) iterator.seek(TransactionReceiptPrefix)
                 else if (after == null) iterator.seekToFirst() else iterator.seek(after)
                 while (iterator.isValid() && rows.size.toUInt() < limit) {
@@ -122,7 +122,7 @@ internal suspend fun RocksDBDataStore.upgradeRocksStorageFormat(
             Transaction(this@upgradeRocksStorageFormat).use { transaction ->
                 val oldRevision = transaction.get(metadata, defaultReadOptions, LegacyTransactionRevisionKey)
                 if (oldRevision?.size == 16) {
-                    if (transaction.get(metadata, defaultReadOptions, TransactionRevisionKey) == null) {
+                    if (!transaction.keyExists(metadata, defaultReadOptions, TransactionRevisionKey)) {
                         transaction.put(metadata, TransactionRevisionKey, oldRevision)
                     }
                     transaction.delete(metadata, LegacyTransactionRevisionKey)
@@ -156,7 +156,7 @@ internal suspend fun RocksDBDataStore.upgradeRocksStorageFormat(
                             val history = familyInfo.firstOrNull { it.first == id && it.second == TableType.HistoricTable }?.third ?: return@history false
                             if (creation == null || latest == null || db.get(history, record)?.contentEquals(creation) != true) return@history false
                             var frontier = creation.toHexString()
-                            db.newIterator(history, sequentialReadOptions).use { iterator ->
+                            DBIterator(db.newIterator(history, maintenanceReadOptions)).use { iterator ->
                                 iterator.seek(record)
                                 while (iterator.isValid()) {
                                     val key = iterator.key()

@@ -117,6 +117,10 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         return status.requiredSizeOrNotFound()
     }
 
+    // DB-level keyExists cannot see pending writes or track optimistic conflicts.
+    internal override fun keyExists(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray): Boolean =
+        get(columnFamilyHandle, readOptions, key) != null
+
     override fun getIterator(readOptions: ReadOptions, columnFamilyHandle: ColumnFamilyHandle) =
         if (atomicOwner) object : DBIterator(currentTransaction().getIterator(readOptions, columnFamilyHandle)) {
             override fun key() = super.key().also { budget(it.size) }

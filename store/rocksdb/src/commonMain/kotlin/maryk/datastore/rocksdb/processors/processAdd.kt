@@ -68,7 +68,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     return try {
         objectToAdd.validate()
 
-        val exists = transaction.get(columnFamilies.keys, defaultReadOptions, key.bytes) != null
+        val exists = transaction.keyExists(columnFamilies.keys, defaultReadOptions, key.bytes)
         val tombstoneVersion = transaction.getForUpdate(
             defaultReadOptions,
             columnFamilies.replicationTombstones,

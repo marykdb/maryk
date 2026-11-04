@@ -19,6 +19,8 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.requests.ScanContinuation
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByIndexScan
+import maryk.datastore.rocksdb.bytewisePrefixLimit
+import maryk.datastore.rocksdb.withBoundedIterator
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
@@ -945,7 +947,7 @@ private fun hasMatchingExactValue(
 ): Boolean {
     val fullIndexValue = createIndexKeyWithPrefix(indexKeyPrefix, createIndexValue(value, recordKeySource, recordKeyOffset, recordKeyLength))
     return if (toVersion == null) {
-        dbAccessor.get(indexColumnHandle, readOptions, fullIndexValue) != null
+        dbAccessor.keyExists(indexColumnHandle, readOptions, fullIndexValue)
     } else {
         val versionBytes = toVersion.toReversedVersionBytes()
         dbAccessor.getIterator(readOptions, indexColumnHandle).use { iterator ->
@@ -992,7 +994,11 @@ private fun hasMatchingPrefixValue(
     val prefixWithReference = combineToByteArray(indexKeyPrefix, prefix)
     val versionBytes = toVersion?.toReversedVersionBytes()
 
-    dbAccessor.getIterator(readOptions, indexColumnHandle).use { iterator ->
+    dbAccessor.withBoundedIterator(
+        readOptions, indexColumnHandle,
+        lower = prefixWithReference.takeIf { toVersion == null },
+        upper = if (toVersion == null) bytewisePrefixLimit(prefixWithReference) else null,
+    ) { iterator ->
         iterator.seek(prefixWithReference)
 
         if (versionBytes != null) {

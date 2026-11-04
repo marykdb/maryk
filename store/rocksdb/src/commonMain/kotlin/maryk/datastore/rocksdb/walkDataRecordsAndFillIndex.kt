@@ -51,12 +51,12 @@ internal fun walkDataRecordsAndFillIndex(
     indexesToIndex: List<IsIndexable>
 ) {
     Transaction(dataStore).use { transaction ->
-        transaction.getIterator(dataStore.defaultReadOptions, columnFamilies.keys).use { iterator ->
+        transaction.getIterator(dataStore.maintenanceReadOptions, columnFamilies.keys).use { iterator ->
             val storeGetter = StoreValuesGetter(
                 null,
                 dataStore.db,
                 columnFamilies,
-                dataStore.defaultReadOptions,
+                dataStore.maintenanceReadOptions,
                 captureVersion = true,
                 decryptValue = { key, reference, value, offset, length ->
                     dataStore.decryptValueIfNeeded(columnFamilies.modelId, key, reference, value, offset, length)
@@ -73,7 +73,7 @@ internal fun walkDataRecordsAndFillIndex(
 
                 storeGetter.moveToKey(key)
                 if (columnFamilies !is HistoricTableColumnFamilies &&
-                    !isSoftDeleted(transaction, columnFamilies, dataStore.defaultReadOptions, null, key)
+                    !isSoftDeleted(transaction, columnFamilies, dataStore.maintenanceReadOptions, null, key)
                 ) {
                     for (index in indexesToIndex) {
                         storeGetter.lastVersion = null
@@ -110,11 +110,11 @@ private fun rebuildHistoricalIndexes(
 ) {
     val versions = mutableSetOf(creationVersion)
     val latestDeleteMarker = transaction.get(
-        columnFamilies.table, dataStore.defaultReadOptions, keyBytes + SOFT_DELETE_INDICATOR,
+        columnFamilies.table, dataStore.maintenanceReadOptions, keyBytes + SOFT_DELETE_INDICATOR,
     )?.takeIf { it.size == VERSION_BYTE_SIZE + 1 }
     val latestDeleteVersion = latestDeleteMarker?.readVersionBytes()
     latestDeleteVersion?.takeIf { it >= creationVersion }?.let { versions += it }
-    transaction.getIterator(dataStore.sequentialReadOptions, columnFamilies.historic.table).use { iterator ->
+    transaction.getIterator(dataStore.maintenanceReadOptions, columnFamilies.historic.table).use { iterator ->
         iterator.seek(keyBytes)
         while (iterator.isValid()) {
             val storedKey = iterator.key()
@@ -131,7 +131,7 @@ private fun rebuildHistoricalIndexes(
     val select = model.indexSelection(indexes)
     var previous = List(indexes.size) { emptyMap<Bytes, ByteArray>() }
     val activeVersions = List(indexes.size) { mutableMapOf<Bytes, ULong>() }
-    transaction.getIterator(dataStore.sequentialReadOptions, columnFamilies.historic.table).use { iterator ->
+    transaction.getIterator(dataStore.maintenanceReadOptions, columnFamilies.historic.table).use { iterator ->
         for (version in versions.sorted()) {
             val snapshot = model.readTransactionIntoValuesWithMetaData(
                 iterator, dataStore, creationVersion, columnFamilies, key, select, version,
@@ -163,7 +163,7 @@ private fun rebuildHistoricalIndexes(
         }
     }
     // Valid history cannot make an unreadable current cell safe to publish in the current index.
-    if (isSoftDeleted(transaction, columnFamilies, dataStore.defaultReadOptions, null, keyBytes)) return
+    if (isSoftDeleted(transaction, columnFamilies, dataStore.maintenanceReadOptions, null, keyBytes)) return
     for ((position, index) in indexes.withIndex()) {
         currentValues.lastVersion = null
         for (value in index.toStorageByteArraysForIndex(currentValues, keyBytes)) {

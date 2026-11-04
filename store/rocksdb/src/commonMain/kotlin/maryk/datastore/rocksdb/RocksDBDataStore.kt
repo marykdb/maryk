@@ -289,7 +289,8 @@ class RocksDBDataStore private constructor(
     internal val defaultReadOptions = ReadOptions().apply {
         setPrefixSameAsStart(true)
     }
-    internal val sequentialReadOptions = ReadOptions()
+    internal val sequentialReadOptions = ReadOptions().setTotalOrderSeek(true)
+    internal val maintenanceReadOptions = ReadOptions().setTotalOrderSeek(true).setFillCache(false)
 
     internal fun createReadContext() = RocksDBReadContext.create(db)
 
@@ -740,14 +741,14 @@ class RocksDBDataStore private constructor(
                 null,
                 db,
                 columnFamilies,
-                defaultReadOptions,
+                maintenanceReadOptions,
                 captureVersion = true,
                 decryptValue = { key, reference, value, offset, length ->
                     decryptValueIfNeeded(columnFamilies.modelId, key, reference, value, offset, length)
                 }
             )
 
-            transaction.getIterator(defaultReadOptions, columnFamilies.keys).use { iterator ->
+            transaction.getIterator(maintenanceReadOptions, columnFamilies.keys).use { iterator ->
                 iterator.seekToFirst()
                 while (iterator.isValid()) {
                     val keyBytes = iterator.key()
@@ -755,7 +756,7 @@ class RocksDBDataStore private constructor(
                         iterator.next()
                         continue
                     }
-                    if (isSoftDeleted(transaction, columnFamilies, defaultReadOptions, null, keyBytes)) {
+                    if (isSoftDeleted(transaction, columnFamilies, maintenanceReadOptions, null, keyBytes)) {
                         iterator.next()
                         continue
                     }
@@ -825,7 +826,7 @@ class RocksDBDataStore private constructor(
     ) {
         do {
             val keysToDelete = ArrayList<ByteArray>(INDEX_FORMAT_MIGRATION_DELETE_BATCH_SIZE)
-            transaction.getIterator(defaultReadOptions, columnFamily).use { iterator ->
+            transaction.getIterator(maintenanceReadOptions, columnFamily).use { iterator ->
                 iterator.seekToFirst()
                 while (iterator.isValid() && keysToDelete.size < INDEX_FORMAT_MIGRATION_DELETE_BATCH_SIZE) {
                     keysToDelete += iterator.key()
@@ -850,7 +851,7 @@ class RocksDBDataStore private constructor(
     }
 
     private fun isColumnFamilyEmpty(columnFamily: ColumnFamilyHandle): Boolean =
-        db.newIterator(columnFamily, defaultReadOptions).use { iterator ->
+        DBIterator(db.newIterator(columnFamily, maintenanceReadOptions)).use { iterator ->
             iterator.seekToFirst()
             !iterator.isValid()
         }
@@ -985,7 +986,7 @@ class RocksDBDataStore private constructor(
         if (tableColumnFamilies.updateHistory == null) return
 
         DBAccessor(this).use { dbAccessor ->
-            dbAccessor.getIterator(defaultReadOptions, tableColumnFamilies.keys).use { keyIterator ->
+            dbAccessor.getIterator(maintenanceReadOptions, tableColumnFamilies.keys).use { keyIterator ->
                 keyIterator.seekToFirst()
 
                 if (keepAllVersions && tableColumnFamilies is HistoricTableColumnFamilies) {
@@ -998,7 +999,7 @@ class RocksDBDataStore private constructor(
 
                         writeSingleUpdateHistoryVersion(tableColumnFamilies, key, creationVersion)
 
-                        dbAccessor.getIterator(defaultReadOptions, tableColumnFamilies.historic.table).use { historicIterator ->
+                        dbAccessor.getIterator(maintenanceReadOptions, tableColumnFamilies.historic.table).use { historicIterator ->
                             historicIterator.seek(key.bytes)
                             while (historicIterator.isValid()) {
                                 val historicKey = historicIterator.key()
@@ -1022,7 +1023,7 @@ class RocksDBDataStore private constructor(
                         val softDeleteQualifier = key.bytes + SOFT_DELETE_INDICATOR
                         val softDeleteValueLength = dbAccessor.get(
                             tableColumnFamilies.table,
-                            defaultReadOptions,
+                            maintenanceReadOptions,
                             softDeleteQualifier,
                             recyclableByteArray
                         )
@@ -1036,7 +1037,7 @@ class RocksDBDataStore private constructor(
                     while (keyIterator.isValid()) {
                         val key = Key<IsRootDataModel>(keyIterator.key().copyOf())
                         val latestKey = key.bytes + LAST_VERSION_INDICATOR
-                        val latestLength = dbAccessor.get(tableColumnFamilies.table, defaultReadOptions, latestKey, recyclableByteArray)
+                        val latestLength = dbAccessor.get(tableColumnFamilies.table, maintenanceReadOptions, latestKey, recyclableByteArray)
                         val lastVersion = recyclableByteArray.readVersionBytesIfExact(latestLength) ?: run {
                             keyIterator.next()
                             continue
@@ -1064,9 +1065,9 @@ class RocksDBDataStore private constructor(
 
     private fun backfillReplicationTombstones(tableColumnFamilies: TableColumnFamilies) {
         val updateHistory = tableColumnFamilies.updateHistory ?: return
-        if (db.get(tableColumnFamilies.model, defaultReadOptions, modelReplicationTombstoneBackfillCompleteKey) != null) return
+        if (db.keyExists(tableColumnFamilies.model, maintenanceReadOptions, modelReplicationTombstoneBackfillCompleteKey)) return
 
-        db.newIterator(updateHistory, sequentialReadOptions).use { iterator ->
+        DBIterator(db.newIterator(updateHistory, maintenanceReadOptions)).use { iterator ->
             iterator.seekToFirst()
             while (iterator.isValid()) {
                 val historyKey = iterator.key()
@@ -1076,7 +1077,7 @@ class RocksDBDataStore private constructor(
                 ) {
                     val version = historyKey.readReversedVersionBytes()
                     val key = historyKey.copyOfRange(ULong.SIZE_BYTES, historyKey.size)
-                    val current = db.get(tableColumnFamilies.replicationTombstones, defaultReadOptions, key)
+                    val current = db.get(tableColumnFamilies.replicationTombstones, maintenanceReadOptions, key)
                         ?.readVersionBytesIfExact()
                     if (current == null || version > current) {
                         db.put(tableColumnFamilies.replicationTombstones, key, HLC.toStorageBytes(HLC(version)))
@@ -1091,9 +1092,9 @@ class RocksDBDataStore private constructor(
     private fun initializeDurableClockWatermark() {
         var storeWatermark = 0uL
         for (columnFamilies in columnFamilyHandlesByDataModelIndex.values) {
-            val storedWatermark = db.get(columnFamilies.model, defaultReadOptions, modelHlcWatermarkKey)
+            val storedWatermark = db.get(columnFamilies.model, maintenanceReadOptions, modelHlcWatermarkKey)
                 ?.readVersionBytesIfExact()
-            val maintenance = db.get(columnFamilies.model, defaultReadOptions, StorageMaintenanceMetadataKey)
+            val maintenance = db.get(columnFamilies.model, maintenanceReadOptions, StorageMaintenanceMetadataKey)
             val needsTransactionWatermarkRepair = maintenance?.firstOrNull() != StorageFormat.CURRENT.toByte() ||
                 maintenance.getOrNull(1)?.toInt()?.and(1) != 1
             val modelWatermark = if (storedWatermark == null || needsTransactionWatermarkRepair) {
@@ -1114,7 +1115,7 @@ class RocksDBDataStore private constructor(
         var maximumVersion = 0uL
 
         fun observeValues(columnFamily: ColumnFamilyHandle, exact: Boolean) {
-            db.newIterator(columnFamily, sequentialReadOptions).use { iterator ->
+            DBIterator(db.newIterator(columnFamily, maintenanceReadOptions)).use { iterator ->
                 iterator.seekToFirst()
                 while (iterator.isValid()) {
                     val value = iterator.value()
@@ -1147,7 +1148,7 @@ class RocksDBDataStore private constructor(
         val nameSize = tableIndex.calculateVarByteLength() + 1
 
         // Prefix set to key size for more optimal search.
-        val tableOptions = blockCache.createColumnFamilyOptions {
+        val tableOptions = blockCache.createColumnFamilyOptions() {
             useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
         }
 
@@ -1232,7 +1233,7 @@ class RocksDBDataStore private constructor(
                     val keysToDelete = mutableListOf<ByteArray>()
                     var lastKey: ByteArray? = null
                     var scanned = 0
-                    transaction.getIterator(sequentialReadOptions, columnFamilies.replicationTombstones).use { iterator ->
+                    transaction.getIterator(maintenanceReadOptions, columnFamilies.replicationTombstones).use { iterator ->
                         nextStart?.let(iterator::seek) ?: iterator.seekToFirst()
                         while (iterator.isValid() && scanned < 256) {
                             lastKey = iterator.key()
@@ -1279,6 +1280,7 @@ class RocksDBDataStore private constructor(
         defaultWriteOptions.close()
         defaultReadOptions.close()
         sequentialReadOptions.close()
+        maintenanceReadOptions.close()
         ownRocksDBOptions?.close()
         ownStatistics?.close()
     }
@@ -1308,7 +1310,7 @@ class RocksDBDataStore private constructor(
         if (transaction.atomicOwner) mergeUniqueReferences(
             declaredUniqueReferencesByModelId[dbIndex].orEmpty(),
             buildList {
-                transaction.getIterator(defaultReadOptions, uniqueHandle).use { iterator ->
+                transaction.getIterator(maintenanceReadOptions, uniqueHandle).use { iterator ->
                     iterator.seekToFirst()
                     while (iterator.isValid()) {
                         val key = iterator.key()
@@ -1350,7 +1352,7 @@ class RocksDBDataStore private constructor(
     private fun searchExistingUniqueIndices(
         uniqueHandle: ColumnFamilyHandle
     ) = buildList {
-        this@RocksDBDataStore.db.newIterator(uniqueHandle).use { iterator ->
+        DBIterator(db.newIterator(uniqueHandle, maintenanceReadOptions)).use { iterator ->
             iterator.seekToFirst()
             while (iterator.isValid()) {
                 val key = iterator.key()

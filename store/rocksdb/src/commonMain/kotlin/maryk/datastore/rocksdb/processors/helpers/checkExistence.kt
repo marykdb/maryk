@@ -22,12 +22,10 @@ internal fun checkExistence(
                 throw StorageException("Key does not exist while it should have existed")
             }
             else -> {
-                var exhausted = false
                 repeat(MAX_LINEAR_ADVANCE_STEPS) {
                     iterator.next()
                     if (!iterator.isValid()) {
-                        exhausted = true
-                        return@repeat
+                        throw StorageException("Key does not exist while it should have existed")
                     }
                     currentKey = iterator.key()
                     when {
@@ -35,9 +33,6 @@ internal fun checkExistence(
                         key.bytes compareTo currentKey < 0 ->
                             throw StorageException("Key does not exist while it should have existed")
                     }
-                }
-                if (exhausted) {
-                    throw StorageException("Key does not exist while it should have existed")
                 }
             }
         }

@@ -35,6 +35,8 @@ If `keepAllVersions = true`:
 Column family names are compact byte arrays: first byte is the `TableType` (1..8), followed by the varint-encoded model id. See `TableType.getDescriptor`.
 
 RocksDB options:
+- Checked iterators report native status on exhaustion and before closing.
+- Transactional range/prefix deletion uses total-order iterators and checks iterator status before staging each bounded batch of deletes. This includes pending writes and supports savepoint rollback without relying on non-transactional range tombstones.
 - Maintenance iterators and record reads disable cache filling. Request snapshots retain normal cache behavior. Eligible bytewise prefix predicates use scoped native iterator bounds, while historic comparator predicates keep their existing boundary checks.
 - Presence-only index and migration-marker checks use exact `keyExists` reads, avoiding value copies. Transactional checks retain transaction reads for pending-write visibility, conflict tracking, and atomic work accounting. `keyMayExist` is not treated as proof of presence.
 - Sequential readers explicitly enable RocksDB's total-order seeks, including snapshot readers, so scans can cross model-key prefixes. Record-local readers retain prefix-restricted seeks.

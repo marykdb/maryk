@@ -8,6 +8,7 @@ import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetReference
 import maryk.core.values.IsValuesGetter
+import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
@@ -113,7 +114,7 @@ internal class StoreValuesGetter(
         val mapPrefix = key + propertyReference.toStorageByteArray()
         val map = linkedMapOf<Any, Any>()
 
-        db.newIterator(columnFamilies.table, readOptions).use { iterator ->
+        DBIterator(db.newIterator(columnFamilies.table, readOptions)).use { iterator ->
             iterator.seek(mapPrefix)
             while (iterator.isValid()) {
                 val qualifier = iterator.key()
@@ -178,7 +179,7 @@ internal class StoreValuesGetter(
         val setPrefix = key + propertyReference.toStorageByteArray()
         val set = linkedSetOf<Any>()
 
-        db.newIterator(columnFamilies.table, readOptions).use { iterator ->
+        DBIterator(db.newIterator(columnFamilies.table, readOptions)).use { iterator ->
             iterator.seek(setPrefix)
             while (iterator.isValid()) {
                 val qualifier = iterator.key()

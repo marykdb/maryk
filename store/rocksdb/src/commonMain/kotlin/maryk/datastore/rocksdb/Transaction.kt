@@ -49,16 +49,16 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         val transaction = currentTransaction()
         do {
             val keysToDelete = ArrayList<ByteArray>(DELETE_RANGE_BATCH_SIZE)
-            transaction.getIterator(rocksDBDataStore.defaultReadOptions, columnFamilyHandle).use { iterator ->
+            transaction.getIterator(rocksDBDataStore.sequentialReadOptions, columnFamilyHandle).use { iterator ->
                 iterator.seek(start)
-                while (
-                    iterator.isValid() &&
-                    iterator.key() < end &&
-                    keysToDelete.size < DELETE_RANGE_BATCH_SIZE
-                ) {
-                    iterator.key().also { budget(it.size); keysToDelete.add(it) }
+                while (iterator.isValid() && keysToDelete.size < DELETE_RANGE_BATCH_SIZE) {
+                    val key = iterator.key()
+                    if (key >= end) break
+                    budget(key.size)
+                    keysToDelete.add(key)
                     iterator.next()
                 }
+                iterator.status()
             }
 
             for (key in keysToDelete) {
@@ -73,16 +73,16 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         val transaction = currentTransaction()
         do {
             val keysToDelete = ArrayList<ByteArray>(DELETE_RANGE_BATCH_SIZE)
-            transaction.getIterator(rocksDBDataStore.defaultReadOptions, columnFamilyHandle).use { iterator ->
+            transaction.getIterator(rocksDBDataStore.sequentialReadOptions, columnFamilyHandle).use { iterator ->
                 iterator.seek(prefix)
-                while (
-                    iterator.isValid() &&
-                    iterator.key().matchesRangePart(0, prefix) &&
-                    keysToDelete.size < DELETE_RANGE_BATCH_SIZE
-                ) {
-                    iterator.key().also { budget(it.size); keysToDelete.add(it) }
+                while (iterator.isValid() && keysToDelete.size < DELETE_RANGE_BATCH_SIZE) {
+                    val key = iterator.key()
+                    if (!key.matchesRangePart(0, prefix)) break
+                    budget(key.size)
+                    keysToDelete.add(key)
                     iterator.next()
                 }
+                iterator.status()
             }
 
             for (key in keysToDelete) {

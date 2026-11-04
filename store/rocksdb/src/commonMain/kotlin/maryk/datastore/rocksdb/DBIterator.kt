@@ -48,7 +48,9 @@ open class DBIterator(
      *
      * @return true if iterator is valid.
      */
-    open fun isValid() = rocksIterator.isValid()
+    open fun isValid() = rocksIterator.isValid().also { valid ->
+        if (!valid) rocksIterator.status()
+    }
 
     /**
      * Moves to the next entry in the source.  After this call, Valid() is
@@ -88,6 +90,11 @@ open class DBIterator(
     open fun value(): ByteArray = rocksIterator.value()
 
     override fun close() {
-        rocksIterator.close()
+        try {
+            // Native transactions can already have closed their child iterators at commit.
+            if (rocksIterator.isOwningHandle()) rocksIterator.status()
+        } finally {
+            rocksIterator.close()
+        }
     }
 }

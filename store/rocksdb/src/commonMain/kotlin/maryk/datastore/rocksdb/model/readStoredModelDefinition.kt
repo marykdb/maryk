@@ -20,6 +20,8 @@ import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.Options
 import maryk.rocksdb.RocksDB
+import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.withSnapshot
 import maryk.rocksdb.listColumnFamilies
 import maryk.rocksdb.openRocksDB
 
@@ -109,36 +111,42 @@ fun readStoredModelDefinition(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,
     conversionContext: DefinitionsConversionContext,
-): RootDataModel<*>? {
-    val legacyTransport = decodeStorageFormat(rocksDB.get(StorageFormatMetadataKey)) == StorageFormat.LEGACY &&
-        decodeStorageFormat(rocksDB.get(modelColumnFamily, modelStorageFormatKey)) == StorageFormat.LEGACY
+): RootDataModel<*>? = rocksDB.withSnapshot { readOptions ->
+    val legacyTransport = decodeStorageFormat(rocksDB.get(readOptions, StorageFormatMetadataKey)) == StorageFormat.LEGACY &&
+        decodeStorageFormat(rocksDB.get(modelColumnFamily, readOptions, modelStorageFormatKey)) == StorageFormat.LEGACY
     // Each persisted pair is self-contained. In particular, recursive dependencies must
     // resolve within this pair, even when another retained root uses the same names.
     val sourceContext = (conversionContext as? StoredModelDefinitionsContext)?.newSourcePairContext()
         ?: StorageDefinitionsConversionContext()
     val model = if (legacyTransport) sourceContext.readLegacyTransportStorage {
-        readStoredModelDefinitionPayload(rocksDB, modelColumnFamily, sourceContext)
-    } else readStoredModelDefinitionPayload(rocksDB, modelColumnFamily, sourceContext)
+        readStoredModelDefinitionPayload(rocksDB, modelColumnFamily, sourceContext, readOptions)
+    } else readStoredModelDefinitionPayload(rocksDB, modelColumnFamily, sourceContext, readOptions)
     conversionContext.dataModels.putAll(sourceContext.dataModels)
     conversionContext.enums.putAll(sourceContext.enums)
     conversionContext.typeEnums.putAll(sourceContext.typeEnums)
     if (model != null) (conversionContext as? StoredModelDefinitionsContext)?.registerSourceRoot(model)
-    return model
+    model
 }
 
 private fun readStoredModelDefinitionPayload(
     rocksDB: RocksDB,
     modelColumnFamily: ColumnFamilyHandle,
     conversionContext: DefinitionsConversionContext,
+    readOptions: ReadOptions,
 ): RootDataModel<*>? {
-    rocksDB.get(modelColumnFamily, modelDependentsDefinitionKey)?.let { dependentBytes ->
+    val storedDefinitions = rocksDB.multiGetAsList(
+        readOptions,
+        listOf(modelColumnFamily, modelColumnFamily),
+        listOf(modelDependentsDefinitionKey, modelDefinitionKey)
+    )
+    storedDefinitions[0]?.let { dependentBytes ->
         var readIndex = 0
         Definitions.Serializer
             .readProtoBuf(dependentBytes.size, { dependentBytes[readIndex++] }, conversionContext)
             .toDataObject()
     }
 
-    val modelBytes = rocksDB.get(modelColumnFamily, modelDefinitionKey) ?: return null
+    val modelBytes = storedDefinitions[1] ?: return null
 
     var readIndex = 0
     val storedDataModel = RootDataModel.Model.Serializer

@@ -135,6 +135,10 @@ the same engine with initial-state checks. See the
 
 Operational details and full runtime API are documented in [Migrations](./migrations.md).
 
+Stored model definitions, dependency payloads, and storage-format flags are read through one scoped RocksDB snapshot; model/dependency payloads are fetched together with `MultiGet`.
+Migration progress and target identity are also fetched together through scoped
+snapshot read options, which are closed before the snapshot is released.
+
 At open time, `RocksDBDataStore` compares the stored model in `Model` with the provided definition:
 - If models are equal → no work.
 - If only safe additions or new indexes exist → it backfills index data (`fillIndex`) and stores the new model.

@@ -1,5 +1,7 @@
 package maryk.datastore.rocksdb.model
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import maryk.core.exceptions.StorageException
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -9,6 +11,8 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.metadata.ModelMeta
 import maryk.datastore.rocksdb.metadata.readMetaFile
 import maryk.deleteFolder
+import maryk.rocksdb.WriteBatch
+import maryk.rocksdb.WriteOptions
 import maryk.test.models.ModelWithDependents
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.AfterTest
@@ -59,6 +63,52 @@ class ReadStoredModelDefinitionTest {
             assertTrue(conversionContext.dataModels.keys.any { it != ModelWithDependents.Meta.name })
         } finally {
             dataStore.close()
+        }
+    }
+
+    @Test
+    fun modelAndDependentsUseOneSnapshotDuringAtomicReplacement() = runTest {
+        val store = RocksDBDataStore.open(relativePath = dbPath, dataModelsById = mapOf(1u to ModelWithDependents, 2u to SimpleMarykModel))
+        try {
+            val complex = store.getColumnFamilies(1u).model
+            val target = store.getColumnFamilies(2u).model
+            val simpleRoot = assertNotNull(store.db.get(target, modelDefinitionKey))
+            val complexRoot = assertNotNull(store.db.get(complex, modelDefinitionKey))
+            val complexDependents = assertNotNull(store.db.get(complex, modelDependentsDefinitionKey))
+            val initialContext = DefinitionsConversionContext()
+            readStoredModelDefinition(store.db, target, initialContext)
+            val simpleNames = initialContext.dataModels.keys.toSet()
+            val writer = async(Dispatchers.Default) {
+                WriteOptions().use { options ->
+                    repeat(1000) { index ->
+                        WriteBatch().use { batch ->
+                            if (index % 2 == 0) {
+                                batch.put(target, modelDefinitionKey, complexRoot)
+                                batch.put(target, modelDependentsDefinitionKey, complexDependents)
+                            } else {
+                                batch.put(target, modelDefinitionKey, simpleRoot)
+                                batch.delete(target, modelDependentsDefinitionKey)
+                            }
+                            store.db.write(options, batch)
+                        }
+                    }
+                }
+            }
+            try {
+                repeat(500) {
+                    val context = DefinitionsConversionContext()
+                    val model = assertNotNull(readStoredModelDefinition(store.db, target, context))
+                    when (model.Meta.name) {
+                        SimpleMarykModel.Meta.name -> assertEquals(simpleNames, context.dataModels.keys)
+                        ModelWithDependents.Meta.name -> assertTrue(context.dataModels.keys.any { it != model.Meta.name })
+                        else -> error("Unexpected stored model ${model.Meta.name}")
+                    }
+                }
+            } finally {
+                writer.await()
+            }
+        } finally {
+            store.close()
         }
     }
 

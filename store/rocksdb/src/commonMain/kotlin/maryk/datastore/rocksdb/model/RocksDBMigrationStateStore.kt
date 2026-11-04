@@ -8,6 +8,7 @@ import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDB
 import maryk.rocksdb.WriteBatch
 import maryk.rocksdb.WriteOptions
+import maryk.rocksdb.withSnapshot
 import maryk.datastore.shared.migration.migrationTargetIdentity
 import maryk.datastore.shared.migration.requireMigrationTargetIdentity
 
@@ -18,8 +19,13 @@ internal class RocksDBMigrationStateStore(
 ) : MigrationStateStore {
     suspend fun readProgress(modelId: UInt): Pair<MigrationState, ByteArray?>? {
         val family = modelColumnFamiliesById[modelId] ?: return null
-        val state = rocksDB.get(family, modelMigrationStateKey)?.let(MigrationState::requireFromPersistedBytes) ?: return null
-        return state to rocksDB.get(family, modelMigrationTargetKey)
+        val values = rocksDB.withSnapshot { readOptions ->
+            rocksDB.multiGetAsList(
+                readOptions, listOf(family, family), listOf(modelMigrationStateKey, modelMigrationTargetKey)
+            )
+        }
+        val state = values[0]?.let(MigrationState::requireFromPersistedBytes) ?: return null
+        return state to values[1]
     }
 
     override suspend fun read(modelId: UInt): MigrationState? = readProgress(modelId)?.let { (state, identity) ->

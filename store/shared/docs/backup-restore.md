@@ -4,6 +4,15 @@
 snapshot version, and models; each chunk contains complete versioned changes for
 one model. It is not a filesystem or engine-level backup.
 
+For complete physical recovery of a RocksDB store, use the separate
+[RocksDB backup repository](../../rocksdb/documentation/backups.md). Native backups
+preserve engine files, indexes and operational metadata and do not require
+`keepAllVersions`; they restore only into compatible RocksDB stores. Portable
+backups export versioned application records for transfer between compatible
+Maryk backends. The two formats are not interchangeable. Native backups can run
+frequently for operational recovery while portable backups provide an independent
+export for backend portability.
+
 The current portable format is version `3` (`DATA_STORE_BACKUP_FORMAT_VERSION`).
 Restore accepts only that exact manifest version; it never guesses how to read an
 older or newer format. A format change must increment the version, update both

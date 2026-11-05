@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb.metadata
 import maryk.file.File
 import maryk.file.writeTextViaTemporaryFile
 import maryk.json.JsonToken
+import maryk.yaml.InvalidYamlContent
 import maryk.yaml.YamlReader
 import maryk.yaml.YamlWriter
 
@@ -91,7 +92,19 @@ fun readModelNames(storePath: String): Map<UInt, String> =
 fun readModelKeySizes(storePath: String): Map<UInt, Int> =
     readMetaFile(storePath).mapValues { it.value.keySize }
 
-private fun parseMeta(text: String): StoreMeta {
+internal fun parseStoreMeta(text: String): StoreMeta = try {
+    parseMeta(text, strict = true).also {
+        require(it.indexKeyFormatVersion <= CURRENT_INDEX_KEY_FORMAT_VERSION) {
+            "Unsupported backup index key format version ${it.indexKeyFormatVersion}"
+        }
+    }
+} catch (error: InvalidYamlContent) {
+    // YAML syntax errors derive from Error. Classify malformed backup data as
+    // invalid input so inventory can isolate it without swallowing fatal errors.
+    throw IllegalArgumentException("Malformed backup store metadata", error)
+}
+
+private fun parseMeta(text: String, strict: Boolean = false): StoreMeta {
     val models = mutableMapOf<UInt, ModelMeta>()
     var indexKeyFormatVersion = LEGACY_INDEX_KEY_FORMAT_VERSION
     var metaFileVersion: Int? = null
@@ -103,6 +116,8 @@ private fun parseMeta(text: String): StoreMeta {
         currentToken = reader.nextToken()
     }
 
+    if (strict) require(currentToken is JsonToken.StartObject) { "Store metadata must be an object" }
+    val rootFields = mutableSetOf<String>()
     var token = currentToken
     if (token is JsonToken.StartObject) {
         token = reader.nextToken()
@@ -110,6 +125,7 @@ private fun parseMeta(text: String): StoreMeta {
 
     while (token !is JsonToken.EndObject && token !is JsonToken.EndDocument) {
         if (token is JsonToken.FieldName) {
+            if (strict) require(rootFields.add(token.value!!)) { "Duplicate store metadata field: ${token.value}" }
             when (token.value) {
                 "version" -> {
                     val valueToken = reader.nextToken() as? JsonToken.Value<*>
@@ -123,15 +139,19 @@ private fun parseMeta(text: String): StoreMeta {
                 }
                 "models" -> {
                     var innerToken = reader.nextToken()
+                    if (strict) require(innerToken is JsonToken.StartObject) { "Store models metadata must be an object" }
                     if (innerToken !is JsonToken.StartObject) {
                         token = innerToken
                         continue
                     }
                     innerToken = reader.nextToken()
                     while (innerToken !is JsonToken.EndObject) {
+                        require(innerToken !is JsonToken.EndDocument) { "Incomplete models metadata" }
                         val idField = innerToken as? JsonToken.FieldName
                         val modelId = idField?.value?.toUIntOrNull()
+                        if (strict) require(modelId != null && modelId !in models) { "Invalid or duplicate model metadata id" }
                         var modelToken = reader.nextToken()
+                        if (strict) require(modelToken is JsonToken.StartObject) { "Model metadata must be an object" }
                         if (modelToken !is JsonToken.StartObject) {
                             reader.skipUntilNextField()
                             innerToken = reader.nextToken()
@@ -139,10 +159,13 @@ private fun parseMeta(text: String): StoreMeta {
                         }
                         var name: String? = null
                         var keySize: Int? = null
+                        val modelFields = mutableSetOf<String>()
 
                         modelToken = reader.nextToken()
                         while (modelToken !is JsonToken.EndObject) {
+                            require(modelToken !is JsonToken.EndDocument) { "Incomplete model metadata" }
                             val metaField = modelToken as? JsonToken.FieldName
+                            if (strict) require(metaField != null && modelFields.add(metaField.value!!)) { "Invalid or duplicate model metadata field" }
                             when (metaField?.value) {
                                 "name" -> {
                                     val valueToken = reader.nextToken() as? JsonToken.Value<*>
@@ -152,11 +175,16 @@ private fun parseMeta(text: String): StoreMeta {
                                     val valueToken = reader.nextToken() as? JsonToken.Value<*>
                                     keySize = (valueToken?.value as? Number)?.toIntExact()
                                 }
-                                else -> reader.skipUntilNextField()
+                                else -> {
+                                    reader.skipUntilNextField()
+                                    modelToken = reader.currentToken
+                                    continue
+                                }
                             }
                             modelToken = reader.nextToken()
                         }
 
+                        if (strict) require(modelId != null && name != null && keySize != null) { "Incomplete model metadata" }
                         if (modelId != null && name != null && keySize != null) {
                             models[modelId] = ModelMeta(name, keySize)
                         }
@@ -164,12 +192,23 @@ private fun parseMeta(text: String): StoreMeta {
                         innerToken = reader.nextToken()
                     }
                 }
-                else -> reader.skipUntilNextField()
+                else -> {
+                    reader.skipUntilNextField()
+                    token = reader.currentToken
+                    continue
+                }
             }
         }
         token = reader.nextToken()
     }
 
+    if (strict) {
+        require("models" in rootFields) { "Missing store model metadata" }
+        require(token is JsonToken.EndObject && reader.nextToken() is JsonToken.EndDocument) {
+            "Store metadata must contain exactly one complete object"
+        }
+        require(metaFileVersion == null || metaFileVersion > 0) { "Invalid store metadata version $metaFileVersion" }
+    }
     require(metaFileVersion == null || metaFileVersion <= CURRENT_VERSION) {
         "Unsupported RocksDB metadata version $metaFileVersion; this Maryk version supports up to $CURRENT_VERSION"
     }

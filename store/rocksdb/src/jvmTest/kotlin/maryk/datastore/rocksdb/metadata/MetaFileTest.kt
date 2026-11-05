@@ -173,6 +173,23 @@ class MetaFileTest {
     }
 
     @Test
+    fun unknownFieldsDoNotHideFollowingMetadata() {
+        File.writeText("$path/MARYK_META.yml", """
+            extension: {ignored: true}
+            indexKeyFormatVersion: 2
+            models:
+              1:
+                extension: {ignored: true}
+                name: KnownModel
+                keySize: 16
+        """.trimIndent())
+        assertEquals(StoreMeta(mapOf(1u to ModelMeta("KnownModel", 16)), 2), readStoreMetaFile(path))
+
+        File.writeText("$path/MARYK_META.yml", "extension: true\nversion: 3\nmodels: {}")
+        assertFailsWith<IllegalArgumentException> { readStoreMetaFile(path) }
+    }
+
+    @Test
     fun rejectsUnsupportedFutureMetaFileVersion() {
         File.writeText(
             "$path/MARYK_META.yml",

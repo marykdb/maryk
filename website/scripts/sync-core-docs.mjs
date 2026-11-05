@@ -67,6 +67,7 @@ export const map = [
   ['src/content/docs/stores/rocksdb/architecture.mdx', '../store/rocksdb/documentation/architecture.md'],
   ['src/content/docs/stores/rocksdb/migrations.mdx', '../store/rocksdb/documentation/migrations.md'],
   ['src/content/docs/stores/rocksdb/storage.mdx', '../store/rocksdb/documentation/storage.md'],
+  ['src/content/docs/stores/rocksdb/backups.mdx', '../store/rocksdb/documentation/backups.md'],
   ['src/content/docs/stores/foundationdb.mdx', '../store/foundationdb/README.md'],
   ['src/content/docs/stores/foundationdb/architecture.mdx', '../store/foundationdb/docs/architecture.md'],
   ['src/content/docs/stores/foundationdb/cluster-updates.mdx', '../store/foundationdb/docs/cluster-updates.md'],

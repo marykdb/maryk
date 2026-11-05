@@ -206,3 +206,13 @@ change see the staged writes, and validation failure rolls back the record savep
 Root list/set/map counts have no type indicator: a zero-count byte means a present,
 empty collection. Nullable removal deletes that qualifier and its descendants,
 including the empty case, and retains the normal history tombstones.
+
+## Physical backup and recovery
+
+`RocksDBBackupRepository` wraps the engine backup APIs in serialized IO operations.
+It embeds `MARYK_META.yml` and history settings in each backup's application
+metadata, prevents overlap with database directories, and restores only into new
+directories. A store lifecycle guard keeps native resources alive during backup;
+schema/index migrations must finish before capture. See
+[backup and restore](backups.md) for how physical recovery complements the shared
+portable record backup format.

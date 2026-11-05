@@ -118,6 +118,7 @@ import maryk.datastore.rocksdb.TableType.Unique
 import maryk.datastore.rocksdb.metadata.CURRENT_INDEX_KEY_FORMAT_VERSION
 import maryk.datastore.rocksdb.metadata.ModelMeta
 import maryk.datastore.rocksdb.metadata.StoreMeta
+import maryk.datastore.rocksdb.metadata.parseStoreMeta
 import maryk.datastore.rocksdb.metadata.readStoreMetaFile
 import maryk.datastore.rocksdb.metadata.writeStoreMetaFile
 import maryk.datastore.rocksdb.model.RocksDBLocalMigrationLease
@@ -186,6 +187,7 @@ import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.TypeIndicator
+import maryk.file.File
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.DBOptions
@@ -233,6 +235,9 @@ class RocksDBDataStore private constructor(
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
     private val resourcesClosed = atomic(false)
+    private val physicalBackupMutex = Mutex()
+    // 0 = idle, 1 = backup owns the DB, -1 = closing/closed. Also guards direct closeResources callers.
+    private val physicalBackupState = atomic(0)
     private val sensitiveReferencesByModelId: Map<UInt, SensitiveModelReferences> =
         dataModelsById.mapValues { (modelId, model) ->
             collectSensitiveReferences(modelId, model)
@@ -249,7 +254,11 @@ class RocksDBDataStore private constructor(
 
     override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
 
-    private val storePath: String = relativePath
+    private val storePath: String = relativePath.also {
+        check(!backupPathExists("$it/$INCOMPLETE_RESTORE_DIRECTORY")) {
+            "Incomplete RocksDB restore at $it; discard this destination and restore into a new path"
+        }
+    }
     private val defaultMigrationLease = RocksDBLocalMigrationLease(storePath)
     private var storeMeta: StoreMeta = readStoreMetaFile(storePath).also { meta ->
         if (meta.indexKeyFormatVersion > CURRENT_INDEX_KEY_FORMAT_VERSION) {
@@ -1256,19 +1265,25 @@ class RocksDBDataStore private constructor(
 
     override suspend fun close() {
         withContext(NonCancellable) {
-            cancelPendingMigrations("Datastore closing")
-            try {
-                super.close()
-            } finally {
-                // A native worker can be cancelled before its background migration finalizer runs.
-                // The default lease is process-local, so closing its owner can release it safely here.
-                defaultMigrationLease.releaseOwnedLeases()
-                closeResources()
+            physicalBackupMutex.withLock {
+                cancelPendingMigrations("Datastore closing")
+                try {
+                    super.close()
+                } finally {
+                    // A native worker can be cancelled before its background migration finalizer runs.
+                    // The default lease is process-local, so closing its owner can release it safely here.
+                    defaultMigrationLease.releaseOwnedLeases()
+                    closeResources()
+                }
             }
         }
     }
 
     fun closeResources() {
+        if (!physicalBackupState.compareAndSet(0, -1)) {
+            check(physicalBackupState.value == -1) { "Cannot close datastore resources during a physical backup; use suspend close()" }
+            return
+        }
         if (resourcesClosed.getAndSet(true)) return
 
         columnFamilyHandlesByDataModelIndex.values.forEach {
@@ -1635,6 +1650,26 @@ class RocksDBDataStore private constructor(
         }
         return true
     }
+
+    internal suspend fun <T> withPhysicalBackup(block: (OptimisticTransactionDB, String, String) -> T): T =
+        physicalBackupMutex.withLock {
+            check(physicalBackupState.compareAndSet(0, 1)) { "Datastore is closed" }
+            try {
+                storeMetaMutex.withLock {
+                    check(storeInitializationReady.isCompleted && !resourcesClosed.value) { "Datastore is not ready" }
+                    check(pendingMigrationModelIds.value.isEmpty() && pendingMigrationsInternal().isEmpty() && dependencyWaitingMigrationModelIds.value.isEmpty() && indexKeyFormatReady.value) {
+                        "Finish schema and index migrations before creating a physical backup"
+                    }
+                    val metadata = requireNotNull(File.readText("$storePath/MARYK_META.yml", 4 * 1024 * 1024)) {
+                        "Missing or oversized Maryk store metadata"
+                    }
+                    check(parseStoreMeta(metadata) == storeMeta) { "Maryk metadata changed outside the datastore" }
+                    block(db, storePath, metadata)
+                }
+            } finally {
+                physicalBackupState.value = 0
+            }
+        }
 
     /** Call while the store is open; counters are cumulative and are not reset by sampling. */
     fun diagnostics(): RocksDBDiagnostics {

@@ -173,6 +173,7 @@ export default defineConfig({
                                 {label: 'RocksDB Architecture', slug: 'stores/rocksdb/architecture'},
                                 {label: 'RocksDB Migrations', slug: 'stores/rocksdb/migrations'},
                                 {label: 'RocksDB Storage Layout', slug: 'stores/rocksdb/storage'},
+                                {label: 'RocksDB Backups', slug: 'stores/rocksdb/backups'},
                             ],
                         },
                         {

@@ -15,7 +15,20 @@ kotlin {
         enableCoreLibraryDesugaring = true
     }
 
+    applyDefaultHierarchyTemplate {
+        common {
+            group("native") {
+                group("posix") {
+                    withApple()
+                    withLinux()
+                    withAndroidNative()
+                }
+            }
+        }
+    }
+
     sourceSets {
+
         getByName("commonTest") {
             kotlin.srcDir("src/commonTestExpect/kotlin")
             dependencies {

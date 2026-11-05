@@ -184,3 +184,17 @@ not an atomic filesystem snapshot or total directory size: obsolete files and
 other metadata are not included. WAL usage can remain significant even when SST
 compression is effective. Pinned cache usage may also include write-buffer
 reservations after application iterators have closed.
+
+## Native and portable backups
+
+`RocksDBBackupRepository` provides incremental physical backups for recovery into
+a compatible RocksDB store, including indexes, transaction receipts and Maryk
+metadata. It works with or without `keepAllVersions`. Restore uses a new directory
+so the recovered store can be validated before switching the application.
+
+The shared `backup(writer)` / `restore(reader)` API remains the portable, versioned
+record export between compatible Maryk stores. It requires retained history and
+does not clone RocksDB's physical files.
+
+See [RocksDB backups and portable backups](documentation/backups.md) for the
+comparison, native API examples, retention, consistency and recovery procedure.

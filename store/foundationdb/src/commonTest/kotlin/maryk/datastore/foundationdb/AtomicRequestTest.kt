@@ -40,12 +40,29 @@ import maryk.datastore.shared.supportsAtomicRequests
 import kotlin.test.assertTrue
 import kotlin.test.Test
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.minutes
 
 class AtomicRequestTest {
+    // Each shared contract runs many integration cases against the real server.
     @Test
-    fun sharedAtomicContract() = runTest {
+    fun sharedTransactionContract() = runTest(timeout = 3.minutes) {
+        val store = FoundationDBDataStore.open(fdbClusterFilePath = "./fdb.cluster", directoryPath = listOf("maryk", "transaction", Random.nextInt().toString()), dataModelsById = dataModelsForTests, keepAllVersions = true, keepUpdateHistoryIndex = true)
+        try {
+            runTransactionDataStoreTests(store)
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
+    fun sharedAtomicContract() = runTest(timeout = 3.minutes) {
         val store = FoundationDBDataStore.open(fdbClusterFilePath = "./fdb.cluster", directoryPath = listOf("maryk", "atomic", Random.nextInt().toString()), dataModelsById = dataModelsForTests, keepAllVersions = true, keepUpdateHistoryIndex = true)
-        try { assertTrue(store.supportsAtomicRequests); runAtomicDataStoreTests(store); runTransactionDataStoreTests(store) } finally { store.close() }
+        try {
+            assertTrue(store.supportsAtomicRequests)
+            runAtomicDataStoreTests(store)
+        } finally {
+            store.close()
+        }
     }
     @Test
     fun competingStoreInstances() = runTest {

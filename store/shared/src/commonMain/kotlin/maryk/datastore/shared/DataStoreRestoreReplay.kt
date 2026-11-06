@@ -28,7 +28,7 @@ internal class RestoreCodec(private val models: Map<String, IsRootDataModel>) {
     private fun context(modelName: String) = RequestContext(
         DefinitionsContext(models.mapValues { DataModelReference(it.value) }.toMutableMap()),
         models.getValue(modelName),
-    )
+    ).also { it.rejectUnknownProtoBufFields = true }
 
     fun encode(modelName: String, record: DataObjectVersionedChange<IsRootDataModel>, remainingBytes: Int): ByteArray {
         val context = context(modelName)

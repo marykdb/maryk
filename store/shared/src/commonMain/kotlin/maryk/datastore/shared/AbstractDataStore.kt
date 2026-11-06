@@ -24,6 +24,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.yield
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
@@ -49,6 +52,8 @@ import maryk.core.query.requests.createCursor
 import maryk.core.query.requests.resolveCursor
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.IsDataResponse
+import maryk.core.query.ValuesWithMetaData
+import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
@@ -78,7 +83,7 @@ abstract class AbstractDataStore(
     coroutineContext: CoroutineContext,
     protected val maxConcurrentReads: Int = 1,
     readWorkerCoroutineContext: CoroutineContext = coroutineContext,
-): IsDataStore, CoroutineScope, AtomicDataStore, TransactionalDataStore, VersionedRestoreDataStore {
+): IsDataStore, CoroutineScope, AtomicDataStore, TransactionalDataStore, VersionedRestoreDataStore, StateBackupDataStore {
     init {
         require(maxConcurrentReads > 0) { "maxConcurrentReads must be greater than zero" }
     }
@@ -170,6 +175,23 @@ abstract class AbstractDataStore(
     protected open suspend fun processTransactionRequest(request: TransactionRequest, version: HLC): TransactionResponse =
         TransactionResponse(TransactionStatus.Unsupported)
 
+    override val supportsStateBackup: Boolean get() = false
+
+    override suspend fun writeStateBackup(writer: DataStoreStateBackupWriter, options: DataStoreStateBackupOptions): DataStoreStateBackupManifest {
+        if (!supportsStateBackup) throw RequestException("Consistent state backup is unsupported")
+        check(currentTransaction(this) == null) { "Backup is not a transaction operation" }
+        val anchor = dataModelsById.values.firstOrNull() ?: EmptyStateBackupModel
+        return execute(StateBackupRequest(anchor, writer, options, currentCoroutineContext()[Job])).manifest
+    }
+
+    /** Engines without a persistent read context must fence external writers for the whole export. */
+    protected open suspend fun withStateBackupReadLock(block: suspend () -> Unit) = block()
+
+    override suspend fun restoreStateVersion(model: IsRootDataModel, records: List<ValuesWithMetaData<IsRootDataModel>>, allocations: Map<Key<IsRootDataModel>, StateBackupAllocations>) {
+        if (!supportsStateBackup || keepAllVersions) throw RequestException("State import requires a supporting store with history disabled")
+        restoreVersion(RestoreVersionRequest.state(model, records, allocations))
+    }
+
     open val supportsVersionedRestore: Boolean get() = false
 
     override val restoreCapabilities get() = atomicCapabilities.takeIf { supportsVersionedRestore }
@@ -204,7 +226,9 @@ abstract class AbstractDataStore(
     ): RP {
         if (request !is TransactionStoreRequest) currentTransaction(this)?.let { return it.execute(request).response }
         waitForInit()
-        if (request !is TransactionStoreRequest) assertRequestModelReady(getDataModelId(request.dataModel))
+        if (request !is TransactionStoreRequest && request !is StateBackupRequest) {
+            assertRequestModelReady(getDataModelId(request.dataModel))
+        }
 
         val response = CompletableDeferred<RP>()
 
@@ -427,15 +451,69 @@ abstract class AbstractDataStore(
             foundationDbReadVersion = foundationDbReadVersion,
         )
 
+    private suspend fun processStateBackupAction(
+        action: StoreAction<*, *, *>,
+        request: StateBackupRequest,
+        scan: suspend (ScanRequest<IsRootDataModel>) -> ValuesResponse<IsRootDataModel>,
+        readAllocations: suspend (IsRootDataModel, Key<IsRootDataModel>) -> StateBackupAllocations,
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        val response = action.response as CompletableDeferred<StateBackupResponse>
+        try {
+            val result = coroutineScope {
+                val job = requireNotNull(currentCoroutineContext()[Job])
+                val cancellation = request.callerJob?.invokeOnCompletion { cause ->
+                    if (cause != null) job.cancel(CancellationException("State backup caller cancelled", cause))
+                }
+                try {
+                    currentCoroutineContext().ensureActive()
+                    var captured: StateBackupResponse? = null
+                    withStateBackupReadLock { captured = captureStateBackup(request, scan, readAllocations) }
+                    requireNotNull(captured)
+                } finally {
+                    cancellation?.dispose()
+                }
+            }
+            response.complete(result)
+        } catch (error: Throwable) {
+            response.completeExceptionally(error)
+            if (error is Error) throw error
+        }
+    }
+
+    /** Preserve the actor entry point for custom backends without state backup support. */
+    protected suspend fun processStoreActions(
+        processAction: suspend (StoreAction<*, *, *>) -> Unit,
+    ) = processStoreActions(
+        readStateAllocations = { _, _ -> throw RequestException("State allocation capture is not implemented") },
+        processAction = processAction,
+    )
+
     /** Consume store actions with bounded reads and write exclusion. */
     protected suspend fun processStoreActions(
+        readStateAllocations: suspend (IsRootDataModel, Key<IsRootDataModel>) -> StateBackupAllocations,
         processAction: suspend (StoreAction<*, *, *>) -> Unit,
     ) = processStoreActions<Unit>(
         createReadContext = null,
         closeReadContext = {},
+        readStateAllocations = { model, key, _ -> readStateAllocations(model, key) },
     ) { action, _ ->
         processAction(action)
     }
+
+    /** Preserve the native-read actor entry point for custom backends. */
+    protected suspend fun <ReadContext : Any> processStoreActions(
+        createReadContext: (suspend () -> ReadContext)?,
+        closeReadContext: suspend (ReadContext) -> Unit,
+        createFlowSnapshotBoundary: (ReadContext?) -> FlowSnapshotBoundary = {
+            this@AbstractDataStore.createFlowSnapshotBoundary()
+        },
+        processAction: suspend (StoreAction<*, *, *>, ReadContext?) -> Unit,
+    ) = processStoreActions(
+        createReadContext, closeReadContext, createFlowSnapshotBoundary,
+        readStateAllocations = { _, _, _ -> throw RequestException("State allocation capture is not implemented") },
+        processAction = processAction,
+    )
 
     /**
      * Consume store actions with bounded reads. A prepared native read context allows
@@ -447,6 +525,7 @@ abstract class AbstractDataStore(
         createFlowSnapshotBoundary: (ReadContext?) -> FlowSnapshotBoundary = {
             this@AbstractDataStore.createFlowSnapshotBoundary()
         },
+        readStateAllocations: suspend (IsRootDataModel, Key<IsRootDataModel>, ReadContext?) -> StateBackupAllocations,
         processAction: suspend (StoreAction<*, *, *>, ReadContext?) -> Unit,
     ) {
         val readSemaphore = Semaphore(maxConcurrentReads)
@@ -463,6 +542,11 @@ abstract class AbstractDataStore(
                 readSemaphore.acquire()
                 try {
                     action.onBeforeReadContext?.invoke()
+                    if (action.request is StateBackupRequest) {
+                        // Pin only a ready schema. A background migration must not finish
+                        // underneath an older read view while the destination suspends.
+                        for (modelId in dataModelsById.keys) assertRequestModelReady(modelId)
+                    }
                 } catch (e: CancellationException) {
                     readSemaphore.release()
                     throw e
@@ -532,7 +616,17 @@ abstract class AbstractDataStore(
                 readJobs += launch(readCoroutineContext, start = CoroutineStart.UNDISPATCHED) {
                     try {
                         yield()
-                        processAction(action, readContext)
+                        val backup = action.request as? StateBackupRequest
+                        if (backup == null) {
+                            processAction(action, readContext)
+                        } else {
+                            processStateBackupAction(action, backup, scan = { request ->
+                                assertRequestModelReady(getDataModelId(request.dataModel))
+                                val page = CompletableDeferred<ValuesResponse<IsRootDataModel>>()
+                                processAction(StoreAction(request, page, null, null, action.executionContext), readContext)
+                                page.await()
+                            }, readAllocations = { model, key -> readStateAllocations(model, key, readContext) })
+                        }
                     } finally {
                         if (readContext != null) {
                             try {

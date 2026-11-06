@@ -19,6 +19,7 @@ enum class RequestExecutionKind {
 
 val Any.requestExecutionKind: RequestExecutionKind
     get() = when (this) {
+        is StateBackupRequest,
         is GetRequest<*>,
         is GetChangesRequest<*>,
         is GetUpdatesRequest<*>,

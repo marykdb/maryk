@@ -1,10 +1,15 @@
 package maryk.datastore.rocksdb
 
+import maryk.datastore.shared.StateBackupAllocationCollector
+import maryk.datastore.shared.incrementingMapWatermarkPrefix
+import maryk.datastore.shared.migration.legacyIncrementingMapProofKey
+
 import maryk.datastore.shared.collectSensitiveReferences
 import maryk.datastore.shared.collectUniqueReferences
 import maryk.datastore.shared.mergeUniqueReferences
 import maryk.datastore.shared.SensitiveModelReferences
 
+import maryk.datastore.rocksdb.processors.helpers.setCreatedVersion
 import maryk.datastore.shared.RestoreVersionRequest
 import maryk.datastore.shared.applyRestoreVersion
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
@@ -876,6 +881,23 @@ class RocksDBDataStore private constructor(
                 processStoreActions(
                     createReadContext = ::createReadContext,
                     closeReadContext = RocksDBReadContext::close,
+                    readStateAllocations = { model, key, context ->
+                        val collector = StateBackupAllocationCollector(model)
+                        val families = getColumnFamilies(model)
+                        val prefix = incrementingMapWatermarkPrefix(families.modelId, key.bytes)
+                        requireNotNull(context).withAccessor(this@RocksDBDataStore) { accessor ->
+                            accessor.getIterator(context.sequentialReadOptions, families.model).use { iterator ->
+                                iterator.seek(prefix)
+                                while (iterator.isValid()) {
+                                    val metadataKey = iterator.key()
+                                    if (metadataKey.size < prefix.size || !metadataKey.copyOfRange(0, prefix.size).contentEquals(prefix)) break
+                                    collector.add(metadataKey.copyOfRange(prefix.size, metadataKey.size), iterator.value())
+                                    iterator.next()
+                                }
+                            }
+                        }
+                        collector.snapshot()
+                    },
                     createFlowSnapshotBoundary = {
                         this@RocksDBDataStore.createFlowSnapshotBoundary()
                     },
@@ -1385,6 +1407,8 @@ class RocksDBDataStore private constructor(
 
     override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
 
+    override val supportsStateBackup = true
+
     override val supportsVersionedRestore = true
 
     override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) {
@@ -1430,6 +1454,19 @@ class RocksDBDataStore private constructor(
                         } },
                     )
                 }
+            }
+            for ((key, firstVersion) in request.stateCreationVersions) {
+                val families = getColumnFamilies(request.dataModel)
+                setCreatedVersion(transaction, families, key, HLC.toStorageBytes(HLC(firstVersion)))
+                val collector = StateBackupAllocationCollector(request.dataModel)
+                for ((reference, maximum) in request.stateAllocations[key].orEmpty()) {
+                    val metadataKey = incrementingMapWatermarkPrefix(families.modelId, key.bytes) + reference.bytes
+                    transaction.get(families.model, defaultReadOptions, metadataKey)?.let { collector.add(reference.bytes, it) }
+                    collector.add(reference.bytes, maximum.bytes)
+                }
+                for ((reference, maximum) in collector.snapshot()) transaction.put(families.model,
+                    incrementingMapWatermarkPrefix(families.modelId, key.bytes) + reference.bytes, maximum.bytes)
+                transaction.put(families.model, legacyIncrementingMapProofKey(families.modelId, key.bytes), byteArrayOf(1))
             }
             for (model in request.targets.keys) {
                 val family = getColumnFamilies(getDataModelId(model)).model

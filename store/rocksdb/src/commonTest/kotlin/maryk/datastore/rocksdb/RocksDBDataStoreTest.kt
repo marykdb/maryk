@@ -30,6 +30,8 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.test.UniqueModel
 import maryk.datastore.test.UniqueModel.email
 import maryk.datastore.test.UniqueOwnershipTest
+import maryk.datastore.test.stateBackupModels
+import maryk.datastore.test.DataStoreStateBackupTest
 import maryk.datastore.test.DataStoreBackupRoundTripTest
 import maryk.datastore.test.DurableReplicationTombstoneTest
 import maryk.datastore.test.assertStatusIs
@@ -348,6 +350,32 @@ class RocksDBDataStoreTest {
 
         try {
             DataStoreBackupRoundTripTest(source, target).restoresCurrentValueAndCompleteHistory()
+        } finally {
+            source.close()
+            target.close()
+            deleteFolder(sourceFolder)
+            deleteFolder(targetFolder)
+        }
+    }
+
+    @Test
+    fun portableStateBackupRoundTrip() = runTest {
+        val sourceFolder = createTestDBFolder("backup-source")
+        val targetFolder = createTestDBFolder("backup-target")
+        val models = stateBackupModels
+        val source = RocksDBDataStore.open(
+            relativePath = sourceFolder,
+            dataModelsById = models,
+            keepAllVersions = false,
+        )
+        val target = RocksDBDataStore.open(
+            relativePath = targetFolder,
+            dataModelsById = models,
+            keepAllVersions = false,
+        )
+
+        try {
+            DataStoreStateBackupTest(source, target).restoresStateWithoutHistory()
         } finally {
             source.close()
             target.close()

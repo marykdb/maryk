@@ -49,6 +49,11 @@ kotlin {
                 api(projects.file)
             }
         }
+        jvmTest {
+            dependencies {
+                implementation(projects.store.memory)
+            }
+        }
         androidHostTest {
             kotlin.srcDir("src/androidUnitTest/kotlin")
         }

@@ -1,5 +1,9 @@
 # Local Test Server
 
+For an isolated native backup/restore rehearsal using separate disposable clusters,
+see the [recovery drill](backups.md#local-recovery-drill). It runs independently
+of the managed test-server lifecycle described below.
+
 This module can automatically install and run a local FoundationDB server for JVM and desktop native tests.
 
 - **Automatic test lifecycle:** macOS/Linux only. `scripts/run-fdb-for-tests.sh` starts `fdbserver` on `127.0.0.1:4500`, writes logs to `build/testdatastore/logs`, and PID to `build/testdatastore/fdbserver.pid`; `scripts/stop-fdb-for-tests.sh` stops that managed server and removes the test database directory.

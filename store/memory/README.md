@@ -77,3 +77,11 @@ contracts outside an explicit transaction.
 See [store behavior](../shared/docs/store-behavior.md) for staged Checks, typed
 child mutations, unique ownership, replication and value ownership. For optional
 SQL queries, follow the [SQL guide](../../sql/README.md).
+
+## Portable backup and restore
+
+Use `backupState` / `restoreState` for current application data without requiring
+source history. Use `backup` / `restore` when retained revisions must survive;
+that mode requires history on source and target. A state restore target must be
+isolated, empty and history-disabled. See the [shared backup guide](../shared/docs/backup-restore.md)
+for examples, consistency rules, backend support and native alternatives.

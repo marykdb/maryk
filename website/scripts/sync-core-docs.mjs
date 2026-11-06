@@ -56,6 +56,9 @@ export const map = [
   ['src/content/docs/stores/shared.mdx', '../store/shared/README.md'],
   ['src/content/docs/stores/shared/encryption-key-rotation.mdx', '../store/shared/docs/encryption-key-rotation.md'],
   ['src/content/docs/stores/shared/backup-restore.mdx', '../store/shared/docs/backup-restore.md'],
+  ['src/content/docs/stores/shared/state-backups.mdx', '../store/shared/docs/state-backups.md'],
+  ['src/content/docs/stores/shared/history-backups.mdx', '../store/shared/docs/history-backups.md'],
+  ['src/content/docs/stores/shared/backup-reference.mdx', '../store/shared/docs/backup-reference.md'],
   ['src/content/docs/stores/shared/store-behavior.mdx', '../store/shared/docs/store-behavior.md'],
   ['src/content/docs/stores/shared/storage-format-upgrades.mdx', '../store/shared/docs/storage-format-upgrades.md'],
   ['src/content/docs/stores/memory.mdx', '../store/memory/README.md'],
@@ -74,6 +77,7 @@ export const map = [
   ['src/content/docs/stores/foundationdb/migrations.mdx', '../store/foundationdb/docs/migrations.md'],
   ['src/content/docs/stores/foundationdb/storage.mdx', '../store/foundationdb/docs/storage.md'],
   ['src/content/docs/stores/foundationdb/local-testing.mdx', '../store/foundationdb/docs/local-testing.md'],
+  ['src/content/docs/stores/foundationdb/backups.mdx', '../store/foundationdb/docs/backups.md'],
   ['src/content/docs/stores/remote.mdx', '../store/remote/README.md'],
   ['src/content/docs/stores/test.mdx', '../store/test/README.md'],
 

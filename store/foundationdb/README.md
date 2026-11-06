@@ -7,6 +7,7 @@ See also:
 - [Architecture overview](./docs/architecture.md)
 - [Migrations](./docs/migrations.md)
 - [Local testing](./docs/local-testing.md)
+- [Backup and recovery](./docs/backups.md)
 
 ## Getting Started
 

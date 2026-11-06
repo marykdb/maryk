@@ -192,9 +192,9 @@ a compatible RocksDB store, including indexes, transaction receipts and Maryk
 metadata. It works with or without `keepAllVersions`. Restore uses a new directory
 so the recovered store can be validated before switching the application.
 
-The shared `backup(writer)` / `restore(reader)` API remains the portable, versioned
-record export between compatible Maryk stores. It requires retained history and
-does not clone RocksDB's physical files.
+Use [portable state or history backups](../shared/docs/backup-restore.md) when
+transferring application data between backends. State export does not require
+retained history.
 
-See [RocksDB backups and portable backups](documentation/backups.md) for the
-comparison, native API examples, retention, consistency and recovery procedure.
+Follow the [native RocksDB recovery guide](documentation/backups.md) for creation,
+retention and restore steps.

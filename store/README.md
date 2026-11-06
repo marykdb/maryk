@@ -16,6 +16,8 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 
 All engines share the same API surface, so you can start with Memory in tests, use IndexedDB in browser apps, use RocksDB for embedded persistence, and move to FoundationDB on the server without changing your models or queries.
 
+For recovery and backend transfer, start with [Backup and restore](shared/docs/backup-restore.md).
+
 Below is a practical overview of each engine, why it was chosen, and when to use it.
 
 ## Atomic changes across models

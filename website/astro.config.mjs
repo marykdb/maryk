@@ -142,7 +142,16 @@ export default defineConfig({
                             items: [
                                 {label: 'Overview', slug: 'stores/shared'},
                                 {label: 'Encryption key rotation', slug: 'stores/shared/encryption-key-rotation'},
-                                {label: 'Backup and restore', slug: 'stores/shared/backup-restore'},
+                                {
+                                    label: 'Backup and restore',
+                                    collapsed: true,
+                                    items: [
+                                        {label: 'Choose a backup', slug: 'stores/shared/backup-restore'},
+                                        {label: 'State backup', slug: 'stores/shared/state-backups'},
+                                        {label: 'History backup', slug: 'stores/shared/history-backups'},
+                                        {label: 'Reference', slug: 'stores/shared/backup-reference'},
+                                    ],
+                                },
                                 {label: 'Store behavior', slug: 'stores/shared/store-behavior'},
                                 {label: 'Model migrations', slug: 'stores/shared/migrations'},
                                 {label: 'Storage format upgrades', slug: 'stores/shared/storage-format-upgrades'},
@@ -185,6 +194,7 @@ export default defineConfig({
                                 {label: 'Cluster-wide live updates', slug: 'stores/foundationdb/cluster-updates'},
                                 {label: 'Migrations', slug: 'stores/foundationdb/migrations'},
                                 {label: 'Local Testing', slug: 'stores/foundationdb/local-testing'},
+                                {label: 'Backup and Recovery', slug: 'stores/foundationdb/backups'},
                                 {label: 'Storage Layout', slug: 'stores/foundationdb/storage'},
                             ],
                         },

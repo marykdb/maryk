@@ -107,21 +107,38 @@ backing store must retain values and a ready update-history index. An older
 server does not gain the new request type through a client upgrade. See
 [history paging](../../../core/docs/query.md#getscan-update-history).
 
+## State backup and restore
+
+Use the shared `backupState` / `restoreState` APIs on `RemoteDataStore`; check
+`remote.supportsStateBackup` first. Both peers and the backing store must support
+it. Export uses one server-owned capture and inherits the backing store's limits.
+Follow the [state backup guide](../../shared/docs/state-backups.md) for storage
+adapters, target settings and restore steps.
+
+Closing the remote store cancels its state operations without closing an
+application-supplied HTTP client. On export failure, the SDK also attempts an
+explicit server cancellation for up to five seconds. Cleanup is best effort if
+the network is unavailable. There is no automatic reconnect or archive resume.
+
+State restore applies atomic batches, not one whole-archive transaction. A lost
+acknowledgement can follow a committed batch: discard the isolated target and
+restart rather than retrying that batch blindly. The server requires `StateBackup`
+for export, and `StateRestore` plus applicable `ProcessUpdate` permissions for import.
+
+See [protocol details](protocol.md#state-archive-transport) for framing, idle
+bounds, admission and cancellation behavior.
+
 ## Atomic backup restore
 
-The client negotiates version-group restore support through store information.
-Current clients send each complete source-version group to `/v1/restore-version`.
-The server checks every affected model and add/change/delete permission using the
-existing `ProcessUpdate` authorization operation before replaying the group.
-The backing store validates final unique ownership and commits the whole group
-atomically, preserving source versions. Old servers without this capability are
-rejected before replay instead of receiving individual updates. Upgrade both
-peers for this restore path; the portable backup format is version 3.
+For retained history, both peers and the backing store must support atomic
+source-version replay. The client negotiates that capability and sends each group
+to `/v1/restore-version`; an older unsupported server is refused. Authorization
+checks cover every affected model and the group's `ProcessUpdate` operations
+before replay. The group commits atomically and preserves original versions.
 
-Restore staging, group ceilings and disposable-target publication follow the
-[shared backup/restore contract](../../shared/docs/backup-restore.md).
-An interrupted HTTP response can leave the commit outcome uncertain; publish the
-target only after the complete restore succeeds.
+Follow the [history backup guide](../../shared/docs/history-backups.md) for source
+and target settings. A lost response can have a committed outcome; use an isolated,
+disposable target and publish it only after complete restore and validation.
 
 ## Serializable transaction scopes
 

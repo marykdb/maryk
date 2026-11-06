@@ -58,6 +58,15 @@ reconnecting obtains a fresh state and can repeat updates.
 History requests require server support, retained versions and a ready history
 index. See [history requirements](docs/client.md#update-history).
 
+## State backup and restore
+
+`backupState` and `restoreState` use the shared portable state format through one
+server-owned capture and bounded atomic import batches. Both peers and the
+backing store must advertise `supportsStateBackup`; older servers default to
+unsupported. Source history is optional, while state restore requires an isolated
+history-disabled target. See [state recovery](docs/client.md#state-backup-and-restore)
+and the [backup choice and backend matrix](../shared/docs/backup-restore.md).
+
 ## Atomic backup restore
 
 Both peers and the backend must support atomic source-version replay. Restore

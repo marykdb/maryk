@@ -63,6 +63,12 @@ Change requests also require permission for their contents: soft deletion requir
 `Delete`, creation requires `Add`, and restoring a soft-deleted object requires
 `Change`. These checks also apply inside collected requests and execute batches.
 
+State backup requires the `StateBackup` operation for every exported model.
+State import requires `StateRestore` and the existing `ProcessUpdate` permissions
+for the batch's add/change/delete contents. Update allowlists explicitly when
+enabling these endpoints. The advertised capability is backend support, not an
+authorization grant. See [state transport](protocol.md#state-archive-transport).
+
 FoundationDB:
 
 ```text

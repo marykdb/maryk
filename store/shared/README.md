@@ -7,8 +7,8 @@ choose a concrete store; this module is for shared capabilities and store adapte
 
 - [Queries and transactions](../../core/docs/query.md): typed requests, atomic
   write sets, serializable scopes, history and sync.
-- [Backup and restore](docs/backup-restore.md): portable point-in-time backups,
-  required history settings, limits and recovery workflow.
+- [Backup and restore](docs/backup-restore.md): choose native, state or history backup, then
+  follow the recovery guide for that approach.
 - [Store behavior](docs/store-behavior.md): deletion, uniqueness, replication,
   structural queries and listener lifecycle.
 - [Encryption key rotation](docs/encryption-key-rotation.md): application-owned
@@ -36,9 +36,12 @@ and providers until all affected data and indexes have been migrated. Follow the
 
 ## Point-in-time backup and restore
 
-Enable retained history before writing data. Backups need a fixed snapshot and
-successful writer completion; restore requires compatible models and a disposable
-target. See [backup and restore](docs/backup-restore.md) for the workflow and limits.
+Use `backupState` for consistent current records with or without source history,
+and `restoreState` for a history-disabled isolated target. Use `backup` / `restore`
+to preserve retained revisions; that path requires history on both stores.
+Both paths require compatible models and successful writer completion. See
+[backup and restore](docs/backup-restore.md) for capture guarantees, binary archive
+transport, resource limits and publication rules.
 
 ## Implementing a store
 

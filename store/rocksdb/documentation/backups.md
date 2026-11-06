@@ -1,112 +1,61 @@
-# RocksDB backups and portable backups
+# Native RocksDB backups
 
-Maryk offers two complementary backup paths. Choose according to what you need
-to recover and where the result must be restored.
+Use `RocksDBBackupRepository` to recover a complete RocksDB store, including its
+indexes, Maryk metadata and whatever history it retains. It works with or without
+`keepAllVersions`. For backend transfer, choose a [portable backup](../../shared/docs/backup-restore.md).
 
-| | Native RocksDB backup | Portable Maryk backup |
-| --- | --- | --- |
-| API | `RocksDBBackupRepository` in `store/rocksdb` | Shared `backup(writer)` / `restore(reader)` |
-| Contents | Physical engine files plus Maryk store metadata | Versioned application records described by a manifest |
-| Destination | A compatible RocksDB store | Compatible Maryk datastore implementations |
-| History required | No; preserves whatever history exists | `keepAllVersions` required on source and target |
-| Recovery point | Consistent current engine state selected during backup | Selected authoritative Maryk snapshot version |
-| Indexes and engine metadata | Preserved, including receipts, tombstones and allocation state | Reconstructed through versioned replay; not an engine clone |
-| Repeated backups | Immutable SST files shared between backups | Logical export through the writer contract |
-| Typical purpose | Operational recovery of an embedded RocksDB store | Portable export, backend transfer and logical recovery |
+## Before starting
 
-The formats and APIs are separate. A native backup cannot be passed to the
-portable reader, and a portable archive cannot be opened by RocksDB's backup
-engine. Existing portable backup behavior and format remain unchanged. See the
-[portable backup and restore guide](../../shared/docs/backup-restore.md) for its
-history, hard-deletion, replay-limit and publication requirements.
+- Create a writable repository directory outside the live database tree.
+- Finish schema and index migrations before backing up.
+- Use paths without supplementary Unicode characters, such as emoji, on JVM and
+  Android. Those paths are rejected because of RocksDB JNI path encoding.
+- Keep the original encryption keys separately; they are not included in a backup.
 
-## Create and retain native backups
+An open repository owns an exclusive filesystem lock. Close it after use, and do
+not delete `.maryk-backup.lock` or modify repository files yourself. A leftover
+lock file after a crash is harmless; the operating system releases the lock.
 
-Create a dedicated repository directory first, outside the live database tree.
-Its parent and the directory itself must already exist and be writable. Opening acquires an
-exclusive filesystem ownership lock; another Maryk repository owner, including
-one in another process, is refused. Canonical aliases share that ownership. Local registration also checks lock-file
-identity, so a failed alias acquisition cannot release another local owner's
-process-scoped POSIX lock.
-The persistent `.maryk-backup.lock` file is harmless after close or a process
-crash: the operating system releases its lock when the owner exits. Do not delete
-or replace that file, or independently modify repository files while it is open.
-Use application-controlled repository and restore-parent directories. External
-tools must also respect exclusive ownership; raw RocksDB backup engines
-do not participate in Maryk's ownership protocol.
+## Create and retain backups
+
+The example assumes `store` is open and `/data/backups/accounts` already exists.
 
 ```kotlin
-import maryk.datastore.rocksdb.RocksDBBackupOptions
 import maryk.datastore.rocksdb.RocksDBBackupRepository
 
-val backups = RocksDBBackupRepository.open(
-    directory = "/data/backups/accounts",
-    options = RocksDBBackupOptions(
-        backupRateLimit = 32L * 1024 * 1024, // bytes/second; zero is unlimited
-        maxBackgroundOperations = 2,
-    ),
-)
+val backups = RocksDBBackupRepository.open("/data/backups/accounts")
 try {
     val backup = backups.createBackup(store)
-    println("Created backup ${backup.id}: ${backup.sizeBytes} logical bytes")
-    val retained = backups.backups()
-    // Only apply retention after the new backup has succeeded.
+    println("Created backup ${backup.id}")
+    // Retain recovery points only after the new backup succeeds.
     backups.purgeOldBackups(keep = 7)
 } finally {
     backups.close()
 }
 ```
 
-The repository uses RocksDB `BackupEngine` with its modern session-ID SST naming
-and safe shared-file identities. This avoids the legacy mode's repeated checksum
-reads of unchanged modern SSTs; older SSTs and blob files can still use the
-engine's legacy fallback. Restored data is checksum-verified in either mode. A backup's reported size is its logical size, not newly allocated
-repository bytes: retained backups may reference the same SSTs. Backups are
-synced, old backups are preserved on open, and retention runs only when requested.
-`deleteBackup(id)` and `purgeOldBackups(keep)` use the engine to delete references
-and let the engine reclaim unused files. Healthy repositories use RocksDB's
-batched retention operation. If some backups have unreadable Maryk metadata,
-retention keeps the requested number of metadata-readable backups and leaves unreadable
-ones untouched. Do not delete shared files yourself.
+Ordinary writes may continue during capture. The default flush includes writes
+made with WAL disabled. Backups are durably synced; retention runs only when
+requested. Repeated backups share unchanged SST files, so the reported backup
+size is its logical size, not newly allocated disk space.
 
-`createBackup` flushes before copying by default. This includes writes made with
-WAL disabled. `flushBeforeBackup = false` instead allows the engine to include
-live WAL files, avoiding that explicit flush; use this mode only when all relevant
-writes use the WAL. Neither mode selects an earlier Maryk HLC snapshot.
-
-Ordinary writes may continue while the engine captures a consistent physical
-state across column families. Subsequent hard deletion cannot erase the files
-already retained by that backup. The operation requires an initialized store
-without pending schema or index migrations. Complete migrations first. Maryk
-holds its store-metadata lock while capturing `MARYK_META.yml` and creating the
-engine backup. The metadata and history settings are embedded in that backup's
-application metadata, so they remain tied to its backup ID and do not depend on
-later changes to the live sidecar. The complete encoded payload must fit RocksDB's
-1 MiB application-metadata limit; oversized or structurally invalid metadata is
-rejected before a backup is started. Physical backup metadata version 2 uses an
-ASCII envelope with Base64-encoded UTF-8 YAML, avoiding JNI/Native string-encoding
-differences for Unicode model names. The reader also accepts the original version
-1 envelope. These version numbers are independent of the portable backup format.
-
-Backup operations run on the IO dispatcher. `store.close()` waits for an active
-backup before releasing native handles. Calling the lower-level synchronous
-`closeResources()` during a backup fails; use `close()` for normal lifecycle
-management. Repository `close()` likewise waits for its active operation. Native
+Use `store.close()` and repository `close()` for cleanup; they wait for active
+backups. The lower-level `closeResources()` refuses an active backup. Native
 backup calls are blocking and do not promise immediate coroutine cancellation.
 
-## Restore and validate before switching
+## Restore into a new directory
 
-Restore requires an absent destination directory with an existing parent.
-Existing directories, including empty ones, are refused. Repository and database
-paths must not contain one another; canonical paths resolve directory aliases
-before checking containment.
+Choose `recoveryBackupId` from `backups.backups()` for the recovery point you need.
+The destination must not exist, even as an empty directory; its parent must exist. The repository and destination must not contain
+one another. Use compatible Maryk/RocksDB versions, model registrations and codecs.
 
 ```kotlin
+import maryk.datastore.rocksdb.RocksDBDataStore
+
 val backups = RocksDBBackupRepository.open("/data/backups/accounts")
 try {
-    val selected = backups.backups().last()
     val restored = backups.restoreBackup(
-        id = selected.id,
+        id = recoveryBackupId,
         destination = "/data/recovery/accounts-checked",
     )
     val recoveredStore = RocksDBDataStore.open(
@@ -118,7 +67,7 @@ try {
     )
     try {
         recoveredStore.verifyStorageChecksums()
-        // Check application invariants before switching the application to this path.
+        // Check known records, indexed queries and application invariants.
     } finally {
         recoveredStore.close()
     }
@@ -127,70 +76,44 @@ try {
 }
 ```
 
-RocksDB checks file checksums while restoring. Maryk validates the physical
-backup metadata format before creating the destination and restores its matching
-`MARYK_META.yml`. That file is synced; directory-sync failures fail the restore
-on supported platforms. Windows does not expose directory syncing through the
-current file abstraction, so it has a weaker directory-entry durability guarantee.
-`corruptedBackupIds()` reports structural corruption known to the engine.
-`backups()` lists backups with readable, supported Maryk metadata (including known
-metadata and index-format versions);
-`unreadableBackupIds()` identifies other engine-readable backups. One unreadable
-backup does not prevent restoring healthy backups. An empty list does not establish that every stored byte has been
-read and checksum-verified. The current common binding has no standalone
-`BackupEngine.verifyBackup` API; test recovery by restoring to a disposable path,
-opening through Maryk and calling `verifyStorageChecksums()`.
+`accountModels` is the original application's model map. Restore checks file
+checksums and the embedded Maryk metadata, then restores the matching
+`MARYK_META.yml`. It does not switch the application or migrate its schema.
+Validate the recovered store before changing application configuration.
 
-A failed restore may leave a partial destination with a
-`.maryk-restore-incomplete` directory. Maryk refuses to open a store with that
-completion guard; it is removed only after files and metadata are restored and
-synced. Do not remove the guard to bypass a failed restore. Discard the partial
-destination explicitly and retry into another absent path. Restore never switches the active
-application store or replaces the live directory. Retention policy should allow
-recovery drills before older known-good backups are removed.
+A failed restore can leave a `.maryk-restore-incomplete` directory. Maryk refuses
+to open that destination. Discard it and retry into another absent path; do not
+remove the guard to bypass a failed restore.
 
-## Performance choices
+## Check recovery and keep an off-device copy
 
-Incremental `BackupEngine` is the default for independent recovery copies. A
-checkpoint can be faster for a local clone because it can hard-link SSTs, but
-it shares the underlying storage and does not protect against disk loss.
+`backups()` lists backups with supported, readable Maryk metadata.
+`unreadableBackupIds()` lists other engine-readable backups, and
+`corruptedBackupIds()` reports structural corruption known to RocksDB. One bad
+backup does not block healthy recovery. Empty error lists are not a full
+checksum verification: rehearse an actual restore and run `verifyStorageChecksums()`.
 
-The repository retains one engine per open owner, uses the native batched
-retention path when possible, and avoids redundant full garbage-collection and
-backup-inventory scans. First-backup time is dominated by copying existing data;
-repeat-backup time depends on changed SSTs, WAL volume and durable metadata writes.
-Tune `maxBackgroundOperations` and throughput limits against the actual disk and
-foreground workload. There is no universal fastest thread count.
+Use `deleteBackup(id)` or `purgeOldBackups(keep)` for retention, rather than deleting
+shared files. If some metadata is unreadable, retention keeps the requested number
+of readable recovery points and leaves unreadable backups untouched.
 
-The default flush includes WAL-disabled writes. WAL-inclusive mode may avoid
-flush latency when every write is WAL-protected. Durable syncing stays enabled;
-this API does not trade recoverability for benchmark throughput. See the
-[RocksDB backup guide](https://github.com/facebook/rocksdb/wiki/How-to-backup-RocksDB)
-and [11.8.1 backup options](https://github.com/facebook/rocksdb/blob/v11.8.1/include/rocksdb/utilities/backup_engine.h)
-for the underlying behavior.
+Copy the complete repository off-device while its owner is closed or quiescent.
+Keep shared files and metadata together. The API needs a writable local directory;
+copy read-only recovery media to a writable working directory first. A same-disk
+backup protects against application mistakes, but not disk loss. Protect stored
+bytes as production data, including any retained historical plaintext.
 
-## Compatibility and operational scope
+## Advanced options and compatibility
 
-JVM and Android backup filesystem paths currently reject supplementary Unicode
-characters (such as emoji): RocksDB JNI marshals paths through modified UTF-8 and
-could otherwise select a different filesystem location. Use a path without those
-characters. Unicode model names are supported by the ASCII metadata envelope.
+`RocksDBBackupOptions` controls throughput and background work; tune it against
+foreground traffic and disk capacity. `flushBeforeBackup = false` may avoid a
+flush, but is safe only when every relevant write uses the WAL. A checkpoint can
+be useful for a fast local clone, but shared storage does not protect against
+disk loss. See the [upstream backup guide](https://github.com/facebook/rocksdb/wiki/How-to-backup-RocksDB)
+for engine-level options.
 
-Native restore needs a compatible Maryk/RocksDB runtime, model registrations,
-custom comparators and codecs. It is not a guarantee of downgrade compatibility
-or a substitute for application schema migration. Restoring to another engine
-requires the portable backup path instead. It can be useful to keep frequent
-native backups for recovery and occasional portable backups for portability.
-
-Field-encryption keys and other application secrets are not bundled. Keep the
-required keys available separately. Native backups retain stored bytes, including
-any historical plaintext, so protect the repository as production data.
-
-The repository operates on a writable local filesystem directory. To recover
-from read-only media, first copy the complete repository to a writable local
-working directory; the published binding does not expose a read-only backup
-engine. Scheduling, off-device
-copying, encryption of the backup repository, and application switching belong to
-the caller. Copy the repository only while its owner is closed or otherwise
-quiescent; its shared-file inventory and metadata must remain together. A backup
-on the same disk provides recovery from application mistakes, but not disk loss.
+The embedded Maryk metadata must fit the engine's 1 MiB application-metadata limit;
+oversized or invalid metadata is rejected before capture. Native restore requires
+compatible custom comparators and codecs and does not promise downgrade
+compatibility. Windows currently has weaker directory-entry durability because
+the file abstraction does not expose directory syncing there.

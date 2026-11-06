@@ -32,6 +32,9 @@ class RequestContext(
     override var dataModel: IsDataModel? = null,
     var reference: IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>? = null
 ) : ContainsDataModelContext<IsDataModel>, ContainsDefinitionsContext by definitionsContext {
+    /** Reject unknown protobuf fields when silently dropping data is unacceptable, such as archives. */
+    var rejectUnknownProtoBufFields: Boolean = false
+
     internal var filterNestingDepth = 0
     internal var legacyValueStorage = false
     internal var legacyNanosDateTime = false

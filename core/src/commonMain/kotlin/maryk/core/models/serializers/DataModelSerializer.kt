@@ -235,7 +235,18 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         } while (true)
     }
 
+    private fun requireKnownProtoBufFields(values: V, context: CX?) {
+        if (context is RequestContext && context.rejectUnknownProtoBufFields) {
+            for (item in values) {
+                if (model[item.index] == null) {
+                    throw ParseException("Unknown property ${item.index} cannot be encoded without data loss")
+                }
+            }
+        }
+    }
+
     override fun calculateProtoBufLength(values: V, cacher: WriteCacheWriter, context: CX?): Int {
+        requireKnownProtoBufFields(values, context)
         var totalByteLength = 0
         for (definition in model) {
             val originalValue = values.original(definition.index)
@@ -295,6 +306,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
     }
 
     override fun writeProtoBuf(values: V, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+        requireKnownProtoBufFields(values, context)
         for (definition in model) {
             val originalValue = values.original(definition.index)
 
@@ -452,6 +464,9 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         val propertyDefinition = dataObjectPropertyDefinition?.definition
 
         if (propertyDefinition == null) {
+            if (context is RequestContext && context.rejectUnknownProtoBufFields) {
+                throw ParseException("Unknown property ${key.tag} cannot be decoded without data loss")
+            }
             skipUnknownField(key, byteReader, remainingLength)
         } else {
             if (key.tag in emptyCollections) throw ParseException("Empty collection marker conflicts with another value")

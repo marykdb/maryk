@@ -1,5 +1,10 @@
 package maryk.datastore.indexeddb
 
+import maryk.datastore.shared.StateBackupAllocationCollector
+import maryk.datastore.shared.incrementingMapWatermarkPrefix
+import maryk.datastore.shared.migration.legacyIncrementingMapProofKey
+import maryk.datastore.indexeddb.processors.keyPrefixUpperBound
+
 import maryk.datastore.shared.RestoreVersionRequest
 import maryk.datastore.shared.applyRestoreVersion
 import maryk.datastore.indexeddb.processors.createUniqueRowKey
@@ -143,6 +148,11 @@ class IndexedDbDataStore private constructor(
 
     override val transactionCapabilities = atomicCapabilities?.let(::TransactionCapabilities)
 
+    override val supportsStateBackup get() = supportsAtomicRequests
+
+    override suspend fun withStateBackupReadLock(block: suspend () -> Unit) =
+        nativeByteStore.transaction(setOf("meta"), IndexedDbTransactionMode.READWRITE) { block() }
+
     override val supportsVersionedRestore get() = supportsAtomicRequests
 
     @OptIn(ExperimentalUuidApi::class)
@@ -192,6 +202,23 @@ class IndexedDbDataStore private constructor(
                             }
                         } },
                     )
+                }
+                for ((key, firstVersion) in request.stateCreationVersions) {
+                    val store = "k:${getDataModelId(request.dataModel)}"
+                    val snapshot = requireNotNull(staged.get(store, key.bytes)).copyOf()
+                    val meta = decodeRecordMeta(snapshot)
+                    encodeRecordMeta(meta.copy(firstVersion = firstVersion)).copyInto(snapshot)
+                    staged.put(store, key.bytes, snapshot)
+                    val id = getDataModelId(request.dataModel)
+                    val collector = StateBackupAllocationCollector(request.dataModel)
+                    for ((reference, maximum) in request.stateAllocations[key].orEmpty()) {
+                        val metadataKey = incrementingMapWatermarkPrefix(id, key.bytes) + reference.bytes
+                        staged.get("meta", metadataKey)?.let { collector.add(reference.bytes, it) }
+                        collector.add(reference.bytes, maximum.bytes)
+                    }
+                    for ((reference, maximum) in collector.snapshot()) staged.put("meta",
+                        incrementingMapWatermarkPrefix(id, key.bytes) + reference.bytes, maximum.bytes)
+                    staged.put("meta", legacyIncrementingMapProofKey(id, key.bytes), byteArrayOf(1))
                 }
                 staged.put("meta", TransactionRevisionKey, Uuid.random().toByteArray())
                 nativeByteStore.writeBatch(staged.operations)
@@ -628,7 +655,20 @@ class IndexedDbDataStore private constructor(
 
             storeActorHasStarted.complete(Unit)
             try {
-                processStoreActions { storeAction ->
+                processStoreActions(readStateAllocations = { model, key ->
+                    val prefix = incrementingMapWatermarkPrefix(getDataModelId(model), key.bytes)
+                    val collector = StateBackupAllocationCollector(model)
+                    var cursor = prefix
+                    var includeStart = true
+                    while (true) {
+                        val row = byteStore.scan("meta", startKey = cursor, includeStart = includeStart,
+                            endKey = keyPrefixUpperBound(prefix), includeEnd = false, limit = 1u).singleOrNull() ?: break
+                        collector.add(row.first.copyOfRange(prefix.size, row.first.size), row.second)
+                        cursor = row.first
+                        includeStart = false
+                    }
+                    collector.snapshot()
+                }) { storeAction ->
                     try {
                         suspend fun process(action: StoreAction<*, *, *> = storeAction) {
                             @Suppress("UNCHECKED_CAST")

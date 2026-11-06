@@ -89,6 +89,8 @@ import maryk.datastore.indexeddb.processors.encodeVersionedChange
 import maryk.datastore.indexeddb.processors.hardDeleteHistoryRowReadObserver
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.test.DataStoreAddTest
+import maryk.datastore.test.stateBackupModels
+import maryk.datastore.test.DataStoreStateBackupTest
 import maryk.datastore.test.DataStoreBackupRoundTripTest
 import maryk.lib.bytes.combineToByteArray
 import maryk.datastore.test.DataStoreChangeComplexTest
@@ -1283,6 +1285,30 @@ class IndexedDbDataStoreTest {
         try {
             DataStoreBackupRoundTripTest(source, target, useAutomaticSnapshot = false)
                 .restoresCurrentValueAndCompleteHistory()
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
+    @Test
+    fun portableStateBackupRoundTrip() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val models = stateBackupModels
+        val source = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-backup-source-${Random.nextInt()}",
+            dataModelsById = models,
+            keepAllVersions = false,
+        )
+        val target = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-backup-target-${Random.nextInt()}",
+            dataModelsById = models,
+            keepAllVersions = false,
+        )
+
+        try {
+            DataStoreStateBackupTest(source, target).restoresStateWithoutHistory()
         } finally {
             source.close()
             target.close()

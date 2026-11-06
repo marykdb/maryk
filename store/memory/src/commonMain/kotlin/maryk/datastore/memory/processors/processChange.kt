@@ -683,7 +683,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
 
                                 val currentIncMapKey = getCurrentIncMapKey(
                                     newValueList,
-                                    incMapReference
+                                    incMapReference,
+                                    objectToChange.stateAllocations,
                                 )
 
                                 val addedKeys = writeIncMapAdditionsToStorage(

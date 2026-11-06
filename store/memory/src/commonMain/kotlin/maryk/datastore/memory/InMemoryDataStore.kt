@@ -1,5 +1,9 @@
 package maryk.datastore.memory
 
+import maryk.datastore.shared.StateBackupAllocationCollector
+import maryk.datastore.shared.incrementingMapKeysForQualifier
+import maryk.datastore.shared.encodeIncrementingMapMaximum
+
 import maryk.datastore.shared.RestoreVersionRequest
 import maryk.datastore.shared.applyRestoreVersion
 import maryk.core.query.responses.ValuesResponse
@@ -122,6 +126,8 @@ class InMemoryDataStore private constructor(
     override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
     private var transactionRevision = freshTransactionRevision()
 
+    override val supportsStateBackup = true
+
     override val supportsVersionedRestore = true
 
     override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) {
@@ -162,6 +168,15 @@ class InMemoryDataStore private constructor(
                 data.addToUniqueIndex(record, claim.qualifier, claim.value, version)
             } },
         )
+        if (request.stateCreationVersions.isNotEmpty()) {
+            val data = fetcher(request.dataModel)
+            for ((key, firstVersion) in request.stateCreationVersions) {
+                val index = data.records.indexOfFirst { it.key == key }
+                check(index >= 0)
+                data.records[index].firstVersion = HLC(firstVersion)
+                data.records[index].stateAllocations = request.stateAllocations[key].orEmpty()
+            }
+        }
         staged.values.forEach { it.finishAtomicCopy() }
         atomicDataStores.putAll(staged)
         transactionRevision = freshTransactionRevision()
@@ -253,7 +268,16 @@ class InMemoryDataStore private constructor(
             storeActorHasStarted.complete(Unit)
             try {
 
-                processStoreActions { storeAction ->
+                processStoreActions(readStateAllocations = { model, key ->
+                    val collector = StateBackupAllocationCollector(model)
+                    val record = dataStores[getDataModelId(model)]?.getByKey(key.bytes)
+                        ?: throw RequestException("State backup record disappeared")
+                    record.stateAllocations.forEach { (reference, maximum) -> collector.add(reference.bytes, maximum.bytes) }
+                    for (node in record.values) for (maximum in incrementingMapKeysForQualifier(model, node.reference)) {
+                        collector.add(maximum.reference.toStorageByteArray(), encodeIncrementingMapMaximum(maximum))
+                    }
+                    collector.snapshot()
+                }) { storeAction ->
                     try {
                         if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
                             transactionRevision = freshTransactionRevision()

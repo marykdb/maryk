@@ -1,5 +1,7 @@
 package maryk.datastore.memory.records
 
+import maryk.datastore.shared.StateBackupAllocations
+
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
@@ -49,8 +51,9 @@ import maryk.lib.exceptions.ParseException
 internal data class DataRecord<DM : IsRootDataModel>(
     val key: Key<DM>,
     var values: List<DataRecordNode>,
-    val firstVersion: HLC,
-    var lastVersion: HLC
+    var firstVersion: HLC,
+    var lastVersion: HLC,
+    var stateAllocations: StateBackupAllocations = emptyMap(),
 ) : IsValuesGetter {
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
         propertyReference: IsPropertyReference<T, D, C>

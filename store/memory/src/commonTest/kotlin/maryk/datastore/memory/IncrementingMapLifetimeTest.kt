@@ -23,6 +23,10 @@ import maryk.datastore.shared.DataStoreBackupChunk
 import maryk.datastore.shared.DataStoreBackupManifest
 import maryk.datastore.shared.DataStoreBackupReader
 import maryk.datastore.shared.DataStoreBackupWriter
+import maryk.datastore.shared.StateBackupArchiveWriter
+import maryk.datastore.shared.backupState
+import maryk.datastore.shared.openStateBackupArchive
+import maryk.datastore.shared.restoreState
 import maryk.datastore.shared.backup
 import maryk.datastore.shared.restore
 import kotlin.test.Test
@@ -40,6 +44,59 @@ private object LifetimeAllocatedRecord : RootDataModel<LifetimeAllocatedRecord>(
 }
 
 class IncrementingMapLifetimeTest {
+    @Test
+    fun stateBackupMustPreserveDeletedAllocationMaxima() = runTest {
+        val models = mapOf(1u to LifetimeAllocatedRecord)
+        val source = InMemoryDataStore.open(dataModelsById = models, keepAllVersions = false)
+        val target = InMemoryDataStore.open(dataModelsById = models, keepAllVersions = false)
+        val nextTarget = InMemoryDataStore.open(dataModelsById = models, keepAllVersions = false)
+        try {
+            val added = assertIs<AddSuccess<LifetimeAllocatedRecord>>(source.execute(LifetimeAllocatedRecord.add(
+                LifetimeAllocatedRecord.create {
+                    entries with mapOf(1u to emptyMap(), 2u to emptyMap())
+                    details with AllocationDetails.create { entries with mapOf(1u to "earlier allocation", 9u to "previously allocated") }
+                },
+            )).statuses.single())
+            source.execute(LifetimeAllocatedRecord.change(added.key.change(Change(
+                LifetimeAllocatedRecord.ref { entries } with emptyMap<UInt, Map<String, String>>(),
+                LifetimeAllocatedRecord.ref { details } with null,
+            ))))
+            source.execute(LifetimeAllocatedRecord.change(added.key.change(Change(
+                LifetimeAllocatedRecord.ref { details } with AllocationDetails.create { entries with emptyMap() },
+            ))))
+            val frames = mutableListOf<ByteArray>()
+            source.backupState(StateBackupArchiveWriter(models, { frames += it }, {}))
+            val bytes = frames.reduce { a, b -> a + b }
+            var position = 0
+            val reader = openStateBackupArchive(models) { maximum ->
+                val end = minOf(bytes.size, position + maximum)
+                bytes.copyOfRange(position, end).also { position = end }
+            }
+            target.restoreState(reader)
+            frames.clear()
+            target.backupState(StateBackupArchiveWriter(models, { frames += it }, {}))
+            val secondBytes = frames.reduce { a, b -> a + b }
+            position = 0
+            nextTarget.restoreState(openStateBackupArchive(models) { maximum ->
+                val end = minOf(secondBytes.size, position + maximum)
+                secondBytes.copyOfRange(position, end).also { position = end }
+            })
+            for (store in listOf(source, target, nextTarget)) {
+                assertIs<ChangeSuccess<LifetimeAllocatedRecord>>(store.execute(LifetimeAllocatedRecord.change(added.key.change(IncMapChange(
+                    LifetimeAllocatedRecord.ref { entries }.change(addValues = listOf(emptyMap<String, String>())),
+                    LifetimeAllocatedRecord.ref { details { entries } }.change(addValues = listOf("next allocation")),
+                )))).statuses.single())
+            }
+            val expected = source.execute(LifetimeAllocatedRecord.get(added.key)).values.single().values
+            val restored = target.execute(LifetimeAllocatedRecord.get(added.key)).values.single().values
+            assertEquals(mapOf(3u to emptyMap()), expected { entries })
+            assertEquals(mapOf(10u to "next allocation"), expected { details }?.get(AllocationDetails.ref { entries }))
+            assertEquals(expected { entries }, nextTarget.execute(LifetimeAllocatedRecord.get(added.key)).values.single().values { entries })
+            assertEquals(expected { entries }, restored { entries }, "State restore must not reuse previously allocated identifiers")
+            assertEquals(expected { details }, restored { details }, "Nested allocation maxima survive parent removal too")
+        } finally { source.close(); target.close(); nextTarget.close() }
+    }
+
     @Test
     fun replacementParentRemovalAndBackupKeepRecordLifetimeMaxima() = runTest {
 

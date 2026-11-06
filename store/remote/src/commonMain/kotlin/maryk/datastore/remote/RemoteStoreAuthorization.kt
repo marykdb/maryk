@@ -18,6 +18,8 @@ enum class RemoteStoreOperation {
     MigrationPause,
     MigrationResume,
     MigrationCancel,
+    StateBackup,
+    StateRestore,
 }
 
 data class RemoteStoreAuthorizationRequest(

@@ -43,6 +43,7 @@ internal data class RemoteStoreInfo(
     val transactionCapabilities: TransactionCapabilities? = null,
     val supportsVersionedRestore: Boolean = false,
     val valueStorageFormat: UInt = 1u,
+    val supportsStateBackup: Boolean = false,
 ) {
     init {
         require(!supportsAtomicRequests || atomicCapabilities != null) { "Atomic support requires capability metadata" }
@@ -98,6 +99,11 @@ internal data class RemoteStoreInfo(
             toSerializable = { value: UInt?, _: ContainsDefinitionsContext? -> value?.takeIf { it != 1u } },
         )
 
+        val supportsStateBackup by boolean(
+            13u, RemoteStoreInfo::supportsStateBackup, default = false,
+            toSerializable = { value: Boolean?, _: ContainsDefinitionsContext? -> value?.takeIf { it } },
+        )
+
         override fun invoke(values: ObjectValues<RemoteStoreInfo, IsObjectDataModel<RemoteStoreInfo>>) = RemoteStoreInfo(
             definitions = values(definitions.index),
             modelIds = values(modelIds.index),
@@ -111,6 +117,7 @@ internal data class RemoteStoreInfo(
             transactionCapabilities = values(transactionCapabilities.index),
             supportsVersionedRestore = values(supportsVersionedRestore.index),
             valueStorageFormat = values(valueStorageFormat.index),
+            supportsStateBackup = values(supportsStateBackup.index),
         )
     }
 }

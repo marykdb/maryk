@@ -1,5 +1,14 @@
 package maryk.datastore.remote
 
+
+import kotlin.time.TimeSource
+import kotlin.uuid.Uuid
+import kotlin.uuid.ExperimentalUuidApi
+
+import maryk.datastore.shared.StateBackupDataStore
+import maryk.datastore.shared.DataStoreStateBackupOptions
+import maryk.datastore.shared.supportsStateBackup
+
 import maryk.datastore.shared.VersionedRestoreDataStore
 import maryk.datastore.shared.RestoreVersionRequest
 import maryk.datastore.shared.validateRestoreVersion
@@ -222,6 +231,8 @@ internal fun Application.remoteStoreModule(
         "Remote Store connection idle timeout must be positive"
     }
     val callAdmission = RequestAdmission(limits.maxConcurrentCalls)
+    val cancellationAdmission = RequestAdmission(limits.maxConcurrentCalls)
+    val stateCaptures = RemoteStateCaptureRegistry(limits.maxConcurrentCalls)
     val flowAdmission = RequestAdmission(limits.maxConcurrentFlows)
     val info = buildRemoteStoreInfo(dataStore)
 
@@ -233,7 +244,8 @@ internal fun Application.remoteStoreModule(
                 finish()
                 return@intercept
             }
-            val callPermit = callAdmission.tryAcquire()
+            val admission = if (context.request.path() == RemoteStoreProtocol.stateBackupCancelPath) cancellationAdmission else callAdmission
+            val callPermit = admission.tryAcquire()
             if (callPermit == null) {
                 context.respondText("Remote Store is at call capacity", status = HttpStatusCode.ServiceUnavailable)
                 finish()
@@ -540,6 +552,82 @@ internal fun Application.remoteStoreModule(
             }
         }
 
+        get(RemoteStoreProtocol.stateBackupPath) {
+            val requestedAt = TimeSource.Monotonic.markNow()
+            val principal = call.authenticate(config) ?: return@get
+            call.respondValidationErrors {
+                if (!dataStore.supportsStateBackup) throw RequestValidationException(HttpStatusCode.NotImplemented, "State backup is unsupported")
+                val captureId = decodeRequest("state capture identity") { stateCaptureId(call) }
+                val options = decodeRequest("state-backup options") {
+                    val parameters = call.request.queryParameters
+                    DataStoreStateBackupOptions(
+                        batchSize = parameters["batchSize"]?.let { it.toUIntOrNull() ?: error("Invalid batchSize") } ?: 250u,
+                        maxChunkBytes = parameters["maxChunkBytes"]?.let { it.toIntOrNull() ?: error("Invalid maxChunkBytes") } ?: 1_048_576,
+                    )
+                }
+                suspend fun requireBackupAuthorization(modelName: String?) {
+                    val currentPrincipal = call.resolvePrincipal(config)
+                    if (currentPrincipal == null || !call.authorize(config, currentPrincipal, RemoteStoreOperation.StateBackup,
+                            modelName = modelName, respondOnFailure = false)) {
+                        throw RequestValidationException(HttpStatusCode.Forbidden, "Remote state backup is not authorized")
+                    }
+                }
+                // Authorize the entire export before sending even the manifest or schema names.
+                val names = dataStore.dataModelsById.values.map { it.Meta.name }
+                if (names.isEmpty()) requireBackupAuthorization(null) else names.forEach { requireBackupAuthorization(it) }
+                val permit = call.attributes[RemoteStoreCallAdmissionPermitKey]
+                permit.deferRelease()
+                try {
+                    call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.stateStreamContentType)) {
+                        try {
+                            stateCaptures.capture(captureId, principal.id, requestedAt) {
+                                writeStateBackupStream(dataStore, options, limits.connectionIdleTimeoutSeconds.toLong() * 1000,
+                                    authorize = ::requireBackupAuthorization)
+                            }
+                        } finally { permit.release() }
+                    }
+                } catch (error: Throwable) { permit.release(); throw error }
+            }
+        }
+
+        post(RemoteStoreProtocol.stateBackupCancelPath) {
+            val principal = call.authenticate(config) ?: return@post
+            call.respondValidationErrors {
+                val id = decodeRequest("state capture identity") { stateCaptureId(call) }
+                // This idempotent operation only cancels captures owned by this authenticated identity.
+                val names = dataStore.dataModelsById.values.map { it.Meta.name }
+                val pendingModels = if (names.isEmpty()) listOf(null) else names
+                val allowPending = pendingModels.all { name -> call.authorize(config, principal, RemoteStoreOperation.StateBackup,
+                    modelName = name, respondOnFailure = false) }
+                stateCaptures.cancel(id, principal.id, allowPending)
+                call.respondBytes(RemoteStoreProtocol.restoreVersionAcknowledgement, ContentType.parse(RemoteStoreProtocol.contentType))
+            }
+        }
+
+        post(RemoteStoreProtocol.stateRestorePath) {
+            val principal = call.authenticate(config) ?: return@post
+            call.respondValidationErrors {
+                val target = (dataStore as? StateBackupDataStore)?.takeIf { it.supportsStateBackup }
+                    ?: throw RequestValidationException(HttpStatusCode.NotImplemented, "State restore is unsupported")
+                if (dataStore.keepAllVersions) throw RequestValidationException(HttpStatusCode.BadRequest, "State restore requires history disabled")
+                requireRequestContentType(call, RemoteStoreProtocol.stateArchiveContentType)
+                val bytes = readRequestBytes(call, "state-restore", limits, MAX_STATE_BATCH_ARCHIVE_BYTES)
+                val chunk = decodeRequest("state-restore") { decodeStateRestoreBatch(dataStore.dataModelsById, bytes) }
+                if (!call.authorize(config, principal, RemoteStoreOperation.StateRestore, modelName = chunk.modelName)) return@respondValidationErrors
+                val changes = chunk.records.flatMap { record -> buildList {
+                    add(ObjectCreate)
+                    addAll(record.values.toChanges())
+                    if (record.isDeleted) add(ObjectSoftDeleteChange(true))
+                } }
+                for (type in authorizationRequestTypes(changes)) {
+                    if (!call.authorize(config, principal, RemoteStoreOperation.ProcessUpdate, type, chunk.modelName)) return@respondValidationErrors
+                }
+                val model = dataStore.dataModelsById.values.single { it.Meta.name == chunk.modelName }
+                target.restoreStateVersion(model, chunk.records, chunk.allocations)
+                call.respondBytes(RemoteStoreProtocol.restoreVersionAcknowledgement, ContentType.parse(RemoteStoreProtocol.contentType))
+            }
+        }
+
         post(RemoteStoreProtocol.restoreVersionPath) {
             val principal = call.authenticate(config) ?: return@post
             call.respondValidationErrors {
@@ -547,7 +635,7 @@ internal fun Application.remoteStoreModule(
                 val capabilities = target?.restoreCapabilities ?: throw RequestValidationException(HttpStatusCode.NotImplemented, "Atomic version-group restore is unsupported")
                 requireRequestContentType(call, RemoteStoreProtocol.contentType)
                 val bytes = readRequestBytes(call, "restore-version", limits)
-                val context = createRequestContext(dataStore)
+                val context = createRequestContext(dataStore).also { it.rejectUnknownProtoBufFields = true }
                 val request = decodeRequest("restore-version") {
                     val wire = RemoteStoreCodec.decode(RemoteRestoreVersion.Serializer, bytes, context)
                     @Suppress("UNCHECKED_CAST")
@@ -1080,6 +1168,10 @@ private fun resolveRequest(rawRequest: Any, operation: String): IsTransportableR
     )
 }
 
+@OptIn(ExperimentalUuidApi::class)
+private fun stateCaptureId(call: ApplicationCall): String =
+    Uuid.parse(requireNotNull(call.request.queryParameters["captureId"]) { "Missing capture identity" }).toString()
+
 private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
     val definitions = RemoteDataStore.collectDefinitions(dataStore.dataModelsById.values)
     val modelIds = dataStore.dataModelsById.map { (id, model) ->
@@ -1097,6 +1189,7 @@ private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
         atomicCapabilities = dataStore.atomicCapabilities ?: (dataStore as? VersionedRestoreDataStore)?.restoreCapabilities,
         transactionCapabilities = dataStore.transactionCapabilities,
         supportsVersionedRestore = (dataStore as? VersionedRestoreDataStore)?.restoreCapabilities != null,
+        supportsStateBackup = dataStore.supportsStateBackup,
         valueStorageFormat = if (dataStore.dataModelsById.values.any { it.hasLegacyTransportStorage() }) StorageFormat.CURRENT.toUInt() else 1u,
     )
 }
@@ -1111,6 +1204,7 @@ private suspend fun readRequestBytes(
     call: ApplicationCall,
     operation: String,
     limits: RemoteStoreServerLimits,
+    maxBytes: Int = MAX_REQUEST_BODY_BYTES,
 ): ByteArray {
     val rawContentLength = call.request.headers[HttpHeaders.ContentLength]
     val contentLength = rawContentLength?.toLongOrNull()
@@ -1130,17 +1224,17 @@ private suspend fun readRequestBytes(
         if (contentLength == 0L) {
             throw RequestValidationException(HttpStatusCode.BadRequest, "Remote $operation request payload cannot be empty")
         }
-        if (contentLength > MAX_REQUEST_BODY_BYTES.toLong()) {
+        if (contentLength > maxBytes.toLong()) {
             throw RequestValidationException(
                 HttpStatusCode.PayloadTooLarge,
-                "Remote $operation request payload exceeds max size: $contentLength > $MAX_REQUEST_BODY_BYTES"
+                "Remote $operation request payload exceeds max size: $contentLength > $maxBytes"
             )
         }
     }
     val bytes = try {
         withTimeout(limits.requestBodyReadTimeoutMillis) {
             call.receiveChannel()
-                .readBuffer(MAX_REQUEST_BODY_BYTES.toLong() + 1L)
+                .readBuffer(maxBytes.toLong() + 1L)
                 .readByteArray()
         }
     } catch (_: TimeoutCancellationException) {
@@ -1152,10 +1246,10 @@ private suspend fun readRequestBytes(
     if (bytes.isEmpty()) {
         throw RequestValidationException(HttpStatusCode.BadRequest, "Remote $operation request payload cannot be empty")
     }
-    if (bytes.size > MAX_REQUEST_BODY_BYTES) {
+    if (bytes.size > maxBytes) {
         throw RequestValidationException(
             HttpStatusCode.PayloadTooLarge,
-            "Remote $operation request payload exceeds max size: ${bytes.size} > $MAX_REQUEST_BODY_BYTES"
+            "Remote $operation request payload exceeds max size: ${bytes.size} > $maxBytes"
         )
     }
     return bytes

@@ -23,6 +23,20 @@ import kotlin.test.assertTrue
 
 class RemoteStoreCodecTest {
     @Test
+    fun stateBackupCapabilityIsAdditiveAndDefaultsOffForOlderServers() {
+        val info = RemoteStoreInfo(
+            definitions = RemoteDataStore.collectDefinitions(listOf(SimpleMarykModel)),
+            modelIds = listOf(RemoteStoreModelId(1u, SimpleMarykModel.Meta.name)),
+            keepAllVersions = false, supportsFuzzyQualifierFiltering = false, supportsSubReferenceFiltering = false,
+        )
+        val legacy = RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info, DefinitionsConversionContext())
+        assertFalse(RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, legacy, DefinitionsConversionContext()).supportsStateBackup)
+        val encoded = RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info.copy(supportsStateBackup = true), DefinitionsConversionContext())
+        assertTrue(RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, encoded, DefinitionsConversionContext()).supportsStateBackup)
+        assertEquals(13u, RemoteStoreInfo.supportsStateBackup.index)
+    }
+
+    @Test
     fun snapshotCapabilityRoundTripsAndDefaultsOffForOlderServers() {
         val info = RemoteStoreInfo(
             definitions = RemoteDataStore.collectDefinitions(listOf(SimpleMarykModel)),

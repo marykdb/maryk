@@ -1,5 +1,18 @@
 package maryk.datastore.remote
 
+import kotlin.uuid.Uuid
+import kotlin.uuid.ExperimentalUuidApi
+
+import maryk.core.query.ValuesWithMetaData
+
+import maryk.core.properties.types.Key
+import maryk.datastore.shared.StateBackupDataStore
+import maryk.datastore.shared.DataStoreStateBackupWriter
+import maryk.datastore.shared.DataStoreStateBackupOptions
+import maryk.datastore.shared.DataStoreStateBackupManifest
+import maryk.datastore.shared.DataStoreStateBackupChunk
+import maryk.datastore.shared.StateBackupAllocations
+
 import maryk.core.exceptions.RequestException
 import maryk.datastore.shared.VersionedRestoreDataStore
 import maryk.datastore.shared.RestoreVersionRequest
@@ -152,7 +165,9 @@ class RemoteDataStore private constructor(
     override val atomicCapabilities: AtomicCapabilities?,
     override val transactionCapabilities: TransactionCapabilities?,
     override val restoreCapabilities: AtomicCapabilities? = null,
-) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider, AtomicDataStore, TransactionalDataStore, VersionedRestoreDataStore {
+    override val supportsStateBackup: Boolean = false,
+) : IsDataStore, MigrationAdmin, ConditionalSnapshotVersionProvider, AtomicDataStore, TransactionalDataStore, VersionedRestoreDataStore, StateBackupDataStore {
+    private val stateBackupRequests = RemoteStateBackupRequests()
     private val definitionsMutex = Mutex()
     private val sshTunnelMutex = Mutex()
     private val lifecycleMutex = Mutex()
@@ -255,6 +270,7 @@ class RemoteDataStore private constructor(
                         requireNotNull(infoResult.info.atomicCapabilities) else null,
                     transactionCapabilities = infoResult.info.transactionCapabilities,
                     restoreCapabilities = infoResult.info.atomicCapabilities.takeIf { infoResult.info.supportsVersionedRestore },
+                    supportsStateBackup = infoResult.info.supportsStateBackup,
                 )
             } catch (error: Throwable) {
                 if (ownsClient) {
@@ -822,13 +838,78 @@ class RemoteDataStore private constructor(
         }
     }
 
+    @OptIn(ExperimentalUuidApi::class)
+    override suspend fun writeStateBackup(writer: DataStoreStateBackupWriter, options: DataStoreStateBackupOptions): DataStoreStateBackupManifest {
+        check(currentTransaction(this) == null) { "State backup is not a transaction operation" }
+        requireOpen()
+        if (!supportsStateBackup) throw RequestException("Remote store does not support state backup")
+        return stateBackupRequests.run {
+            val captureId = Uuid.random().toString()
+            try {
+                val statement = httpClient.prepareGet(buildUrl(baseUrl, RemoteStoreProtocol.stateBackupPath)) {
+                    url.parameters.append("captureId", captureId)
+                    url.parameters.append("batchSize", options.batchSize.toString())
+                    url.parameters.append("maxChunkBytes", options.maxChunkBytes.toString())
+                    headers {
+                        append(HttpHeaders.Accept, RemoteStoreProtocol.stateStreamContentType)
+                        append(HttpHeaders.Connection, "close")
+                        appendStoreHeaders(bearerToken)
+                    }
+                }
+                receiveStateBackup(statement, dataModelsById, writer)
+            } catch (error: Throwable) {
+                // A client engine can drain an abandoned response rather than close its socket.
+                // Release the server-owned scope explicitly, independently of that connection.
+                withContext(NonCancellable) {
+                    try {
+                        withTimeout(5_000) {
+                            readNonFlowResponseBytes("state-backup cancellation") {
+                                httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.stateBackupCancelPath)) {
+                                    url.parameters.append("captureId", captureId)
+                                    headers { appendStoreHeaders(bearerToken) }
+                                }
+                            }
+                        }
+                    } catch (cleanupError: Throwable) {
+                        if (cleanupError is Error) throw cleanupError
+                        error.addSuppressed(cleanupError)
+                    }
+                }
+                throw error
+            }
+        }
+    }
+
+    override suspend fun restoreStateVersion(model: IsRootDataModel, records: List<ValuesWithMetaData<IsRootDataModel>>, allocations: Map<Key<IsRootDataModel>, StateBackupAllocations>) {
+        check(currentTransaction(this) == null) { "State restore is not a transaction operation" }
+        requireOpen()
+        if (!supportsStateBackup || keepAllVersions) throw RequestException("Remote state restore requires state support and history disabled")
+        val payload = encodeStateRestoreBatch(model, DataStoreStateBackupChunk(model.Meta.name, records, allocations))
+        stateBackupRequests.run {
+            val response = readNonFlowResponseBytes("state-restore") {
+                httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.stateRestorePath)) {
+                    headers {
+                        append(HttpHeaders.ContentType, RemoteStoreProtocol.stateArchiveContentType)
+                        append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                        appendStoreHeaders(bearerToken)
+                    }
+                    setBody(payload)
+                }
+            }
+            if (!response.contentEquals(RemoteStoreProtocol.restoreVersionAcknowledgement)) throw RequestException("Remote state restore returned an invalid commit acknowledgement")
+        }
+    }
+
     override suspend fun restoreVersion(request: RestoreVersionRequest) {
         check(currentTransaction(this) == null) { "Restore is not a transaction operation" }
         requireOpen()
         val capabilities = restoreCapabilities ?: throw RequestException("Remote store does not support atomic version-group restore")
         validateRestoreVersion(request, capabilities)
         registerLocalDataModels(request.updates.map { it.dataModel })
-        val payload = RemoteStoreCodec.encode(RemoteRestoreVersion.Serializer, RemoteRestoreVersion(request.updates), requestContext(request.dataModel, request.updates.map { it.dataModel }), MAX_REQUEST_BODY_BYTES)
+        val context = requestContext(request.dataModel, request.updates.map { it.dataModel }).also {
+            it.rejectUnknownProtoBufFields = true
+        }
+        val payload = RemoteStoreCodec.encode(RemoteRestoreVersion.Serializer, RemoteRestoreVersion(request.updates), context, MAX_REQUEST_BODY_BYTES)
         val response = readNonFlowResponseBytes("restore-version") {
             httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.restoreVersionPath)) {
                 headers {
@@ -929,6 +1010,7 @@ class RemoteDataStore private constructor(
 
     override suspend fun close() {
         withContext(NonCancellable) {
+            stateBackupRequests.close()
             if (!lifecycleMutex.withLock {
                 if (closed) false else {
                     closed = true
@@ -1114,7 +1196,7 @@ private data class InfoResult(
     val definitionsContext: ContainsDefinitionsContext,
 )
 
-private suspend fun requireSuccess(response: HttpResponse, operation: String) {
+internal suspend fun requireSuccess(response: HttpResponse, operation: String) {
     if (response.status.value !in 200..299) {
         response.headers[RemoteStoreProtocol.completedRequestCountHeader]
             ?.toIntOrNull()
@@ -1151,7 +1233,7 @@ private suspend fun readErrorPreview(response: HttpResponse): String {
     return bytes.copyOf(minOf(bytes.size, MAX_ERROR_PREVIEW_BYTES)).decodeToString()
 }
 
-private fun requireContentType(response: HttpResponse, expected: String, operation: String) {
+internal fun requireContentType(response: HttpResponse, expected: String, operation: String) {
     val actual = response.headers[HttpHeaders.ContentType]
         ?.substringBefore(';')
         ?.trim()
@@ -1230,7 +1312,7 @@ private const val NON_FLOW_REQUEST_TIMEOUT_MILLIS = 30_000L
 private const val MAX_BATCH_RESPONSE_BODY_BYTES = 64 * 1024 * 1024
 private const val MAX_ERROR_PREVIEW_BYTES = 4096
 
-private suspend fun readFrameLength(
+internal suspend fun readFrameLength(
     channel: ByteReadChannel,
     lengthBuffer: ByteArray,
 ): RemoteStoreCodec.LengthResult? {
@@ -1247,7 +1329,7 @@ private suspend fun readFrameLength(
     return RemoteStoreCodec.readLengthPrefix(lengthBuffer, 0)
 }
 
-private suspend fun readFramePayload(
+internal suspend fun readFramePayload(
     channel: ByteReadChannel,
     payload: ByteArray,
 ) {

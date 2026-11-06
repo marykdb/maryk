@@ -14,6 +14,11 @@ internal object RemoteStoreProtocol {
     const val infoPath = "/v1/info"
     const val executePath = "/v1/execute"
     const val flowPath = "/v1/flow"
+    const val stateBackupPath = "/v1/state-backup"
+    const val stateBackupCancelPath = "/v1/state-backup-cancel"
+    const val stateRestorePath = "/v1/state-restore"
+    const val stateStreamContentType = "application/x-maryk-state-backup-stream"
+    const val stateArchiveContentType = "application/x-maryk-state-backup"
     const val restoreVersionPath = "/v1/restore-version"
     // Protobuf acknowledgement: bool committed = 1.
     val restoreVersionAcknowledgement = byteArrayOf(8, 1)

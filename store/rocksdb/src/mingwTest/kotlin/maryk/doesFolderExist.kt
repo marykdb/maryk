@@ -1,14 +1,9 @@
-@file:OptIn(ExperimentalForeignApi::class)
-
 package maryk
 
-import kotlinx.cinterop.ExperimentalForeignApi
-import platform.posix.closedir
-import platform.posix.opendir
+import platform.windows.FILE_ATTRIBUTE_DIRECTORY
+import platform.windows.GetFileAttributesW
 
 actual fun doesFolderExist(path: String): Boolean {
-    val directory = opendir(path)
-    directory ?: return false
-    closedir(directory)
-    return true
+    val attributes = GetFileAttributesW(path)
+    return attributes != UInt.MAX_VALUE && (attributes and FILE_ATTRIBUTE_DIRECTORY.toUInt()) != 0u
 }

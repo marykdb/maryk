@@ -190,6 +190,18 @@ tasks.withType<KotlinNativeTest>().configureEach {
     }
 }
 
+tasks.register<JavaExec>("runFoundationDBRecoveryDrill") {
+    group = "verification"
+    description = "Back up and restore disposable FoundationDB clusters, then verify Maryk recovery."
+    val testCompilation = kotlinExt.targets.getByName("jvm").compilations.getByName("test")
+    classpath(testCompilation.output.allOutputs, configurations.getByName("jvmTestRuntimeClasspath"))
+    mainClass.set("maryk.datastore.foundationdb.FoundationDBRecoveryDrillKt")
+    dependsOn(tasks.named("jvmTestClasses"))
+    environment("DYLD_LIBRARY_PATH", localFoundationDbLibDir)
+    environment("LD_LIBRARY_PATH", localFoundationDbLibDir)
+    jvmArgs("-Djava.library.path=${localFoundationDbLibDir}${pathSeparator}${systemFoundationDbLibDir}")
+}
+
 tasks.register<JavaExec>("runFoundationDBTestRunner") {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Seed FoundationDB with test models and keep the process alive for manual testing."

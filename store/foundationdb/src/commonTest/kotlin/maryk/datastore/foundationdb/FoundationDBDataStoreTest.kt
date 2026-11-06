@@ -46,6 +46,8 @@ import maryk.datastore.shared.DataStoreBackupWriter
 import maryk.datastore.shared.backup
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
+import maryk.datastore.test.stateBackupModels
+import maryk.datastore.test.DataStoreStateBackupTest
 import maryk.datastore.test.DataStoreBackupRoundTripTest
 import maryk.datastore.test.DurableReplicationTombstoneTest
 import maryk.datastore.test.UniqueModel
@@ -512,6 +514,28 @@ class FoundationDBDataStoreTest {
         try {
             DataStoreBackupRoundTripTest(source, target, useAutomaticSnapshot = false)
                 .restoresCurrentValueAndCompleteHistory()
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
+    @Test
+    fun portableStateBackupRoundTrip() = runTest(timeout = 3.minutes) {
+        val models = stateBackupModels
+        val source = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "backup-source", Uuid.random().toString()),
+            dataModelsById = models,
+            keepAllVersions = false,
+        )
+        val target = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "backup-target", Uuid.random().toString()),
+            dataModelsById = models,
+            keepAllVersions = false,
+        )
+
+        try {
+            DataStoreStateBackupTest(source, target).restoresStateWithoutHistory()
         } finally {
             source.close()
             target.close()

@@ -1,10 +1,16 @@
 package maryk.datastore.foundationdb
 
+import maryk.datastore.shared.StateBackupAllocationCollector
+import maryk.datastore.shared.incrementingMapWatermarkPrefix
+import maryk.datastore.shared.migration.legacyIncrementingMapProofKey
+import maryk.foundationdb.Range
+
 import maryk.datastore.shared.collectSensitiveReferences
 import maryk.datastore.shared.collectUniqueReferences
 import maryk.datastore.shared.mergeUniqueReferences
 import maryk.datastore.shared.SensitiveModelReferences
 
+import maryk.datastore.foundationdb.processors.helpers.setCreatedVersion
 import maryk.datastore.shared.RestoreVersionRequest
 import maryk.datastore.shared.applyRestoreVersion
 import maryk.datastore.foundationdb.processors.helpers.setUniqueIndexValue
@@ -182,7 +188,6 @@ import maryk.datastore.shared.updates.Update
 import maryk.foundationdb.Database
 import maryk.foundationdb.DatabaseOptions
 import maryk.foundationdb.FdbFuture
-import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
@@ -1086,6 +1091,20 @@ class FoundationDBDataStore private constructor(
                 processStoreActions(
                     createReadContext = ::createReadContext,
                     closeReadContext = {},
+                    readStateAllocations = { model, key, context ->
+                        val id = getDataModelId(model)
+                        val dirs = getTableDirs(id)
+                        val prefix = packKey(dirs.modelPrefix, incrementingMapWatermarkPrefix(id, key.bytes))
+                        runReadTransaction(requireNotNull(context), id) { transaction ->
+                            val collector = StateBackupAllocationCollector(model)
+                            val iterator = transaction.getRange(Range.startsWith(prefix)).iterator()
+                            while (iterator.hasNext()) {
+                                val row = iterator.nextBlocking()
+                                collector.add(row.key.copyOfRange(prefix.size, row.key.size), row.value)
+                            }
+                            collector.snapshot()
+                        }
+                    },
                     createFlowSnapshotBoundary = { readContext ->
                         this@FoundationDBDataStore.createFlowSnapshotBoundary(readContext?.readVersion)
                     },
@@ -1494,6 +1513,8 @@ class FoundationDBDataStore private constructor(
 
     override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
 
+    override val supportsStateBackup = true
+
     override val supportsVersionedRestore = true
 
     override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) = withContext(Dispatchers.IO) {
@@ -1544,6 +1565,19 @@ class FoundationDBDataStore private constructor(
                             setUniqueIndexValue(transaction, dirs, claim.qualifier + candidates.first(), HLC.toStorageBytes(HLC(request.version)), claim.key.bytes)
                         } },
                     )
+                }
+                for ((key, firstVersion) in request.stateCreationVersions) {
+                    val dirs = getTableDirs(request.dataModel)
+                    setCreatedVersion(transaction, dirs, key.bytes, HLC.toStorageBytes(HLC(firstVersion)))
+                    val collector = StateBackupAllocationCollector(request.dataModel)
+                    for ((reference, maximum) in request.stateAllocations[key].orEmpty()) {
+                        val metadataKey = packKey(dirs.modelPrefix, incrementingMapWatermarkPrefix(dirs.modelId, key.bytes), reference.bytes)
+                        transaction.get(metadataKey).awaitResult()?.let { collector.add(reference.bytes, it) }
+                        collector.add(reference.bytes, maximum.bytes)
+                    }
+                    for ((reference, maximum) in collector.snapshot()) transaction.set(
+                        packKey(dirs.modelPrefix, incrementingMapWatermarkPrefix(dirs.modelId, key.bytes), reference.bytes), maximum.bytes)
+                    transaction.set(packKey(dirs.modelPrefix, legacyIncrementingMapProofKey(dirs.modelId, key.bytes)), byteArrayOf(1))
                 }
                 advanceTransactionRevision(transaction)
                 updates = atomic.updates.toList()

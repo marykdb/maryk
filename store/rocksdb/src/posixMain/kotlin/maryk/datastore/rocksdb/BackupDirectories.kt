@@ -1,7 +1,8 @@
-@file:OptIn(ExperimentalForeignApi::class)
+@file:OptIn(ExperimentalForeignApi::class, UnsafeNumber::class)
 
 package maryk.datastore.rocksdb
 
+import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
@@ -69,8 +70,9 @@ internal actual fun lockBackupRepository(directory: String): AutoCloseable {
 
 internal actual fun backupDirectorySyncRequired(): Boolean = true
 
-internal actual fun backupOwnershipFileKey(directory: String): String? = memScoped {
-    val info = alloc<stat>()
-    if (stat("$directory/.maryk-backup.lock", info.ptr) != 0) null
-    else "${info.st_dev}:${info.st_ino}"
-}
+internal actual fun backupOwnershipFileKey(directory: String): String? =
+    posixBackupFileIdentity("$directory/.maryk-backup.lock")
+
+// stat layout and dev_t differ between POSIX targets. Keep the FFI field access
+// in leaf compilations while exposing only a stable Kotlin type to shared metadata.
+internal expect fun posixBackupFileIdentity(path: String): String?

@@ -36,7 +36,7 @@ jobs:
         include:
           - os: macos-latest
             timeout_minutes: 75
-            gradle_task: "macosArm64Test compileKotlinIosArm64 compileKotlinIosX64 compileKotlinTvosArm64 compileKotlinWatchosArm32 compileKotlinWatchosArm64 compileKotlinWatchosDeviceArm64"
+            gradle_task: ":store:rocksdb:allMetadataJar macosArm64Test compileKotlinIosArm64 compileKotlinIosX64 compileKotlinTvosArm64 compileKotlinWatchosArm32 compileKotlinWatchosArm64 compileKotlinWatchosDeviceArm64"
             job_name: macOS Apple Arm tests
           - os: macos-latest
             timeout_minutes: 60

@@ -88,6 +88,9 @@ tasks.matching { it.name == "testAndroidHostTest" }.configureEach {
 }
 
 kotlin.targets.withType<KotlinNativeTarget>().configureEach {
+    if (konanTarget.family != Family.MINGW) {
+        compilations.getByName("main").defaultSourceSet.kotlin.srcDir("src/posixPlatformMain/kotlin")
+    }
     if (konanTarget.family == Family.MINGW) {
         binaries.all {
             linkerOpts("-lrpcrt4")

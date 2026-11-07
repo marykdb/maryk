@@ -185,6 +185,74 @@ other metadata are not included. WAL usage can remain significant even when SST
 compression is effective. Pinned cache usage may also include write-buffer
 reservations after application iterators have closed.
 
+## Optional table settings
+
+Existing `open(...)` calls need no extra configuration. New SST files use a shared
+10-bit-per-key Bloom filter to avoid unnecessary reads for missing keys. Bytewise
+column families use automatic index search; historic column families retain
+binary search because their custom comparator cannot use interpolation. Existing
+SSTs remain readable. Startup does not rewrite them.
+
+Use the overload with `tableConfiguration` only when overriding these defaults:
+
+```kotlin
+import maryk.datastore.rocksdb.RocksDBTableConfiguration
+import maryk.rocksdb.CompressionType
+
+val store = RocksDBDataStore.open(
+    relativePath = "data/accounts",
+    dataModelsById = mapOf(1u to Account),
+    tableConfiguration = RocksDBTableConfiguration(
+        bloomFilterBitsPerKey = 8.0, // null disables filters for future SSTs
+        compression = CompressionType.LZ4_COMPRESSION,
+        bottommostCompression = CompressionType.ZSTD_COMPRESSION,
+    ),
+)
+```
+
+`compressionPerLevel` is empty by default, using the general codec. A nonempty
+list overrides compression by LSM level; `bottommostCompression` still controls
+the bottommost level. These choices apply during flush and compaction. Maryk
+copies the list when opening. `indexSearchType` overrides bytewise families only;
+historic families always retain binary search.
+
+Persistent caching is disabled by default. To cache SST pages on a separate
+persistent volume, pass a binding `PersistentCache` as `persistentCache` in the
+table configuration. Its cache directory is disposable and is not a backup or
+part of portable exports. Keep the caller-owned cache, environment and logger
+alive until all stores using them close; close the cache before its logger.
+
+The binding's optional row cache and logging callback use the existing
+`rocksDBOptions` argument, without another Maryk configuration layer:
+
+```kotlin
+import maryk.rocksdb.DBOptions
+import maryk.rocksdb.InfoLogLevel
+import maryk.rocksdb.LRUCache
+import maryk.rocksdb.createLogger
+import maryk.rocksdb.loadRocksDBLibrary
+import maryk.rocksdb.setLogger
+
+loadRocksDBLibrary()
+createLogger(InfoLogLevel.INFO_LEVEL) { _, message -> println(message) }.use { logger ->
+    LRUCache(4L * 1024 * 1024).use { rowCache ->
+        DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true)
+            .setLogger(logger).setRowCache(rowCache).use { options ->
+                RocksDBDataStore.open(
+                    relativePath = "data/accounts",
+                    dataModelsById = mapOf(1u to Account),
+                    rocksDBOptions = options,
+                ).use { /* execute requests */ }
+            }
+    }
+}
+```
+
+The logger can run on engine threads; keep callbacks short and thread-safe.
+Row caching adds memory beyond the default budgets and is opt-in. Supplied
+`DBOptions` remain caller-owned, including their statistics and write-buffer
+configuration. No logger, row cache or persistent cache is allocated by default.
+
 ## Native and portable backups
 
 `RocksDBBackupRepository` provides incremental physical backups for recovery into

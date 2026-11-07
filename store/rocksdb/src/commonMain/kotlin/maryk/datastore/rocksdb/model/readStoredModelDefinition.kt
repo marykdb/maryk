@@ -60,9 +60,7 @@ fun readStoredModelDefinitionsFromPath(
                 TableType.HistoricUnique.byte -> {
                     val id = name.decodeVarUInt(startIndex = 1) ?: 0u
                     val keySize = keySizesById[id] ?: 0
-                    blockCache.createColumnFamilyOptions {
-                        setComparator(blockCache.createVersionedComparator(keySize))
-                    }
+                    blockCache.createVersionedColumnFamilyOptions(keySize)
                 }
                 else -> blockCache.createColumnFamilyOptions()
             }

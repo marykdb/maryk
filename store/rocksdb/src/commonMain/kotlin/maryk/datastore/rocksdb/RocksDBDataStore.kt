@@ -226,6 +226,7 @@ class RocksDBDataStore private constructor(
     val fieldEncryptionProvider: FieldEncryptionProvider? = null,
     maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
     private val tuning: RocksDBTuning = RocksDBTuning(),
+    tableConfiguration: RocksDBTableConfiguration = RocksDBTableConfiguration(),
 ) : AbstractDataStore(
     dataModelsById = dataModelsById,
     coroutineContext = Dispatchers.IO,
@@ -282,7 +283,7 @@ class RocksDBDataStore private constructor(
     private val indexKeyFormatMigrationMutex = Mutex()
     private val storeMetaMutex = Mutex()
 
-    private val blockCache = RocksDBBlockCache(tuning)
+    private val blockCache = RocksDBBlockCache(tuning, tableConfiguration)
     private val ownStatistics = if (rocksDBOptions == null && tuning.enableStatistics) Statistics().apply {
         setStatsLevel(StatsLevel.EXCEPT_DETAILED_TIMERS)
     } else null
@@ -324,16 +325,20 @@ class RocksDBDataStore private constructor(
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
-        descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily, blockCache.createColumnFamilyOptions()))
-        for ((index, db) in dataModelsById) {
-            createColumnFamilyHandles(descriptors, index, db)
-        }
-        addRetainedColumnFamilyDescriptors(descriptors)
-
         val handles = mutableListOf<ColumnFamilyHandle>()
         this.db = try {
+            descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily, blockCache.createColumnFamilyOptions()))
+            for ((index, db) in dataModelsById) {
+                createColumnFamilyHandles(descriptors, index, db)
+            }
+            addRetainedColumnFamilyDescriptors(descriptors)
             openOptimisticTransactionDB(rocksDBOptions ?: ownRocksDBOptions!!, storePath, descriptors, handles)
         } catch (throwable: Throwable) {
+            handles.forEach { it.close() }
+            defaultWriteOptions.close()
+            defaultReadOptions.close()
+            sequentialReadOptions.close()
+            maintenanceReadOptions.close()
             ownRocksDBOptions?.close()
             blockCache.close()
             ownStatistics?.close()
@@ -1195,18 +1200,13 @@ class RocksDBDataStore private constructor(
 
         if (keepAllVersions) {
             // Prefix set to key size for more optimal search.
-            val tableOptionsHistoric = blockCache.createColumnFamilyOptions {
+            val tableOptionsHistoric = blockCache.createVersionedColumnFamilyOptions(db.Meta.keyByteSize) {
                 useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
-                setComparator(blockCache.createVersionedComparator(db.Meta.keyByteSize))
             }
 
-            val indexOptionsHistoric = blockCache.createColumnFamilyOptions {
-                setComparator(blockCache.createVersionedComparator(db.Meta.keyByteSize))
-            }
+            val indexOptionsHistoric = blockCache.createVersionedColumnFamilyOptions(db.Meta.keyByteSize)
 
-            val uniqueOptionsHistoric = blockCache.createColumnFamilyOptions {
-                setComparator(blockCache.createVersionedComparator(db.Meta.keyByteSize))
-            }
+            val uniqueOptionsHistoric = blockCache.createVersionedColumnFamilyOptions(db.Meta.keyByteSize)
 
             descriptors += HistoricTable.getDescriptor(tableIndex, nameSize, tableOptionsHistoric)
             descriptors += HistoricIndex.getDescriptor(tableIndex, nameSize, indexOptionsHistoric)
@@ -1247,9 +1247,7 @@ class RocksDBDataStore private constructor(
                 val modelId = name.decodeVarUInt(startIndex = 1)
                 val keySize = modelId?.let { storeMeta.models[it]?.keySize }
                 val columnFamilyOptions = when (tableType) {
-                    HistoricTable, HistoricIndex, HistoricUnique -> blockCache.createColumnFamilyOptions {
-                        setComparator(blockCache.createVersionedComparator(keySize ?: 0))
-                    }
+                    HistoricTable, HistoricIndex, HistoricUnique -> blockCache.createVersionedColumnFamilyOptions(keySize ?: 0)
                     else -> blockCache.createColumnFamilyOptions()
                 }
                 descriptors += ColumnFamilyDescriptor(name, columnFamilyOptions)
@@ -1859,6 +1857,32 @@ class RocksDBDataStore private constructor(
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
             maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
         ): RocksDBDataStore {
+            return open(
+                tableConfiguration = RocksDBTableConfiguration(), tuning = tuning,
+                keepAllVersions = keepAllVersions, keepUpdateHistoryIndex = keepUpdateHistoryIndex,
+                relativePath = relativePath, dataModelsById = dataModelsById, rocksDBOptions = rocksDBOptions,
+                onlyCheckModelVersion = onlyCheckModelVersion, migrationConfiguration = migrationConfiguration,
+                versionUpdateHandler = versionUpdateHandler, fieldEncryptionProvider = fieldEncryptionProvider,
+                maxConcurrentReads = maxConcurrentReads,
+            )
+        }
+
+        suspend fun open(
+            tableConfiguration: RocksDBTableConfiguration,
+            tuning: RocksDBTuning = RocksDBTuning(),
+            keepAllVersions: Boolean = true,
+            keepUpdateHistoryIndex: Boolean = false,
+            relativePath: String,
+            dataModelsById: Map<UInt, IsRootDataModel>,
+            rocksDBOptions: DBOptions? = null,
+            onlyCheckModelVersion: Boolean = false,
+            migrationConfiguration: MigrationConfiguration<RocksDBDataStore> = MigrationConfiguration(),
+            versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
+            fieldEncryptionProvider: FieldEncryptionProvider? = null,
+            maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
+        ): RocksDBDataStore {
+            require(tableConfiguration.persistentCache?.isOwningHandle() != false) { "Persistent cache is closed" }
+            val tableSnapshot = tableConfiguration.copy(compressionPerLevel = tableConfiguration.compressionPerLevel.toList())
             return RocksDBDataStore(
                 keepAllVersions = keepAllVersions,
                 keepUpdateHistoryIndex = keepUpdateHistoryIndex,
@@ -1871,6 +1895,7 @@ class RocksDBDataStore private constructor(
                 fieldEncryptionProvider = fieldEncryptionProvider,
                 maxConcurrentReads = maxConcurrentReads,
                 tuning = tuning,
+                tableConfiguration = tableSnapshot,
             ).apply {
                 try {
                     initAsync()

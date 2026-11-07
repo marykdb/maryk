@@ -10,6 +10,10 @@ indexes, Maryk metadata and whatever history it retains. It works with or withou
 - Finish schema and index migrations before backing up.
 - Use paths without supplementary Unicode characters, such as emoji, on JVM and
   Android. Those paths are rejected because of RocksDB JNI path encoding.
+- Use ASCII-only repository paths on Windows Native (MinGW), including parent
+  directories. The pinned `rocksdb-multiplatform` 11.8.1 binding checks writability
+  with a narrow Windows API and can reject writable Unicode paths. Maryk's
+  Unicode directory and lock handling does not remove this engine limitation.
 - Keep the original encryption keys separately; they are not included in a backup.
 
 An open repository owns an exclusive filesystem lock. Close it after use, and do

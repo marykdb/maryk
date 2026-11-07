@@ -279,7 +279,9 @@ class RocksDBBackupTest {
     fun exclusiveOwnershipAndCanonicalPathsSurviveCloseAndReopen() = runTest {
         val working = canonicalBackupDirectory(".")
         val windows = working.getOrNull(1) == ':' || working.startsWith("//")
-        val path = createTestDBFolder(if (windows) "physical-owner-İ" else "physical-owner-İ-\\literal")
+        // rocksdb-multiplatform 11.8.1 uses narrow access() in BackupEngineOptions
+        // on MinGW. Exercise Unicode paths independently of that engine limitation.
+        val path = createTestDBFolder(if (windows) "physical-owner" else "physical-owner-İ-\\literal")
         val canonical = canonicalBackupDirectory(path)
         assertEquals(canonical, canonicalBackupDirectory(canonical))
         val first = RocksDBBackupRepository.open(path)
@@ -293,6 +295,30 @@ class RocksDBBackupTest {
             assertFailsWith<IllegalArgumentException> { canonicalBackupDirectory("$path/plain-file") }
             assertFailsWith<IllegalArgumentException> { requireSeparateBackupDirectories("C:/Data", "c:/DATA/nested") }
         } finally { deleteFolder(path) }
+    }
+
+    @Test
+    fun canonicalDirectoriesPreserveUnicodeAndWindowsLocksCanBeReopened() {
+        val working = canonicalBackupDirectory(".")
+        val windows = working.getOrNull(1) == ':' || working.startsWith("//")
+        val path = createTestDBFolder(if (windows) "physical-path-İ" else "physical-path-İ-\\literal")
+        try {
+            val canonical = canonicalBackupDirectory(path)
+            assertEquals(canonical, canonicalBackupDirectory(canonical))
+            assertEquals(canonical, canonicalBackupDirectory("$path/."))
+            if (windows) {
+                // Test the wide Windows lock API without entering BackupEngineOptions.
+                val ownership = lockBackupRepository(canonical)
+                try {
+                    assertFailsWith<IllegalStateException> { lockBackupRepository("$canonical/.") }
+                } finally {
+                    ownership.close()
+                }
+                lockBackupRepository(canonical).close()
+            }
+        } finally {
+            deleteFolder(path)
+        }
     }
 
     @Test

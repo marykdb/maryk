@@ -10,10 +10,8 @@ indexes, Maryk metadata and whatever history it retains. It works with or withou
 - Finish schema and index migrations before backing up.
 - Use paths without supplementary Unicode characters, such as emoji, on JVM and
   Android. Those paths are rejected because of RocksDB JNI path encoding.
-- Use ASCII-only repository paths on Windows Native (MinGW), including parent
-  directories. The pinned `rocksdb-multiplatform` 11.8.1 binding checks writability
-  with a narrow Windows API and can reject writable Unicode paths. Maryk's
-  Unicode directory and lock handling does not remove this engine limitation.
+- Windows Native supports valid Unicode paths, including emoji, with the
+  `rocksdb-multiplatform` 11.8.1.1 binding.
 - Keep the original encryption keys separately; they are not included in a backup.
 
 An open repository owns an exclusive filesystem lock. Close it after use, and do
@@ -121,3 +119,17 @@ oversized or invalid metadata is rejected before capture. Native restore require
 compatible custom comparators and codecs and does not promise downgrade
 compatibility. Windows currently has weaker directory-entry durability because
 the file abstraction does not expose directory syncing there.
+
+## Upgrading Windows Native stores
+
+Older bindings could place files in a legacy-encoded lookalike directory when a
+path contained non-ASCII characters. The UTF-16 filesystem fix does not relocate
+those files. Preserve the original directories before upgrading. Locate the
+actual database containing `CURRENT`, its referenced manifest and matching Maryk
+metadata; do not rename files individually or merge lookalike directories.
+
+Open the identified store with compatible models and caller-owned `DBOptions`
+using `setCreateIfMissing(false)` and `setCreateMissingColumnFamilies(false)`.
+Check known records by their original keys before allowing application writes.
+Maryk does not search alternate encodings or silently create a replacement during
+this recovery check. Close the options after the store closes.

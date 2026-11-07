@@ -279,9 +279,7 @@ class RocksDBBackupTest {
     fun exclusiveOwnershipAndCanonicalPathsSurviveCloseAndReopen() = runTest {
         val working = canonicalBackupDirectory(".")
         val windows = working.getOrNull(1) == ':' || working.startsWith("//")
-        // rocksdb-multiplatform 11.8.1 uses narrow access() in BackupEngineOptions
-        // on MinGW. Exercise Unicode paths independently of that engine limitation.
-        val path = createTestDBFolder(if (windows) "physical-owner" else "physical-owner-İ-\\literal")
+        val path = createTestDBFolder(if (windows) "physical-owner-İ-日本" else "physical-owner-İ-\\literal")
         val canonical = canonicalBackupDirectory(path)
         assertEquals(canonical, canonicalBackupDirectory(canonical))
         val first = RocksDBBackupRepository.open(path)

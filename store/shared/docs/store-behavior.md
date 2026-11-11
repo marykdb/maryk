@@ -4,6 +4,80 @@ Use the [query guide](../../../core/docs/query.md) for request syntax and the
 transaction contract. This reference explains behavior that matters when changing
 or synchronizing records.
 
+## Decoded-value cache
+
+FoundationDB and RocksDB use a shared decoded-value cache within each request.
+It reuses a value only when its reference and version match. This cache is
+separate from RocksDB's block cache and does not cache queries between requests.
+
+`Cache(...)` keeps its constructor, defaults and per-key limits for existing
+callers. Datastore paths select `Cache.forRequest(request)`: known scalar Get/Scan
+reads bypass value admission because they materialize each field once. Repeated
+Get rows reuse decoded records instead. Complex/custom reads, large Get requests
+beyond the record-planning bound, and mutations retain the pooled estimated
+2 MiB budget across models and keys. Individual values can borrow that pool,
+instead of being rejected at the former 128 KiB per-key boundary. Both paths
+retain the 1,024-key-per-model and 128-reference-per-key safeguards. Least recently
+used entries are evicted when a limit is reached; linked nodes are reused on hits.
+The request pool accounts for record/index metadata as well as decoded values.
+
+Sizing uses a portable allowance for object metadata, two bytes per string
+character, and the payload size of byte wrappers and primitive arrays. Known
+fixed-size scalars use a constant allowance. Sizing never copies payloads or
+traverses arbitrary object graphs. Unknown/composite values and values larger
+than the available pool bypass caching. Replacement/deletion releases accounting,
+and older-version reads cannot replace newer cached values.
+
+Get requests with repeated keys can reuse already-decoded records in the same
+snapshot and retry attempt. Result order, duplicates, filters, projections,
+historic metadata and aggregation multiplicity are preserved. Reused results
+copy built-in mutable containers. Planning is limited to 4,096 input keys and
+copy eligibility to bounded built-in graphs; larger/custom graphs use normal
+reads. Memoized payloads are already owned by the response, with bounded planning
+metadata. Missing/filtered repeated keys can reuse negative results. FoundationDB
+charges reused results against its request materialization budget using the
+original encoded row size, preserving that safeguard despite fewer physical reads.
+
+RocksDB and FoundationDB share a strict decoder for canonical string payloads in
+already-bounded byte arrays. Other types and storage markers retain the general
+streaming decoder. The general decoder's allocation safeguards are unchanged.
+
+These budgets are estimates, not exact runtime heap limits or response-size
+limits. A single hot record may retain more than under the legacy per-key limit;
+the pooled budget prevents many keys from multiplying that allowance. Returned
+results still own memory after eviction, and working sets larger than the pool
+can require repeated decoding. No cache survives its request or snapshot scope.
+No persisted encodings or storage migration changes.
+
+Run `:store:shared:runCachePerformanceProbe --args=request` to compare strict
+per-key and pooled behavior, bounded decoding, allocations and retained heap.
+Without arguments it retains the earlier entry-count-policy comparison. Probes
+validate their results; timings and GC observations are diagnostics, not assertions
+or production guarantees.
+
+## Large dossiers and native caches
+
+Keep report records individually addressable, with an index grouping patient and
+report ordering fields. Fetch metadata projections in bounded cursor pages, then
+load selected report bodies.
+Cursor continuation does not keep a database snapshot open between requests.
+
+RocksDB's [block cache](https://github.com/facebook/rocksdb/wiki/Block-Cache)
+stores uncompressed database blocks. FoundationDB's client can
+[reuse encoded ranges within a transaction](https://forums.foundationdb.org/t/are-range-reads-cached-in-the-c-client/3692).
+These layers remain enabled. Maryk record reuse avoids repeated binding calls,
+decoding and object construction above them; it does not imply a corresponding
+reduction in physical disk reads. Single-pass scalar reads avoid an additional
+value cache with no measured reuse. Neither mechanism caches query results across
+requests or grows with the entire patient population.
+
+The request pool is separate from native cache, memtable, transaction, response
+and process memory budgets. A write-heavy import can temporarily consume more
+native memory than steady-state reads. Size engine resources for the workload
+and inspect native diagnostics; the request cache is not a total-memory limit.
+Avoid opening a separate datastore/native cache per patient when one indexed
+store can serve the patient population.
+
 ## Write validation and collection boundaries
 
 Write validation runs inside the backend mutation boundary. Typed replacements

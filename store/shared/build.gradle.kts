@@ -6,6 +6,16 @@ plugins {
     id("maryk.conventions.publishing")
 }
 
+tasks.register<JavaExec>("runCachePerformanceProbe") {
+    group = "verification"
+    description = "Compare decoded-value cache memory retention and repeated-read costs."
+    val compilation = kotlin.targets.getByName("jvm").compilations.getByName("test")
+    classpath(compilation.output.allOutputs, configurations.getByName("jvmTestRuntimeClasspath"))
+    mainClass.set("maryk.datastore.shared.benchmark.CachePerformanceProbeKt")
+    dependsOn(tasks.named("jvmTestClasses"))
+    maxHeapSize = "512m"
+}
+
 kotlin {
     sourceSets {
         commonMain {

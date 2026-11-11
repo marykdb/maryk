@@ -97,6 +97,18 @@ Common read helpers:
 - `DBAccessorStoreValuesGetter` decodes values on demand and can capture the highest seen version while reading.
 - `getValue()` selects latest versus historic storage based on `toVersion`.
 
+Current projections of up to 16 simple root properties skip unselected collection
+subtrees with seeks on the existing request iterator. This avoids walking every
+collection item to return a few metadata fields. Missing fields, soft deletion,
+selected-field versions, snapshots and pending transaction writes retain their
+ordinary semantics. Small scalar models, full records, complex selections and
+historic snapshots use the existing sequential decoder. Historical projections
+also inspect unselected qualifiers to preserve their visible `lastVersion`.
+
+Historical point reads reuse a supplied request reader for both present and absent
+values. A missing/deleted value or a decoder returning null does not create a
+second iterator or invoke the decoder again. Reader ownership stays with its caller.
+
 Older stores can have a current soft-delete marker without its historic row.
 The change-reader fallback uses that marker only when its timestamp lies within
 the inclusive requested version window. Finite update history narrows this window

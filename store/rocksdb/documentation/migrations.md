@@ -2,9 +2,25 @@
 
 This guide documents migration behavior in `RocksDBDataStore` and how to operate it safely.
 
-Preferred API:
-- pass migration settings as `migrationConfiguration = MigrationConfiguration(...)`
-- flat migration arguments on `RocksDBDataStore.open(...)` still work for compatibility
+Pass migration settings as `migrationConfiguration = MigrationConfiguration(...)`.
+Use `versionUpdateHandler` for post-migration work.
+
+## Opening existing stores
+
+Opening compares stored and configured model definitions. Compatible changes are
+handled automatically; incompatible changes require the migration hooks below.
+
+Opening a released store can also run a resumable storage-format conversion
+before application schema migrations. Stop old writers, retain a recoverable
+source copy, and read the [storage upgrade guide](../../shared/docs/storage-format-upgrades.md)
+before rollout. Some legacy collection/allocation states require authoritative
+recovery; do not remove upgrade metadata to bypass a failure.
+
+Older stores receive a one-time version-watermark repair by scanning current
+rows and replication tombstones per model. The scan uses constant memory, but
+startup time depends on stored data size. A completion marker skips the repair
+on later opens. Watermarks committed with atomic requests and transactions then
+keep snapshots current after reopen.
 
 ## When migration is required
 

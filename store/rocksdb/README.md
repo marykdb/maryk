@@ -1,268 +1,55 @@
 # Maryk RocksDB Store
 
-An embedded, high‑performance Maryk data store built on [RocksDB](https://rocksdb.org).
+An embedded Maryk data store backed by [RocksDB](https://rocksdb.org), supporting
+JVM, Android, Apple platforms, Linux, Windows and Android Native through the
+`rocksdb-multiplatform` bindings.
 
-Each DataModel is mapped to multiple column families (keys/table/index/unique and historic variants when enabled). See the detailed [Architecture](documentation/architecture.md) and [Storage Layout](documentation/storage.md).
-For migration runtime and operations, see [Migrations](documentation/migrations.md).
+## Quick start
 
-## Getting Started
+Define a model, register its stable ID, and execute Maryk requests:
 
-Use the following snippet:
 ```kotlin
-import kotlinx.coroutines.runBlocking
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.string
+import maryk.core.query.pairs.with
+import maryk.core.query.requests.add
+import maryk.datastore.rocksdb.RocksDBDataStore
 
-fun main() = runBlocking {
-    RocksDBDataStore.open(
-        keepAllVersions = false,
-        keepUpdateHistoryIndex = false,
-        relativePath = "path/to/folder/on/disk/for/store",
-        dataModelsById = mapOf(
-            1u to Account,
-            2u to Course
-        )
-    ).use {
-        // Run operations on the store
-
-        execute(
-            Account.add(
-                Account(
-                    username="test1",
-                    password="test1234"
-                ),
-                Account(
-                    username="test2",
-                    password="test1234"
-                )
-            )
-        )
-    )
+object Note : RootDataModel<Note>() {
+    val message by string(index = 1u)
 }
-```
 
-The `.use { ... }` scope closes the store automatically. If you don’t use `use`, call `close()` when finished to free native resources.
-
-Committed atomic requests and transactions persist their version watermark with
-their data and receipt, so snapshots remain current after reopening. The first
-open after upgrading repairs older watermarks by scanning current rows and
-replication tombstones once per model. This uses constant scan memory, but startup
-time depends on stored data size. A completion marker skips the repair on later
-opens.
-
-Need remote access to this local RocksDB store? Expose it with the
-[Remote Store](../remote/README.md) via CLI `serve`.
-
-## Migrations and version updates
-
-Opening compares stored and configured model definitions. Compatible changes are
-handled automatically; incompatible changes require migration hooks. Group these
-under `migrationConfiguration = MigrationConfiguration(...)`. Use
-`versionUpdateHandler` for post-migration work.
-
-See [Migrations](documentation/migrations.md) for examples, hook ordering, resumable phases,
-lease configuration and operational controls.
-
-## Platform Support
-
-This module is Kotlin Multiplatform and works on JVM, iOS, macOS, tvOS, watchOS, Android, Android Native, Windows and Linux via the `rocksdb-multiplatform` bindings.
-
-For a deeper dive into how data is laid out and how queries execute, check the [Architecture](documentation/architecture.md) and [Storage Layout](documentation/storage.md) docs.
-
-## Options
-
-- `keepAllVersions`: Keep historic table/index/unique column families for time-travel and change-history reads.
-- `keepUpdateHistoryIndex`: Add an `UpdateHistory` column family keyed by change version + key for historical paging. `ScanUpdates` may select records through this index, but its emitted synchronization events remain chronological.
-
-## Compression
-
-Column families use LZ4 for general compression and Zstandard for the bottommost
-level, following [RocksDB's compression guidance](https://github.com/facebook/rocksdb/wiki/Compression)
-for balancing CPU and storage costs. This is
-a general-purpose default, not a measured optimum for every workload.
-
-Existing Snappy-compressed and uncompressed SST files remain readable. No rewrite
-is required to open a store: new flushes and normal compactions gradually apply
-the new settings. No compression migration or forced compaction runs at startup.
-Any other binary opening newly written files must also support LZ4 and Zstandard;
-this does not guarantee downgrade compatibility with older codec-limited builds.
-
-## Update history
-
-For finite, newest-first revision pages, use `getUpdateHistory(key, ...)` or
-`scanUpdateHistory(...)` with both history options enabled and a ready history
-index. Continue with `UpdatesResponse.nextCursor`; the limit counts complete
-record-version entries, independently of property-history `maxVersions`.
-Both queries scan the existing model-wide history index. See
-[history paging](../../core/docs/query.md#getscan-update-history) for filters,
-projections, and hard-delete retention limits.
-
-## Sensitive Properties
-
-`RocksDBDataStore.open` accepts a `fieldEncryptionProvider` argument using the shared encryption contract
-`maryk.datastore.shared.encryption.FieldEncryptionProvider`.
-
-Use `sensitive = true` on property definitions to encrypt value payloads at rest.
-
-```kotlin
-val secret by string(index = 3u, sensitive = true)
-
-val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
-val encryptionProvider = AesGcmHmacSha256EncryptionProvider(
-    encryptionKey = keyMaterial.encryptionKey,
-    tokenKey = keyMaterial.tokenKey
-)
-```
-
-Notes:
-- Sensitive values are encrypted in table payloads (latest + historic).
-- Reads auto-decrypt based on an encrypted payload marker.
-- Supported for simple value properties.
-- Sensitive+`unique` is supported when `fieldEncryptionProvider` also implements
-  `maryk.datastore.shared.encryption.SensitiveIndexTokenProvider`.
-- Sensitive properties cannot contribute to primary keys or secondary indexes,
-  including composite and transformed indexes. Use a separate explicit blind-index
-  field when search is required. Custom indexes without a dependency contract are
-  rejected when the model contains sensitive properties.
-- Earlier versions could accept unsafe composite indexes. This validation does not
-  erase existing plaintext key/index bytes or physical backups. Recover affected
-  data into a fresh store with safe definitions, then securely retire old copies.
-- Pass `fieldEncryptionProvider = encryptionProvider` to `RocksDBDataStore.open(...)`.
-
-### Hard deletion and history
-
-A hard delete permanently removes a record's current and historic values, including when `keepAllVersions` is enabled. An earlier `toVersion` query cannot recover erased values. Use soft deletion when historical recovery is required.
-
-See [store behavior](../shared/docs/store-behavior.md) for undelete, unique
-ownership, replication ordering and scans that include deleted records.
-
-## Serializable transaction scopes
-
-RocksDB replays through a native optimistic transaction. Point reads and iterators include its pending writes; a revision key participates in conflict detection and changes in each normal write commit. Preview closes without commit, and durable receipts survive reopen.
-
-The [shared contract](../../core/docs/query.md#serializable-transactions) describes
-read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
-commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
-contracts outside an explicit transaction.
-
-
-For optional SQL queries, add the SQL module and follow the [SQL guide](../../sql/README.md).
-
-## Upgrading existing stores
-
-Opening a released store can run a resumable storage-format conversion before
-application schema migrations. Stop old writers, retain a recoverable source copy,
-and read the [storage upgrade guide](../shared/docs/storage-format-upgrades.md)
-before rollout. Some legacy collection/allocation states require authoritative
-recovery; do not remove upgrade metadata to bypass a failure.
-
-## Resource budgets and diagnostics
-
-`open(...)` retains its existing signature. To tune resources, use the overload
-with `tuning = RocksDBTuning(...)`. Defaults share a 64 MiB LRU block cache across
-all column families and use a 32 MiB write-buffer budget. Memtable reservations
-are charged to that cache; these numbers must not be summed as independent
-allocations. They are engine budgets, not a strict process-memory limit.
-
-When passing caller-owned `rocksDBOptions`, Maryk preserves its write-buffer
-manager and statistics configuration. Configure those resources on the supplied
-options and retain them until the store closes. The shared table cache still
-uses `tuning.blockCacheBytes`.
-
-Migration, repair, and index-building reads avoid inserting scanned data blocks
-into the application cache. RocksDB may still cache small index/table metadata. Bounded prefix predicates preserve the request snapshot and pending
-transaction writes; historic comparator scans retain their own boundary logic.
-Iterator read failures propagate instead of appearing as successful exhaustion.
-
-`diagnostics()` returns approximate memory accounting, cache usage and pins,
-compaction backlog, immutable memtables, write-stop state, and cumulative cache
-and write-stall counters when Maryk owns the statistics configuration.
-`verifyStorageChecksums()` checks RocksDB's SST files on the IO dispatcher and throws on corruption.
-Call these while the store is open and coordinate them with store shutdown.
-
-`storageDiagnostics()` samples live SST file count/bytes, bytes by LSM level, and
-WAL file count/bytes on the IO dispatcher. These are separate live inventories,
-not an atomic filesystem snapshot or total directory size: obsolete files and
-other metadata are not included. WAL usage can remain significant even when SST
-compression is effective. Pinned cache usage may also include write-buffer
-reservations after application iterators have closed.
-
-## Optional table settings
-
-Existing `open(...)` calls need no extra configuration. New SST files use a shared
-10-bit-per-key Bloom filter to avoid unnecessary reads for missing keys. Bytewise
-column families use automatic index search; historic column families retain
-binary search because their custom comparator cannot use interpolation. Existing
-SSTs remain readable. Startup does not rewrite them.
-
-Use the overload with `tableConfiguration` only when overriding these defaults:
-
-```kotlin
-import maryk.datastore.rocksdb.RocksDBTableConfiguration
-import maryk.rocksdb.CompressionType
-
-val store = RocksDBDataStore.open(
-    relativePath = "data/accounts",
-    dataModelsById = mapOf(1u to Account),
-    tableConfiguration = RocksDBTableConfiguration(
-        bloomFilterBitsPerKey = 8.0, // null disables filters for future SSTs
-        compression = CompressionType.LZ4_COMPRESSION,
-        bottommostCompression = CompressionType.ZSTD_COMPRESSION,
-    ),
-)
-```
-
-`compressionPerLevel` is empty by default, using the general codec. A nonempty
-list overrides compression by LSM level; `bottommostCompression` still controls
-the bottommost level. These choices apply during flush and compaction. Maryk
-copies the list when opening. `indexSearchType` overrides bytewise families only;
-historic families always retain binary search.
-
-Persistent caching is disabled by default. To cache SST pages on a separate
-persistent volume, pass a binding `PersistentCache` as `persistentCache` in the
-table configuration. Its cache directory is disposable and is not a backup or
-part of portable exports. Keep the caller-owned cache, environment and logger
-alive until all stores using them close; close the cache before its logger.
-
-The binding's optional row cache and logging callback use the existing
-`rocksDBOptions` argument, without another Maryk configuration layer:
-
-```kotlin
-import maryk.rocksdb.DBOptions
-import maryk.rocksdb.InfoLogLevel
-import maryk.rocksdb.LRUCache
-import maryk.rocksdb.createLogger
-import maryk.rocksdb.loadRocksDBLibrary
-import maryk.rocksdb.setLogger
-
-loadRocksDBLibrary()
-createLogger(InfoLogLevel.INFO_LEVEL) { _, message -> println(message) }.use { logger ->
-    LRUCache(4L * 1024 * 1024).use { rowCache ->
-        DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true)
-            .setLogger(logger).setRowCache(rowCache).use { options ->
-                RocksDBDataStore.open(
-                    relativePath = "data/accounts",
-                    dataModelsById = mapOf(1u to Account),
-                    rocksDBOptions = options,
-                ).use { /* execute requests */ }
-            }
+suspend fun main() {
+    RocksDBDataStore.open(
+        relativePath = "notes.db",
+        dataModelsById = mapOf(1u to Note),
+    ).use {
+        execute(Note.add(Note.create { Note.message with "Hello Maryk" }))
     }
 }
 ```
 
-The logger can run on engine threads; keep callbacks short and thread-safe.
-Row caching adds memory beyond the default budgets and is opt-in. Supplied
-`DBOptions` remain caller-owned, including their statistics and write-buffer
-configuration. No logger, row cache or persistent cache is allocated by default.
+The path is a database directory. Keep model IDs stable across reopens. `use`
+closes the store; otherwise, call `close()` when finished to release native resources.
 
-## Native and portable backups
+The defaults retain history and use a shared 64 MiB cache, 10-bit Bloom filters,
+automatic index search for bytewise families, and LZ4/Zstandard compression.
+Existing stores remain readable; opening can run a required storage-format or
+schema migration. Read the [upgrade guidance](documentation/migrations.md#opening-existing-stores)
+before upgrading a deployed store.
 
-`RocksDBBackupRepository` provides incremental physical backups for recovery into
-a compatible RocksDB store, including indexes, transaction receipts and Maryk
-metadata. It works with or without `keepAllVersions`. Restore uses a new directory
-so the recovered store can be validated before switching the application.
+## Guides
 
-Use [portable state or history backups](../shared/docs/backup-restore.md) when
-transferring application data between backends. State export does not require
-retained history.
+| Task | Guide |
+| --- | --- |
+| Tune memory, filters, compression, caches or logging; inspect diagnostics | [Configuration and tuning](documentation/configuration.md) |
+| Configure history, page revisions or use transactions | [History and transactions](documentation/history-and-transactions.md) |
+| Encrypt sensitive properties and manage key ownership | [Field encryption](documentation/encryption.md) |
+| Upgrade storage or migrate model definitions | [Migrations and upgrades](documentation/migrations.md) |
+| Create and restore physical recovery backups | [RocksDB backups](documentation/backups.md) |
+| Transfer data between storage backends | [Portable backups](../shared/docs/backup-restore.md) |
+| Understand the implementation | [Architecture](documentation/architecture.md) and [storage layout](documentation/storage.md) |
 
-Follow the [native RocksDB recovery guide](documentation/backups.md) for creation,
-retention and restore steps.
+For request examples, see [reading and writing](../../core/docs/query/reads-writes.md).
+Expose a store through the [Remote Store](../remote/README.md), or add
+[SQL queries](../../sql/README.md) when needed.

@@ -3,6 +3,7 @@ package maryk.datastore.shared.updates
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.channelFlow
@@ -154,10 +155,22 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
         }
 
         val updateJob = launch {
-            sendFlow.receiveAsFlow().collect(::send)
+            try {
+                sendFlow.receiveAsFlow().collect(::send)
+            } catch (error: ClosedSendChannelException) {
+                // The listener may close the output while a forwarding send resumes.
+                // Its completion handler retains any original failure on the output.
+                if (!closed.isCompleted) throw error
+            }
         }
-        closed.invokeOnCompletion { cause -> close(cause) }
-        awaitClose { updateJob.cancel() }
+        val completion = closed.invokeOnCompletion { cause ->
+            updateJob.cancel()
+            close(cause)
+        }
+        awaitClose {
+            completion.dispose()
+            updateJob.cancel()
+        }
     }
 
     fun close(cause: Throwable? = null) {

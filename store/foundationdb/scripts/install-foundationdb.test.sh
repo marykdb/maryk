@@ -105,7 +105,7 @@ if output="$(FDB_TARGET_ARCH=arm64 FAKE_UNAME_OS=Linux FAKE_UNAME_ARCH=x86_64 PA
   echo "Expected the cross-target ARM64 artifact to fail checksum verification in the fixture." >&2
   exit 1
 fi
-grep -Fq 'foundationdb-clients_7.3.79-1_aarch64.deb' <<< "$output" || {
+grep -Fq 'foundationdb-clients_7.3.81-1_aarch64.deb' <<< "$output" || {
   echo "Expected FDB_TARGET_ARCH=arm64 to select the ARM64 FoundationDB package, got:" >&2
   echo "$output" >&2
   exit 1
@@ -118,12 +118,12 @@ while read -r artifact expected; do
     exit 1
   }
 done <<'EOF'
-FoundationDB-7.3.79_arm64.pkg 5104ade94d1e1b62119f49e3e16d43bd9ffb8b5ec604b1730f46f680c0c1890e
-FoundationDB-7.3.79_x86_64.pkg 0bcd0f9430984ab72d7ba47f8ed95c85f14d237f3878ab1521feff14e074dbc4
-foundationdb-clients_7.3.79-1_aarch64.deb 52de6931803c322e131c5e84cebb35d647237ef51a7df3df6fbe32b9b971e7fb
-foundationdb-clients_7.3.79-1_amd64.deb 52cc22565c42e7eb60c08f395a0626483735c311be0d80b7c035ac8e328e2fff
-foundationdb-server_7.3.79-1_aarch64.deb d92ecf9ebb5cba4b4c06ee3c74c44d31871957a1fb35a1efb662836ae7c87025
-foundationdb-server_7.3.79-1_amd64.deb f85a4126a76919a4dd6194e69bc29200d0d4fa3d7b5261e7eb91c090b7fdba55
+FoundationDB-7.3.81_arm64.pkg cfa81beae6ac36410f3110f832b582f820cea4f43d7dbf0cb60a24da1824c56f
+FoundationDB-7.3.81_x86_64.pkg 5718fc8cce59ee11e538c3a3c54f3224a362c4cfc7cfcf1415c5de6956b50c60
+foundationdb-clients_7.3.81-1_aarch64.deb 7b6437e23137672a576ce0cdbefb5d866cd32aac1ed5e0d88be76dc6bd493035
+foundationdb-clients_7.3.81-1_amd64.deb 28bb8291c6b32647d1149286cd2b6b5204360833a42e39e7799d80be57cbfa87
+foundationdb-server_7.3.81-1_aarch64.deb 61fef33b59db860d421bf8fec4586e29fa2960de4509ab49c508cbc4ed4bdc0a
+foundationdb-server_7.3.81-1_amd64.deb 232370c0be6c185c8a2c3225f61a56d7fe37c7bb9a197f94a23ee0dda6820ef4
 EOF
 
 if bash -c 'source "$1"; pinned_sha256 unsupported-artifact' _ "$INSTALLER" >/dev/null; then
@@ -171,7 +171,7 @@ grep -Fq 'Checksum mismatch' <<< "$output" || {
 # Even a forged manifest cannot make arbitrary cached binaries reusable.
 printf '#!/usr/bin/env bash\nexit 0\n' > "$CACHED_BIN/fdbserver"
 chmod +x "$CACHED_BIN/fdbserver"
-printf 'version 7.3.79\n%s fdbserver\n' "$(shasum -a 256 "$CACHED_BIN/fdbserver" | awk '{print $1}')" > "$CACHED_BIN/.maryk-foundationdb-integrity"
+printf 'version 7.3.81\n%s fdbserver\n' "$(shasum -a 256 "$CACHED_BIN/fdbserver" | awk '{print $1}')" > "$CACHED_BIN/.maryk-foundationdb-integrity"
 if output="$(PATH="$FAKE_BIN:/usr/bin:/bin" bash "$CACHED_SCRIPTS/install-foundationdb.sh" 2>&1)"; then
   echo "Expected a forged cached FoundationDB bundle to be rejected, but it succeeded." >&2
   exit 1

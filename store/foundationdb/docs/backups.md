@@ -104,7 +104,7 @@ and `backup_agent` on `PATH`, or together in `FDB_RECOVERY_BIN_DIR`:
 ```
 
 The installer supplies server/client support for module tests; backup tools must
-be installed separately. Local tooling pins server 7.3.79 and API 730, which does
+be installed separately. Local tooling pins server 7.3.81 and API 730, which does
 not establish production upgrade/downgrade compatibility.
 
 The drill creates two disposable loopback clusters and its own agents. It does

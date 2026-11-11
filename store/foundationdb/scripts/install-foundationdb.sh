@@ -4,7 +4,7 @@ set -euo pipefail
 # Install or link FoundationDB locally for the current platform.
 # - Installs/symlinks into: store/foundationdb/bin
 # - Version selector via FDB_VERSION env var or --version flag. Only releases with
-#   pinned checksums are accepted (currently 7.3.79).
+#   pinned checksums are accepted (currently 7.3.81).
 # - Strategy:
 #   * Always rebuild the CLI bundle from pinned release artifacts and verify
 #     their checksums before extraction. Cached, PATH, and package-manager
@@ -18,7 +18,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 BIN_DIR="$ROOT_DIR/store/foundationdb/bin"
 LIB_DIR="$BIN_DIR/lib"
 
-FDB_VERSION_DEFAULT="7.3.79"
+FDB_VERSION_DEFAULT="7.3.81"
 FDB_VERSION="${FDB_VERSION:-$FDB_VERSION_DEFAULT}"
 
 if [[ "${1:-}" == "--version" && -n "${2:-}" ]]; then
@@ -62,12 +62,18 @@ pinned_sha256() {
     "7.3.79/foundationdb-clients_7.3.79-1_amd64.deb") echo "52cc22565c42e7eb60c08f395a0626483735c311be0d80b7c035ac8e328e2fff" ;;
     "7.3.79/foundationdb-server_7.3.79-1_aarch64.deb") echo "d92ecf9ebb5cba4b4c06ee3c74c44d31871957a1fb35a1efb662836ae7c87025" ;;
     "7.3.79/foundationdb-server_7.3.79-1_amd64.deb") echo "f85a4126a76919a4dd6194e69bc29200d0d4fa3d7b5261e7eb91c090b7fdba55" ;;
+    "7.3.81/FoundationDB-7.3.81_arm64.pkg") echo "cfa81beae6ac36410f3110f832b582f820cea4f43d7dbf0cb60a24da1824c56f" ;;
+    "7.3.81/FoundationDB-7.3.81_x86_64.pkg") echo "5718fc8cce59ee11e538c3a3c54f3224a362c4cfc7cfcf1415c5de6956b50c60" ;;
+    "7.3.81/foundationdb-clients_7.3.81-1_aarch64.deb") echo "7b6437e23137672a576ce0cdbefb5d866cd32aac1ed5e0d88be76dc6bd493035" ;;
+    "7.3.81/foundationdb-clients_7.3.81-1_amd64.deb") echo "28bb8291c6b32647d1149286cd2b6b5204360833a42e39e7799d80be57cbfa87" ;;
+    "7.3.81/foundationdb-server_7.3.81-1_aarch64.deb") echo "61fef33b59db860d421bf8fec4586e29fa2960de4509ab49c508cbc4ed4bdc0a" ;;
+    "7.3.81/foundationdb-server_7.3.81-1_amd64.deb") echo "232370c0be6c185c8a2c3225f61a56d7fe37c7bb9a197f94a23ee0dda6820ef4" ;;
     *) return 1 ;;
   esac
 }
 validate_pinned_version() {
   case "$FDB_VERSION" in
-    7.3.79) ;;
+    7.3.79|7.3.81) ;;
     *) err "No pinned SHA-256 checksums for FoundationDB version $FDB_VERSION." ;;
   esac
 }

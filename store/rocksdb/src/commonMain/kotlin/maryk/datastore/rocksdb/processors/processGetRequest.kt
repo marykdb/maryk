@@ -16,6 +16,7 @@ import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
+import maryk.datastore.shared.RequestRecordCache
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
@@ -44,6 +45,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
     getRequest.checkToVersion(keepAllVersions)
 
     readContext.withAccessor(this) { dbAccessor ->
+        val records = RequestRecordCache.create(getRequest.keys)
         val columnToScan = if (getRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
@@ -62,13 +64,16 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
         dbAccessor.getIterator(sequentialReadOptions, columnToScan).use { iterator ->
             historicalReader.use { reader ->
                 keyWalk@ for (key in getRequest.keys) {
-                    readCreationVersion(
-                        dbAccessor,
-                        columnFamilies,
-                        defaultReadOptions,
-                        key.bytes,
-                        getRequest.toVersion
-                    )?.let { creationVersion ->
+                    val valuesWithMetaData = if (records?.contains(key) == true) {
+                        records.get(key) ?: continue@keyWalk
+                    } else {
+                        val creationVersion = readCreationVersion(
+                            dbAccessor,
+                            columnFamilies,
+                            defaultReadOptions,
+                            key.bytes,
+                            getRequest.toVersion
+                        ) ?: run { records?.put(key, null); continue@keyWalk }
                         val deleted = if (getRequest.toVersion != null || getRequest.filterSoftDeleted) {
                             softDeleteCache.get(key.bytes, 0, key.size)
                         } else {
@@ -88,6 +93,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
                                 softDeleteCache = softDeleteCache
                             )
                         ) {
+                            records?.put(key, null)
                             continue@keyWalk
                         }
 
@@ -95,7 +101,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
                             cache.readValue(dbIndex, key, reference, version, valueReader)
                         }
 
-                        val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                        getRequest.dataModel.readTransactionIntoValuesWithMetaData(
                             iterator,
                             this,
                             creationVersion,
@@ -111,23 +117,22 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
                                 val cachedDeleted = deleted ?: softDeleteCache.get(key.bytes, 0, key.size)
                                 if (values.isDeleted == cachedDeleted) values else values.copy(isDeleted = cachedDeleted)
                             }
-                        }?.also {
-                            valuesWithMeta.add(it)
-                        }
+                        }?.also { records?.put(key, it) }
+                    }
+                    valuesWithMetaData?.let { valuesWithMeta.add(it) }
 
-                        aggregator?.aggregate {
-                            @Suppress("UNCHECKED_CAST")
-                            valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
-                                ?: dbAccessor.getValue(
-                                    columnFamilies,
-                                    defaultReadOptions,
-                                    getRequest.toVersion,
-                                    it.toStorageByteArray(key.bytes),
-                                    reader
-                                ) { valueBytes, offset, length ->
-                                    valueBytes.convertToValue(it, offset, length)
-                                }
-                        }
+                    aggregator?.aggregate {
+                        @Suppress("UNCHECKED_CAST")
+                        valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
+                            ?: dbAccessor.getValue(
+                                columnFamilies,
+                                defaultReadOptions,
+                                getRequest.toVersion,
+                                it.toStorageByteArray(key.bytes),
+                                reader
+                            ) { valueBytes, offset, length ->
+                                valueBytes.convertToValue(it, offset, length)
+                            }
                     }
                 }
             }

@@ -29,8 +29,9 @@ import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
+import maryk.datastore.rocksdb.processors.helpers.projectedQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
-import maryk.datastore.shared.readValue
+import maryk.datastore.shared.readStoredValue
 import maryk.datastore.shared.readStoredCount
 import maryk.datastore.shared.hasStoredValuePayload
 import maryk.datastore.shared.rethrowIfFatal
@@ -60,7 +61,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         checkExistence(iterator, key)
 
         // Will start by going to next key so will miss the creation timestamp
-        val getQualifier = iterator.nonHistoricQualifierRetriever(key)
+        val getQualifier = projectedQualifierRetriever(iterator, key, select)
+            ?: iterator.nonHistoricQualifierRetriever(key)
 
         var index: Int
         this.readStorageToValues(
@@ -104,12 +106,9 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                             valueBytes.size - VERSION_BYTE_SIZE,
                         ) { payload, offset, length ->
                             cachedRead(reference, currentVersion) {
-                                var valueIndex = offset
                                 val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                     ?: reference.propertyDefinition
-                                readValue(definition, { payload[valueIndex++] }) {
-                                    offset + length - valueIndex
-                                }
+                                readStoredValue(definition, payload, offset, length)
                             }
                         }
                     }
@@ -211,12 +210,9 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                     (reference as? IsPropertyReference<*, *, *>)?.toStorageByteArray() ?: return@cachedRead null,
                                     valueBytes,
                                 ) { payload, offset, length ->
-                                    var valueIndex = offset
                                     val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                         ?: reference.propertyDefinition
-                                    readValue(definition, { payload[valueIndex++] }) {
-                                        offset + length - valueIndex
-                                    }
+                                    readStoredValue(definition, payload, offset, length)
                                 }
                             }
                             ListSize -> {

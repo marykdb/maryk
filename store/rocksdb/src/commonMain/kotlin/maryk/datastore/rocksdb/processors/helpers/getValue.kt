@@ -63,14 +63,17 @@ internal fun <T: Any> DBAccessor.getValue(
             throw RequestException("Cannot use toVersion on a non historic table")
         }
 
-        historicalTableReader?.getValue(keyAndReference) { result, _, _ ->
-            val decrypted = if (decryptValue) this.dataStore.decryptValueIfNeeded(columnFamilies.modelId, recordKey, reference, result) else result
-            handleResult(decrypted, 0, decrypted.size)
-        } ?: HistoricalTableReader(this, columnFamilies, readOptions, toVersion).use { reader ->
-            reader.getValue(keyAndReference) { result, _, _ ->
-                val decrypted = if (decryptValue) this.dataStore.decryptValueIfNeeded(columnFamilies.modelId, recordKey, reference, result) else result
-                handleResult(decrypted, 0, decrypted.size)
+        fun read(reader: HistoricalTableReader): T? = reader.getValue(keyAndReference) { result, offset, length ->
+            if (decryptValue) {
+                dataStore.withDecryptedValueIfNeeded(columnFamilies.modelId, recordKey, reference, result, offset, length, handleResult)
+            } else {
+                handleResult(result, offset, length)
             }
+        }
+        if (historicalTableReader != null) {
+            read(historicalTableReader)
+        } else HistoricalTableReader(this, columnFamilies, readOptions, toVersion).use { reader ->
+            read(reader)
         }
     }
 }

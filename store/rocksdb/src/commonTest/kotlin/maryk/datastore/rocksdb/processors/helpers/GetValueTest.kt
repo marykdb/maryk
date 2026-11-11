@@ -11,12 +11,45 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.test.dataModelsForTests
 import maryk.deleteFolder
 import maryk.test.models.CompleteMarykModel
+import maryk.rocksdb.ColumnFamilyHandle
+import maryk.rocksdb.ReadOptions
+import kotlin.test.assertEquals
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class GetValueTest {
+    @Test
+    fun reusedHistoricReaderDoesNotRetryMissingOrNullResults() = runTest {
+        val folder = createTestDBFolder("get-value-reused-reader")
+        val store = RocksDBDataStore.open(relativePath = folder, dataModelsById = dataModelsForTests)
+        try {
+            val families = store.getColumnFamilies(CompleteMarykModel) as HistoricTableColumnFamilies
+            val key = ByteArray(CompleteMarykModel.Meta.keyByteSize) { (it + 1).toByte() } + byteArrayOf(5)
+            var iterators = 0
+            val accessor = object : DBAccessor(store) {
+                override fun getIterator(readOptions: ReadOptions, columnFamilyHandle: ColumnFamilyHandle) =
+                    super.getIterator(readOptions, columnFamilyHandle).also { iterators++ }
+            }
+            HistoricalTableReader(accessor, families, store.defaultReadOptions, 10uL).use { reader ->
+                assertNull(accessor.getValue(families, store.defaultReadOptions, 10uL, key, reader) { _, _, _ -> "unexpected" })
+                assertEquals(1, iterators, "A supplied reader must also handle absence")
+                store.db.put(families.historic.table, key + 10uL.toReversedVersionBytes(), byteArrayOf(7))
+            }
+            // Create a fresh iterator after writing; a callback returning null is a final result too.
+            HistoricalTableReader(accessor, families, store.defaultReadOptions, 10uL).use { reader ->
+                var decoded = 0
+                assertNull(accessor.getValue<String>(families, store.defaultReadOptions, 10uL, key, reader) { _, _, _ -> decoded++; null })
+                assertEquals(1, decoded)
+                assertEquals(2, iterators)
+            }
+        } finally {
+            store.close()
+            deleteFolder(folder)
+        }
+    }
+
     @Test
     fun currentGetValueRejectsMissingVersionPrefix() = runTest {
         val folder = createTestDBFolder("get-value-missing-version")

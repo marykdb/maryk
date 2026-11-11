@@ -907,7 +907,7 @@ class RocksDBDataStore private constructor(
                         this@RocksDBDataStore.createFlowSnapshotBoundary()
                     },
                 ) { storeAction, readContext ->
-                    val cache = Cache()
+                    val cache = Cache.forRequest(storeAction.request)
                     try {
                         if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
                             clock = nextMutationClock(
@@ -1419,7 +1419,8 @@ class RocksDBDataStore private constructor(
                     applyRestoreVersion(request,
                         read = { model, key ->
                             val response = CompletableDeferred<ValuesResponse<IsRootDataModel>>()
-                            processGetRequest(StoreAction(model.get(key, filterSoftDeleted = false), response), Cache(), readContext)
+                            val getRequest = model.get(key, filterSoftDeleted = false)
+                            processGetRequest(StoreAction(getRequest, response), Cache.forRequest(getRequest), readContext)
                             response.await().values.singleOrNull()
                         },
                         clearUnique = { claims -> claims.forEach { claim ->
@@ -1510,9 +1511,9 @@ class RocksDBDataStore private constructor(
                         when (member) {
                             is AddRequest<*> -> processAddRequest(memberVersion, action as AnyAddStoreAction)
                             is ChangeRequest<*> -> processChangeRequest(memberVersion, action as AnyChangeStoreAction)
-                            is DeleteRequest<*> -> processDeleteRequest(memberVersion, action as AnyDeleteStoreAction, Cache())
-                            is GetRequest<*> -> processGetRequest(action as AnyGetStoreAction, Cache(), readContext)
-                            is ScanRequest<*> -> processScanRequest(action as AnyScanStoreAction, Cache(), readContext)
+                            is DeleteRequest<*> -> processDeleteRequest(memberVersion, action as AnyDeleteStoreAction, Cache.forRequest())
+                            is GetRequest<*> -> processGetRequest(action as AnyGetStoreAction, Cache.forRequest(action.request), readContext)
+                            is ScanRequest<*> -> processScanRequest(action as AnyScanStoreAction, Cache.forRequest(action.request), readContext)
                             else -> error("Invalid transaction member")
                         }
                         response.await() as IsDataModelResponse<*>

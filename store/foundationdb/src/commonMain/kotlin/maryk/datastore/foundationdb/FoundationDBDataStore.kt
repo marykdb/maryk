@@ -24,11 +24,17 @@ import maryk.datastore.shared.migration.StorageMaintenanceMetadataKey
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -41,6 +47,7 @@ import kotlin.uuid.Uuid
 import maryk.core.properties.types.Bytes
 import maryk.core.query.requests.TransactionCapabilities
 import maryk.core.query.requests.TransactionRequest
+import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.TransactionResponse
 import maryk.core.query.responses.TransactionStatus
 import maryk.datastore.shared.TransactionAbort
@@ -185,14 +192,17 @@ import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.runCatchingNonFatal
 import maryk.datastore.shared.updates.Update
+import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.foundationdb.Database
 import maryk.foundationdb.DatabaseOptions
 import maryk.foundationdb.FdbFuture
 import maryk.foundationdb.Transaction
+import maryk.foundationdb.MutationType
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
 import maryk.foundationdb.tuple.Tuple
 import maryk.lib.bytes.combineToByteArray
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.nextByteInSameLength
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -223,6 +233,9 @@ class FoundationDBDataStore private constructor(
     private val clusterUpdateLogConfiguration: FoundationDBClusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(),
     internal val fieldEncryptionProvider: FieldEncryptionProvider? = null,
     maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
+    private val transactionConfiguration: FoundationDBTransactionConfiguration,
+    internal val executionConfiguration: FoundationDBExecutionConfiguration,
+    private val directoryLayer: DirectoryLayer,
 ) : AbstractDataStore(
     dataModelsById = dataModelsById,
     coroutineContext = Dispatchers.IO,
@@ -232,10 +245,16 @@ class FoundationDBDataStore private constructor(
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
-    internal val tc = TrackingTransactionContext(db)
+    internal val tc = TrackingTransactionContext(db) { transaction, context ->
+        if (context.kind == FoundationDBTransactionKind.Maintenance) {
+            transactionConfiguration.maintenancePolicy.applyTo(transaction.options())
+        }
+        transactionConfiguration.optionsSetter(transaction.options(), context)
+    }
 
     init {
         db.options().apply {
+            transactionConfiguration.requestPolicy.applyTo(this)
             databaseOptionsSetter()
         }
     }
@@ -262,6 +281,7 @@ class FoundationDBDataStore private constructor(
     private lateinit var metadataDirectory: DirectorySubspace
     private val atomicTransactions = atomic<Set<Transaction>>(emptySet())
     private lateinit var atomicReceiptsPrefix: ByteArray
+    private lateinit var ordinaryReceiptsPrefix: ByteArray
     private lateinit var metadataPrefix: ByteArray
     internal val directoriesByDataModelIndex = mutableMapOf<UInt, IsTableDirectories>()
     private val expectedSchemaEpochs = atomic<Map<UInt, ByteArray?>>(emptyMap())
@@ -294,16 +314,40 @@ class FoundationDBDataStore private constructor(
         }
     private val sensitiveReferencePrefixesByModelId: Map<UInt, List<ByteArray>> =
         sensitiveReferencesByModelId.mapValues { it.value.sensitiveReferences }
+    // Without sensitive fields, decode the existing payload slice directly instead of
+    // allocating a copy through an identity decryption callback for every value.
+    internal val valueDecryptor: DecryptValue? =
+        if (sensitiveReferencePrefixesByModelId.values.all { it.isEmpty() }) null
+        else { modelId, value, offset, length, recordKey, reference ->
+            decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length)
+        }
+
     private val sensitiveUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
         sensitiveReferencesByModelId.mapValues { it.value.sensitiveUniqueReferences }
     private val declaredUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
         dataModelsById.mapValues { (_, model) -> collectUniqueReferences(model) }
+
+    internal val afterOrdinaryMutationPrepared = atomic<((Transaction) -> Unit)?>(null)
+    internal val afterClusterTailBatch = atomic<((Int, Boolean) -> Unit)?>(null)
+    internal val ordinaryReceiptReplays = atomic(0L)
+    internal val largestOrdinaryTransactionBytes = atomic(0L)
+    internal val completedOrdinaryReceipts = PendingReceiptQueue()
+
+    @OptIn(ExperimentalUuidApi::class)
+    private val ordinaryReceiptSession = Uuid.random().toString()
+
+    internal fun ordinaryReceiptRange(): Range = Range.startsWith(ordinaryReceiptsPrefix + Tuple.from(ordinaryReceiptSession).pack())
+
+    @OptIn(ExperimentalUuidApi::class)
+    internal fun ordinaryReceiptKey(): ByteArray = ordinaryReceiptsPrefix +
+        Tuple.from(ordinaryReceiptSession, Uuid.random().toString()).pack()
 
     internal val transactionRevisionKey get() = packKey(metadataPrefix, transactionRevisionMetadataSuffix)
 
     @OptIn(ExperimentalUuidApi::class)
     internal fun advanceTransactionRevision(transaction: Transaction) {
         transaction.set(transactionRevisionKey, Uuid.random().toByteArray())
+        tc.markMutation(transaction)
     }
 
     internal inline fun <T> runTransaction(
@@ -311,10 +355,10 @@ class FoundationDBDataStore private constructor(
         crossinline block: (Transaction) -> T
     ): T {
         if (isClosing.value) throw CancellationException("Datastore closing")
-        return tc.run { tr ->
+        return tc.runConfigured(FoundationDBTransactionContext(FoundationDBTransactionKind.Maintenance, dataModelId)) { tr ->
             storageFormatTransactionGuard?.invoke(tr)
             dataModelId?.let { requireModelSchemaReady(tr, it) }
-            block(tr).also { if (dataModelId != null) advanceTransactionRevision(tr) }
+            block(tr)
         }
     }
 
@@ -333,10 +377,35 @@ class FoundationDBDataStore private constructor(
             }
             return block(tr)
         }
-        return tc.run { tr ->
-            dataModelId?.let { requireModelSchemaReady(tr, it, migrationRequest?.transactionGuard) }
-            block(tr).also { advanceTransactionRevision(tr) }
+        // This id and retained outcome live outside FoundationDB's retry callback.
+        // A retry after commit_unknown_result must never allocate/map/change twice.
+        val receiptKey = ordinaryReceiptKey()
+        var retained: OrdinaryMutationResult<T>? = null
+        var receiptPrepared = false
+        val result = tc.runSuspending(FoundationDBTransactionContext(FoundationDBTransactionKind.Request, dataModelId)) { tr ->
+            if (tr.get(receiptKey).await() != null) {
+                ordinaryReceiptReplays.incrementAndGet()
+                requireNotNull(retained) { "Ordinary mutation receipt has no retained result" }.value
+            } else {
+                dataModelId?.let { requireModelSchemaReady(tr, it, migrationRequest?.transactionGuard) }
+                val mutationsBefore = tc.mutationCount(tr)
+                block(tr).also { value ->
+                    retained = OrdinaryMutationResult(value)
+                    if (tc.mutationCount(tr) != mutationsBefore) {
+                        tr.set(receiptKey, byteArrayOf(1))
+                        receiptPrepared = true
+                        val bytes = tr.getApproximateSize().await()
+                        largestOrdinaryTransactionBytes.update { maxOf(it, bytes) }
+                        executionConfiguration.maxTransactionWorkBytes?.let { limit ->
+                            if (bytes > limit) throw FoundationDBTransactionWorkLimitExceededException(bytes, limit)
+                        }
+                        afterOrdinaryMutationPrepared.value?.invoke(tr)
+                    }
+                }
+            }
         }
+        if (receiptPrepared) completedOrdinaryReceipts.offer(receiptKey)
+        return result
     }
 
     private fun requireModelSchemaReady(transaction: Transaction, dataModelId: UInt) =
@@ -391,9 +460,11 @@ class FoundationDBDataStore private constructor(
         // old index, but a context created during/after the transition must not
         // read cleared or newly incompatible index rows.
         dataModelId?.let { dataModelId ->
-            tc.run { transaction -> requireModelSchemaReady(transaction, dataModelId) }
+            tc.runConfigured(FoundationDBTransactionContext(FoundationDBTransactionKind.Read, dataModelId)) { transaction ->
+                requireModelSchemaReady(transaction, dataModelId)
+            }
         }
-        return tc.run { tr ->
+        return tc.runConfigured(FoundationDBTransactionContext(FoundationDBTransactionKind.Read, dataModelId)) { tr ->
             tr.options().setRetryLimit(0)
             tr.setReadVersion(readContext.readVersion)
             dataModelId?.let { requireModelSchemaReady(tr, it) }
@@ -401,8 +472,33 @@ class FoundationDBDataStore private constructor(
         }
     }
 
+    internal suspend fun <T> runReadTransactionSuspending(
+        readContext: FoundationDBReadContext,
+        dataModelId: UInt,
+        block: suspend (Transaction) -> T,
+    ): T {
+        if (isClosing.value) throw CancellationException("Datastore closing")
+        readContext.requireUsable()
+        readContext.transaction?.let { transaction ->
+            requireModelSchemaReady(transaction, dataModelId)
+            return block(transaction)
+        }
+        tc.runSuspending(FoundationDBTransactionContext(FoundationDBTransactionKind.Read, dataModelId)) {
+            requireModelSchemaReady(it, dataModelId)
+        }
+        return tc.runSuspending(FoundationDBTransactionContext(FoundationDBTransactionKind.Read, dataModelId)) { transaction ->
+            transaction.options().setRetryLimit(0)
+            transaction.setReadVersion(readContext.readVersion)
+            requireModelSchemaReady(transaction, dataModelId)
+            block(transaction)
+        }
+    }
+
     internal fun createReadContext() = FoundationDBReadContext(
-        runTransaction { tr -> tr.getReadVersion().awaitResult() },
+        tc.runConfigured(FoundationDBTransactionContext(FoundationDBTransactionKind.Read)) { tr ->
+            tr.getReadVersion().awaitResult()
+        },
+        readBudget = FoundationDBReadBudget(executionConfiguration.maxRequestReadBytes),
     )
 
     internal inline fun <T> runTransactionAsync(
@@ -416,7 +512,7 @@ class FoundationDBDataStore private constructor(
 
     suspend fun initAsync() {
         rootDirectory = runTransactionAsync { tr ->
-            DirectoryLayer.getDefault().createOrOpen(tr, directoryRootPath)
+            directoryLayer.createOrOpen(tr, directoryRootPath)
         }.await()
 
         metadataDirectory = runTransaction { tr ->
@@ -425,6 +521,9 @@ class FoundationDBDataStore private constructor(
         metadataPrefix = metadataDirectory.pack()
         atomicReceiptsPrefix = runTransaction { tr ->
             rootDirectory.createOrOpen(tr, listOf("__meta__", "atomic_receipts")).awaitResult().pack()
+        }
+        ordinaryReceiptsPrefix = runTransaction { tr ->
+            rootDirectory.createOrOpen(tr, listOf("__meta__", "ordinary_receipts")).awaitResult().pack()
         }
         storageFormatPrefix = runTransaction { tr ->
             rootDirectory.createOrOpen(tr, listOf("__meta__", "storage_format")).awaitResult().pack()
@@ -821,6 +920,7 @@ class FoundationDBDataStore private constructor(
                         try {
                             waitForAnyClusterLogHeadChange(
                                 headGroupCount = headGroupCount,
+                                reader = 1,
                                 timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                             )
                         } catch (error: Throwable) {
@@ -927,6 +1027,7 @@ class FoundationDBDataStore private constructor(
                             )
                         }
 
+                        afterClusterTailBatch.value?.invoke(shard, tail.decoded.isNotEmpty())
                         for (decoded in tail.decoded) {
                             val model = dataModelsById[decoded.header.modelId] ?: continue
                             observedClusterHlc.value = maxOf(observedClusterHlc.value, decoded.update.version)
@@ -947,8 +1048,10 @@ class FoundationDBDataStore private constructor(
                             }
                         }
 
-                        if (tail.decoded.isEmpty()) {
-                            advancePair()
+                        // Visit every shard/model even when one shard remains busy.
+                        // Own-origin and malformed entries also count as progress.
+                        advancePair()
+                        if (tail.lastKey == null) {
                             idle++
                             if (idle >= pairCount) {
                                 idle = 0
@@ -1085,6 +1188,24 @@ class FoundationDBDataStore private constructor(
         super.startFlows()
 
         this.launch {
+            while (isActive) {
+                delay(1_000.milliseconds)
+                val completed = completedOrdinaryReceipts.drain()
+                if (completed.isNotEmpty()) {
+                    try {
+                        completed.chunked(256).forEach { keys ->
+                            tc.run { transaction -> keys.forEach { transaction.clear(it.bytes) } }
+                        }
+                    } catch (error: Throwable) {
+                        error.rethrowIfFatal()
+                        completedOrdinaryReceipts.restore(completed)
+                        if (error is CancellationException) throw error
+                    }
+                }
+            }
+        }
+
+        this.launch {
             var clock = HLC(durableVersionFloor.value)
             storeActorHasStarted.complete(Unit)
             try {
@@ -1112,7 +1233,7 @@ class FoundationDBDataStore private constructor(
                     val requestContext = (storeAction.executionContext as? FoundationDBMigrationRequestContext)
                         ?.takeIf { it.owner === this@FoundationDBDataStore }
                     withContext(requestContext ?: EmptyCoroutineContext) {
-                        val cache = Cache()
+                        val cache = Cache.forRequest(storeAction.request)
                         try {
                         if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
                             val observed = observedClusterHlc.value
@@ -1125,6 +1246,11 @@ class FoundationDBDataStore private constructor(
                         }
                         @Suppress("UNCHECKED_CAST")
                         when (val request = storeAction.request) {
+                            is FoundationDBBulkAddRequest<*> -> {
+                                val response = processBulkAdd(request as FoundationDBBulkAddRequest<IsRootDataModel>, clock)
+                                clock = HLC(clock.timestamp + request.request.objects.size.toULong())
+                                (storeAction.response as CompletableDeferred<AddResponse<IsRootDataModel>>).complete(response)
+                            }
                             is AddRequest<*> ->
                                 processAddRequest(clock, storeAction as AnyAddStoreAction)
                             is ChangeRequest<*> ->
@@ -1187,6 +1313,38 @@ class FoundationDBDataStore private constructor(
      * epoch. A failed/cancelled rebuild deliberately leaves Rebuilding persisted
      * so a later opener with the same target can take it over safely.
      */
+    private val maintenanceProgressByModel = atomic<Map<UInt, FoundationDBMaintenanceProgress>>(emptyMap())
+
+    fun maintenanceProgress(dataModelId: UInt): FoundationDBMaintenanceProgress? = maintenanceProgressByModel.value[dataModelId]
+
+    private fun indexRebuildPartitions(directories: IsTableDirectories): Pair<Long, List<Range>> = tc.run { transaction ->
+        val keyRange = Range.startsWith(directories.keysPrefix)
+        val sourcePrefixes = listOf(directories.tablePrefix) +
+            if (directories is HistoricTableDirectories) listOf(directories.historicTablePrefix) else emptyList()
+        val estimated = sourcePrefixes.sumOf { prefix ->
+            transaction.getEstimatedRangeSizeBytes(Range.startsWith(prefix)).awaitResult()
+        }
+        if (executionConfiguration.maintenanceConcurrency == 1) return@run estimated to listOf(keyRange)
+        val target = maxOf(executionConfiguration.maintenancePartitionBytes, (estimated + 127) / 128)
+        val keySize = dataModelsById.getValue(directories.modelId).Meta.keyByteSize
+        // Sample actual value/history bytes, then move boundaries to whole record
+        // keys. A wide record is never split between independently replaying workers.
+        val points = sourcePrefixes.flatMap { prefix ->
+            transaction.getRangeSplitPoints(Range.startsWith(prefix), target).awaitResult().mapNotNull { point ->
+                if (point.size < prefix.size + keySize || !prefix.indices.all { point[it] == prefix[it] }) null
+                else directories.keysPrefix + point.copyOfRange(prefix.size, prefix.size + keySize)
+            }
+        }.filter { it.compareTo(keyRange.begin) > 0 && it.compareTo(keyRange.end) < 0 }
+            .sortedWith { first, second -> first.compareTo(second) }
+        val boundaries = mutableListOf(keyRange.begin)
+        val stride = ((points.size + 126) / 127).coerceAtLeast(1)
+        points.filterIndexed { index, _ -> index % stride == 0 }.forEach { point ->
+            if (!boundaries.last().contentEquals(point)) boundaries += point
+        }
+        boundaries += keyRange.end
+        estimated to boundaries.zipWithNext { begin, end -> Range(begin, end) }
+    }
+
     private suspend fun rebuildIndexesAndPublish(
         dataModelId: UInt,
         dataModel: IsRootDataModel,
@@ -1209,20 +1367,33 @@ class FoundationDBDataStore private constructor(
                 transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
             }
         }
-        walkDataRecordsAndFillIndex(
-            tc = tc,
-            tableDirectories = tableDirectories,
-            indexesToIndex = indexesToIndex,
-            dataModel = dataModel,
-            decryptValue = { modelId, value, offset, length, key, reference ->
-                decryptValueIfNeeded(modelId, key, reference, value, offset, length)
-            },
-            historicScratchPrefix = scratchPrefix,
-            verifyRebuildOwner = { transaction ->
-                transactionGuard?.invoke(transaction)
-                transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
-            },
-        )
+        val (estimatedBytes, partitions) = indexRebuildPartitions(tableDirectories)
+        maintenanceProgressByModel.update { it + (dataModelId to FoundationDBMaintenanceProgress(estimatedBytes, partitions.size, 0)) }
+        coroutineScope {
+            for (batch in partitions.chunked(executionConfiguration.maintenanceConcurrency)) {
+                batch.map { partition -> async(Dispatchers.IO) {
+                    walkDataRecordsAndFillIndex(
+                        tc = tc,
+                        tableDirectories = tableDirectories,
+                        indexesToIndex = indexesToIndex,
+                        dataModel = dataModel,
+                        decryptValue = { modelId, value, offset, length, key, reference ->
+                            decryptValueIfNeeded(modelId, key, reference, value, offset, length)
+                        },
+                        historicScratchPrefix = scratchPrefix,
+                        keyRange = partition,
+                        verifyRebuildOwner = { transaction ->
+                            transactionGuard?.invoke(transaction)
+                            transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
+                        },
+                    )
+                    maintenanceProgressByModel.update { progress ->
+                        val current = progress.getValue(dataModelId)
+                        progress + (dataModelId to current.copy(completedPartitions = current.completedPartitions + 1))
+                    }
+                } }.awaitAll()
+            }
+        }
         if (beforeDefinitionPublication != null) {
             val rebuildOwnerGuard = { transaction: Transaction ->
                 transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
@@ -1520,20 +1691,24 @@ class FoundationDBDataStore private constructor(
     override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) = withContext(Dispatchers.IO) {
         val parentJob = requireNotNull(currentCoroutineContext()[Job])
         var updates: List<Update<*>> = emptyList()
-        tc.run { transaction ->
+        tc.runConfigured(FoundationDBTransactionContext(FoundationDBTransactionKind.Atomic)) { transaction ->
             transaction.options().setTimeout(FOUNDATION_DB_TRANSACTION_TIMEOUT_MS)
             transaction.options().setRetryLimit(10)
             transaction.options().setSizeLimit(4_194_304)
             request.targets.keys.forEach { requireModelSchemaReady(transaction, getDataModelId(it)) }
             val atomic = AtomicMutationContext(this@FoundationDBDataStore, transaction)
-            val readContext = FoundationDBReadContext(transaction.getReadVersion().awaitResult(), transaction)
+            val readContext = FoundationDBReadContext(
+                transaction.getReadVersion().awaitResult(), transaction,
+                readBudget = FoundationDBReadBudget(executionConfiguration.maxRequestReadBytes),
+            )
             atomicTransactions.update { it + transaction }
             try {
-                runBlocking(parentJob + atomic) {
+                runBlocking(parentJob + atomic + FoundationDBRestoreContext(this@FoundationDBDataStore)) {
                     applyRestoreVersion(request,
                         read = { model, key ->
                             val response = CompletableDeferred<ValuesResponse<IsRootDataModel>>()
-                            processGetRequest(StoreAction(model.get(key, filterSoftDeleted = false), response), Cache(), readContext)
+                            val getRequest = model.get(key, filterSoftDeleted = false)
+                            processGetRequest(StoreAction(getRequest, response), Cache.forRequest(getRequest), readContext)
                             response.await().values.singleOrNull()
                         },
                         clearUnique = { claims -> claims.forEach { claim ->
@@ -1600,13 +1775,15 @@ class FoundationDBDataStore private constructor(
         var updates: List<Update<*>> = emptyList()
         var committed = false
         try {
-            val result = tc.run { transaction ->
+            val result = tc.runConfigured(FoundationDBTransactionContext(FoundationDBTransactionKind.Atomic)) { transaction ->
                 transaction.options().setTimeout(FOUNDATION_DB_TRANSACTION_TIMEOUT_MS)
                 transaction.options().setRetryLimit(10)
                 transaction.options().setSizeLimit(4_194_304)
                 updates = emptyList()
-                readAtomicReceipt(transaction, atomicReceiptsPrefix, request.transactionId)?.let { return@run codec.replayTransaction(it, fingerprints, request) }
-                val revision = Bytes(transaction.get(transactionRevisionKey).awaitResult() ?: byteArrayOf(0))
+                readAtomicReceipt(transaction, atomicReceiptsPrefix, request.transactionId)?.let { return@runConfigured codec.replayTransaction(it, fingerprints, request) }
+                // Only replayed scopes need a datastore-wide conflict fence. A request
+                // without an expected revision is protected by its native record/range reads.
+                val revision = transaction.readTransactionRevision(transactionRevisionKey, request.expectedRevision != null)
                 var observedVersion = if (!request.commit && request.stagingVersion == null)
                     directoriesByDataModelIndex.values.maxOfOrNull { readMaximumStoredWatermark(transaction, it) } ?: 0uL else 0uL
                 // Atomic all-add requests have distinct targets, so the same initial reads
@@ -1645,7 +1822,10 @@ class FoundationDBDataStore private constructor(
                 val executionVersion = if (request.commit) nextMutationClock(version, maxOf(observedVersion, request.stagingVersion ?: 0uL))
                     else HLC(request.stagingVersion ?: nextMutationClock(version, observedVersion).timestamp)
                 val atomic = AtomicMutationContext(this@FoundationDBDataStore, transaction)
-                val readContext = FoundationDBReadContext(transaction.getReadVersion().awaitResult(), transaction)
+                val readContext = FoundationDBReadContext(
+                    transaction.getReadVersion().awaitResult(), transaction,
+                    readBudget = FoundationDBReadBudget(executionConfiguration.maxRequestReadBytes),
+                )
                 atomicTransactions.update { it + transaction }
                 val result = try {
                     runBlocking(parentJob + atomic + (bulkAdd ?: EmptyCoroutineContext)) {
@@ -1656,9 +1836,9 @@ class FoundationDBDataStore private constructor(
                             when (member) {
                                 is AddRequest<*> -> processAddRequest(memberVersion, action as AnyAddStoreAction)
                                 is ChangeRequest<*> -> processChangeRequest(memberVersion, action as AnyChangeStoreAction)
-                                is DeleteRequest<*> -> processDeleteRequest(memberVersion, action as AnyDeleteStoreAction, Cache())
-                                is GetRequest<*> -> processGetRequest(action as AnyGetStoreAction, Cache(), readContext)
-                                is ScanRequest<*> -> processScanRequest(action as AnyScanStoreAction, Cache(), readContext)
+                                is DeleteRequest<*> -> processDeleteRequest(memberVersion, action as AnyDeleteStoreAction, Cache.forRequest())
+                                is GetRequest<*> -> processGetRequest(action as AnyGetStoreAction, Cache.forRequest(action.request), readContext)
+                                is ScanRequest<*> -> processScanRequest(action as AnyScanStoreAction, Cache.forRequest(action.request), readContext)
                                 else -> error("Invalid transaction member")
                             }
                             response.await() as IsDataModelResponse<*>
@@ -1670,7 +1850,6 @@ class FoundationDBDataStore private constructor(
                 val receipt = codec.transactionReceipt(fingerprints.current, result)
                 if (!request.commit) throw TransactionPreview(result)
                 writeAtomicReceipt(transaction, atomicReceiptsPrefix, request.transactionId, receipt)
-                if (request.hasMutations) advanceTransactionRevision(transaction)
                 updates = atomic.updates.toList()
                 result
             }
@@ -1709,6 +1888,10 @@ class FoundationDBDataStore private constructor(
     internal suspend fun emitUpdate(update: Update<*>?) {
         if (update == null) return
         currentAtomicContext(this)?.let { it.updates += update; return }
+        currentCoroutineContext()[FoundationDBBulkImportContext]?.takeIf { it.owner === this }?.let {
+            it.updates += update
+            return
+        }
         durableVersionFloor.update { maxOf(it, update.version) }
         observeCommittedVersion(update.version)
         val flowUpdate = prepareFlowUpdate(update)
@@ -1728,10 +1911,12 @@ class FoundationDBDataStore private constructor(
         version: HLC,
     ) {
         val watermarkKey = packKey(tableDirectories.modelPrefix, watermarkKeyFor(recordKey))
-        val current = transaction.get(watermarkKey).awaitResult()?.readHLCTimestampIfExact()
-        if (current == null || version.timestamp > current) {
-            transaction.set(watermarkKey, HLC.toStorageBytes(version))
-        }
+        // HLC storage bytes are fixed-width unsigned big-endian, so byte ordering
+        // matches timestamp ordering. Avoid a read dependency on this shared bucket.
+        transaction.mutate(MutationType.BYTE_MAX, watermarkKey, HLC.toStorageBytes(version))
+        // Only accepted data mutations advance the application revision. Reads,
+        // failed validations and unchanged values must leave suspended scopes valid.
+        advanceTransactionRevision(transaction)
     }
 
     private fun initializeDurableClockWatermark() {
@@ -1851,6 +2036,7 @@ class FoundationDBDataStore private constructor(
             val storeJob = coroutineContext[Job]
             storeJob?.cancel()
             tc.cancelActive()
+            cleanupOrdinaryReceiptsOnClose()
             // Closing the native handle aborts FDB futures blocked inside the legacy runBlocking
             // bridge. Scope cancellation is requested first so ordinary migration cleanup can run,
             // but joining still comes after close because a blocking bridge ignores cancellation.
@@ -1868,8 +2054,29 @@ class FoundationDBDataStore private constructor(
         val storeJob = coroutineContext[Job]
         storeJob?.cancel()
         tc.cancelActive()
+        cleanupOrdinaryReceiptsOnClose()
         runCatchingNonFatal { this.db.close() }
         runCatchingNonFatal { joinDataStoreScopeAfterNativeClose(storeJob) }
+    }
+
+    private suspend fun cleanupOrdinaryReceiptsOnClose() = withContext(NonCancellable + Dispatchers.IO) {
+        if (!this@FoundationDBDataStore::ordinaryReceiptsPrefix.isInitialized) return@withContext
+        // New attempts are rejected before reclaiming this instance's namespace.
+        // A commit already in flight can still leave an orphan, but cannot retry
+        // against a deleted marker through this closed transaction context.
+        try {
+            val transaction = db.createTransaction()
+            try {
+                transaction.options().setTimeout(250)
+                transaction.clear(ordinaryReceiptRange())
+                withTimeoutOrNull(500.milliseconds) { transaction.commit().await() }
+            } finally {
+                runCatchingNonFatal { transaction.cancel() }
+                runCatchingNonFatal { transaction.close() }
+            }
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+        }
     }
 
     private suspend fun joinDataStoreScopeAfterNativeClose(storeJob: Job?) {
@@ -1896,9 +2103,11 @@ class FoundationDBDataStore private constructor(
 
     override fun onUpdateListenerAdded(dataModelId: UInt) {
         activeUpdateListenersByModelId[dataModelId]?.incrementAndGet()
+        listenerWakeups.trySend(Unit)
     }
 
     override fun onUpdateListenerRemoved(dataModelId: UInt) {
+        listenerWakeups.trySend(Unit)
         val counter = activeUpdateListenersByModelId[dataModelId] ?: return
         while (true) {
             val current = counter.value
@@ -1909,6 +2118,7 @@ class FoundationDBDataStore private constructor(
 
     override fun onAllUpdateListenersRemoved() {
         activeUpdateListenersByModelId.values.forEach { it.value = 0 }
+        listenerWakeups.trySend(Unit)
     }
 
     internal fun getClusterUpdateLogStats(): ClusterUpdateLogStats? =
@@ -1932,10 +2142,49 @@ class FoundationDBDataStore private constructor(
             )
         }
 
-    private suspend fun waitForAnyClusterLogHeadChange(headGroupCount: Int, timeoutMs: Long) {
+    private val listenerWakeups = Channel<Unit>(Channel.CONFLATED)
+    private val clusterHeadSnapshots = atomic<Map<Int, List<Bytes?>>>(emptyMap())
+    internal val clusterLogWatchRegistrations = atomic(0L)
+
+    private suspend fun waitForAnyClusterLogHeadChange(headGroupCount: Int, timeoutMs: Long, reader: Int = 0) {
         if (headGroupCount <= 0 || timeoutMs <= 0) return
-        // Native FDB watch future cancellation can segfault through fdb_future_cancel.
-        delay(timeoutMs.milliseconds)
+        val log = clusterUpdateLog ?: return
+        val previous = clusterHeadSnapshots.value[reader]
+        var watches = emptyList<FdbFuture<Unit>>()
+        try {
+            val heads = tc.runSuspending(FoundationDBTransactionContext(FoundationDBTransactionKind.Maintenance)) { transaction ->
+                watches.forEach { it.cancel() }
+                watches = emptyList()
+                val reads = (0 until headGroupCount).map { transaction.get(log.headKey(it)) }
+                val current = try { reads.map { it.await()?.let(::Bytes) } }
+                    finally { reads.forEach { it.cancel() } }
+                // Compare with the previous idle pass to cover writes that landed
+                // between scanning and arming the watch. First use rescans once.
+                if (previous != null && current == previous) {
+                    val created = mutableListOf<FdbFuture<Unit>>()
+                    watches = created
+                    for (group in 0 until headGroupCount) created += transaction.watch(log.headKey(group))
+                }
+                current
+            }
+            clusterHeadSnapshots.update { it + (reader to heads) }
+            if (watches.isEmpty()) return
+            clusterLogWatchRegistrations.addAndGet(watches.size.toLong())
+            withTimeoutOrNull(maxOf(timeoutMs, executionConfiguration.watchFallbackMillis)) {
+                coroutineScope {
+                    val waiting = watches.map { watch -> async { watch.await() } }
+                    try {
+                        select {
+                            waiting.forEach { wait -> wait.onAwait { } }
+                            if (reader == 0) listenerWakeups.onReceive { }
+                        }
+                    }
+                    finally { waiting.forEach { it.cancel() } }
+                }
+            }
+        } finally {
+            watches.forEach { it.cancel() }
+        }
     }
 
     private fun readULongBigEndian(bytes: ByteArray): ULong {
@@ -2271,6 +2520,60 @@ class FoundationDBDataStore private constructor(
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
             maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
         ): FoundationDBDataStore {
+            return open(
+                keepAllVersions, keepUpdateHistoryIndex, fdbClusterFilePath, directoryPath,
+                dataModelsById, onlyCheckModelVersion, databaseOptionsSetter, migrationConfiguration,
+                migrationLeaseConfiguration, versionUpdateHandler, clusterUpdateLogConfiguration,
+                fieldEncryptionProvider, maxConcurrentReads, FoundationDBTransactionConfiguration(),
+            )
+        }
+
+        /** Open with request/maintenance limits and a per-attempt diagnostic/options hook. */
+        suspend fun open(
+            keepAllVersions: Boolean = true,
+            keepUpdateHistoryIndex: Boolean = false,
+            fdbClusterFilePath: String? = null,
+            directoryPath: List<String> = listOf("maryk"),
+            dataModelsById: Map<UInt, IsRootDataModel>,
+            onlyCheckModelVersion: Boolean = false,
+            databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
+            migrationConfiguration: MigrationConfiguration<FoundationDBDataStore> = MigrationConfiguration(),
+            migrationLeaseConfiguration: FoundationDBMigrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(),
+            versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
+            clusterUpdateLogConfiguration: FoundationDBClusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(),
+            fieldEncryptionProvider: FieldEncryptionProvider? = null,
+            maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
+            transactionConfiguration: FoundationDBTransactionConfiguration,
+            executionConfiguration: FoundationDBExecutionConfiguration = FoundationDBExecutionConfiguration(),
+        ): FoundationDBDataStore {
+            return open(
+                keepAllVersions, keepUpdateHistoryIndex, fdbClusterFilePath, directoryPath,
+                dataModelsById, onlyCheckModelVersion, databaseOptionsSetter, migrationConfiguration,
+                migrationLeaseConfiguration, versionUpdateHandler, clusterUpdateLogConfiguration,
+                fieldEncryptionProvider, maxConcurrentReads, transactionConfiguration,
+                executionConfiguration, DirectoryLayer.getDefault(),
+            )
+        }
+
+        /** Open an explicitly configured directory layer, including a verified migration destination. */
+        suspend fun open(
+            keepAllVersions: Boolean = true,
+            keepUpdateHistoryIndex: Boolean = false,
+            fdbClusterFilePath: String? = null,
+            directoryPath: List<String> = listOf("maryk"),
+            dataModelsById: Map<UInt, IsRootDataModel>,
+            onlyCheckModelVersion: Boolean = false,
+            databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
+            migrationConfiguration: MigrationConfiguration<FoundationDBDataStore> = MigrationConfiguration(),
+            migrationLeaseConfiguration: FoundationDBMigrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(),
+            versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
+            clusterUpdateLogConfiguration: FoundationDBClusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(),
+            fieldEncryptionProvider: FieldEncryptionProvider? = null,
+            maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
+            transactionConfiguration: FoundationDBTransactionConfiguration = FoundationDBTransactionConfiguration(),
+            executionConfiguration: FoundationDBExecutionConfiguration = FoundationDBExecutionConfiguration(),
+            directoryLayer: DirectoryLayer,
+        ): FoundationDBDataStore {
             orderMigrationModelIds(dataModelsById)
             if (clusterUpdateLogConfiguration.enableClusterUpdateLog) {
                 clusterUpdateLogConfiguration.validateCursorCapacity(dataModelsById.size)
@@ -2294,6 +2597,9 @@ class FoundationDBDataStore private constructor(
                     clusterUpdateLogConfiguration = clusterUpdateLogConfiguration,
                     fieldEncryptionProvider = fieldEncryptionProvider,
                     maxConcurrentReads = maxConcurrentReads,
+                    transactionConfiguration = transactionConfiguration,
+                    executionConfiguration = executionConfiguration,
+                    directoryLayer = directoryLayer,
                 )
             } catch (e: Throwable) {
                 runCatchingNonFatal { db.close() }
@@ -2344,3 +2650,5 @@ private data class FoundationDBAtomicRecordReads(
     val tombstone: FdbFuture<ByteArray?>,
     val existing: FdbFuture<ByteArray?>?,
 )
+
+internal class OrdinaryMutationResult<T>(val value: T)

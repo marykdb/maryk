@@ -1,5 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
+import maryk.foundationdb.FdbFuture
+import maryk.foundationdb.KeyValue
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
 import maryk.core.extensions.bytes.calculateVarByteLength
@@ -32,11 +34,14 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
+import maryk.datastore.foundationdb.processors.helpers.RangeBatchResult
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.concatArrays
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
+import maryk.datastore.foundationdb.processors.helpers.AdaptiveRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
@@ -71,6 +76,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
     decryptValue: DecryptValue? = null,
     processStoreValue: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
+    val batches = AdaptiveRangeBatch(scanRequest.limit)
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
     if (indexScanRange.ranges.isEmpty()) {
@@ -178,8 +184,11 @@ internal fun <DM : IsRootDataModel> scanIndex(
                     var nextBegin = begin
                     while (emitted < scanRequest.limit) {
                         val result = transactionRunner.run { tr ->
-                            tr.forEachInRangeBatch(Range(nextBegin, end), false) { kv ->
-                                if (emitted >= scanRequest.limit) return@forEachInRangeBatch false
+                            tr.forEachCurrentIndexBatch(
+                                Range(nextBegin, end), false, batches.nextSize(), tableDirs,
+                                valueOffset, keySize, indexPartCount,
+                            ) { kv, creationRead ->
+                                if (emitted >= scanRequest.limit) return@forEachCurrentIndexBatch false
                                 val indexKeyBytes = kv.key
                                 val totalLen = indexKeyBytes.size
                                 val valueSize = findIndexValueSize(
@@ -189,17 +198,17 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                     keySize,
                                     indexPartCount
                                 )
-                                if (valueSize < 0) return@forEachInRangeBatch true
-                                if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize, totalLen - versionSize)) return@forEachInRangeBatch true
+                                if (valueSize < 0) return@forEachCurrentIndexBatch true
+                                if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize, totalLen - versionSize)) return@forEachCurrentIndexBatch true
                                 val keyOffset = totalLen - keySize - versionSize
                                 var keyReadIndex = keyOffset
                                 val key = scanRequest.dataModel.key { indexKeyBytes[keyReadIndex++] }
-                                if (continuation?.key?.bytes?.contentEquals(key.bytes) == true) return@forEachInRangeBatch true
-                                if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachInRangeBatch true
-                                val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
-                                    ?: return@forEachInRangeBatch true
+                                if (continuation?.key?.bytes?.contentEquals(key.bytes) == true) return@forEachCurrentIndexBatch true
+                                if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachCurrentIndexBatch true
+                                val createdVersion = creationRead?.awaitResult()?.readHLCTimestampIfExact()
+                                    ?: return@forEachCurrentIndexBatch true
                                 if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) {
-                                    return@forEachInRangeBatch true
+                                    return@forEachCurrentIndexBatch true
                                 }
                                 if (effectiveStartKey != null) {
                                     val cmp = compareDefinedRange(
@@ -208,8 +217,8 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                         totalLen - versionSize - valueOffset,
                                         effectiveStartKey
                                     )
-                                    if (cmp < 0) return@forEachInRangeBatch true
-                                    if (!keyScanRange.includeStart && cmp == 0) return@forEachInRangeBatch true
+                                    if (cmp < 0) return@forEachCurrentIndexBatch true
+                                    if (!keyScanRange.includeStart && cmp == 0) return@forEachCurrentIndexBatch true
                                 }
 
                                 if (continuation != null) {
@@ -229,11 +238,11 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                     )
                                     val currentIndexValue = indexKeyBytes.copyOfRange(valueOffset, totalLen)
                                     if (canonicalIndexValue?.contentEquals(currentIndexValue) != true) {
-                                        return@forEachInRangeBatch true
+                                        return@forEachCurrentIndexBatch true
                                     }
                                 }
 
-                                if (!seenKeys.add(key.bytes.asByteArrayKey(copy = true))) return@forEachInRangeBatch true
+                                if (!seenKeys.add(key.bytes.asByteArrayKey(copy = true))) return@forEachCurrentIndexBatch true
 
                                 val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
                                 processStoreValue(tr, key, createdVersion, sortingKey)
@@ -283,8 +292,11 @@ internal fun <DM : IsRootDataModel> scanIndex(
                     var nextEnd = end
                     while (emitted < scanRequest.limit) {
                         val result = transactionRunner.run { tr ->
-                            tr.forEachInRangeBatch(Range(begin, nextEnd), true) { kv ->
-                                if (emitted >= scanRequest.limit) return@forEachInRangeBatch false
+                            tr.forEachCurrentIndexBatch(
+                                Range(begin, nextEnd), true, batches.nextSize(), tableDirs,
+                                valueOffset, keySize, indexPartCount,
+                            ) { kv, creationRead ->
+                                if (emitted >= scanRequest.limit) return@forEachCurrentIndexBatch false
                                 val indexKeyBytes = kv.key
                                 val totalLen = indexKeyBytes.size
                                 val valueSize = findIndexValueSize(
@@ -294,7 +306,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                     keySize,
                                     indexPartCount
                                 )
-                                if (valueSize < 0) return@forEachInRangeBatch true
+                                if (valueSize < 0) return@forEachCurrentIndexBatch true
                                 if (startIndexKey != null) {
                                     val cmp = compareDefinedRange(
                                         indexKeyBytes,
@@ -302,19 +314,19 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                         totalLen - versionSize - valueOffset,
                                         startIndexKey
                                     )
-                                    if (cmp > 0) return@forEachInRangeBatch true
-                                    if (!keyScanRange.includeStart && cmp == 0) return@forEachInRangeBatch true
+                                    if (cmp > 0) return@forEachCurrentIndexBatch true
+                                    if (!keyScanRange.includeStart && cmp == 0) return@forEachCurrentIndexBatch true
                                 }
-                                if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize, totalLen - versionSize)) return@forEachInRangeBatch true
+                                if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize, totalLen - versionSize)) return@forEachCurrentIndexBatch true
                                 val keyOffset = totalLen - keySize - versionSize
                                 var keyReadIndex = keyOffset
                                 val key = scanRequest.dataModel.key { indexKeyBytes[keyReadIndex++] }
-                                if (continuation?.key?.bytes?.contentEquals(key.bytes) == true) return@forEachInRangeBatch true
-                                if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachInRangeBatch true
-                                val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
-                                    ?: return@forEachInRangeBatch true
+                                if (continuation?.key?.bytes?.contentEquals(key.bytes) == true) return@forEachCurrentIndexBatch true
+                                if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachCurrentIndexBatch true
+                                val createdVersion = creationRead?.awaitResult()?.readHLCTimestampIfExact()
+                                    ?: return@forEachCurrentIndexBatch true
                                 if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) {
-                                    return@forEachInRangeBatch true
+                                    return@forEachCurrentIndexBatch true
                                 }
                                 if (continuation != null) {
                                     val getter = createIndexValuesGetter(
@@ -333,10 +345,10 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                     )
                                     val currentIndexValue = indexKeyBytes.copyOfRange(valueOffset, totalLen)
                                     if (canonicalIndexValue?.contentEquals(currentIndexValue) != true) {
-                                        return@forEachInRangeBatch true
+                                        return@forEachCurrentIndexBatch true
                                     }
                                 }
-                                if (!seenKeys.add(key.bytes.asByteArrayKey(copy = true))) return@forEachInRangeBatch true
+                                if (!seenKeys.add(key.bytes.asByteArrayKey(copy = true))) return@forEachCurrentIndexBatch true
 
                                 val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
                                 processStoreValue(tr, key, createdVersion, sortingKey)
@@ -412,7 +424,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
             var nextBegin = begin
             while (true) {
                 val result = transactionRunner.run { tr ->
-                    tr.forEachInRangeBatch(Range(nextBegin, end), false) { kv ->
+                    tr.forEachInRangeBatch(Range(nextBegin, end), false, batchSize = batches.nextSize()) { kv ->
                         val k = kv.key
                         val versionOffset = k.size - toVersionBytes.size
                         val sepIndex = versionOffset - 1
@@ -1002,4 +1014,29 @@ private fun qualifierMatches(
 ): Boolean {
     if (leftLength != rightLength) return false
     return left.matchesRange(leftOffset, right, sourceLength = leftLength, offset = rightOffset, length = rightLength)
+}
+
+/** Read independent candidate metadata together, and decode/filter in index order. */
+private fun Transaction.forEachCurrentIndexBatch(
+    range: Range,
+    reverse: Boolean,
+    batchSize: Int,
+    directories: IsTableDirectories,
+    valueOffset: Int,
+    keySize: Int,
+    indexPartCount: Int,
+    process: (KeyValue, FdbFuture<ByteArray?>?) -> Boolean,
+): RangeBatchResult {
+    val creations = mutableMapOf<ByteArrayKey, FdbFuture<ByteArray?>>()
+    try {
+        return forEachInRangeBatch(range, reverse, batchSize, prepareBatch = { rows ->
+            for (row in rows) {
+                if (findIndexValueSize(row.key, valueOffset, row.key.size, keySize, indexPartCount) < 0) continue
+                val key = row.key.copyOfRange(row.key.size - keySize, row.key.size)
+                creations[row.key.asByteArrayKey()] = get(packKey(directories.keysPrefix, key))
+            }
+        }) { row -> process(row, creations[row.key.asByteArrayKey()]) }
+    } finally {
+        creations.values.forEach { it.cancel() }
+    }
 }

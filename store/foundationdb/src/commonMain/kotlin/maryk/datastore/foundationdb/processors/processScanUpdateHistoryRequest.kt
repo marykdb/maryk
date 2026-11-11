@@ -98,7 +98,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                         keyLength = key.size,
                         createdVersion = creationVersion,
                         toVersion = version,
-                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                        decryptValue = valueDecryptor
                     )
                 ) return@forEachInRangeBatch true
 
@@ -115,7 +115,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                         select = scanRequest.select,
                         toVersion = creationEventVersion,
                         cachedRead = cacheReader,
-                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                        decryptValue = valueDecryptor,
+                        readBudget = readContext.readBudget,
                     )?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
                             key = key,
@@ -143,7 +144,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     maxVersions = 1u,
                     sortingKey = null,
                     cachedRead = cacheReader,
-                    decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                    decryptValue = valueDecryptor,
+                    readBudget = readContext.readBudget,
                 )
                 val updatedObjectChange = addSoftDeleteChangeIfMissing(
                     tr = tr,

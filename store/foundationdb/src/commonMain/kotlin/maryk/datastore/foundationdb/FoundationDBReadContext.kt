@@ -18,6 +18,7 @@ internal data class FoundationDBReadContext(
     val readVersion: Long,
     val transaction: Transaction? = null,
     private val startedAt: TimeMark = TimeSource.Monotonic.markNow(),
+    val readBudget: FoundationDBReadBudget,
 ) {
     fun requireUsable() {
         if (startedAt.elapsedNow() >= maxSnapshotAge) {

@@ -19,6 +19,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.VersionedChanges
+import maryk.datastore.foundationdb.FoundationDBReadBudget
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
@@ -26,6 +27,7 @@ import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.FDBIterator
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.boundedRows
 import maryk.datastore.foundationdb.processors.helpers.checkExistence
 import maryk.datastore.foundationdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.foundationdb.processors.helpers.isHistoricDeleteMarker
@@ -49,14 +51,16 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
     maxVersions: UInt,
     sortingKey: ByteArray?,
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?,
-    decryptValue: DecryptValue? = null
+    decryptValue: DecryptValue? = null,
+    readBudget: FoundationDBReadBudget,
 ): DataObjectVersionedChange<DM>? {
+    val recordBudget = FoundationDBReadBudget(tableDirs.dataStore.executionConfiguration.maxRecordReadBytes, readBudget)
     val changes: List<VersionedChanges>
     val readValuesAtVersion = { version: ULong ->
         val snapshotVersion = if (tableDirs is HistoricTableDirectories) version else null
         requireNotNull(readTransactionIntoValuesWithMetaData(
             tr, creationVersion, tableDirs, key, select, snapshotVersion,
-            { _, _, reader -> reader() }, decryptValue,
+            { _, _, reader -> reader() }, decryptValue, readBudget = recordBudget,
         )).values
     }
 
@@ -64,7 +68,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
         val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
 
         val iterator = FDBIterator(
-            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).asList().awaitResult().iterator()
+            tr.boundedRows(FDBRange.startsWith(prefixWithKeyRange), recordBudget).awaitResult().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)
@@ -166,7 +170,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
 
         val prefixWithKeyRange = packKey(tableDirs.historicTablePrefix, key.bytes)
         val iterator = FDBIterator(
-            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).asList().awaitResult().iterator()
+            tr.boundedRows(FDBRange.startsWith(prefixWithKeyRange), recordBudget).awaitResult().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)

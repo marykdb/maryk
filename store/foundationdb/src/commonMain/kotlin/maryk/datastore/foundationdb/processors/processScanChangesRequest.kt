@@ -49,7 +49,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
                 toVersion = scanRequest.toVersion,
                 maxVersions = scanRequest.maxVersions,
                 sortingKey = sortingKey,
-                cachedRead = cacheReader
+                cachedRead = cacheReader,
+                decryptValue = valueDecryptor,
+                readBudget = readContext.readBudget,
             )
             val updated = if (scanRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
                 addSoftDeleteChangeIfMissing(

@@ -28,6 +28,13 @@ private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by
 suspend fun readStoredModelDefinitionsFromDirectory(
     fdbClusterFilePath: String? = null,
     directoryPath: List<String> = listOf("maryk"),
+): Map<UInt, RootDataModel<*>> =
+    readStoredModelDefinitionsFromDirectory(fdbClusterFilePath, directoryPath, DirectoryLayer.getDefault())
+
+suspend fun readStoredModelDefinitionsFromDirectory(
+    fdbClusterFilePath: String? = null,
+    directoryPath: List<String> = listOf("maryk"),
+    directoryLayer: DirectoryLayer,
 ): Map<UInt, RootDataModel<*>> {
     val db = openFoundationDatabase(fdbClusterFilePath)
 
@@ -38,7 +45,7 @@ suspend fun readStoredModelDefinitionsFromDirectory(
             val rootDirectory: DirectorySubspace = try {
                 withTimeout(10_000.milliseconds) {
                     tc.runSuspend { tr ->
-                        DirectoryLayer.getDefault().open(tr, directoryPath).await()
+                        directoryLayer.open(tr, directoryPath).await()
                     }
                 }
             } catch (e: Throwable) {

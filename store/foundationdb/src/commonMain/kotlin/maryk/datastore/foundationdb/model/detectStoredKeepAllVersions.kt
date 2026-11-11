@@ -17,6 +17,14 @@ suspend fun detectStoredKeepAllVersions(
     clusterFilePath: String?,
     directoryPath: List<String>,
     modelNames: List<String>,
+): Boolean? =
+    detectStoredKeepAllVersions(clusterFilePath, directoryPath, modelNames, DirectoryLayer.getDefault())
+
+suspend fun detectStoredKeepAllVersions(
+    clusterFilePath: String?,
+    directoryPath: List<String>,
+    modelNames: List<String>,
+    directoryLayer: DirectoryLayer,
 ): Boolean? {
     val modelName = modelNames.firstOrNull() ?: return null
     val db = openFoundationDatabase(clusterFilePath)
@@ -27,7 +35,7 @@ suspend fun detectStoredKeepAllVersions(
         val rootDirectory: DirectorySubspace = try {
             withTimeout(10_000.milliseconds) {
                 tc.runSuspend { tr ->
-                    DirectoryLayer.getDefault().open(tr, directoryPath).await()
+                    directoryLayer.open(tr, directoryPath).await()
                 }
             }
         } catch (e: Throwable) {

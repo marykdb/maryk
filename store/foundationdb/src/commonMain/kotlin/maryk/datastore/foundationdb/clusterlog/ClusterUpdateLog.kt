@@ -15,6 +15,7 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.shared.updates.Update
+import maryk.foundationdb.FdbFuture
 import maryk.foundationdb.MutationType
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
@@ -472,12 +473,24 @@ internal class ClusterUpdateLog(
         val chunkPrefix = chunkPrefixForMainKey(key) ?: return null
         val reconstructed = ByteArray(manifest.totalSize)
         var offset = 0
-        for (index in 0 until manifest.chunkCount) {
-            val chunk = tr.get(chunkKey(chunkPrefix, index)).awaitResult() ?: return null
-            val expectedSize = minOf(maxChunkValueSize, manifest.totalSize - offset)
-            if (chunk.size != expectedSize) return null
-            chunk.copyInto(reconstructed, offset)
-            offset += chunk.size
+        // Bound the number of outstanding chunk reads, and release every future
+        // even when a missing/corrupt chunk causes an early return.
+        for (start in 0 until manifest.chunkCount step 8) {
+            val reads = ArrayList<FdbFuture<ByteArray?>>(8)
+            try {
+                for (index in start until minOf(start + 8, manifest.chunkCount)) {
+                    reads += tr.get(chunkKey(chunkPrefix, index))
+                }
+                for (chunkRead in reads) {
+                    val chunk = chunkRead.awaitResult() ?: return null
+                    val expectedSize = minOf(maxChunkValueSize, manifest.totalSize - offset)
+                    if (chunk.size != expectedSize) return null
+                    chunk.copyInto(reconstructed, offset)
+                    offset += chunk.size
+                }
+            } finally {
+                reads.forEach { it.cancel() }
+            }
         }
         if (offset != manifest.totalSize) return null
         return decodeEntry(key, reconstructed)
@@ -690,7 +703,7 @@ internal class ClusterUpdateLog(
     private fun unpackLogTuple(key: ByteArray): Tuple? {
         if (key.size <= logPrefix.size || !key.startsWith(logPrefix)) return null
         return try {
-            Tuple.fromBytes(key.copyOfRange(logPrefix.size, key.size))
+            Tuple.fromBytes(key, logPrefix.size, key.size - logPrefix.size)
         } catch (_: IllegalArgumentException) {
             null
         } catch (_: IndexOutOfBoundsException) {

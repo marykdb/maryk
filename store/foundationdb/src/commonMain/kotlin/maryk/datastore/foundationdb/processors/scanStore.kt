@@ -14,9 +14,11 @@ import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByTableScan
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
+import maryk.datastore.foundationdb.processors.helpers.AdaptiveRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
 import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.foundationdb.processors.helpers.TransactionRunner
 import maryk.lib.extensions.compare.compareDefinedRange
@@ -31,6 +33,7 @@ internal fun <DM : IsRootDataModel> scanStore(
     decryptValue: DecryptValue? = null,
     processStoreValue: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
+    val batches = AdaptiveRangeBatch(scanRequest.limit)
     val prefix = tableDirs.keysPrefix
     val prefixSize = prefix.size
     val prefixEnd = Range.startsWith(prefix).end
@@ -87,7 +90,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                 var nextBegin = begin
                 while (streamed < limit) {
                     val result = transactionRunner.run { tr ->
-                        tr.forEachInRangeBatch(Range(nextBegin, end), false) { kv ->
+                        tr.forEachInRangeBatch(Range(nextBegin, end), false, batchSize = batches.nextSize()) { kv ->
                             if (streamed >= limit) return@forEachInRangeBatch false
                             val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
 
@@ -101,7 +104,9 @@ internal fun <DM : IsRootDataModel> scanStore(
                             }
 
                             val key = scanRequest.dataModel.key(modelKeyBytes)
-                            val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
+                            // Current key rows already contain the creation version.
+                            val creationVersion = (if (scanRequest.toVersion == null) kv.value.readHLCTimestampIfExact()
+                                else tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion))
                                 ?: return@forEachInRangeBatch true
                             if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) {
                                 return@forEachInRangeBatch true
@@ -168,7 +173,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                 var nextEnd = end
                 while (emitted < limit) {
                     val result = transactionRunner.run { tr ->
-                        tr.forEachInRangeBatch(Range(begin, nextEnd), true) { kv ->
+                        tr.forEachInRangeBatch(Range(begin, nextEnd), true, batchSize = batches.nextSize()) { kv ->
                             if (emitted >= limit) return@forEachInRangeBatch false
                             val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
 
@@ -182,7 +187,9 @@ internal fun <DM : IsRootDataModel> scanStore(
                             if (!scanRange.matchesPartials(modelKeyBytes)) return@forEachInRangeBatch true
 
                             val key = scanRequest.dataModel.key(modelKeyBytes)
-                            val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
+                            // Current key rows already contain the creation version.
+                            val creationVersion = (if (scanRequest.toVersion == null) kv.value.readHLCTimestampIfExact()
+                                else tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion))
                                 ?: return@forEachInRangeBatch true
                             if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) {
                                 return@forEachInRangeBatch true

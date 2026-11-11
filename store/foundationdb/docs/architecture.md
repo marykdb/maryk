@@ -45,7 +45,11 @@ Explicit atomic requests and serializable transaction journals use one native
 transaction per replay attempt across participating models, schema fences and
 receipts. Preview aborts its native transaction; application suspension retains
 no native snapshot. A datastore revision fence detects intervening Maryk writes,
-including writes outside the models selected by the scope. Atomic requests keep
+including writes outside the models selected by the scope. A replay with an
+expected revision reads this fence with a conflict dependency. Requests without
+an expected revision read the token through `snapshot()` and rely on their
+native record/range conflicts, avoiding unrelated retries without weakening
+suspended-scope validation. Atomic requests keep
 initial-state checks; interactive journals read earlier staged writes and support
 repeated mutations and hard deletion. See the
 [shared transaction contract](../../../core/docs/query.md#serializable-transactions).
@@ -223,3 +227,111 @@ native transaction. Scalars use direct qualifier reads; each Check with complex
 properties materializes the record once. Collection counts are not decoded as
 collection values. A missing expected property fails validation. Checks after a
 change see preceding staged writes, and a failed check aborts the record mutation.
+
+### Native API read and write optimizations
+
+Clock watermark buckets use atomic `BYTE_MAX` on canonical eight-byte unsigned
+big-endian HLC values. This keeps the maximum across concurrent writers without
+reading the bucket in each mutation. This internal metadata must retain its
+canonical encoding; corrupt watermark metadata requires recovery rather than
+using normal writes as a repair mechanism.
+
+Main table and index scans start with at most the requested row count and grow
+bounded candidate batches up to 512 when more candidates are needed. Batches use
+the binding's default streaming mode; Java `asList` already optimizes finite
+limits, and the local probe found no benefit from forcing `WANT_ALL`. Current
+table scans reuse the creation version in their key row. Current index scans
+prefetch candidate creation markers before filtering, and cluster-log payloads
+fetch up to eight chunks together. Outstanding futures are canceled when a
+batch completes or fails; decoding and results preserve storage order and the
+request's pinned read version.
+
+Request/maintenance policies and per-attempt tracing hooks are described in the
+[configuration guide](../README.md#transaction-policies-and-diagnostics).
+
+### Retry markers and asynchronous ownership
+
+Ordinary native write attempts share one invocation ID and retained outcome,
+created outside the retry callback. Private markers live in `__meta__/ordinary_receipts`,
+separate from durable serialized atomic receipts and their format conversion.
+Successful invocation cleanup uses a bounded queue of unique invocation keys rather
+than copying a growing set for each acknowledgement. Failed cleanup batches are
+restored ahead of newer keys within the existing 65,536-key cap; clearing replayed
+keys is idempotent. Abandoned markers require quiescent
+maintenance if they accumulate after crashes. Markers do not provide cross-call
+idempotence without an application-supplied stable transaction ID.
+
+Suspending transaction callbacks run in a supervisor scope so one failed attempt
+cannot cancel its parent before FoundationDB retries it. A canceled operation
+cancels its native transactions as well as its futures. Prepared range readers
+use the common Flow adapter to own iterator/future cleanup, and enforce atomic
+byte budgets before collecting rows. Ordinary reads, transaction previews/commits
+and restores all use the configured request limit. A native attempt shares one
+request budget across its members; the next attempt receives a fresh budget. Each
+decoded Get record releases its raw buffers immediately, while at most eight
+record reads remain prefetched. Get decoding uses
+already-awaited rows; synchronous codec/filter callbacks keep a compatibility
+bridge rather than introducing a second coroutine inside every value callback.
+
+Cluster head values are compared with the previous idle pass before committed
+watches are armed, covering the scan/watch gap. Separate HLC and tailer baselines
+avoid consuming each other's signals. A local conflated listener signal wakes
+the tailer when subscriptions change. Watch cancellation propagates through the
+JVM mapped future to its native source; native awaiting-coroutine cancellation
+also cancels the underlying future.
+
+Maintenance split points are derived from data/history bytes and normalized to
+whole record keys. Workers keep the same schema fence, independent scratch
+record namespaces and bounded native transactions. Final schema publication
+waits until all workers complete; cancellation leaves the rebuild fenced and
+recoverable.
+
+### Reproducing performance measurements
+
+Run `:store:foundationdb:runFoundationDBPerformanceProbe` against the managed
+isolated local cluster. It verifies returned rows/statuses and reports median
+and p95 range timings, scan-versus-point ownership lookup, and bulk import with
+one versus eight concurrent transactions. Timings are diagnostic output, not
+unit-test assertions or guarantees for a remote production cluster.
+
+Before publishing binding changes, use
+`-PfoundationDbBindingsPath=/absolute/path/to/foundationdb-multiplatform` to compile
+that checkout with Maryk's verified toolchain. This local source override is
+explicit; normal builds resolve the pinned published binding artifact. Native
+focused checks also accept `-PfoundationDbNativeTestFilter=package.Class.*`.
+
+Read allocation and receipt cleanup comparisons are also available through
+`:store:foundationdb:runFoundationDBPerformanceProbe --args=reads` and
+`--args=receipts`. The receipt probe retains the previous set-copy algorithm as a
+control. Both modes check their results, warm up, and report allocation counters
+when the JVM exposes them. JVM and Native release measurements should be kept
+separate from debug-test timings.
+
+Stores without sensitive fields pass payload slices directly to the decoder;
+sensitive stores retain context-bound decryption. Canonical strings decode from
+bounded byte arrays without rebuilding a streaming buffer. Other definitions and
+noncanonical markers use the general decoder. Persisted encodings and read budgets
+are unchanged.
+
+### Optional JVM direct-buffer queries
+
+The binding's JVM runtime extensions can reduce temporary heap allocation during
+range reads. Configure them once at application startup, because the SDK setting
+and buffer pool are process-wide:
+
+```kotlin
+import maryk.foundationdb.ApiVersion
+import maryk.foundationdb.FDB
+import maryk.foundationdb.jvm.enableDirectBufferQuery
+import maryk.foundationdb.jvm.resizeDirectBufferPool
+
+val fdb = FDB.selectAPIVersion(ApiVersion.LATEST)
+fdb.resizeDirectBufferPool(poolSize = 8, bufferSize = 512 * 1024)
+fdb.enableDirectBufferQuery(true)
+```
+
+This is opt-in: eight buffers reserve about 4 MiB of native memory, and the SDK
+initializes its 64 MiB default pool before resizing. Larger/concurrent queries
+need their own measurements and sizing. Native clients do not use this Java pool.
+Maryk leaves the SDK default disabled; lower heap allocation does not by itself
+imply lower total memory use or a useful latency improvement.

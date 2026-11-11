@@ -67,7 +67,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             keyLength = key.size,
                             createdVersion = creationVersion,
                             toVersion = getRequest.toVersion,
-                            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                            decryptValue = valueDecryptor
                         )
                     ) {
                         Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
@@ -93,7 +93,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                                 select = getRequest.select,
                                 toVersion = readVersion,
                                 cachedRead = cacheReader,
-                                decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                                decryptValue = valueDecryptor,
+                                readBudget = readContext.readBudget,
                             )?.withSoftDeleteState(tr, tableDirs, key.bytes, readVersion)
                         }
 
@@ -108,7 +109,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             maxVersions = getRequest.maxVersions,
                             sortingKey = null,
                             cachedRead = cacheReader,
-                            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                            decryptValue = valueDecryptor,
+                            readBudget = readContext.readBudget,
                         )
 
                         val fallbackChanges = if (getRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {

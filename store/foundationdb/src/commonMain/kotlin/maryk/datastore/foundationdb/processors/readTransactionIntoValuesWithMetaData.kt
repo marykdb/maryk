@@ -19,6 +19,7 @@ import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.Values
+import maryk.datastore.foundationdb.FoundationDBReadBudget
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
@@ -34,7 +35,7 @@ import maryk.datastore.foundationdb.processors.helpers.nonHistoricQualifierRetri
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.withCurrentPayload
-import maryk.datastore.shared.readValue
+import maryk.datastore.foundationdb.processors.helpers.readStoredValue
 import maryk.datastore.shared.readStoredCount
 import maryk.datastore.shared.hasStoredValuePayload
 
@@ -56,6 +57,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?,
     decryptValue: DecryptValue? = null,
     preparedRead: PreparedRecordRead? = null,
+    readBudget: FoundationDBReadBudget? = null,
 ): ValuesWithMetaData<DM>? {
     if (toVersion != null && creationVersion > toVersion) return null
     var maxVersion = creationVersion
@@ -69,7 +71,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
 
         val iterator = FDBIterator(
-            (preparedRead ?: prepareRecordRead(tr, tableDirs, key.bytes, select, toVersion)).awaitRows().iterator()
+            (preparedRead ?: prepareRecordRead(tr, tableDirs, key.bytes, select, toVersion, readBudget)).awaitRows().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)
@@ -84,7 +86,6 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         // Will start by going to next key so will miss the creation timestamp
         val getQualifier = iterator.nonHistoricQualifierRetriever(prefixWithKeyRange)
 
-        var index: Int
         this.readStorageToValues(
             getQualifier = getQualifier,
             select = select,
@@ -110,15 +111,10 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
                             value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
-                                index = offset
-                                val reader = { payload[index++] }
-
                                 val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                     ?: reference.propertyDefinition
 
-                                readValue(definition, reader) {
-                                    offset + length - index
-                                }
+                                readStoredValue(definition, payload, offset, length)
                             }
                         }
                     }
@@ -164,7 +160,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         val prefixWithKeyRange = packKey(tableDirs.historicTablePrefix, key.bytes)
 
         val iterator = FDBIterator(
-            (preparedRead ?: prepareRecordRead(tr, tableDirs, key.bytes, select, toVersion)).awaitRows().iterator()
+            (preparedRead ?: prepareRecordRead(tr, tableDirs, key.bytes, select, toVersion, readBudget)).awaitRows().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)
@@ -176,7 +172,6 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
             maxVersion = maxOf(currentVersion, maxVersion)
         }
 
-        var index: Int
         this.readStorageToValues(
             getQualifier = getQualifier,
             select = select,
@@ -204,15 +199,10 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                         }
                         when (storageType) {
                             Value -> {
-                                index = 0
-                                val reader = { value[index++] }
-
                                 val definition =
                                     (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                         ?: reference.propertyDefinition
-                                readValue(definition, reader) {
-                                    value.size - index
-                                }
+                                readStoredValue(definition, value, 0, value.size)
                             }
                             ListSize -> {
                                 readStoredCount(value)

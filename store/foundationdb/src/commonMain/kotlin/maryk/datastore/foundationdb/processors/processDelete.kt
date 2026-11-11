@@ -137,7 +137,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                         tableDirs,
                         keyBytes,
                         propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
-                        { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                        valueDecryptor
                     ) as T?
                 } else if (propertyReference is SetReference<*, *>) {
                     @Suppress("UNCHECKED_CAST")
@@ -153,7 +153,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                         null,
                         keyBytes,
                         propertyReference.toStorageByteArray(),
-                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                        decryptValue = valueDecryptor
                     ) { valueBytes, offset, length ->
                         valueBytes.convertToValue(propertyReference, offset, length) as T?
                     }

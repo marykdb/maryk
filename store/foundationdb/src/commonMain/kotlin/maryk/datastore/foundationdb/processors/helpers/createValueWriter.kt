@@ -14,10 +14,13 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.TRUE
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.isStoredPropertyDeleteMarker
+import maryk.core.exceptions.StorageException
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
 import maryk.lib.extensions.compare.matchesRangePart
@@ -32,6 +35,7 @@ internal fun FoundationDBDataStore.createValueWriter(
     currentValues: List<Pair<ByteArray, ByteArray>>? = null,
     skipCurrentUniqueOwnership: Boolean = false,
     onUniqueClaim: ((ByteArray, List<ByteArray>) -> Unit)? = null,
+    allowUniqueOwnershipRepairScan: Boolean = true,
     onWrite: (() -> Unit)? = null,
 ): ValueWriter<IsPropertyDefinition<*>> = { type, reference, definition, value ->
     fun shouldSkip(referenceBytes: ByteArray, valueBytes: ByteArray): Boolean =
@@ -81,7 +85,8 @@ internal fun FoundationDBDataStore.createValueWriter(
                             tableDirs = tableDirs,
                             reference = reference,
                             key = key.bytes,
-                            versionBytes = versionBytes
+                            versionBytes = versionBytes,
+                            allowRepairScan = allowUniqueOwnershipRepairScan,
                         )
 
                         createUniqueIndexIfNotExists(dataModelId, tableDirs.uniquePrefix, reference, tr)
@@ -131,26 +136,69 @@ internal fun FoundationDBDataStore.createValueWriter(
     }
 }
 
-private fun deleteCurrentUniqueIndexEntryForKey(
+private fun FoundationDBDataStore.deleteCurrentUniqueIndexEntryForKey(
     tr: Transaction,
     tableDirs: IsTableDirectories,
     reference: ByteArray,
     key: ByteArray,
-    versionBytes: ByteArray
+    versionBytes: ByteArray,
+    allowRepairScan: Boolean,
 ) {
-    val prefix = packKey(tableDirs.uniquePrefix, reference)
-    val iterator = tr.getRange(Range.startsWith(prefix)).iterator()
+    val stored = tr.get(packKey(tableDirs.tablePrefix, key, reference)).awaitResult() ?: return
+    requireVersionedValue(stored)
+    val oldValue = decryptValueIfNeeded(tableDirs.modelId, key, reference, stored,
+        VERSION_BYTE_SIZE, stored.size - VERSION_BYTE_SIZE)
+    if (isStoredPropertyDeleteMarker(oldValue)) return
 
-    while (iterator.hasNext()) {
-        val kv = iterator.nextBlocking()
-        if (
-            kv.value.size == VERSION_BYTE_SIZE + key.size &&
-            kv.value.matchesRangePart(VERSION_BYTE_SIZE, key)
-        ) {
-            tr.clear(kv.key)
-            val uniqueRef = kv.key.copyOfRange(tableDirs.uniquePrefix.size, kv.key.size)
-            writeHistoricUnique(tr, tableDirs, key, uniqueRef, versionBytes)
-            break
+    fun clearExact(payload: ByteArray): Boolean {
+        var found = false
+        for (candidate in mapUniqueValueByteCandidates(tableDirs.modelId, reference, payload)) {
+            val uniqueRef = reference + candidate
+            val uniqueKey = packKey(tableDirs.uniquePrefix, uniqueRef)
+            val owner = tr.get(uniqueKey).awaitResult() ?: continue
+            if (owner.size == VERSION_BYTE_SIZE + key.size && owner.matchesRangePart(VERSION_BYTE_SIZE, key)) {
+                tr.clear(uniqueKey)
+                writeHistoricUnique(tr, tableDirs, key, uniqueRef, versionBytes)
+                found = true
+            }
         }
+        return found
+    }
+    // Healthy writes never inspect another record's claims.
+    if (clearExact(oldValue)) return
+
+    // A damaged current payload can disagree with its still-valid ownership.
+    // Prefer its exact original version over scanning the property namespace.
+    if (tableDirs is HistoricTableDirectories) {
+        val historic = tr.get(packVersionedKey(tableDirs.historicTablePrefix, key,
+            encodeZeroFreeUsing01(reference), version = stored.copyOfRange(0, VERSION_BYTE_SIZE))).awaitResult()
+        if (historic != null && historic.isNotEmpty()) {
+            val source = decryptValueIfNeeded(tableDirs.modelId, key, reference, historic)
+            if (clearExact(source)) return
+        }
+    }
+    // Undeletes and version restores can deliberately release the previous claim.
+    // Their final reconciliation still validates ownership of the replacement.
+    if (!allowRepairScan) return
+
+    // Preserve legacy repair when history is absent/damaged. Bound the work;
+    // exceeding this limit aborts the entire mutation, leaving ownership intact.
+    val prefix = packKey(tableDirs.uniquePrefix, reference)
+    val iterator = tr.getRange(Range.startsWith(prefix), RANGE_SCAN_BATCH_SIZE + 1).iterator()
+    try {
+        var inspected = 0
+        while (iterator.hasNext()) {
+            if (++inspected > RANGE_SCAN_BATCH_SIZE) {
+                throw StorageException("Unique ownership repair exceeds $RANGE_SCAN_BATCH_SIZE rows; repair the inconsistent property metadata first")
+            }
+            val row = iterator.nextBlocking()
+            if (row.value.size == VERSION_BYTE_SIZE + key.size && row.value.matchesRangePart(VERSION_BYTE_SIZE, key)) {
+                tr.clear(row.key)
+                writeHistoricUnique(tr, tableDirs, key, row.key.copyOfRange(tableDirs.uniquePrefix.size, row.key.size), versionBytes)
+                return
+            }
+        }
+    } finally {
+        iterator.cancel()
     }
 }

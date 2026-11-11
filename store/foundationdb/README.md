@@ -45,7 +45,7 @@ suspend fun main() {
 
 Notes:
 - The cluster file can be omitted when the default `~/.fdb` setup is used. Tests use `store/foundationdb/fdb.cluster` via `FDB_CLUSTER_FILE`.
-- Always close the store (or wrap in your runtime's lifecycle) to release FDB resources.
+- Close every store to release its resources. Native hosts also own [process-wide network shutdown](docs/architecture.md#process-lifecycle).
 - Need remote access to this FoundationDB store? Expose it with the [Remote Store](../remote/README.md) via CLI `serve`.
 
 ## Migrations and version updates
@@ -78,6 +78,112 @@ val store = FoundationDBDataStore.open(
     }
 )
 ```
+
+### Transaction policies and diagnostics
+
+Ordinary requests now default to a 4.5-second native transaction timeout, ten
+retries, a one-second maximum retry delay and FoundationDB's existing 10 MB size
+limit. These bounds apply to each native transaction; multi-object requests and
+maintenance jobs can use several transactions. Explicit atomic requests retain
+their existing 4 MiB budget and 4.5-second timeout.
+
+Use the `open` overload with `transactionConfiguration` to configure request and
+maintenance policies independently and inspect each transaction attempt:
+
+```kotlin
+val store = FoundationDBDataStore.open(
+    dataModelsById = mapOf(1u to Account),
+    transactionConfiguration = FoundationDBTransactionConfiguration(
+        requestPolicy = FoundationDBTransactionPolicy(timeoutMillis = 3000),
+        maintenancePolicy = FoundationDBTransactionPolicy(timeoutMillis = 4500, retryLimit = 20),
+        optionsSetter = { context ->
+            setTag(context.kind.name)
+            setDebugTransactionIdentifier("maryk-${context.kind.name}-${context.dataModelId}")
+            // Enable client trace logging separately before adding setLogTransaction().
+        },
+    ),
+)
+```
+
+Request policies become database defaults before `databaseOptionsSetter` runs,
+so existing database overrides retain precedence for requests. Maintenance
+policies override those defaults. The transaction hook then runs on every retry
+attempt; it must be thread-safe and must not perform external side effects.
+`context.kind` distinguishes `Request`, `Read`, `Atomic` and `Maintenance`;
+`dataModelId` is provided when one model is known. Atomic safety limits and the
+no-retry rule for pinned reads are applied after the hook. Nested members of an
+atomic request share its transaction and do not invoke a separate hook.
+
+The existing `open(...)` signature remains available. Policies and diagnostic
+settings do not change stored data or request serialization.
+
+### Bounded reads, bulk import and maintenance
+
+The overload accepting `transactionConfiguration` also accepts
+`executionConfiguration = FoundationDBExecutionConfiguration(...)`. Defaults
+limit a materialized record to 16 MiB and a request to 32 MiB of storage-row
+bytes. Exceeding a limit throws `FoundationDBReadLimitExceededException` before
+value decoding. Use a projection or smaller page, or explicitly raise the
+budgets. Record budgets include keys and stored payloads; they are not an exact
+measurement of decoded heap usage. Aggregate/filter helper work and custom
+codec/provider allocations are not covered by this accounting.
+
+Full record and change/history ranges stream through a bounded collector.
+Change/history limits apply to all raw rows traversed before projection and
+version filtering. A small selected result can therefore exceed the record
+budget when its stored history is large; projections and `maxVersions` do not
+reduce this raw-history charge. Reconstructed collection snapshots count toward the same record
+and request budgets; update responses also charge reconstructed creation values
+to the request budget.
+
+Get creation/record preparation and ordinary commit/retry waits suspend; synchronous filter and
+writer callbacks retain the compatibility bridge.
+
+For explicit bulk ingestion of distinct record keys:
+
+```kotlin
+val response = store.bulkAdd(Account.add(/* objects */), concurrency = 8)
+```
+
+Each record commits independently and retains normal validation and uniqueness
+checks. Response statuses and local notifications retain input order. At most
+one concurrency window of notification payloads is buffered. Ordinary `execute`
+ordering and explicit atomic requests keep their existing contracts. Bulk import
+is not available inside a transaction scope.
+
+Index rebuilding uses FoundationDB range-size estimates and split points from
+current and historic value ranges. Boundaries are moved to complete record keys
+before scheduling disjoint workers. Configure `maintenancePartitionBytes`
+(default 8 MiB) and `maintenanceConcurrency` (default 1, maximum 16) to tune this.
+`store.maintenanceProgress(modelId)` exposes the last rebuild's estimated source
+bytes and partition completion. Estimates are approximate; progress is local to
+the process and resets on reopening.
+
+Cluster log readers use committed watches with a periodic fallback (30 seconds
+by default, controlled by `watchFallbackMillis`). Listener activation also wakes
+the local tailer, including when an existing backlog has no new remote writes.
+The tailer rotates shard/model pairs after each batch, so a busy shard cannot
+starve another. The configured poll interval remains the error fallback and a
+lower bound for the watch fallback.
+
+### Ordinary mutation retries
+
+Every ordinary per-record write has a private retry marker committed with the
+mutation and a retained in-memory result. If FoundationDB retries an ambiguous
+commit, the same invocation returns that result without allocating or changing
+values again. Accepted mutations advance the application revision; read-only
+maintenance, failed validations and unchanged values do not.
+
+Completed private markers are removed in bounded background batches from their
+own metadata directory. Normal close also attempts a separately bounded cleanup
+of only that instance's private namespace. A crash or an exhausted cleanup queue
+can leave small orphan markers; these contain no application payload. This mechanism protects
+automatic retries within one invocation. Native size estimates are diagnostics by
+default: they count overwritten mutations and can exceed the final commit size.
+Set `maxTransactionWorkBytes` to opt into a conservative staged-work budget;
+the native client remains authoritative for final commit admission. This does
+not identify a new application call after restart or resolve a terminal timeout. Use an explicit transaction
+with a stable transaction ID when cross-call commit resolution is required.
 
 ### Update history
 
@@ -141,11 +247,15 @@ coordinated upgrades and monitoring.
 ## Operational Tips
 
 - Ordinary requests: each add, change, or delete object is handled in its own FDB transaction; a multi-object request can therefore partially succeed. FDB retries conflicts, while Maryk returns validation errors (uniques, parent presence, etc.) as per-object statuses.
-- Close: active transactions and futures are canceled before the native handle closes. Because the JVM FoundationDB binding does not guarantee that an in-flight native commit responds to `Transaction.close()`, scope shutdown is bounded to five seconds. A timeout is reported as `StorageException`; native work may still be in flight and must not be assumed rolled back.
+- Close: active transactions receive explicit cancellation before their handles close, and outstanding futures are canceled. Cancellation during an in-flight commit does not prove rollback; scope shutdown remains bounded to five seconds. A timeout is reported as `StorageException`; native work may still be in flight and must not be assumed rolled back.
 - Scans: index scans are recommended for large filtered queries. Primary key scans are inexpensive for full‑range iteration. A request keeps one coherent FoundationDB snapshot; after four seconds the store throws `FoundationDBSnapshotExpiredException` before FoundationDB can reject the old version. Retry with a smaller page and use the scan cursor to resume completed pages.
 - Historic queries: `toVersion` is supported for data, unique, and index reads. Historic index scanning is implemented and used when `toVersion` is provided.
 
 ## Development
+
+The store targets FoundationDB client **7.3.81** with API version **730**.
+The Kotlin multiplatform binding is **7.3.81.1**. The local-source
+override below supports verifying binding changes before publication.
 
 You can run the tests locally using the local FDB server. See [Local Testing](./docs/local-testing.md) for more details.
 
@@ -158,6 +268,19 @@ Run module tests:
 ```bash
 ./gradlew :store:foundationdb:jvmTest
 ```
+
+To test a sibling binding checkout before publishing its release, pass an explicit
+source path. The development adapter compiles those sources with Maryk's verified
+toolchain; normal builds keep using the pinned Maven dependency.
+
+```bash
+./gradlew -PfoundationDbBindingsPath=../foundationdb-multiplatform :store:foundationdb:jvmTest
+```
+
+For native development, first run `downloadFoundationDbHeaders` in the binding
+checkout. `:store:foundationdb:runFoundationDBPerformanceProbe` runs opt-in local
+comparisons for streaming modes, unique-owner lookup, bulk import and rebuilding.
+It validates results and reports timings without flaky timing assertions.
 
 If you use a non‑default cluster file for tests, ensure `fdb.cluster` is present (the test config references `./fdb.cluster`).
 Environment variable `FDB_CLUSTER_FILE` is set by Gradle to `store/foundationdb/fdb.cluster` for JVM tests.
@@ -192,3 +315,9 @@ recovery; do not remove upgrade metadata to bypass a failure.
 ## License
 
 Maryk is licensed under the Apache 2.0 License. See the repository's LICENSE file for details.
+
+For a directory tree copied into a separately configured FoundationDB layer, pass
+`directoryLayer` to `FoundationDBDataStore.open`. Use the same layer with
+`readStoredModelDefinitionsFromDirectory` and `detectStoredKeepAllVersions`.
+Existing overloads keep the default layer. Select the migrated layer only after
+completing offline copy and verification; opening a store never performs that migration.

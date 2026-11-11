@@ -83,7 +83,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processScanInTransactio
         transactionRunner.run { tr ->
             val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
             if (createdVersion != null) {
-                if (shouldProcessRecord(tr, tableDirs, key, createdVersion, scanRequest, keyScanRange, { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) })) {
+                if (shouldProcessRecord(tr, tableDirs, key, createdVersion, scanRequest, keyScanRange, valueDecryptor)) {
                     processRecord(tr, key, createdVersion, null)
                 }
             }
@@ -124,7 +124,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processScanInTransactio
                     val key = scanRequest.dataModel.key {
                         keyBytes[keyReadIndex++]
                     }
-                    if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) })) {
+                    if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, valueDecryptor)) {
                         val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
                         if (createdVersion != null) {
                             processRecord(tr, key, createdVersion, null)
@@ -160,7 +160,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processScanInTransactio
             scanRequest = scanRequest,
             direction = processedScanIndex.direction,
             scanRange = keyScanRange,
-            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) },
+            decryptValue = valueDecryptor,
             processStoreValue = processRecord
         )
         is ScanType.IndexScan ->
@@ -171,7 +171,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processScanInTransactio
                 indexScan = processedScanIndex,
                 keyScanRange = keyScanRange,
                 continuation = continuation,
-                decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) },
+                decryptValue = valueDecryptor,
                 processStoreValue = processRecord
             )
         is ScanType.UpdateHistoryScan -> throw IllegalStateException("UpdateHistoryScan is only supported by scanUpdates")

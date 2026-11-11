@@ -102,6 +102,7 @@ internal fun walkDataRecordsAndFillIndex(
     onRecordMaterialized: ((ByteArray) -> Unit)? = null,
     verifyRebuildOwner: ((Transaction) -> Unit)? = null,
     historicScratchPrefix: ByteArray? = null,
+    keyRange: Range? = null,
 ): Int {
     if (indexesToIndex.isEmpty()) return 0
     require(rowsPerReadTransaction > 0) { "rowsPerReadTransaction must be positive" }
@@ -127,7 +128,7 @@ internal fun walkDataRecordsAndFillIndex(
         }
     }
 
-    val keyCursor = RebuildRangeCursor(tc, tableDirectories.keysPrefix, rowsPerReadTransaction, bytesPerReadTransaction)
+    val keyCursor = RebuildRangeCursor(tc, tableDirectories.keysPrefix, rowsPerReadTransaction, bytesPerReadTransaction, keyRange)
     var writeTransactions = 0
 
     while (true) {
@@ -227,7 +228,9 @@ private class RebuildRangeCursor(
     private val prefix: ByteArray,
     private val rowsPerTransaction: Int,
     private val bytesPerTransaction: Int,
+    keyRange: Range? = null,
 ) {
+    private val range = keyRange ?: Range.startsWith(prefix)
     private var page: Iterator<RawStorageRow> = emptyList<RawStorageRow>().iterator()
     private var afterKey: ByteArray? = null
     private var exhausted = false
@@ -235,7 +238,7 @@ private class RebuildRangeCursor(
     fun next(): RawStorageRow? {
         if (!page.hasNext()) {
             if (exhausted) return null
-            val rows = readRawStoragePage(tc, Range(afterKey?.plus(byteArrayOf(0)) ?: prefix, Range.startsWith(prefix).end), rowsPerTransaction, bytesPerTransaction)
+            val rows = readRawStoragePage(tc, Range(afterKey?.plus(byteArrayOf(0)) ?: range.begin, range.end), rowsPerTransaction, bytesPerTransaction)
             if (rows.isEmpty()) {
                 exhausted = true
                 return null

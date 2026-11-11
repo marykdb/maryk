@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.currentCoroutineContext
 import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.properties.definitions.validateValueType
 import maryk.foundationdb.Range
@@ -81,6 +82,7 @@ import maryk.core.values.IsValuesGetter
 import maryk.core.values.Values
 import maryk.datastore.foundationdb.clusterlog.ClusterLogChange
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBRestoreContext
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
@@ -164,6 +166,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
     ignoreIfVersionNotNewer: Boolean = false,
 ): IsChangeResponseStatus<DM> {
     val dataModelId = getDataModelId(dataModel)
+    val restoring = currentCoroutineContext()[FoundationDBRestoreContext]?.owner === this
     val result: IsChangeResponseStatus<DM> = try {
         var updateToEmit: Update<DM>? = null
 
@@ -235,9 +238,11 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                 tableDirs,
                 null,
                 keyBytes + SOFT_DELETE_INDICATOR,
-                decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                decryptValue = valueDecryptor
             ) { bytes, offset, length -> length == 1 && bytes[offset] == TRUE } == true
             val targetIsDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: currentIsDeleted
+            val allowUniqueOwnershipRepairScan = !restoring && !currentIsDeleted &&
+                changes.none { it is ObjectSoftDeleteChange && it.isDeleted }
             val uniqueReferencesToReconcile = if (changes.any { it is ObjectSoftDeleteChange }) null else
                 requestedChangedReferences.map { it.toStorageByteArray() }
             val initialUniqueClaims = (if (currentIsDeleted || targetIsDeleted) emptyList() else captureCurrentUniqueClaims(dataModel, tr, tableDirs, key.bytes, uniqueReferencesToReconcile)).toMutableList()
@@ -268,7 +273,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                 tableDirs,
                                 keyBytes,
                                 propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
-                                { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                                valueDecryptor
                             ) as T?
                         }
 
@@ -298,7 +303,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                 null,
                                 keyBytes,
                                 propertyReference.toStorageByteArray(),
-                                decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                                decryptValue = valueDecryptor
                             ) { valueBytes, offset, length ->
                                 valueBytes.convertToValue(propertyReference, offset, length) as T?
                             }
@@ -420,7 +425,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                     when (change) {
                         is ObjectSoftDeleteChange -> {
                             val softDeleteKey = key.bytes + SOFT_DELETE_INDICATOR
-                            val wasDeleted = tr.getValue(tableDirs, null, softDeleteKey, decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }) { b, o, l ->
+                            val wasDeleted = tr.getValue(tableDirs, null, softDeleteKey, decryptValue = valueDecryptor) { b, o, l ->
                                 if (l == 1) b[o] == TRUE else false
                             } == true
 
@@ -522,7 +527,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         }
                                         val keep = mutableListOf<ByteArray>()
                                         var didWrite = false
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim) { didWrite = true }
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim, allowUniqueOwnershipRepairScan = allowUniqueOwnershipRepairScan) { didWrite = true }
                                         if (!hasCurrentComplexValue(current, reference)) checkParentReference(reference)
                                         if (!hasCurrentComplexValue(current, reference) && reference is MapValueReference<*, *, *>) {
                                             handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes)
@@ -548,7 +553,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         }
                                         val keep = mutableListOf<ByteArray>()
                                         var didWrite = false
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim) { didWrite = true }
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim, allowUniqueOwnershipRepairScan = allowUniqueOwnershipRepairScan) { didWrite = true }
                                         if (!hasCurrentComplexValue(current, reference)) checkParentReference(reference)
                                         if (!hasCurrentComplexValue(current, reference) && reference is MapValueReference<*, *, *>) {
                                             handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes)
@@ -573,7 +578,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         }
                                         val keep = mutableListOf<ByteArray>()
                                         var didWrite = false
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim) { didWrite = true }
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim, allowUniqueOwnershipRepairScan = allowUniqueOwnershipRepairScan) { didWrite = true }
                                         if (!hasCurrentComplexValue(current, reference)) checkParentReference(reference)
                                         if (!hasCurrentComplexValue(current, reference) && reference is MapValueReference<*, *, *>) {
                                             handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes)
@@ -619,7 +624,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                             writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, HISTORIC_DELETE_MARKER)
                                         }
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, null, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim)
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, null, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim, allowUniqueOwnershipRepairScan = allowUniqueOwnershipRepairScan)
                                         if (!hasCurrentComplexValue(current, reference)) checkParentReference(reference)
                                         if (!hasCurrentComplexValue(current, reference) && reference is MapValueReference<*, *, *>) {
                                             handleMapAdditionCount(tr, tableDirs, key, reference, versionBytes)
@@ -650,7 +655,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         }
 
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim)
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim, allowUniqueOwnershipRepairScan = allowUniqueOwnershipRepairScan)
                                         // Marker for embedded object
                                         writer(Embed, referenceBytes, reference.propertyDefinition, Unit)
                                         @Suppress("UNCHECKED_CAST")
@@ -669,7 +674,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                     else -> {
                                         // Simple value (including list/map/set item refs)
                                         try {
-                                            val previousValue = tr.getValue(tableDirs, null, keyBytes, referenceBytes, decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }) { b, o, l ->
+                                            val previousValue = tr.getValue(tableDirs, null, keyBytes, referenceBytes, decryptValue = valueDecryptor) { b, o, l ->
                                                 b.convertToValue(reference, o, l)
                                             }
 
@@ -686,7 +691,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                                         null,
                                                         keyBytes,
                                                         reference.parentReference!!.toStorageByteArray(),
-                                                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                                                        decryptValue = valueDecryptor
                                                     ) { b, o, l ->
                                                         if (hasStoredValuePayload(reference.parentReference!!.comparablePropertyDefinition, b, o, l)) true else null
                                                     } != null
@@ -713,6 +718,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                                 versionBytes,
                                                 skipCurrentUniqueOwnership = targetIsDeleted,
                                                 onUniqueClaim = rememberUniqueClaim,
+                                                allowUniqueOwnershipRepairScan = allowUniqueOwnershipRepairScan,
                                             )
 
                                             // Unique handling if applicable is covered by writer for TypeValue; handle comparable uniques here
@@ -802,7 +808,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                                     null,
                                                     keyBytes,
                                                     setItemRef.toStorageByteArray(),
-                                                    decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+                                                    decryptValue = valueDecryptor
                                                 ) { b, o, l -> if (l == 0 || b[o] == TypeIndicator.DeletedIndicator.byte) null else true } != null
                                                 if (existed) continue
                                                 if (finalSetPresent) throw AlreadySetException(setRef)
@@ -858,7 +864,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                     }
 
                                     val currentIncKey = getCurrentIncMapKey(tr, tableDirs, key, incMapRef)
-                                    val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim)
+                                    val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim, allowUniqueOwnershipRepairScan = allowUniqueOwnershipRepairScan)
                                     val addedKeys = writeIncMapAdditionsToStorage(currentIncKey, writer, incMapRef.propertyDefinition.definition, addValues)
 
                                     if (addedKeys.isNotEmpty()) {

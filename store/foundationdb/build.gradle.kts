@@ -267,3 +267,17 @@ tasks.register<JavaExec>("runFoundationDBTestRunner") {
         "-Djava.library.path=${localFoundationDbLibDir}${pathSeparator}${systemFoundationDbLibDir}"
     )
 }
+
+tasks.register<JavaExec>("runFoundationDBPerformanceProbe") {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    description = "Measure range streaming, unique lookup, and bounded bulk import against an isolated local cluster."
+    val compilation = kotlinExt.targets.getByName("jvm").compilations.getByName("test")
+    classpath(compilation.output.allOutputs, configurations.getByName("jvmTestRuntimeClasspath"))
+    mainClass.set("maryk.datastore.foundationdb.FoundationDBPerformanceProbeKt")
+    dependsOn(tasks.named("jvmTestClasses"), resetFoundationDBTestData, startFoundationDBForTests)
+    finalizedBy(stopFoundationDBForTests)
+    environment("DYLD_LIBRARY_PATH", localFoundationDbLibDir)
+    environment("LD_LIBRARY_PATH", localFoundationDbLibDir)
+    environment("FDB_CLUSTER_FILE", rootProject.projectDir.resolve("store/foundationdb/fdb.cluster").absolutePath)
+    jvmArgs("-Djava.library.path=${localFoundationDbLibDir}${pathSeparator}${systemFoundationDbLibDir}")
+}

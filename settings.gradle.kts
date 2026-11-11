@@ -24,6 +24,15 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         google()
+        maven {
+            name = "Maryk storage snapshots"
+            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+            mavenContent { snapshotsOnly() }
+            content {
+                includeGroup("io.maryk.rocksdb")
+                includeGroup("io.maryk.foundationdb")
+            }
+        }
         ivy {
             name = "Node distributions"
             url = uri("https://nodejs.org/dist")
@@ -81,3 +90,9 @@ include(
     ":cli",
     ":app",
 )
+
+// Compile local binding sources with Maryk's verified toolchain before release.
+providers.gradleProperty("foundationDbBindingsPath").orNull?.let {
+    include(":foundationdb-binding-dev")
+    project(":foundationdb-binding-dev").projectDir = file("build-logic/foundationdb-binding-dev")
+}

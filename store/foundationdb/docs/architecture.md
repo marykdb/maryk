@@ -31,6 +31,14 @@ Capabilities in the FDB engine:
 - Initializes per‑model directories via DirectoryLayer.
 - Launches the store actor (coroutine) to process incoming requests one by one. Add, change, and delete processors use one FDB transaction per object; multi-object requests can therefore return partial results. Reads use transactions or iterators scoped to the required operation.
 
+### Process lifecycle
+
+`FoundationDBDataStore.close()` releases per-store resources while leaving the
+process-wide FoundationDB client network available to other stores. A Native
+host must close all stores, then call `FDB.instance().shutdown()` during process
+termination. Shutdown stops the shared network worker before native runtime
+teardown and is terminal: the network cannot restart in that process.
+
 ### Public atomic requests and transaction scopes
 
 Explicit atomic requests and serializable transaction journals use one native

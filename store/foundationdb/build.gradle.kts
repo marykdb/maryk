@@ -1,8 +1,11 @@
 import org.gradle.internal.os.OperatingSystem
+import org.gradle.api.tasks.testing.AbstractTestTask
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
+import org.jetbrains.kotlin.gradle.testing.internal.KotlinTestReport
+import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.Family
 import maryk.conventions.FoundationDbTestServerLeaseService
 import maryk.conventions.resetTestResultStore
@@ -63,7 +66,11 @@ kotlin {
                 api(projects.lib)
                 api(projects.core)
                 api(projects.store.shared)
-                api(libs.maryk.foundationdb.multiplatform)
+                if (providers.gradleProperty("foundationDbBindingsPath").isPresent) {
+                    api(project(":foundationdb-binding-dev"))
+                } else {
+                    api(libs.maryk.foundationdb.multiplatform)
+                }
             }
         }
         getByName("jvmMain") {
@@ -167,6 +174,9 @@ tasks.named("jvmTest").configure {
 val kotlinExt = extensions.getByType<KotlinMultiplatformExtension>()
 
 tasks.withType<KotlinNativeTest>().configureEach {
+    providers.gradleProperty("foundationDbNativeTestFilter").orNull?.let { filter ->
+        args = args + "--ktest_filter=$filter"
+    }
     val target = kotlinExt.targets.withType<KotlinNativeTarget>().firstOrNull { nativeTarget ->
         name.startsWith(nativeTarget.name)
     }
@@ -187,6 +197,36 @@ tasks.withType<KotlinNativeTest>().configureEach {
 
     } else {
         onlyIf { false }
+    }
+}
+
+// Configure after the server-task providers: realizing a test binary also configures its linker.
+// Datastore.close leaves the process-wide network usable by other live stores; the test
+// launcher stops it once the whole suite has finished, before native process teardown.
+kotlinExt.targets.withType<KotlinNativeTarget>().configureEach {
+    binaries.withType<TestExecutable>().configureEach {
+        freeCompilerArgs += listOf("-entry", "maryk.datastore.foundationdb.runNativeTests")
+    }
+}
+
+// The installed FoundationDB client is for this exact host architecture. Aggregate
+// tests must not infer cross-target link dependencies from foreign result directories.
+// Explicit compile/link tasks remain available when a matching target client is supplied.
+afterEvaluate {
+    tasks.withType<KotlinTestReport>().configureEach {
+        fun KotlinTestReport.runnableTests(): List<AbstractTestTask> =
+            (testTasks + children.flatMap { it.get().runnableTests() }).filter { test ->
+                test !is KotlinNativeTest || kotlinExt.targets.withType<KotlinNativeTarget>().any { target ->
+                    test.name.startsWith(target.name) && target.konanTarget == HostManager.host
+                }
+            }
+        val foreignTests = tasks.withType<KotlinNativeTest>().filter { test ->
+            kotlinExt.targets.withType<KotlinNativeTarget>().any { target ->
+                test.name.startsWith(target.name) && target.konanTarget != HostManager.host
+            }
+        }.map { it.name }.toSet()
+        setDependsOn(dependsOn.filterNot { it is String && it in foreignTests })
+        testResults.setFrom(provider { runnableTests().map { it.binaryResultsDirectory } })
     }
 }
 

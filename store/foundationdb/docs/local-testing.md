@@ -14,6 +14,8 @@ This module can automatically install and run a local FoundationDB server for JV
 ### Gradle Integration
 
 - **Auto start/stop:** JVM and supported native test tasks acquire the shared test-server lease, reset test data, start FDB, and finalize by stopping it. The lease prevents another Gradle invocation in the same checkout from resetting the server during a test run.
+- **Native client shutdown:** The Native test launcher calls `FDB.instance().shutdown()` after all selected tests finish, before process teardown. Test filters and failure exit codes are preserved. See [process lifecycle](architecture.md#process-lifecycle) for the host application contract.
+- **Native target selection:** `allTests` includes only the exact host native architecture (for example, `macosArm64Test` on Apple Silicon), alongside JVM tests. The installed C client matches that host. Explicit target checks such as `compileTestKotlinLinuxX64` and `linkDebugTestLinuxX64` remain available; linking requires a C client for that target. CI continues to run each supported native test task on its matching runner/client architecture.
 - **Tasks:**
     - `installFoundationDB`: installs or links FDB locally.
     - `startFoundationDBForTests`: starts the local server.
@@ -21,7 +23,7 @@ This module can automatically install and run a local FoundationDB server for JV
 
 ### Configuration
 
-- **`FDB_VERSION`:** Optional FoundationDB release selector. The only supported pinned release is `7.3.79`; any other version fails before local/system installation, download, or extraction. If unset, scripts use the project default matching the client dependency.
+- **`FDB_VERSION`:** Optional FoundationDB release selector. Pinned releases are `7.3.81` (default) and `7.3.79`; other versions fail before local/system installation, download, or extraction. If unset, scripts use the project default matching the client dependency.
 - **`FDB_CLEAN_MODE`:** Post‑test cleanup (default `data`). Options:
     - `data`: delete `build/testdatastore/data` (database wiped).
     - `all`: delete `build/testdatastore/data` and `build/testdatastore/logs`.

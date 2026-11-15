@@ -1,6 +1,7 @@
 package maryk.datastore.shared
 
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.references.AnyPropertyReference
 
@@ -13,10 +14,11 @@ fun ByteArray.isAffectedUniqueClaim(references: List<ByteArray>?): Boolean =
 /** Minimal qualifier ranges needed to reconcile a mutation's current unique claims. */
 fun IsRootDataModel.uniqueClaimScopes(references: List<ByteArray>?): List<ByteArray> {
     if (references == null) return listOf(byteArrayOf())
-    val scopes = references.toMutableList()
+    val scopes = mutableListOf<ByteArray>()
     for (reference in references) {
         var offset = 0
         val property = getPropertyReferenceByStorageBytes(reference.size, { reference[offset++] })
+        if (property.comparablePropertyDefinition !is IsSimpleValueDefinition<*, *>) scopes += reference
         for (ancestor: AnyPropertyReference in listOf(property) + storageReferenceParents(property)) {
             if ((ancestor.comparablePropertyDefinition as? IsComparableDefinition<*, *>)?.unique == true) {
                 scopes += ancestor.toStorageByteArray()

@@ -30,9 +30,26 @@ private object FilterProjectionLeaf : DataModel<FilterProjectionLeaf>() {
 
 private object FilterProjectionRecord : RootDataModel<FilterProjectionRecord>() {
     val entries by list(1u, valueDefinition = EmbeddedValuesDefinition(dataModel = { FilterProjectionLeaf }))
+    val mapping by map(2u, required = false, keyDefinition = StringDefinition(), valueDefinition = StringDefinition())
 }
 
 class StoredReferenceReadTest {
+    @Test
+    fun orderedUnorderedAndDuplicateRowsDecodeWithoutChangingTheirInputs() {
+        val expected = mapOf("first" to "one", "second" to "two")
+        val record = FilterProjectionRecord.create {
+            entries with emptyList()
+            mapping with expected
+        }
+        val reference = FilterProjectionRecord.mapping.ref()
+        val rows = record.toEncodedRows().selectedRows(reference)
+        for (input in listOf(rows, rows.reversed(), rows + rows.last())) {
+            val before = input.map { Bytes(it.first.copyOf()) to Bytes(it.second.copyOf()) }
+            assertEquals(expected, FilterProjectionRecord.readStoredReferenceValue(reference, input))
+            assertEquals(before, input.map { Bytes(it.first) to Bytes(it.second) })
+        }
+    }
+
     @Test
     fun selectedListAncestorUsesItsActualBoundsWithoutInventingEarlierItems() {
         for (empty in listOf(true, false)) {

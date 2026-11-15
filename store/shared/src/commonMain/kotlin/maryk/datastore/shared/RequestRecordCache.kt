@@ -11,7 +11,9 @@ import maryk.core.values.copyWithOwnedValues
 /** Memoizes only repeated Get keys, within one snapshot/attempt and one projection.
  * Payloads are already retained by the response. Hits copy built-in mutable containers. */
 class RequestRecordCache<DM : IsRootDataModel> private constructor(private val repeated: Set<Key<DM>>) {
+    private var maxValueNodes = 4096
     private val records = HashMap<Key<DM>, ValuesWithMetaData<DM>?>()
+    private var rejected: MutableSet<Key<DM>>? = null
 
     fun contains(key: Key<DM>): Boolean = records.containsKey(key)
 
@@ -21,8 +23,19 @@ class RequestRecordCache<DM : IsRootDataModel> private constructor(private val r
 
     fun put(key: Key<DM>, value: ValuesWithMetaData<DM>?) {
         if (key !in repeated) return
+        if (value == null) {
+            records[key] = null
+            return
+        }
+        if (rejected?.contains(key) == true) return
         // Unknown/custom graphs retain the original decoding path rather than sharing ownership.
-        if (value == null || canCopy(value.values, intArrayOf(4096), 0)) records[key] = value
+        if (canCopy(value.values, intArrayOf(maxValueNodes), 0)) {
+            records[key] = value
+        } else {
+            // One snapshot/projection cannot make the same graph eligible on a later duplicate.
+            val skipped = rejected ?: HashSet<Key<DM>>().also { rejected = it }
+            skipped.add(key)
+        }
     }
 
     companion object {
@@ -34,6 +47,12 @@ class RequestRecordCache<DM : IsRootDataModel> private constructor(private val r
             val repeated = HashSet<Key<DM>>()
             for (key in keys) if (!seen.add(key)) repeated.add(key)
             return if (repeated.isEmpty()) null else RequestRecordCache(repeated)
+        }
+
+        /** Opt into larger graphs while retaining bounded ownership checks and the existing default. */
+        fun <DM : IsRootDataModel> create(keys: List<Key<DM>>, maxValueNodes: Int): RequestRecordCache<DM>? {
+            require(maxValueNodes in 1..16_384) { "Copy work must be bounded to 1..16384 value nodes" }
+            return create(keys)?.also { it.maxValueNodes = maxValueNodes }
         }
 
         private fun canCopy(value: Any?, remaining: IntArray, depth: Int): Boolean {

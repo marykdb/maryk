@@ -119,7 +119,7 @@ class RequestValueCacheTest {
         assertEquals(2, reads)
     }
 
-    @Test fun scalarReadsAvoidAdmissionWhileComplexAndLargeRequestsKeepThePool() {
+    @Test fun singleRecordAndScalarReadsAvoidAdmissionWhileComplexBatchesKeepThePool() {
         val reference = reference()
         val simpleKey = Key<SimpleMarykModel>(ByteArray(SimpleMarykModel.Meta.keyByteSize))
         val completeKey = Key<CompleteMarykModel>(ByteArray(CompleteMarykModel.Meta.keyByteSize))
@@ -127,7 +127,9 @@ class RequestValueCacheTest {
             SimpleMarykModel.get(simpleKey) to false,
             SimpleMarykModel.scan() to false,
             CompleteMarykModel.get(completeKey, select = CompleteMarykModel.graph { listOf(string) }) to false,
-            CompleteMarykModel.get(completeKey) to true,
+            CompleteMarykModel.get(completeKey) to false,
+            CompleteMarykModel.get(completeKey, completeKey) to true,
+            CompleteMarykModel.scan() to true,
             SimpleMarykModel.get(*Array(4097) { simpleKey }) to true,
         )
         for ((request, caches) in requests) {

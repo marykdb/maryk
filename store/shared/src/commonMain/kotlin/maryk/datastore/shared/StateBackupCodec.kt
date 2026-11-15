@@ -3,6 +3,7 @@ package maryk.datastore.shared
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
@@ -10,8 +11,12 @@ import maryk.core.query.ValuesWithMetaData
 
 /** The state format uses the existing contextual, portable record encoding. */
 internal class StateBackupCodec(private val models: Map<String, IsRootDataModel>) {
+    private val references: Map<String, IsDataModelReference<*>> = models.mapValues { DataModelReference(it.value) }
+
     private fun context(name: String, model: IsRootDataModel = models.getValue(name)) = RequestContext(
-        DefinitionsContext((models + (name to model)).mapValues { DataModelReference(it.value) }.toMutableMap()), model,
+        DefinitionsContext(references.toMutableMap().also {
+            if (model !== models.getValue(name)) it[name] = DataModelReference(model)
+        }), model,
     ).also { it.rejectUnknownProtoBufFields = true }
 
     fun encode(name: String, record: ValuesWithMetaData<IsRootDataModel>, remaining: Int): ByteArray {

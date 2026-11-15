@@ -37,7 +37,11 @@ class StateBackupArchiveWriter(
         val header = archiveInt(type) + archiveInt(payload.size)
         val next = CryptographyProvider.Default.get(SHA256).hasher().hash(checksum + header + payload)
         try {
-            writeBytes(header + payload + next)
+            val frame = ByteArray(header.size + payload.size + next.size)
+            header.copyInto(frame)
+            payload.copyInto(frame, header.size)
+            next.copyInto(frame, header.size + payload.size)
+            writeBytes(frame)
             checksum = next
         } catch (error: Throwable) {
             failed = true
@@ -67,18 +71,30 @@ class StateBackupArchiveWriter(
         } catch (error: Throwable) { failed = true; throw error }
     }
 
-    override suspend fun write(chunk: DataStoreStateBackupChunk) {
+    internal fun usesModel(model: IsRootDataModel) = models[model.Meta.name] === model
+
+    /** Only capture's already validated, privately owned encodings may take this path. */
+    internal suspend fun writeCaptured(chunk: DataStoreStateBackupChunk, encoded: List<ByteArray>) = writeChunk(chunk, encoded)
+
+    override suspend fun write(chunk: DataStoreStateBackupChunk) = writeChunk(chunk, null)
+
+    private suspend fun writeChunk(chunk: DataStoreStateBackupChunk, encoded: List<ByteArray>?) {
         check(started && !finished && !failed) { "Archive writer is not active" }
         try {
             if (chunk.modelName !in declaredModels || chunk.records.size > 1000) throw RequestException("Invalid state archive chunk")
             val fields = mutableListOf(archiveBytes(chunk.modelName.encodeToByteArray()), archiveInt(chunk.records.size))
-            if (chunk.allocations.keys.any { key -> chunk.records.none { it.key == key } }) throw RequestException("State allocations refer to a missing record")
+            if (encoded != null && encoded.size != chunk.records.size) throw RequestException("Invalid encoded state record count")
+            if (chunk.allocations.isNotEmpty()) {
+                val keys = chunk.records.mapTo(HashSet(chunk.records.size)) { it.key }
+                if (chunk.allocations.keys.any { it !in keys }) throw RequestException("State allocations refer to a missing record")
+            }
             var remaining = MAX_ATOMIC_BYTES
-            for (record in chunk.records) {
+            for ((index, record) in chunk.records.withIndex()) {
                 validateStateRecord(record)
                 val allocations = snapshotStateAllocations(models.getValue(chunk.modelName), chunk.allocations[record.key].orEmpty())
                 remaining -= stateAllocationBytes(allocations)
-                val bytes = codec.encode(chunk.modelName, record, remaining)
+                val bytes = encoded?.get(index) ?: codec.encode(chunk.modelName, record, remaining)
+                if (bytes.size > remaining) throw RequestException("Serialized state backup exceeds chunk byte limit")
                 remaining -= bytes.size
                 fields += archiveBytes(bytes)
                 fields += archiveInt(allocations.size)

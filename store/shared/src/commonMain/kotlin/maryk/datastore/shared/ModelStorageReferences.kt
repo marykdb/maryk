@@ -5,6 +5,10 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
@@ -40,6 +44,20 @@ fun collectUniqueReferences(dataModel: IsRootDataModel): List<ByteArray> = build
     dataModel.forEachEmbeddedProperty { _, wrapper, reference ->
         if ((wrapper.definition as? IsComparableDefinition<*, *>)?.unique == true) add(reference.toStorageByteArray())
     }
+}
+
+/** Unknown or complex definitions retain the full uniqueness scan. */
+fun IsRootDataModel.mayContainUniqueValues(): Boolean = any { it.definition.mayContainUniqueValues() }
+
+private fun IsPropertyDefinition<*>.mayContainUniqueValues(): Boolean = when (this) {
+    is IsDefinitionWrapper<*, *, *, *> -> definition.mayContainUniqueValues()
+    is IsSimpleValueDefinition<*, *> -> (this as? IsComparableDefinition<*, *>)?.unique == true
+    is IsCollectionDefinition<*, *, *, *> ->
+        valueDefinition !is IsSimpleValueDefinition<*, *> || valueDefinition.mayContainUniqueValues()
+    is IsMapDefinition<*, *, *> ->
+        valueDefinition !is IsSimpleValueDefinition<*, *> || valueDefinition.mayContainUniqueValues() ||
+            (keyDefinition as? IsComparableDefinition<*, *>)?.unique == true
+    else -> true
 }
 
 /** Retain declared order and stored descriptors which are no longer in the active schema. */

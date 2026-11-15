@@ -5,6 +5,7 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -39,6 +40,26 @@ class RequestRecordCacheTest {
         assertFalse(cache.contains(other))
     }
 
+    @Test fun rejectedGraphsAreNotRevisitedOrTreatedAsMissingRecords() {
+        val cache = assertNotNull(RequestRecordCache.create(listOf(key, key), maxValueNodes = 8))
+        var visited = 0
+        val oversized = object : AbstractList<String>() {
+            override val size = 100
+            override fun get(index: Int): String = "value".also { visited++ }
+        }
+        val value = record().let { it.copy(values = it.values.copyWithValue(1u, oversized)) }
+        cache.put(key, value)
+        val firstWalk = visited
+        assertTrue(firstWalk > 0)
+        cache.put(key, value)
+        assertEquals(firstWalk, visited)
+        assertFalse(cache.contains(key))
+        val other = Key<SimpleMarykModel>(byteArrayOf(2))
+        val fresh = assertNotNull(RequestRecordCache.create(listOf(other, other)))
+        fresh.put(other, null)
+        assertTrue(fresh.contains(other))
+    }
+
     @Test fun mutableCollectionsAndByteArraysAreCopiedOnReuse() {
         val cache = assertNotNull(RequestRecordCache.create(listOf(key, key)))
         val bytes = byteArrayOf(1, 2)
@@ -50,6 +71,29 @@ class RequestRecordCacheTest {
         copied.clear()
         assertEquals(1, collection.size)
         assertEquals(1, bytes[0].toInt())
+    }
+
+    @Test fun largerCopyBudgetsAreExplicitBoundedAndKeepOwnedContainers() {
+        val original = record().let { it.copy(values = it.values.copyWithValue(1u, List(8192) { "value-$it" })) }
+        val defaults = assertNotNull(RequestRecordCache.create(listOf(key, key)))
+        defaults.put(key, original)
+        assertFalse(defaults.contains(key))
+        val expanded = assertNotNull(RequestRecordCache.create(listOf(key, key), maxValueNodes = 16_384))
+        expanded.put(key, original)
+        assertTrue(expanded.contains(key))
+        @Suppress("UNCHECKED_CAST")
+        val copy = assertNotNull(expanded.get(key)).values.original(1u) as MutableList<String>
+        copy[0] = "changed"
+        assertEquals("value-0", (original.values.original(1u) as List<*>).first())
+        assertEquals("value-0", (assertNotNull(expanded.get(key)).values.original(1u) as List<*>).first())
+        val tooLarge = assertNotNull(RequestRecordCache.create(listOf(key, key), maxValueNodes = 16_384))
+        tooLarge.put(key, original.copy(values = original.values.copyWithValue(1u, List(16_384) { "value" })))
+        assertFalse(tooLarge.contains(key))
+        val cyclic = mutableListOf<Any>().also { it.add(it) }
+        tooLarge.put(key, original.copy(values = original.values.copyWithValue(1u, cyclic)))
+        assertFalse(tooLarge.contains(key))
+        assertFailsWith<IllegalArgumentException> { RequestRecordCache.create(listOf(key, key), maxValueNodes = 0) }
+        assertFailsWith<IllegalArgumentException> { RequestRecordCache.create(listOf(key, key), maxValueNodes = 16_385) }
     }
 
     @Test fun planningAndCopyWorkAreBoundedAndDoNotAcceptUnknownGraphs() {

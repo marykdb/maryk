@@ -40,23 +40,29 @@ fun hasStoredReferenceValue(reference: AnyPropertyReference, bytes: ByteArray, o
     return true
 }
 
-fun storageReferenceParents(reference: AnyPropertyReference): List<AnyPropertyReference> = buildList {
-    var parent = (reference as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
-    while (parent != null) {
-        add(parent)
-        parent = (parent as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
+fun storageReferenceParents(reference: AnyPropertyReference): List<AnyPropertyReference> {
+    val first = (reference as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference ?: return emptyList()
+    return buildList {
+        var parent: AnyPropertyReference? = first
+        while (parent != null) {
+            add(parent)
+            parent = (parent as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
+        }
     }
 }
 
 /** A type can leave old child cells behind; only its current case is logically present. */
-fun hasActiveStoredType(reference: AnyPropertyReference, readTypeIndex: (AnyPropertyReference) -> UInt?): Boolean =
-    (listOf(reference) + storageReferenceParents(reference)).asReversed().all { part ->
+fun hasActiveStoredType(reference: AnyPropertyReference, readTypeIndex: (AnyPropertyReference) -> UInt?): Boolean {
+    if (reference !is TypedValueReference<*, *, *> && reference !is SimpleTypedValueReference<*, *, *> &&
+        (reference as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference == null) return true
+    return (listOf(reference) + storageReferenceParents(reference)).asReversed().all { part ->
         when (part) {
             is TypedValueReference<*, *, *> -> part.parentReference?.let { readTypeIndex(it) == part.type.index } == true
             is SimpleTypedValueReference<*, *, *> -> part.parentReference?.let { readTypeIndex(it) == part.type.index } == true
             else -> true
         }
     }
+}
 
 /** Read just the discriminator, without decoding the value belonging to the selected case. */
 fun storedTypeIndex(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset): UInt? {
@@ -78,7 +84,8 @@ fun requiresStoredReferenceStructure(reference: AnyPropertyReference): Boolean =
 
 /** Decode only the requested subtree and its actual ancestor markers; no defaults are synthesized. */
 fun IsRootDataModel.readStoredReferenceValue(reference: AnyPropertyReference, rows: List<Pair<ByteArray, ByteArray>>): Any? {
-    val selectedListItems = (storageReferenceParents(reference) + reference).filterIsInstance<ListItemReference<*, *>>()
+    val parents = storageReferenceParents(reference)
+    val selectedListItems = (parents + reference).filterIsInstance<ListItemReference<*, *>>()
     val projectedCounts = selectedListItems.map { item ->
         val parent = requireNotNull(item.parentReference).toStorageByteArray()
         val countBytes = rows.firstOrNull { it.first.contentEquals(parent) }?.second ?: return null
@@ -86,7 +93,7 @@ fun IsRootDataModel.readStoredReferenceValue(reference: AnyPropertyReference, ro
         if (item.index >= count.toUInt()) return null
         Bytes(parent)
     }.toMutableSet()
-    for (parent in storageReferenceParents(reference)) {
+    for (parent in parents) {
         val definition = parent.comparablePropertyDefinition.let { if (it is IsDefinitionWrapper<*, *, *, *>) it.definition else it }
         if (definition !is IsMapDefinition<*, *, *>) continue
         val qualifier = parent.toStorageByteArray()
@@ -94,25 +101,33 @@ fun IsRootDataModel.readStoredReferenceValue(reference: AnyPropertyReference, ro
         if ((readStoredCount(countBytes) ?: return null) == 0) return null
         projectedCounts += Bytes(qualifier)
     }
-    fun projectQualifier(qualifier: ByteArray): ByteArray = qualifier.copyOf().also { projected ->
-        for (item in selectedListItems) {
-            if (qualifier.matchesRangePart(0, item.toStorageByteArray())) {
-                val indexOffset = requireNotNull(item.parentReference).calculateStorageByteLength()
+    val listProjections = selectedListItems.map { item ->
+        item.toStorageByteArray() to requireNotNull(item.parentReference).calculateStorageByteLength()
+    }
+    fun projectQualifier(qualifier: ByteArray): ByteArray = if (listProjections.isEmpty()) qualifier else qualifier.copyOf().also { projected ->
+        for ((prefix, indexOffset) in listProjections) {
+            if (qualifier.matchesRangePart(0, prefix)) {
                 repeat(UInt.SIZE_BYTES) { projected[indexOffset + it] = 0 }
             }
         }
     }
     // Each selected list ancestor becomes a one-item view. Validate the real bounds above,
     // then remap only copied qualifiers/counts; unselected siblings need not be read or decrypted.
-    val projectedRows = rows.map { (qualifier, value) ->
-        projectQualifier(qualifier) to if (Bytes(qualifier) in projectedCounts) byteArrayOf(1) else value
+    val projectedRows = if (listProjections.isEmpty() && projectedCounts.isEmpty()) rows else {
+        rows.map { (qualifier, value) ->
+            projectQualifier(qualifier) to if (projectedCounts.isNotEmpty() && Bytes(qualifier) in projectedCounts) byteArrayOf(1) else value
+        }
     }
     val projectedReference = if (selectedListItems.isEmpty()) reference else {
         val qualifier = projectQualifier(reference.toStorageByteArray())
         var index = 0
         getPropertyReferenceByStorageBytes(qualifier.size, { qualifier[index++] })
     }
-    val sorted = projectedRows.distinctBy { Bytes(it.first) }.sortedWith { first, second -> first.first.compareTo(second.first) }
+    val orderedUnique = (1 until projectedRows.size).all { index ->
+        projectedRows[index - 1].first.compareTo(projectedRows[index].first) < 0
+    }
+    val sorted = if (orderedUnique) projectedRows else
+        projectedRows.distinctBy { Bytes(it.first) }.sortedWith { first, second -> first.first.compareTo(second.first) }
     var rowIndex = -1
     val values = readStorageToValues(
         getQualifier = { reader ->

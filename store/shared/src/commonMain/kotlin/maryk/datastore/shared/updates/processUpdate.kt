@@ -45,7 +45,6 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
 ) {
     if (updateListener.includesInSnapshot(this)) return
     val request = updateListener.request
-    val currentKeys = updateListener.matchingKeys.value
     // Only process object requests or change requests if the version is after or equal to from version
     if (request !is IsChangesRequest<*, *> || request.fromVersion <= version) {
         when (this) {
@@ -99,7 +98,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                 val shouldDelete = softDeleteChange?.isDeleted == true && request.filterSoftDeleted
                 val isUndelete = softDeleteChange?.isDeleted == false
 
-                if (currentKeys.contains(key)) {
+                if (updateListener.containsKey(key)) {
                     if (shouldDelete) {
                         handleDeletion(dataStore, this, SoftDelete, updateListener, sharedFlow)
                     } else {
@@ -229,7 +228,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                 }
             }
             is Deletion<DM> -> {
-                if (currentKeys.contains(key) && (isHardDelete || request.filterSoftDeleted)) {
+                if (updateListener.containsKey(key) && (isHardDelete || request.filterSoftDeleted)) {
                     handleDeletion(
                         dataStore,
                         this,
@@ -237,7 +236,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                         updateListener,
                         sharedFlow
                     )
-                } else if (currentKeys.contains(key) && !isHardDelete) {
+                } else if (updateListener.containsKey(key) && !isHardDelete) {
                     val softDelete = Change(
                         dataModel = dataModel,
                         key = key,

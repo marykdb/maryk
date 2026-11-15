@@ -72,6 +72,46 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         else -> request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
     }
 
+    private var membershipKeys: List<Key<DM>>? = null
+    private var membership: Set<Key<DM>>? = null
+    private var membershipReads = 0
+    private var membershipThreshold = 32
+
+    internal override fun containsKey(key: Key<DM>): Boolean {
+        val keys = matchingKeys.value
+        if (keys.size < 64) {
+            if (membershipKeys != null) clearMembership()
+            return key in keys
+        }
+        return containsInLargeResult(keys, key)
+    }
+
+    private fun clearMembership() {
+        membershipKeys = null
+        membership = null
+        membershipReads = 0
+        membershipThreshold = 32
+    }
+
+    private fun containsInLargeResult(keys: List<Key<DM>>, key: Key<DM>): Boolean {
+        if (keys.size > 4096) {
+            if (membershipKeys != null) clearMembership()
+            return key in keys
+        }
+        if (membershipKeys !== keys) {
+            // Back off after invalidating an admitted index so frequent reordering does not
+            // repeatedly allocate a set. Ordinary cold/churning lists keep linear lookup.
+            if (membership != null) membershipThreshold = minOf(membershipThreshold * 4, 4096)
+            membershipKeys = keys
+            membership = null
+            membershipReads = 0
+        }
+        membership?.let { return key in it }
+        if (++membershipReads < membershipThreshold) return key in keys
+        val index = keys.toHashSet().also { membership = it }
+        return key in index
+    }
+
     internal val usesTableScan get() = scanType is TableScan
     internal val usesIndexScan get() = scanType is IndexScan
     private val continuation = (request as? ScanRequest<DM>)?.resolveCursor()

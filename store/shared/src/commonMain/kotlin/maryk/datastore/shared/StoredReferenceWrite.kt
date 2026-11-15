@@ -48,6 +48,7 @@ fun requireStoredReferenceParents(
     allowMissingMapParent: Boolean = false,
 ) {
     val parents = storageReferenceParents(reference)
+    if (parents.isEmpty() && reference !is ListItemReference<*, *>) return
     for (item in (listOf(reference) + parents).filterIsInstance<ListItemReference<*, *>>()) {
         val count = item.parentReference?.let(readCount)
         if (count == null || item.index >= count.toUInt()) {

@@ -5,11 +5,15 @@ import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.map
 import maryk.core.properties.types.Bytes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 private object ReferenceLeaf : DataModel<ReferenceLeaf>() {
     val secret by string(1u, sensitive = true, unique = true)
@@ -26,7 +30,30 @@ private object IndexedSecret : RootDataModel<IndexedSecret>(indexes = { listOf(I
     val secret by string(1u, sensitive = true)
 }
 
+private object NonUniqueCollections : RootDataModel<NonUniqueCollections>() {
+    val name by string(1u)
+    val entries by list(2u, valueDefinition = StringDefinition())
+    val labels by map(3u, keyDefinition = StringDefinition(), valueDefinition = StringDefinition())
+}
+
+private object UniqueListMembers : RootDataModel<UniqueListMembers>() {
+    val entries by list(1u, valueDefinition = StringDefinition(unique = true))
+}
+
+private object UniqueMapMembers : RootDataModel<UniqueMapMembers>() {
+    val entries by map(1u, keyDefinition = StringDefinition(), valueDefinition = StringDefinition(unique = true))
+}
+
 class ModelStorageReferencesTest {
+    @Test
+    fun uniquenessPreflightRetainsNestedAndMemberChecks() {
+        assertFalse(NonUniqueCollections.mayContainUniqueValues())
+        assertFalse(IndexedSecret.mayContainUniqueValues())
+        assertTrue(ReferenceRoot.mayContainUniqueValues())
+        assertTrue(UniqueListMembers.mayContainUniqueValues())
+        assertTrue(UniqueMapMembers.mayContainUniqueValues())
+    }
+
     @Test
     fun reusedEmbeddedSchemasHaveIndependentPrefixesAndCyclesTerminate() {
         val expected = listOf(ReferenceRoot.ref { left { secret } }, ReferenceRoot.ref { right { secret } })

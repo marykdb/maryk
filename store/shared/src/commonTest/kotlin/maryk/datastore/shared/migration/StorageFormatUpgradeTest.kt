@@ -231,6 +231,39 @@ class StorageFormatUpgradeTest {
     }
 
     @Test
+    fun cleanupAdvancesPastDeletedBatchesWithoutRevisitingTheirTombstones() = runTest {
+        val store = MultiNamespaceStore()
+        var lastDeletedKey: ByteArray? = null
+        var deletedBatches = 0
+        val observed = object : StorageFormatUpgradeStore by store {
+            override suspend fun scan(namespace: Int, after: ByteArray?, limit: UInt): List<StorageFormatRow> {
+                val state = store.get(0, StorageFormatUpgradeStateKey)?.let(MigrationState::requireFromPersistedBytes)
+                if (namespace == 0 && state?.message == "cleanup") {
+                    lastDeletedKey?.let { deleted ->
+                        assertTrue(requireNotNull(after).toHexString() >= deleted.toHexString(),
+                            "Cleanup must not seek back through already deleted batches")
+                    }
+                }
+                return store.scan(namespace, after, limit)
+            }
+
+            override suspend fun commit(writes: List<StorageFormatWrite>) {
+                val state = store.get(0, StorageFormatUpgradeStateKey)?.let(MigrationState::requireFromPersistedBytes)
+                if (state?.message == "cleanup" && writes.all { it.namespace == 0 && it.value == null }) {
+                    lastDeletedKey = writes.last().key
+                    deletedBatches++
+                }
+                store.commit(writes)
+            }
+        }
+        observed.upgradeStorageFormat()
+        assertTrue(deletedBatches > 10)
+        assertEquals(StorageFormat.CURRENT, store.readStorageFormat())
+        val expected = MultiNamespaceStore().also { it.upgradeStorageFormat() }
+        assertEquals(expected.snapshot(), store.snapshot())
+    }
+
+    @Test
     fun resumesAfterEverySourceSchemaPublicationBeforeGlobalStamp() = runTest {
         val store = MultiNamespaceStore().apply { failDuringPublication = true }
         repeat(store.namespaceCount) { expectedPublished ->

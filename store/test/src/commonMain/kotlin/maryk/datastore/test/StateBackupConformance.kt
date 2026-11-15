@@ -51,6 +51,7 @@ import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
 import kotlin.test.assertEquals
+import kotlin.test.assertContentEquals
 import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
@@ -154,6 +155,11 @@ suspend fun assertAdvancedStateRoundTrip(source: IsDataStore, target: IsDataStor
         DataStoreStateBackupOptions(batchSize = 2u))
     assertTrue(published)
     val bytes = frames.reduce { a, b -> a + b }
+    // Force the general writer contract to verify that captured-byte reuse retains the wire format.
+    val ordinaryFrames = mutableListOf<ByteArray>()
+    val ordinaryWriter = StateBackupArchiveWriter(source.dataModelsById, { ordinaryFrames += it }, {})
+    source.backupState(object : DataStoreStateBackupWriter by ordinaryWriter {}, DataStoreStateBackupOptions(batchSize = 2u))
+    assertContentEquals(bytes, ordinaryFrames.reduce { a, b -> a + b })
     var position = 0
     val reader = openStateBackupArchive(target.dataModelsById) { maximum ->
         val end = minOf(bytes.size, position + minOf(maximum, 7))

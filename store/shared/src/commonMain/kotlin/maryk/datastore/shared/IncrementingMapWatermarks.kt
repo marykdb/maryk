@@ -2,11 +2,17 @@ package maryk.datastore.shared
 
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.BaseDataModel
 import maryk.core.properties.definitions.IsStorageBytesEncodable
+import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.ReferenceType
+import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 
 data class IncrementingMapMaximum(
     val reference: IncMapReference<out Comparable<Any>, out Any, *>,
@@ -17,18 +23,37 @@ fun incrementingMapWatermarkPrefix(modelId: UInt, keyBytes: ByteArray): ByteArra
     "maryk.incmap/$modelId/".encodeToByteArray() + keyBytes.size.toVarBytes() + keyBytes
 
 /** Extract allocation identities from qualifiers without decoding or decrypting values. */
-fun incrementingMapKeysForQualifier(model: IsRootDataModel, qualifier: ByteArray): List<IncrementingMapMaximum> = buildList {
-    if (qualifier.isEmpty() || (qualifier.size == 1 && (qualifier[0] == 0.toByte() || qualifier[0] == 8.toByte()))) return@buildList
-    var readIndex = 0
-    var reference: AnyPropertyReference? = model.getPropertyReferenceByStorageBytes(qualifier.size, { qualifier[readIndex++] })
-    while (reference != null) {
-        val parent = (reference as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
-        if (reference is MapValueReference<*, *, *> && parent is IncMapReference<*, *, *>) {
-            @Suppress("UNCHECKED_CAST")
-            add(IncrementingMapMaximum(parent as IncMapReference<out Comparable<Any>, out Any, *>, reference.key as Comparable<Any>))
+fun incrementingMapKeysForQualifier(model: IsRootDataModel, qualifier: ByteArray): List<IncrementingMapMaximum> {
+    if (qualifier.isEmpty() || (qualifier.size == 1 && (qualifier[0] == 0.toByte() || qualifier[0] == 8.toByte()))) return emptyList()
+    if (isCanonicalRootScalar(model, qualifier)) return emptyList()
+    return buildList {
+        var readIndex = 0
+        var reference: AnyPropertyReference? = model.getPropertyReferenceByStorageBytes(qualifier.size, { qualifier[readIndex++] })
+        while (reference != null) {
+            val parent = (reference as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference
+            if (reference is MapValueReference<*, *, *> && parent is IncMapReference<*, *, *>) {
+                @Suppress("UNCHECKED_CAST")
+                add(IncrementingMapMaximum(parent as IncMapReference<out Comparable<Any>, out Any, *>, reference.key as Comparable<Any>))
+            }
+            reference = parent
         }
-        reference = parent
     }
+}
+
+private fun isCanonicalRootScalar(model: IsRootDataModel, qualifier: ByteArray): Boolean {
+    if (model !is BaseDataModel<*> || qualifier.size != 1) return false
+    val encoded = qualifier[0].toInt() and 0xff
+    if (encoded and 0x87 != ReferenceType.VALUE.value.toInt()) return false
+    val reference = when (val property = model[(encoded ushr 3).toUInt()]) {
+        is FixedBytesDefinitionWrapper<*, *, *, *, *> -> property.ref()
+        is FlexBytesDefinitionWrapper<*, *, *, *, *> -> property.ref()
+        else -> return false
+    }
+    // Final built-in wrappers create these exact root references. Custom parsers
+    // and subclasses retain the complete length and parent-path checks.
+    return reference.parentReference == null &&
+        (reference::class == ValueWithFixedBytesPropertyReference::class ||
+            reference::class == ValueWithFlexBytesPropertyReference::class)
 }
 
 fun encodeIncrementingMapMaximum(maximum: IncrementingMapMaximum): ByteArray {

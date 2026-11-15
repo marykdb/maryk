@@ -166,19 +166,42 @@ suspend fun applyAtomicMembers(
 
 /** Receipts contain a request digest, never a copy of sensitive request values. */
 class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
+    private class FingerprintBuffer(val bytes: ByteArray, var identical: Boolean = true)
+
     private fun context() = RequestContext(DefinitionsContext(
         dataModels = models.values.associate { it.Meta.name to DataModelReference(it) }.toMutableMap(),
     ))
 
-    private fun <T : Any> encode(model: IsTypedObjectDataModel<T, *, RequestContext, RequestContext>, value: T, limit: String, released: Boolean = false): ByteArray {
+    private fun <T : Any> encode(
+        model: IsTypedObjectDataModel<T, *, RequestContext, RequestContext>,
+        value: T,
+        limit: String,
+        released: Boolean = false,
+        reused: FingerprintBuffer? = null,
+    ): ByteArray {
         val context = context()
         fun write(): ByteArray {
             val cache = WriteCache()
             val length = model.Serializer.calculateObjectProtoBufLength(value, cache, context)
             if (length > MAX_ATOMIC_BYTES) rejectAtomicLimit(limit, MAX_ATOMIC_BYTES.toULong(), length.toULong())
-            val result = ByteArray(length)
+            val result = if (reused != null && reused.bytes.size == length) reused.bytes else ByteArray(length).also {
+                if (reused != null) reused.identical = false
+            }
             var offset = 0
-            model.Serializer.writeObjectProtoBuf(value, cache, { result[offset++] = it }, context)
+            if (reused == null) {
+                model.Serializer.writeObjectProtoBuf(value, cache, { result[offset++] = it }, context)
+            } else {
+                model.Serializer.writeObjectProtoBuf(value, cache, { byte ->
+                    if (reused.identical && result[offset] != byte) reused.identical = false
+                    result[offset++] = byte
+                }, context)
+                // Preserve the zero padding of a fresh array if a custom writer
+                // emits fewer bytes than its declared length.
+                if (result === reused.bytes) while (offset < length) {
+                    if (result[offset] != 0.toByte()) reused.identical = false
+                    result[offset++] = 0
+                }
+            }
             return result
         }
         return if (released) context.writeReleasedTransportForFingerprint(::write) else write()
@@ -191,13 +214,16 @@ class AtomicReceiptCodec(private val models: Map<UInt, IsRootDataModel>) {
         val currentBytes = encode(TransactionRequest, request, "requestBytes")
         val hasher = CryptographyProvider.Default.get(SHA256).hasher()
         val current = hasher.hash(currentBytes)
+        // Hashing has completed, so this private buffer can hold the legacy
+        // encoding without retaining another complete copy of the request.
+        val reused = FingerprintBuffer(currentBytes)
         val releasedBytes = try {
-            encode(TransactionRequest, request, "requestBytes", released = true)
+            encode(TransactionRequest, request, "requestBytes", released = true, reused = reused)
         } catch (unsupported: ReleasedTransportFingerprintException) {
             return TransactionFingerprints(current, null, unsupported.message)
         }
         return TransactionFingerprints(current,
-            if (currentBytes.contentEquals(releasedBytes)) current else hasher.hash(releasedBytes))
+            if (reused.identical) current else hasher.hash(releasedBytes))
     }
 
     /** Own the submitted values, keys and predicates independently of caller-owned collections. */

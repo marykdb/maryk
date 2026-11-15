@@ -50,6 +50,15 @@ class UniqueClaimScopesTest {
     }
 
     @Test
+    fun nonUniqueScalarLeavesDoNotScanUnrelatedClaims() {
+        val labelQualifier = ClaimRecord.ref { details { label } }.toStorageByteArray()
+        val mappedLabel = ClaimDetails.ref(ClaimRecord.ref { entries at "first" }) { label }.toStorageByteArray()
+        val alias = ClaimRecord.alias.ref().toStorageByteArray()
+        assertEquals(emptyList(), ClaimRecord.uniqueClaimScopes(listOf(labelQualifier, mappedLabel)))
+        assertEquals(listOf(Bytes(alias)), ClaimRecord.uniqueClaimScopes(listOf(labelQualifier, alias)).map(::Bytes))
+    }
+
+    @Test
     fun wholeRecordAndEmptyMutationHaveDifferentScopes() {
         assertEquals(listOf(Bytes(byteArrayOf())), ClaimRecord.uniqueClaimScopes(null).map(::Bytes))
         assertEquals(emptyList(), ClaimRecord.uniqueClaimScopes(emptyList()))

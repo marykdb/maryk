@@ -35,18 +35,21 @@ class Cache(
     private val maxKeysPerDb: Int = DEFAULT_MAX_KEYS_PER_DB,
     private val maxSizeBytesPerKey: Int = DEFAULT_CACHE_SIZE_BYTES_PER_KEY
 ) {
-    private val cachePerDb = HashMap<UInt, DbCache>(4)
+    private var cachePerDb: HashMap<UInt, DbCache>? = null
     private var requestValues: RequestValueCache? = null
+    private var requestMaxBytes: Int? = null
 
     companion object {
         /** A shared estimated byte budget across models/keys, owned by one request. Zero disables value caching. */
         fun forRequest(maxSizeBytes: Int = 2 * 1024 * 1024): Cache = Cache().apply {
             require(maxSizeBytes >= 0) { "maxSizeBytes cannot be negative" }
-            requestValues = RequestValueCache(maxSizeBytes)
+            requestMaxBytes = maxSizeBytes
         }
 
         /** Scalar Get/Scan paths materialize each field once; repeated Get rows use record reuse. */
         fun forRequest(request: IsStoreRequest<*, *>): Cache {
+            // One record is decoded in one forward pass, including complex values.
+            if (request is GetRequest<*> && request.keys.size <= 1) return forRequest(0)
             val singlePass = request is ScanRequest<*> ||
                 (request is GetRequest<*> && request.keys.size <= RequestRecordCache.MAX_KEYS)
             val selected = when (request) {
@@ -84,8 +87,13 @@ class Cache(
         version: ULong,
         valueReader: () -> Any?
     ): Any? {
-        requestValues?.let { return it.readValue(dbIndex, key, reference, version, valueReader) }
-        val dbCache = cachePerDb.getOrPut(dbIndex) {
+        requestMaxBytes?.let { maxBytes ->
+            if (maxBytes == 0) return valueReader()
+            val values = requestValues ?: RequestValueCache(maxBytes).also { requestValues = it }
+            return values.readValue(dbIndex, key, reference, version, valueReader)
+        }
+        val caches = cachePerDb ?: HashMap<UInt, DbCache>(4).also { cachePerDb = it }
+        val dbCache = caches.getOrPut(dbIndex) {
             DbCache(maxKeys = maxKeysPerDb, maxSizeBytesPerKey = maxSizeBytesPerKey)
         }
         val value = dbCache.get(key)?.get(reference)
@@ -109,11 +117,15 @@ class Cache(
 
     /** Delete [key] from the table with [dbIndex] */
     fun delete(dbIndex: UInt, key: Key<*>) {
-        requestValues?.let { it.delete(dbIndex, key); return }
-        val dbCache = cachePerDb[dbIndex] ?: return
+        if (requestMaxBytes != null) {
+            requestValues?.delete(dbIndex, key)
+            return
+        }
+        val caches = cachePerDb ?: return
+        val dbCache = caches[dbIndex] ?: return
         dbCache.delete(key)
         if (dbCache.isEmpty()) {
-            cachePerDb.remove(dbIndex)
+            caches.remove(dbIndex)
         }
     }
 }

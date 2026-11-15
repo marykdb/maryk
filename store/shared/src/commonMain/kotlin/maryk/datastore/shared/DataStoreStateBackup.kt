@@ -15,6 +15,7 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.ValuesResponse
 import maryk.lib.extensions.compare.compareTo
+import maryk.datastore.shared.migration.hasLegacyIncrementingMapStorage
 
 const val DATA_STORE_STATE_BACKUP_FORMAT_VERSION = 2u
 
@@ -99,12 +100,15 @@ internal suspend fun IsDataStore.captureStateBackup(
     request: StateBackupRequest,
     scan: suspend (ScanRequest<IsRootDataModel>) -> ValuesResponse<IsRootDataModel>,
     readAllocations: suspend (IsRootDataModel, Key<IsRootDataModel>) -> StateBackupAllocations,
+    validateSnapshot: suspend () -> Unit,
 ): StateBackupResponse {
     val models = dataModelsById.values.sortedBy { it.Meta.name }
     val manifest = DataStoreStateBackupManifest(models.map { it.Meta.name }, models.associate { it.Meta.name to it.Meta.version.major })
     val codec = StateBackupCodec(models.associateBy { it.Meta.name })
     request.writer.begin(manifest)
     for (model in models) {
+        val hasAllocationState = model.hasLegacyIncrementingMapStorage()
+        val archive = (request.writer as? StateBackupArchiveWriter)?.takeIf { it.usesModel(model) }
         var cursor: ScanCursor? = null
         var previous: Key<IsRootDataModel>? = null
         do {
@@ -112,6 +116,7 @@ internal suspend fun IsDataStore.captureStateBackup(
             val page = scan(model.scan(cursor = cursor, limit = request.options.batchSize, filterSoftDeleted = false, allowTableScan = true))
             val records = mutableListOf<ValuesWithMetaData<IsRootDataModel>>()
             val allocations = mutableMapOf<Key<IsRootDataModel>, StateBackupAllocations>()
+            val encodings = archive?.let { mutableMapOf<Key<IsRootDataModel>, ByteArray>() }
             var bytes = 0
             suspend fun writeRecords(batch: List<ValuesWithMetaData<IsRootDataModel>>) {
                 if (batch.isEmpty()) return
@@ -129,12 +134,18 @@ internal suspend fun IsDataStore.captureStateBackup(
                     writeRecords(batch.subList(middle, batch.size))
                     return
                 }
-                request.writer.write(DataStoreStateBackupChunk(model.Meta.name, batch, batchAllocations))
+                val chunk = DataStoreStateBackupChunk(model.Meta.name, batch, batchAllocations)
+                if (archive != null) {
+                    archive.writeCaptured(chunk, batch.map { requireNotNull(encodings?.get(it.key)) })
+                } else {
+                    request.writer.write(chunk)
+                }
             }
             suspend fun flush() {
                 writeRecords(records.toList())
                 records.clear()
                 allocations.clear()
+                encodings?.clear()
                 bytes = 0
             }
             for (record in page.values) {
@@ -142,12 +153,16 @@ internal suspend fun IsDataStore.captureStateBackup(
                 if (previous?.let { (it.bytes compareTo record.key.bytes) >= 0 } == true) throw RequestException("State backup scan returned duplicate or unordered keys")
                 previous = Key(record.key.bytes.copyOf())
                 val encoded = codec.encode(model.Meta.name, record, request.options.maxChunkBytes)
-                val recordAllocations = snapshotStateAllocations(model, readAllocations(model, record.key))
+                val recordAllocations = if (hasAllocationState) snapshotStateAllocations(model, readAllocations(model, record.key))
+                    else emptyMap()
                 val allocationBytes = stateAllocationBytes(recordAllocations)
                 if (encoded.size.toLong() + allocationBytes > request.options.maxChunkBytes) throw RequestException("State record and allocation metadata exceed byte limit")
                 if (bytes + encoded.size + allocationBytes > request.options.maxChunkBytes) flush()
                 // Detach the exported values from backend-owned mutable buffers.
-                records += codec.decode(model.Meta.name, encoded)
+                val detached = codec.decode(model.Meta.name, encoded)
+                records += detached
+                encodings?.put(record.key, if (record.values.dataModel === model) encoded
+                    else codec.encode(model.Meta.name, detached, request.options.maxChunkBytes))
                 allocations[Key(record.key.bytes)] = recordAllocations
                 bytes += encoded.size + allocationBytes
             }
@@ -157,6 +172,7 @@ internal suspend fun IsDataStore.captureStateBackup(
         } while (cursor != null)
     }
     currentCoroutineContext().ensureActive()
+    validateSnapshot()
     request.writer.complete()
     return StateBackupResponse(manifest)
 }

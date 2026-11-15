@@ -187,6 +187,9 @@ abstract class AbstractDataStore(
     /** Engines without a persistent read context must fence external writers for the whole export. */
     protected open suspend fun withStateBackupReadLock(block: suspend () -> Unit) = block()
 
+    /** Validate an engine's export fence before the destination publishes its archive. */
+    protected open suspend fun validateStateBackupSnapshot() {}
+
     override suspend fun restoreStateVersion(model: IsRootDataModel, records: List<ValuesWithMetaData<IsRootDataModel>>, allocations: Map<Key<IsRootDataModel>, StateBackupAllocations>) {
         if (!supportsStateBackup || keepAllVersions) throw RequestException("State import requires a supporting store with history disabled")
         restoreVersion(RestoreVersionRequest.state(model, records, allocations))
@@ -197,13 +200,6 @@ abstract class AbstractDataStore(
     override val restoreCapabilities get() = atomicCapabilities.takeIf { supportsVersionedRestore }
 
     override suspend fun restoreVersion(request: RestoreVersionRequest) {
-        waitForInit()
-        check(currentTransaction(this) == null) { "Restore is not a transaction operation" }
-        validateRestoreVersion(request, restoreCapabilities ?: throw RequestException("Atomic version-group restore is unsupported"))
-        for (update in request.updates) {
-            assertRequestModelReady(getDataModelId(update.dataModel))
-            requireSafeUpdateVersion(update.update)
-        }
         execute(request)
     }
 
@@ -224,9 +220,18 @@ abstract class AbstractDataStore(
     override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ
     ): RP {
-        if (request !is TransactionStoreRequest) currentTransaction(this)?.let { return it.execute(request).response }
+        if (request !is TransactionStoreRequest) currentTransaction(this)?.let {
+            check(request !is RestoreVersionRequest) { "Restore is not a transaction operation" }
+            return it.execute(request).response
+        }
         waitForInit()
-        if (request !is TransactionStoreRequest && request !is StateBackupRequest) {
+        if (request is RestoreVersionRequest) {
+            validateRestoreVersion(request, restoreCapabilities ?: throw RequestException("Atomic version-group restore is unsupported"))
+            for (update in request.updates) {
+                assertRequestModelReady(getDataModelId(update.dataModel))
+                requireSafeUpdateVersion(update.update)
+            }
+        } else if (request !is TransactionStoreRequest && request !is StateBackupRequest) {
             assertRequestModelReady(getDataModelId(request.dataModel))
         }
 
@@ -402,6 +407,8 @@ abstract class AbstractDataStore(
     protected open fun onUpdateListenerRemoved(dataModelId: UInt) {}
     protected open fun onAllUpdateListenersRemoved() {}
     protected open suspend fun onBeforeFlowSnapshotBoundary() {}
+    /** Preserve existing preparation hooks while allowing a backend to specialize ordinary reads. */
+    protected open suspend fun onBeforeReadBoundary(isFlowSnapshot: Boolean) = onBeforeFlowSnapshotBoundary()
     /** Backend hook for coroutine-scoped request permissions such as migration handlers. */
     protected open suspend fun assertRequestModelReady(dataModelId: UInt) = assertModelReady(dataModelId)
     /** Backend hook to carry coroutine-scoped permissions to the request processor. */
@@ -468,7 +475,9 @@ abstract class AbstractDataStore(
                 try {
                     currentCoroutineContext().ensureActive()
                     var captured: StateBackupResponse? = null
-                    withStateBackupReadLock { captured = captureStateBackup(request, scan, readAllocations) }
+                    withStateBackupReadLock {
+                        captured = captureStateBackup(request, scan, readAllocations, ::validateStateBackupSnapshot)
+                    }
                     requireNotNull(captured)
                 } finally {
                     cancellation?.dispose()
@@ -568,7 +577,10 @@ abstract class AbstractDataStore(
                     continue
                 }
                 try {
-                    onBeforeFlowSnapshotBoundary()
+                    if (action.onFlowSnapshotBoundary != null || action.request is StateBackupRequest) {
+                        (readContext as? DeferredReadSnapshot)?.captureSnapshot()
+                    }
+                    onBeforeReadBoundary(action.onFlowSnapshotBoundary != null || action.request is StateBackupRequest)
                 } catch (e: CancellationException) {
                     if (readContext != null) {
                         try {

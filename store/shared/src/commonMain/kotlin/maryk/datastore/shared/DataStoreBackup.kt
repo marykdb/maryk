@@ -2,6 +2,7 @@ package maryk.datastore.shared
 
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.graph
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectCreate
@@ -124,6 +125,8 @@ suspend fun IsDataStore.backup(
     writer.begin(manifest)
 
     for (model in models) {
+        // Discovery needs identities only; complete values are read from history below.
+        val identitiesOnly = model.graph { emptyList() }
         var cursor: ScanCursor? = null
         while (true) {
             val page = execute(
@@ -131,6 +134,7 @@ suspend fun IsDataStore.backup(
                     cursor = cursor,
                     limit = batchSize,
                     toVersion = effectiveSnapshotVersion,
+                    select = identitiesOnly,
                     filterSoftDeleted = false,
                     allowTableScan = true,
                 )
@@ -230,31 +234,34 @@ suspend fun IsDataStore.restore(
         }
         validateBackupRecords(chunk.modelName, chunk.records, manifest.snapshotVersion)
         for (record in chunk.records) {
-            for (change in record.changes) {
-                val size = codec.replaySize(chunk.modelName, manifest.snapshotVersion, listOf(record.copy(changes = listOf(change))))
-                if (size < 0 || size > options.maxReplayBytes) {
-                    throw RequestException("One backup record version exceeds maxReplayBytes; a record version cannot be split")
-                }
-            }
             staged.add(chunk.modelName, record)
             restored++
         }
     }
     val groups = staged.orderedEvents().groupBy { it.version }.values.map { events ->
-        val updates = events.groupBy { it.modelName }.map { (name, records) ->
+        val byModel = events.groupBy { it.modelName }
+        val updates = byModel.map { (name, records) ->
             UpdateResponse(models.getValue(name), InitialChangesUpdate(manifest.snapshotVersion, records.map { it.record }))
         }
-        val bytes = updates.sumOf { update ->
-            codec.replaySize(update.dataModel.Meta.name, manifest.snapshotVersion, (update.update as InitialChangesUpdate).changes).toLong()
+        var upperBound = if (events.any { it.serializedRecordBytes < 0 }) Long.MAX_VALUE else {
+            byModel.entries.sumOf { (name, records) -> codec.replayByteUpperBound(name, records) }
         }
         val records = events.size.toUInt()
         val capabilities = requireNotNull(target.restoreCapabilities)
-        if (bytes > minOf(options.maxReplayBytes.toLong(), capabilities.maxRequestBytes.toLong(), MAX_ATOMIC_BYTES.toLong()) || records > minOf(capabilities.maxMutations, MAX_ATOMIC_OPERATIONS)) {
+        val byteLimit = minOf(options.maxReplayBytes.toLong(), capabilities.maxRequestBytes.toLong(), MAX_ATOMIC_BYTES.toLong())
+        if (upperBound > byteLimit) {
+            upperBound = updates.sumOf { update ->
+                val size = codec.replaySize(update.dataModel.Meta.name, manifest.snapshotVersion, (update.update as InitialChangesUpdate).changes)
+                if (size < 0) throw RequestException("Serialized restore group size exceeds the supported range")
+                size.toLong()
+            }
+        }
+        if (records > minOf(capabilities.maxMutations, MAX_ATOMIC_OPERATIONS) || upperBound > byteLimit) {
             throw RequestException("One source version exceeds atomic restore limits; a version group cannot be split")
         }
-        updates
+        updates to upperBound
     }
-    for (group in groups) target.restoreVersion(RestoreVersionRequest(group))
+    for ((group, upperBound) in groups) target.restoreVersion(RestoreVersionRequest.stagedWithByteUpperBound(group, upperBound))
 
     return DataStoreRestoreResult(models.size, restored)
 }

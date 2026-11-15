@@ -38,6 +38,8 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     val matchingKeys: AtomicRef<List<Key<DM>>>
     internal val responseVersion: ULong
 
+    internal open fun containsKey(key: Key<DM>): Boolean = key in matchingKeys.value
+
     // A follow-up read can overtake queued commits. Its complete row already
     // includes those revisions, so their deltas must not be applied a second time.
     private val snapshotVersions = mutableMapOf<Key<DM>, ULong>()

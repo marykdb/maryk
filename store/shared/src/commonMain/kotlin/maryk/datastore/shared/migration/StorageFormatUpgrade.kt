@@ -147,10 +147,14 @@ suspend fun StorageFormatUpgradeStore.upgradeStorageFormat() {
         checkpoint(state.copy(cursor = null, message = "cleanup"))
     }
     for (prefix in listOf(StagePrefix, TargetPrefix, StorageFormatTokenPrefix)) {
+        var after = prefix
         while (true) {
-            val rows = scan(0, prefix, BatchSize).takeWhile { it.key.startsWith(prefix) }
+            val rows = scan(0, after, BatchSize).takeWhile { it.key.startsWith(prefix) }
             if (rows.isEmpty()) break
             commit(rows.map { StorageFormatWrite(0, it.key, null) })
+            // Advance past deleted batches instead of rescanning their LSM tombstones.
+            // A restart safely begins at the prefix and finds the remaining live rows.
+            after = rows.last().key
         }
     }
     commit(listOf(StorageFormatWrite(0, StorageFormatMetadataKey, StorageFormat.CURRENT.toString().encodeToByteArray()), StorageFormatWrite(0, StorageFormatUpgradeStateKey, null)))

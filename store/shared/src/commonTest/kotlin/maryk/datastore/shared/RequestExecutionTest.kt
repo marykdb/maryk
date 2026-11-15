@@ -159,6 +159,20 @@ class RequestExecutionTest {
     }
 
     @Test
+    fun deferredSnapshotCaptureFailureClosesPreparedReadContext() = runTest {
+        withContext(Dispatchers.Default) {
+            val store = BoundaryFailureReadTestStore(failSnapshot = true)
+            try {
+                val failure = assertFailsWith<IllegalStateException> {
+                    store.executeWithFailingBoundaryCallback()
+                }
+                assertEquals("snapshot capture failed", failure.message)
+                withTimeout(2.seconds) { store.readContextClosed.await() }
+            } finally { store.close() }
+        }
+    }
+
+    @Test
     fun snapshotBoundaryPreparationFailureClosesPreparedReadContext() = runTest {
         withContext(Dispatchers.Default) {
             val store = SnapshotBoundaryPreparationFailureReadTestStore()
@@ -915,7 +929,7 @@ private class SnapshotReadTestStore : AbstractDataStore(
     }
 }
 
-private class BoundaryFailureReadTestStore : AbstractDataStore(
+private class BoundaryFailureReadTestStore(private val failSnapshot: Boolean = false) : AbstractDataStore(
     dataModelsById = mapOf(1u to SimpleMarykModel),
     coroutineContext = Dispatchers.Default,
 ) {
@@ -945,7 +959,13 @@ private class BoundaryFailureReadTestStore : AbstractDataStore(
         launch {
             storeActorHasStarted.complete(Unit)
             processStoreActions(
-                createReadContext = { Unit },
+                createReadContext = {
+                    object : DeferredReadSnapshot {
+                        override fun captureSnapshot() {
+                            if (failSnapshot) error("snapshot capture failed")
+                        }
+                    }
+                },
                 closeReadContext = { readContextClosed.complete(Unit) },
             ) { _, _ ->
                 error("Read worker must not start after a boundary callback failure")

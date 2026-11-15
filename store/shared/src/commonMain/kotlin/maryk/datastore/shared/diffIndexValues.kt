@@ -4,6 +4,15 @@ package maryk.datastore.shared
  * Calculates index value membership changes without comparing every old value to every new value.
  */
 fun diffIndexValues(oldValues: List<ByteArray>, newValues: List<ByteArray>): IndexValueDiff {
+    if (oldValues.isEmpty()) return IndexValueDiff(emptyList(), newValues.toList())
+    if (newValues.isEmpty()) return IndexValueDiff(oldValues.toList(), emptyList())
+    // Most scalar indexes have one value. Keep bounded tiny comparisons allocation-light.
+    if (oldValues.size <= 4 && newValues.size <= 4) {
+        return IndexValueDiff(
+            removed = oldValues.filter { old -> newValues.none { old.contentEquals(it) } },
+            added = newValues.filter { new -> oldValues.none { new.contentEquals(it) } },
+        )
+    }
     val oldValueKeys = oldValues.mapTo(HashSet(oldValues.size), ::IndexValueKey)
     val newValueKeys = newValues.mapTo(HashSet(newValues.size), ::IndexValueKey)
 

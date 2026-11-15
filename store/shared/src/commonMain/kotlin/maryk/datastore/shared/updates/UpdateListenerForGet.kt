@@ -18,6 +18,9 @@ class UpdateListenerForGet<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
 ) {
     private val keyIndex = OrderedKeyIndex(request.keys, matchingKeys.value)
 
+    internal override fun containsKey(key: Key<DM>): Boolean =
+        if (matchingKeys.value.size <= 16) super.containsKey(key) else keyIndex.isPresent(key)
+
     override suspend fun process(
         update: Update<DM>,
         dataStore: IsDataStore

@@ -1,5 +1,6 @@
 package maryk.datastore.shared
 
+import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Value
@@ -14,6 +15,7 @@ import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.AtomicCapabilities
+import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.MAX_ATOMIC_OPERATIONS
 import maryk.core.query.responses.AddOrChangeResponse
 import maryk.core.query.responses.IsResponse
@@ -22,6 +24,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.ProcessResponse
+import maryk.core.values.copyWithOwnedValues
 
 /** Explicit capability for atomic replay; decorators can forward it independently of ordinary replication. */
 interface VersionedRestoreDataStore {
@@ -33,28 +36,63 @@ interface VersionedRestoreDataStore {
 class RestoreVersionRequest private constructor(
     updates: List<UpdateResponse<IsRootDataModel>>,
     private val stateBaseline: Boolean,
+    staged: Boolean = false,
 ) : IsStoreRequest<IsRootDataModel, RestoreVersionResponse> {
     constructor(updates: List<UpdateResponse<IsRootDataModel>>) : this(updates, false)
 
-    val updates = snapshotRestoreUpdates(updates)
+    private val ownedUpdates = if (staged) copyStagedRestoreUpdates(updates) else snapshotRestoreUpdates(updates)
+    private val payloadBytes = atomic(if (staged) UNKNOWN_PAYLOAD_BYTES else EXPOSED_PAYLOAD_BYTES)
+    private var stagedByteUpperBound = Long.MAX_VALUE
+
+    // A staged payload can retain its measurement until its mutable graph is exposed.
+    val updates get() = ownedUpdates.also { payloadBytes.value = EXPOSED_PAYLOAD_BYTES }
+
+    internal fun fitsSerializedUpdateLimit(limit: Long): Boolean =
+        (payloadBytes.value != EXPOSED_PAYLOAD_BYTES && stagedByteUpperBound <= limit) || serializedUpdateSize() <= limit
+
+    internal fun serializedUpdateSize(): Long {
+        val cached = payloadBytes.value
+        if (cached >= 0) return cached
+        val codec = RestoreCodec(ownedUpdates.associate { it.dataModel.Meta.name to it.dataModel })
+        val measured = ownedUpdates.sumOf {
+            codec.replaySize(it.dataModel.Meta.name, it.update.version, (it.update as InitialChangesUpdate).changes).toLong()
+        }
+        payloadBytes.compareAndSet(UNKNOWN_PAYLOAD_BYTES, measured)
+        return measured
+    }
+
+    /** Fresh authorization metadata; no mutable payload operands escape through this view. */
+    fun requiredRequestTypes(): Map<IsRootDataModel, Set<RequestType>> = ownedUpdates.associate { response ->
+        val types = mutableSetOf<RequestType>()
+        for (record in (response.update as InitialChangesUpdate).changes) {
+            for (version in record.changes) types += changeRequestTypes(version.changes)
+        }
+        response.dataModel to types
+    }
 
     init {
-        if (this.updates.isEmpty()) throw RequestException("A restore version group cannot be empty")
-        val versions = this.updates.flatMap { response ->
-            requireSafeUpdateVersion(response.update)
+        if (ownedUpdates.isEmpty()) throw RequestException("A restore version group cannot be empty")
+        var sourceVersion: ULong? = null
+        val modelNames = if (ownedUpdates.size > 1) mutableSetOf<String>() else null
+        for (response in ownedUpdates) {
             val update = response.update as? InitialChangesUpdate
                 ?: throw RequestException("Restore requires versioned record changes")
-            if (update.changes.isEmpty() || update.changes.any { it.changes.size != 1 }) {
-                throw RequestException("Restore requires one version per record in a group")
+            requireSafeUpdateVersion(update.version)
+            if (modelNames != null && !modelNames.add(response.dataModel.Meta.name)) throw RequestException("Duplicate restore model groups")
+            val records = update.changes
+            if (records.isEmpty()) throw RequestException("Restore requires one version per record in a group")
+            val keys = if (records.size > 1) mutableSetOf<Bytes>() else null
+            for (record in records) {
+                if (record.changes.size != 1) throw RequestException("Restore requires one version per record in a group")
+                val version = record.changes.single().version
+                requireSafeUpdateVersion(version)
+                if (version >= update.version) throw RequestException("Restore version must precede its snapshot boundary")
+                if (!stateBaseline && sourceVersion != null && sourceVersion != version) {
+                    throw RequestException("Restore group must contain one source version")
+                }
+                sourceVersion = version
+                if (keys != null && !keys.add(record.key)) throw RequestException("Duplicate restore record identities")
             }
-            if (update.changes.any { it.changes.single().version >= update.version }) throw RequestException("Restore version must precede its snapshot boundary")
-            update.changes.map { it.changes.single().version }
-        }
-        if (!stateBaseline && versions.distinct().size != 1) throw RequestException("Restore group must contain one source version")
-        if (this.updates.map { it.dataModel.Meta.name }.distinct().size != this.updates.size) throw RequestException("Duplicate restore model groups")
-        for (update in this.updates) {
-            val records = (update.update as InitialChangesUpdate).changes
-            if (records.map { Bytes(it.key.bytes) }.distinct().size != records.size) throw RequestException("Duplicate restore record identities")
         }
     }
     /** Creation metadata to install atomically for a current-state baseline; absent for history replay. */
@@ -65,6 +103,21 @@ class RestoreVersionRequest private constructor(
         private set
 
     companion object {
+        private const val UNKNOWN_PAYLOAD_BYTES = -1L
+        private const val EXPOSED_PAYLOAD_BYTES = -2L
+
+        internal fun staged(updates: List<UpdateResponse<IsRootDataModel>>, serializedBytes: Long) =
+            staged(updates).also { it.payloadBytes.value = serializedBytes }
+
+        internal fun stagedWithByteUpperBound(updates: List<UpdateResponse<IsRootDataModel>>, upperBound: Long) =
+            staged(updates).also {
+                require(upperBound >= 0)
+                it.stagedByteUpperBound = upperBound
+            }
+
+        /** Only restore's privately decoded, admitted staging groups may use this path. */
+        internal fun staged(updates: List<UpdateResponse<IsRootDataModel>>) = RestoreVersionRequest(updates, false, true)
+
         internal fun state(model: IsRootDataModel, records: List<ValuesWithMetaData<IsRootDataModel>>, allocations: Map<Key<IsRootDataModel>, StateBackupAllocations> = emptyMap()): RestoreVersionRequest {
             if (records.isEmpty()) throw RequestException("A state restore group cannot be empty")
             records.forEach(::validateStateRecord)
@@ -84,12 +137,27 @@ class RestoreVersionRequest private constructor(
         }
     }
 
-    override val dataModel = this.updates.first().dataModel
-    val version = this.updates.maxOf { (it.update as InitialChangesUpdate).changes.maxOf { record -> record.changes.single().version } }
-    internal val stateChangeVersions get() = updates.flatMap { (it.update as InitialChangesUpdate).changes }
+    override val dataModel = ownedUpdates.first().dataModel
+    val version = ownedUpdates.maxOf { (it.update as InitialChangesUpdate).changes.maxOf { record -> record.changes.single().version } }
+    internal val stateChangeVersions get() = ownedUpdates.flatMap { (it.update as InitialChangesUpdate).changes }
         .associate { it.key to it.changes.single().version }
-    val targets = this.updates.associate { update ->
+    val targets = ownedUpdates.associate { update ->
         update.dataModel to (update.update as InitialChangesUpdate).changes.map { it.key }
+    }
+}
+
+/** Staging has already performed codec validation; each request still owns its containers. */
+private fun copyStagedRestoreUpdates(updates: List<UpdateResponse<IsRootDataModel>>): List<UpdateResponse<IsRootDataModel>> {
+    if (updates.sumOf { (it.update as? InitialChangesUpdate)?.changes?.size?.toLong() ?: 0L } > MAX_ATOMIC_OPERATIONS.toLong()) {
+        throw RequestException("Restore version group exceeds mutation limit")
+    }
+    return updates.map { response ->
+        val update = response.update as? InitialChangesUpdate ?: throw RequestException("Restore requires versioned record changes")
+        UpdateResponse(response.dataModel, InitialChangesUpdate(update.version, update.changes.map { record ->
+            record.copy(changes = record.changes.map { version ->
+                version.copy(changes = version.changes.map { it.copyWithOwnedValues() })
+            })
+        }))
     }
 }
 
@@ -128,6 +196,7 @@ suspend fun applyRestoreVersion(
     apply: suspend (UpdateResponse<IsRootDataModel>) -> ProcessResponse<IsRootDataModel>,
     installUnique: suspend (List<RestoreUniqueClaim>) -> Unit,
 ) {
+    val uniqueModels = request.targets.keys.filterTo(mutableSetOf()) { it.mayContainUniqueValues() }
     val active = mutableMapOf<IsRootDataModel, List<Key<IsRootDataModel>>>()
     val before = mutableListOf<ValuesWithMetaData<IsRootDataModel>>()
     for ((model, keys) in request.targets) {
@@ -135,13 +204,13 @@ suspend fun applyRestoreVersion(
             val record = read(model, key)
             if (request.stateCreationVersions.isNotEmpty() && record != null) throw RequestException("State import cannot overwrite an existing record")
             (record == null || record.lastVersion < request.version).also { include ->
-                if (include && record != null) before += record
+                if (include && record != null && model in uniqueModels) before += record
             }
         }
     }
     fun claims(records: List<ValuesWithMetaData<IsRootDataModel>>) = buildList {
         for (record in records) {
-            if (record.isDeleted) continue
+            if (record.isDeleted || record.values.dataModel !in uniqueModels) continue
             record.values.writeToStorage { type, qualifier, definition, value ->
                 if (type == Value && definition is IsComparableDefinition<*, *> && definition.unique) {
                     @Suppress("UNCHECKED_CAST")
@@ -151,7 +220,7 @@ suspend fun applyRestoreVersion(
             }
         }
     }
-    clearUnique(claims(before))
+    if (uniqueModels.isNotEmpty()) clearUnique(claims(before))
     for (update in request.updates) {
         val changes = (update.update as InitialChangesUpdate).changes.filter { it.key in active.getValue(update.dataModel) }
         if (changes.isEmpty()) continue
@@ -163,12 +232,21 @@ suspend fun applyRestoreVersion(
             throw RequestException("Could not restore version ${request.version}: ${response.statuses.joinToString()}")
         }
     }
+    if (uniqueModels.isEmpty() && request.stateCreationVersions.isEmpty()) return
+
     val after = mutableListOf<ValuesWithMetaData<IsRootDataModel>>()
-    for ((model, keys) in active) for (key in keys) read(model, key)?.let { after += it }
-    val expectedStateVersions = request.stateChangeVersions
-    if (request.stateCreationVersions.isNotEmpty() && (after.size != request.stateCreationVersions.size || after.any { it.lastVersion != expectedStateVersions[it.key] })) {
-        throw RequestException("State import did not install every record at its source version")
+    for ((model, keys) in active) {
+        if (model !in uniqueModels && request.stateCreationVersions.isEmpty()) continue
+        for (key in keys) read(model, key)?.let { after += it }
     }
+    if (request.stateCreationVersions.isNotEmpty()) {
+        val expectedStateVersions = request.stateChangeVersions
+        if (after.size != request.stateCreationVersions.size || after.any { it.lastVersion != expectedStateVersions[it.key] }) {
+            throw RequestException("State import did not install every record at its source version")
+        }
+    }
+    if (uniqueModels.isEmpty()) return
+
     val finalClaims = claims(after)
     val owners = mutableMapOf<Triple<String, Bytes, Bytes>, Key<IsRootDataModel>>()
     for (claim in finalClaims) {
@@ -185,12 +263,9 @@ suspend fun applyRestoreVersion(
 fun validateRestoreVersion(request: RestoreVersionRequest, capabilities: AtomicCapabilities) {
     val count = request.targets.values.sumOf { it.size.toLong() }
     if (count > capabilities.maxMutations.toLong()) throw RequestException("Restore version group exceeds mutation limit")
-    val codec = RestoreCodec(request.updates.associate { it.dataModel.Meta.name to it.dataModel })
-    val bytes = request.updates.sumOf {
-        codec.replaySize(it.dataModel.Meta.name, it.update.version, (it.update as InitialChangesUpdate).changes).toLong()
-    }
     val allocationBytes = request.stateCreationVersions.keys.sumOf { key ->
         8L + key.size + stateAllocationBytes(request.stateAllocations[key].orEmpty())
     }
-    if (bytes + allocationBytes > capabilities.maxRequestBytes.toLong()) throw RequestException("Restore version group exceeds byte limit")
+    val remainingBytes = capabilities.maxRequestBytes.toLong() - allocationBytes
+    if (remainingBytes < 0 || !request.fitsSerializedUpdateLimit(remainingBytes)) throw RequestException("Restore version group exceeds byte limit")
 }

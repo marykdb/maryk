@@ -1,5 +1,6 @@
 import org.gradle.kotlin.dsl.support.serviceOf
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import maryk.conventions.PrepareJvmNativeComparator
 import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
 import org.jetbrains.kotlin.konan.target.Family
 
@@ -8,6 +9,7 @@ plugins {
     id("maryk.conventions.kotlin-multiplatform-android-library")
     id("maryk.conventions.kotlin-multiplatform-native-limited")
     id("maryk.conventions.publishing")
+    id("maryk.conventions.rocksdb-native-comparator")
 }
 
 kotlin {
@@ -85,6 +87,15 @@ tasks.withType<Test>().configureEach {
 tasks.matching { it.name == "testAndroidHostTest" }.configureEach {
     // RocksDB tests require platform native libraries; Android host tests run on the build host.
     enabled = false
+}
+
+kotlin.sourceSets.named("jvmMain") {
+    resources.srcDir(tasks.named<PrepareJvmNativeComparator>("prepareJvmNativeComparator").flatMap { it.outputDirectory })
+}
+tasks.named<Copy>("jvmProcessResources") {
+    dependsOn("prepareJvmNativeComparator")
+    // Copy tasks retain removed inputs. Never leave an older native bundle active.
+    doFirst { project.delete(destinationDir.resolve("maryk/rocksdb/native")) }
 }
 
 kotlin.targets.withType<KotlinNativeTarget>().configureEach {

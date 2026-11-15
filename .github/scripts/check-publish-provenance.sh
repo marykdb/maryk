@@ -42,6 +42,18 @@ check_required "$publish_workflow" \
   'env.MARYK_PUBLISH_SHA !=' \
   'build_run_id=$MARYK_BUILD_RUN_ID'
 
+check_required "$publish_workflow" \
+  'name: Download tested native comparators' \
+  'run-id: ${{ env.MARYK_BUILD_RUN_ID }}' \
+  'repository: ${{ github.repository }}' \
+  'pattern: rocksdb-jvm-native-*' \
+  '-Pmaryk.rocksdbNativeArtifactsDir=$PWD/rocksdb-native-resources'
+
+check_required .github/workflows/build.yml \
+  'native-jvm-comparator:' \
+  'MARYK_REQUIRE_NATIVE_COMPARATOR:' \
+  'name: rocksdb-jvm-native-${{ matrix.platform }}'
+
 check_required "$release_workflow" \
   'types: [published]' \
   'description: Existing release tag to build and attach' \

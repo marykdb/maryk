@@ -1,2 +1,9 @@
 # An empty final field represents an exact zero-length stored value.
 store/rocksdb/src/jvmTest/resources/released-0.13.0/rows.tsv whitespace=-blank-at-eol
+
+# Native manifests hash source bytes across macOS producers and Windows tests.
+/store/rocksdb/src/jvmNative/** text eol=lf
+/store/rocksdb/build.gradle.kts text eol=lf
+/store/rocksdb/scripts/compile-jvm-comparator.sh text eol=lf
+/build-logic/src/main/kotlin/maryk/conventions/rocksdb-native-comparator.gradle.kts text eol=lf
+/build-logic/src/main/kotlin/maryk/conventions/PrepareJvmNativeComparator.kt text eol=lf

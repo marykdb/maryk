@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb
 
-import maryk.datastore.rocksdb.processors.VersionedComparator
+import maryk.rocksdb.AbstractComparator
 import maryk.datastore.shared.MAX_ATOMIC_WORK_BYTES
 import maryk.rocksdb.BlockBasedTableConfig
 import maryk.rocksdb.BloomFilter
@@ -27,7 +27,7 @@ internal class RocksDBBlockCache(
     private val filterPolicy = tableConfiguration.bloomFilterBitsPerKey?.let(::BloomFilter)
     private val columnFamilyOptions = mutableListOf<ColumnFamilyOptions>()
     private val comparatorOptions = mutableListOf<ComparatorOptions>()
-    private val comparators = mutableListOf<VersionedComparator>()
+    private val comparators = mutableListOf<AbstractComparator>()
 
     fun createColumnFamilyOptions(metadata: Boolean = false, configure: ColumnFamilyOptions.() -> Unit = {}) =
         createOptions(bytewiseComparator = true, metadata, configure)
@@ -66,10 +66,10 @@ internal class RocksDBBlockCache(
         }
     }
 
-    private fun createVersionedComparator(keySize: Int): VersionedComparator {
+    private fun createVersionedComparator(keySize: Int): AbstractComparator {
         val options = ComparatorOptions()
         comparatorOptions += options
-        return VersionedComparator(options, keySize).also(comparators::add)
+        return createPlatformVersionedComparator(options, keySize).also(comparators::add)
     }
 
     fun close() {

@@ -24,8 +24,6 @@ internal fun <T: Any> DBAccessor.getValue(
     decryptValue: Boolean = true,
     handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
-    val recordKey = keyAndReference.copyOfRange(0, columnFamilies.keyByteSize)
-    val reference = keyAndReference.copyOfRange(columnFamilies.keyByteSize, keyAndReference.size)
     return if (toVersion == null) {
         val valueLength = this.get(columnFamilies.table, readOptions, keyAndReference, recyclableByteArray)
 
@@ -37,7 +35,9 @@ internal fun <T: Any> DBAccessor.getValue(
                 if (!decryptValue) {
                     if (isStoredPropertyDeleteMarker(valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE)) null
                     else handleResult(valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE)
-                } else this.dataStore.withDecryptedValueIfNeeded(columnFamilies.modelId, recordKey, reference, valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE) { value, offset, length ->
+                } else this.dataStore.withDecryptedValueIfNeeded(columnFamilies.modelId,
+                    { keyAndReference.copyOfRange(0, columnFamilies.keyByteSize) },
+                    { keyAndReference.copyOfRange(columnFamilies.keyByteSize, keyAndReference.size) }, valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE) { value, offset, length ->
                     if (isStoredPropertyDeleteMarker(value, offset, length)) null else handleResult(value, offset, length)
                 }
             }
@@ -48,8 +48,8 @@ internal fun <T: Any> DBAccessor.getValue(
                     else handleResult(recyclableByteArray, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE)
                 } else this.dataStore.withDecryptedValueIfNeeded(
                     columnFamilies.modelId,
-                    recordKey,
-                    reference,
+                    { keyAndReference.copyOfRange(0, columnFamilies.keyByteSize) },
+                    { keyAndReference.copyOfRange(columnFamilies.keyByteSize, keyAndReference.size) },
                     recyclableByteArray,
                     VERSION_BYTE_SIZE,
                     valueLength - VERSION_BYTE_SIZE
@@ -65,7 +65,9 @@ internal fun <T: Any> DBAccessor.getValue(
 
         fun read(reader: HistoricalTableReader): T? = reader.getValue(keyAndReference) { result, offset, length ->
             if (decryptValue) {
-                dataStore.withDecryptedValueIfNeeded(columnFamilies.modelId, recordKey, reference, result, offset, length, handleResult)
+                dataStore.withDecryptedValueIfNeeded(columnFamilies.modelId,
+                    { keyAndReference.copyOfRange(0, columnFamilies.keyByteSize) },
+                    { keyAndReference.copyOfRange(columnFamilies.keyByteSize, keyAndReference.size) }, result, offset, length, handleResult)
             } else {
                 handleResult(result, offset, length)
             }

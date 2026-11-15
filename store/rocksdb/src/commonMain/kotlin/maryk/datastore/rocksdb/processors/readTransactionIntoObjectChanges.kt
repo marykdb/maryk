@@ -31,7 +31,7 @@ import maryk.datastore.rocksdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.rocksdb.ReadOptions
-import maryk.datastore.shared.readValue
+import maryk.datastore.shared.readStoredValue
 import maryk.datastore.shared.readStoredCount
 
 /** Process values for [key] from transaction to a DataObjectWithChanges object */
@@ -51,12 +51,12 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
     readOptions: ReadOptions,
 ): DataObjectVersionedChange<DM>? {
     val changes: List<VersionedChanges>
-    val readValuesAtVersion = { version: ULong ->
+    val readValuesAtVersion = { version: ULong, snapshotSelect: RootPropRefGraph<DM> ->
         val snapshotVersion = if (columnFamilies is HistoricTableColumnFamilies) version else null
         val family = if (snapshotVersion != null) (columnFamilies as HistoricTableColumnFamilies).historic.table else columnFamilies.table
         dbAccessor.getIterator(readOptions, family).use { valueIterator ->
             requireNotNull(readTransactionIntoValuesWithMetaData(
-                valueIterator, dataStore, creationVersion, columnFamilies, key, select, snapshotVersion,
+                valueIterator, dataStore, creationVersion, columnFamilies, key, snapshotSelect, snapshotVersion,
                 { _, _, reader -> reader() },
             )).values
         }
@@ -68,12 +68,11 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
         // Will start by going to next key so will miss the creation timestamp
         val getQualifier = iterator.nonHistoricQualifierRetriever(key)
 
-        var index: Int
         changes = this.readStorageToChanges(
             getQualifier = getQualifier,
             select = select,
             creationVersion = if (creationVersion >= fromVersion) creationVersion else null,
-            readValuesAtVersion = readValuesAtVersion,
+            readSelectedValuesAtVersion = readValuesAtVersion,
             processValue = { storageType, reference, valueWithVersionReader ->
                 val currentVersion: ULong
                 val value = when (storageType) {
@@ -102,14 +101,11 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                     ?: reference.propertyDefinition
 
                                 dataStore.withDecryptedValueIfNeeded(
-                                    columnFamilies.modelId, key.bytes,
-                                    (reference as IsPropertyReference<*, *, *>).toStorageByteArray(),
+                                    columnFamilies.modelId, { key.bytes },
+                                    { (reference as IsPropertyReference<*, *, *>).toStorageByteArray() },
                                     valueBytes, VERSION_BYTE_SIZE, valueBytes.size - VERSION_BYTE_SIZE,
                                 ) { payload, offset, length ->
-                                    index = offset
-                                    readValue(definition, { payload[index++] }) {
-                                        offset + length - index
-                                    }
+                                    readStoredValue(definition, payload, offset, length)
                                 }
                             }
                         } else null
@@ -169,12 +165,11 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
             currentVersion = version
         }
 
-        var index: Int
         changes = this.readStorageToChanges(
             getQualifier = getQualifier,
             select = select,
             creationVersion = if (creationVersion >= fromVersion) creationVersion else null,
-            readValuesAtVersion = readValuesAtVersion,
+            readSelectedValuesAtVersion = readValuesAtVersion,
             processValue = { storageType, reference, valueWithVersionReader ->
                 if (currentVersion >= fromVersion) {
                     val value = cachedRead(reference, currentVersion) {
@@ -193,14 +188,11 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                     ?: reference.propertyDefinition
                                 dataStore.withDecryptedValueIfNeeded(
-                                    columnFamilies.modelId, key.bytes,
-                                    (reference as IsPropertyReference<*, *, *>).toStorageByteArray(),
+                                    columnFamilies.modelId, { key.bytes },
+                                    { (reference as IsPropertyReference<*, *, *>).toStorageByteArray() },
                                     valueBytes, 0, valueBytes.size,
                                 ) { payload, offset, length ->
-                                    index = offset
-                                    readValue(definition, { payload[index++] }) {
-                                        offset + length - index
-                                    }
+                                    readStoredValue(definition, payload, offset, length)
                                 }
                             }
                             ListSize -> {
@@ -208,7 +200,6 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 if (valueBytes.isHistoricDeleteMarker(allowLegacyMarker = false)) {
                                     return@cachedRead null
                                 }
-                                index = 0
                                 readStoredCount(valueBytes)
                             }
                             SetSize -> {
@@ -216,7 +207,6 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 if (valueBytes.isHistoricDeleteMarker(allowLegacyMarker = false)) {
                                     return@cachedRead null
                                 }
-                                index = 0
                                 readStoredCount(valueBytes)
                             }
                             MapSize -> {
@@ -224,7 +214,6 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 if (valueBytes.isHistoricDeleteMarker(allowLegacyMarker = false)) {
                                     return@cachedRead null
                                 }
-                                index = 0
                                 readStoredCount(valueBytes)
                             }
                             Embed -> {}

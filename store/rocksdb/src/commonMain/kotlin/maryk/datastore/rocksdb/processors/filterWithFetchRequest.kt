@@ -39,7 +39,7 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
     checkSoftDelete && this.filterSoftDeleted &&
         (softDeleteCache?.get(key, keyOffset, keyLength)
             ?: isSoftDeleted(dbAccessor, columnFamilies, readOptions, toVersion, key, keyOffset, keyLength, historicalReader)) -> true
-    else -> !matchesFilterWithPresence(
+    else -> where != null && !matchesFilterWithPresence(
         where,
         valueMatcher = { propertyReference, valueMatcher ->
             dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, historicalReader, valueMatcher)

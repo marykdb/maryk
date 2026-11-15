@@ -122,6 +122,8 @@ import maryk.datastore.shared.requireStoredReferenceParents
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.normalizeReplicationChanges
 import maryk.datastore.shared.diffIndexValues
+import maryk.datastore.shared.indexesToReconcile
+import maryk.datastore.shared.CurrentUniqueClaim
 import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.readValue
 import maryk.datastore.shared.rethrowIfFatal
@@ -144,21 +146,22 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
     ignoreIfVersionNotNewer: Boolean = false,
     updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsChangeResponseStatus<DM> {
+    val keyBytes = key.bytes
     val normalizedChanges = if (ignoreIfVersionNotNewer) normalizeReplicationChanges(changes) else changes
     val tombstoneVersion = if (ignoreIfVersionNotNewer) {
         transaction.getForUpdate(
             defaultReadOptions,
             columnFamilies.replicationTombstones,
-            key.bytes,
+            keyBytes,
         )?.readVersionBytesIfExact()
     } else null
-    val mayExist = transaction.atomicOwner || db.keyMayExist(columnFamilies.keys, key.bytes, null)
+    val mayExist = transaction.atomicOwner || db.keyMayExist(columnFamilies.keys, keyBytes, null)
     return if (mayExist) {
         val valueLength =
             transaction.get(
                 columnFamilies.keys,
                 defaultReadOptions,
-                key.bytes,
+                keyBytes,
                 recyclableByteArray
             )
 
@@ -228,6 +231,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
     advanceVersionOnNoop: Boolean,
     updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsChangeResponseStatus<DM> {
+    val keyBytes = key.bytes
     var savePointSet = false
     fun rollbackToChangeSavePoint() {
         if (savePointSet) {
@@ -253,13 +257,21 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
         val versionBytes = HLC.toStorageBytes(version)
         val requestedChangedReferences = collectRequestedChangedReferences(changes)
+        val currentIsDeleted = transaction.getValue(
+            columnFamilies,
+            defaultReadOptions,
+            null,
+            keyBytes + SOFT_DELETE_INDICATOR
+        ) { bytes, offset, length -> length == 1 && bytes[offset] == TRUE } == true
+        val targetIsDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: currentIsDeleted
+        val indexesToMaintain = dataModel.Meta.indexes?.indexesToReconcile(changes, requestedChangedReferences, currentIsDeleted)?.takeIf { it.isNotEmpty() }
         val initialIndexValues = mutableMapOf<IsIndexable, List<ByteArray>>()
-        dataModel.Meta.indexes?.let { indexes ->
+        indexesToMaintain?.let { indexes ->
             val storeGetter = DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions)
-            storeGetter.moveToKey(key.bytes, transaction)
+            storeGetter.moveToKey(keyBytes, transaction)
             indexes.forEach { index ->
                 initialIndexValues[index] = try {
-                    index.toStorageByteArraysForIndex(storeGetter, key.bytes)
+                    index.toStorageByteArraysForIndex(storeGetter, keyBytes.copyOf())
                 } catch (error: Throwable) {
                     error.rethrowIfFatal()
                     if (!error.isSkippableDataError()) {
@@ -270,7 +282,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                         columnFamilies = columnFamilies,
                         readOptions = defaultReadOptions,
                         indexReference = index.referenceStorageByteArray.bytes,
-                        key = key.bytes
+                        key = keyBytes
                     )
                 }
             }
@@ -279,27 +291,20 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
         transaction.setSavePoint()
         savePointSet = true
 
-        val currentIsDeleted = transaction.getValue(
-            columnFamilies,
-            defaultReadOptions,
-            null,
-            key.bytes + SOFT_DELETE_INDICATOR
-        ) { bytes, offset, length -> length == 1 && bytes[offset] == TRUE } == true
-        val targetIsDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: currentIsDeleted
         val uniqueReferencesToReconcile = if (changes.any { it is ObjectSoftDeleteChange }) null else
             requestedChangedReferences.map { it.toStorageByteArray() }
-        val initialUniqueClaims = (if (currentIsDeleted || targetIsDeleted) emptyList() else captureCurrentUniqueClaims(dataModel, transaction, columnFamilies, key.bytes, uniqueReferencesToReconcile)).toMutableList()
+        val initialUniqueClaims = (if (currentIsDeleted || targetIsDeleted) emptyList() else captureCurrentUniqueClaims(dataModel, transaction, columnFamilies, keyBytes, uniqueReferencesToReconcile)).toMutableList()
         val rememberUniqueClaim = { reference: ByteArray, candidates: List<ByteArray> ->
             initialUniqueClaims += CurrentUniqueClaim(reference.copyOf(), candidates.map { it.copyOf() })
         }
         fun hasActiveType(reference: AnyPropertyReference) =
-            transaction.hasActiveStoredType(columnFamilies, defaultReadOptions, key.bytes, reference, null)
+            transaction.hasActiveStoredType(columnFamilies, defaultReadOptions, keyBytes, reference, null)
         fun requireActiveType(reference: AnyPropertyReference) {
             if (!hasActiveType(reference)) throw RequestException("Property '${reference.completeName}' belongs to an inactive type. Set the multi type parent first.")
         }
 
         fun hasStoredValue(reference: AnyPropertyReference) = transaction.getValue(columnFamilies, defaultReadOptions, null,
-            reference.toStorageByteArray(key.bytes)) { bytes, offset, length ->
+            reference.toStorageByteArray(keyBytes)) { bytes, offset, length ->
             hasStoredValuePayload(reference.comparablePropertyDefinition, bytes, offset, length)
         } == true
 
@@ -307,7 +312,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
             allowMissingMapParent = allowMissingMapParent,
             hasValue = ::hasStoredValue,
             readCount = { parent -> transaction.getValue(columnFamilies, defaultReadOptions, null,
-                parent.toStorageByteArray(key.bytes)) { bytes, offset, length -> readStoredCount(bytes, offset, length) } },
+                parent.toStorageByteArray(keyBytes)) { bytes, offset, length -> readStoredCount(bytes, offset, length) } },
         )
 
         fun trackChange(reference: AnyPropertyReference): (Boolean) -> Unit {
@@ -324,7 +329,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
             try {
                 when (change) {
                     is ObjectSoftDeleteChange -> {
-                        val softDeleteQualifier = key.bytes + SOFT_DELETE_INDICATOR
+                        val softDeleteQualifier = keyBytes + SOFT_DELETE_INDICATOR
                         val wasDeleted = transaction.getValue(columnFamilies, defaultReadOptions, null, softDeleteQualifier) { b, o, l ->
                             if (l == 1) b[o] == TRUE else false
                         } == true
@@ -341,7 +346,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                         )
 
                         if (columnFamilies is HistoricTableColumnFamilies) {
-                            val historicReference = combineToByteArray(key.bytes, SOFT_DELETE_INDICATOR, versionBytes)
+                            val historicReference = combineToByteArray(keyBytes, SOFT_DELETE_INDICATOR, versionBytes)
                             historicReference.invert(historicReference.size - versionBytes.size)
                             transaction.put(
                                 columnFamilies.historic.table,
@@ -353,7 +358,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                         if (change.isDeleted) {
                             for (reference in getUniqueIndices(dbIndex, columnFamilies.unique, transaction)) {
                                 deleteCurrentUniqueIndexEntryForKeyByScan(transaction, columnFamilies,
-                                    defaultReadOptions, reference, key.bytes, versionBytes)
+                                    defaultReadOptions, reference, keyBytes, versionBytes)
                             }
                         }
 
@@ -386,7 +391,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                         for ((reference, expected) in change.referenceValuePairs) {
                             val actual = if (!hasActiveType(reference)) null else if (reference.comparablePropertyDefinition !is IsSimpleValueDefinition<*, *>) {
                                 completeValues?.get(reference)
-                            } else transaction.getValue(columnFamilies, defaultReadOptions, null, reference.toStorageByteArray(key.bytes)) { bytes, offset, length ->
+                            } else transaction.getValue(columnFamilies, defaultReadOptions, null, reference.toStorageByteArray(keyBytes)) { bytes, offset, length ->
                                 var readIndex = offset
                                 readValue(reference.comparablePropertyDefinition, { bytes[readIndex++] }) { offset + length - readIndex }
                             }
@@ -424,7 +429,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                                 columnFamilies = columnFamilies,
                                                 readOptions = defaultReadOptions,
                                                 reference = referenceAsBytes,
-                                                key = key.bytes,
+                                                key = keyBytes,
                                                 versionBytes = versionBytes
                                             )
                                         }
@@ -460,7 +465,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     val referenceAsBytes = reference.toStorageByteArray()
                                     val currentValues = getCurrentValues(transaction, columnFamilies, key, referenceAsBytes)
-                                    val hadPrevValue = hasCurrentComplexValue(currentValues, key.bytes, reference)
+                                    val hadPrevValue = hasCurrentComplexValue(currentValues, keyBytes, reference)
 
                                     @Suppress("UNCHECKED_CAST")
                                     mapDefinition.validateValueWithRef(
@@ -478,7 +483,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                         key,
                                         versionBytes,
                                         qualifiersToKeep,
-                                        doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues),
+                                        doesCurrentNotContainExactQualifierAndValue(keyBytes, currentValues),
                                         onWrite = { didWrite = true },
                                         skipCurrentUniqueOwnership = targetIsDeleted,
                                         onUniqueClaim = rememberUniqueClaim,
@@ -505,7 +510,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     val referenceAsBytes = reference.toStorageByteArray()
                                     val currentValues = getCurrentValues(transaction, columnFamilies, key, referenceAsBytes)
-                                    val hadPrevValue = hasCurrentComplexValue(currentValues, key.bytes, reference)
+                                    val hadPrevValue = hasCurrentComplexValue(currentValues, keyBytes, reference)
 
                                     @Suppress("UNCHECKED_CAST")
                                     listDefinition.validateValueWithRef(
@@ -523,7 +528,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                         key,
                                         versionBytes,
                                         qualifiersToKeep,
-                                        doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues),
+                                        doesCurrentNotContainExactQualifierAndValue(keyBytes, currentValues),
                                         onWrite = { didWrite = true },
                                         skipCurrentUniqueOwnership = targetIsDeleted,
                                         onUniqueClaim = rememberUniqueClaim,
@@ -550,7 +555,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     val referenceAsBytes = reference.toStorageByteArray()
                                     val currentValues = getCurrentValues(transaction, columnFamilies, key, referenceAsBytes)
-                                    val hadPrevValue = hasCurrentComplexValue(currentValues, key.bytes, reference)
+                                    val hadPrevValue = hasCurrentComplexValue(currentValues, keyBytes, reference)
 
                                     @Suppress("UNCHECKED_CAST")
                                     setDefinition.validateValueWithRef(
@@ -568,7 +573,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                         key,
                                         versionBytes,
                                         qualifiersToKeep,
-                                        doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues),
+                                        doesCurrentNotContainExactQualifierAndValue(keyBytes, currentValues),
                                         onWrite = { didWrite = true },
                                         skipCurrentUniqueOwnership = targetIsDeleted,
                                         onUniqueClaim = rememberUniqueClaim,
@@ -598,7 +603,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeReference = reference as IsPropertyReference<TypedValue<MultiTypeEnum<Any>, Any>, IsPropertyDefinition<TypedValue<MultiTypeEnum<Any>, Any>>, *>
 
-                                    val previous = transaction.getValue(columnFamilies, defaultReadOptions, null, reference.toStorageByteArray(key.bytes)) { bytes, offset, length ->
+                                    val previous = transaction.getValue(columnFamilies, defaultReadOptions, null, reference.toStorageByteArray(keyBytes)) { bytes, offset, length ->
                                         if (!hasStoredValuePayload(reference.comparablePropertyDefinition, bytes, offset, length)) null else {
                                             var readIndex = offset
                                             when (val marker = readValue(reference.comparablePropertyDefinition, { bytes[readIndex++] }) { offset + length - readIndex }) {
@@ -644,7 +649,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     val referenceAsBytes = reference.toStorageByteArray()
                                     val currentValues = getCurrentValues(transaction, columnFamilies, key, referenceAsBytes)
-                                    val hadPrevValue = hasCurrentComplexValue(currentValues, key.bytes, reference)
+                                    val hadPrevValue = hasCurrentComplexValue(currentValues, keyBytes, reference)
 
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateValueWithRef(
@@ -660,7 +665,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                         key,
                                         versionBytes,
                                         qualifiersToKeep,
-                                        doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues),
+                                        doesCurrentNotContainExactQualifierAndValue(keyBytes, currentValues),
                                         skipCurrentUniqueOwnership = targetIsDeleted,
                                         onUniqueClaim = rememberUniqueClaim,
                                     )
@@ -688,7 +693,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                 else -> {
                                     try {
                                         val referenceAsBytes = reference.toStorageByteArray()
-                                        val keyAndReference = key.bytes + referenceAsBytes
+                                        val keyAndReference = keyBytes + referenceAsBytes
 
                                         val previousValue = transaction.getValue(columnFamilies, defaultReadOptions, null, keyAndReference) { b, o, l ->
                                             var readIndex = o
@@ -706,7 +711,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                             // Check if parent exists before trying to change
                                             if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null &&
                                                 !(advanceVersionOnNoop && reference is MapValueReference<*, *, *> && reference.parentReference is IncMapReference<*, *, *>)) {
-                                                transaction.getValue(columnFamilies, defaultReadOptions, null, key.bytes + reference.parentReference!!.toStorageByteArray()) { b, o, l ->
+                                                transaction.getValue(columnFamilies, defaultReadOptions, null, keyBytes + reference.parentReference!!.toStorageByteArray()) { b, o, l ->
                                                     // Check if parent was deleted
                                                     if (hasStoredValuePayload(reference.parentReference!!.comparablePropertyDefinition, b, o, l)) true else null
                                                 } ?: throw RequestException("Property '${reference.completeName}' can only be changed if parent value exists. Set the parent value with this value.")
@@ -779,7 +784,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                 val listDefinition = listReference.comparablePropertyDefinition as IsListDefinition<Any, IsPropertyContext>
                                 // getList returns an empty list for both absent and explicitly empty values.
                                 val hadList = transaction.getValue(columnFamilies, defaultReadOptions, null,
-                                    listReference.toStorageByteArray(key.bytes)) { bytes, offset, length -> readStoredCount(bytes, offset, length) } != null
+                                    listReference.toStorageByteArray(keyBytes)) { bytes, offset, length -> readStoredCount(bytes, offset, length) } != null
                                 val previousList = originalList.takeIf { hadList }
                                 listDefinition.validateValueWithRef(previousList, list) { listReference }
 
@@ -810,7 +815,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                             columnFamilies = columnFamilies,
                                             readOptions = defaultReadOptions,
                                             reference = itemReference,
-                                            key = key.bytes,
+                                            key = keyBytes,
                                             versionBytes = versionBytes,
                                         )
                                     }
@@ -825,7 +830,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     key = key,
                                     versionBytes = versionBytes,
                                     qualifiersToKeep = qualifiersToKeep,
-                                    shouldWrite = doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues),
+                                    shouldWrite = doesCurrentNotContainExactQualifierAndValue(keyBytes, currentValues),
                                     onWrite = { didWrite = true },
                                     skipCurrentUniqueOwnership = targetIsDeleted,
                                     onUniqueClaim = rememberUniqueClaim,
@@ -860,7 +865,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                             val setReference = setChange.reference as TypedPropertyReference<Set<Any>>
                             val setDefinition = setReference.comparablePropertyDefinition as IsSetDefinition<Any, IsPropertyContext>
                             val hadSet = transaction.getValue(columnFamilies, defaultReadOptions, null,
-                                setReference.toStorageByteArray(key.bytes)) { bytes, offset, length -> readStoredCount(bytes, offset, length) } != null
+                                setReference.toStorageByteArray(keyBytes)) { bytes, offset, length -> readStoredCount(bytes, offset, length) } != null
                             val finalSetPresent = setDefinition.final && hadSet
                             var countChange = 0
                             setChange.addValues?.let {
@@ -870,7 +875,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                         try {
                                             setDefinition.valueDefinition.validateValueWithRef(null, value) { setItemRef as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>? }
 
-                                            val keyAndReference = setItemRef.toStorageByteArray(key.bytes)
+                                            val keyAndReference = setItemRef.toStorageByteArray(keyBytes)
 
                                             // Check if previous value exists and raise count change if it does not
                                             val existed = transaction.getValue(columnFamilies, defaultReadOptions, null, keyAndReference) { b, o, l ->
@@ -934,7 +939,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                             valueChange.addValues?.let { addValues ->
                                 if (addValues.isEmpty()) return@let
                                 if (incMapDefinition.final && transaction.getValue(columnFamilies, defaultReadOptions, null,
-                                        incMapReference.toStorageByteArray(key.bytes)) { bytes, offset, length -> readStoredCount(bytes, offset, length) } != null) {
+                                        incMapReference.toStorageByteArray(keyBytes)) { bytes, offset, length -> readStoredCount(bytes, offset, length) } != null) {
                                     throw AlreadySetException(incMapReference)
                                 }
                                 createValidationUmbrellaException({ incMapReference }) { addException ->
@@ -1033,29 +1038,29 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
             return ChangeSuccess(persistedVersion, outChanges)
         }
 
-        reconcileCurrentUniqueClaims(dataModel, transaction, columnFamilies, key.bytes, versionBytes,
+        reconcileCurrentUniqueClaims(dataModel, transaction, columnFamilies, keyBytes, versionBytes,
             initialUniqueClaims, targetIsDeleted, uniqueReferencesToReconcile)
 
         if (version.timestamp > persistedVersion) {
             setLatestVersion(transaction, columnFamilies, key, versionBytes)
         }
         columnFamilies.updateHistory?.let {
-            transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, EMPTY_ARRAY)
+            transaction.put(it, version.timestamp.toReversedVersionBytes() + keyBytes, EMPTY_ARRAY)
         }
 
         var indexUpdates: MutableList<IsIndexUpdate>? = null
 
         // Process indexes
-        dataModel.Meta.indexes?.let { indexes ->
+        indexesToMaintain?.let { indexes ->
             indexUpdates = mutableListOf()
 
             val transactionGetter = DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions)
-            transactionGetter.moveToKey(key.bytes, transaction)
+            transactionGetter.moveToKey(keyBytes, transaction)
 
             for (index in indexes) {
                 val oldValues = initialIndexValues[index].orEmpty()
                 val finalValues = try {
-                    index.toStorageByteArraysForIndex(transactionGetter, key.bytes)
+                    index.toStorageByteArraysForIndex(transactionGetter, keyBytes.copyOf())
                 } catch (error: Throwable) {
                     error.rethrowIfFatal()
                     if (

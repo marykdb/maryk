@@ -57,6 +57,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     ignoreIfVersionNotNewer: Boolean = false,
     updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsAddResponseStatus<DM> {
+    val keyBytes = key.bytes
     var savePointSet = false
     fun rollbackToAddSavePoint() {
         if (savePointSet) {
@@ -68,11 +69,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     return try {
         objectToAdd.validate()
 
-        val exists = transaction.keyExists(columnFamilies.keys, defaultReadOptions, key.bytes)
+        val exists = transaction.keyExists(columnFamilies.keys, defaultReadOptions, keyBytes)
         val tombstoneVersion = transaction.getForUpdate(
             defaultReadOptions,
             columnFamilies.replicationTombstones,
-            key.bytes,
+            keyBytes,
         )?.readVersionBytesIfExact()
         if (ignoreIfVersionNotNewer) {
             val currentVersion = if (exists) {
@@ -94,21 +95,21 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
             savePointSet = true
 
             if (tombstoneVersion != null) {
-                transaction.delete(columnFamilies.replicationTombstones, key.bytes)
+                transaction.delete(columnFamilies.replicationTombstones, keyBytes)
             }
 
             // Store first and last version
             setCreatedVersion(transaction, columnFamilies, key, versionBytes)
             setLatestVersion(transaction, columnFamilies, key, versionBytes)
             columnFamilies.updateHistory?.let {
-                transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, EMPTY_ARRAY)
+                transaction.put(it, version.timestamp.toReversedVersionBytes() + keyBytes, EMPTY_ARRAY)
             }
 
             // Find new index values to write
             if (!isDeleted) {
                 dataModel.Meta.indexes?.forEach { indexDefinition ->
                     val indexReference = indexDefinition.referenceStorageByteArray.bytes
-                    indexDefinition.toStorageByteArraysForIndex(objectToAdd, key.bytes).forEach { valueAndKeyBytes ->
+                    indexDefinition.toStorageByteArraysForIndex(objectToAdd, keyBytes.copyOf()).forEach { valueAndKeyBytes ->
                         setIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes)
                     }
                 }
@@ -155,15 +156,15 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                             setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                         }
 
-                        val encryptedValue = encryptValueIfSensitive(dbIndex, key.bytes, reference, valueBytes)
-                        setValue(transaction, columnFamilies, key, reference, versionBytes, encryptedValue)
+                        val encryptedValue = encryptValueIfSensitive(dbIndex, keyBytes, reference, valueBytes)
+                        setValue(transaction, columnFamilies, keyBytes, reference, versionBytes, encryptedValue)
                     }
                     ListSize,
                     SetSize,
                     MapSize -> setValue(
                         transaction,
                         columnFamilies,
-                        key,
+                        keyBytes,
                         reference,
                         versionBytes,
                         (value as Int).toVarBytes()
@@ -181,15 +182,15 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                         // Indicates value exists and is an embedded value object
                         // Is for the root of embed
                         val valueBytes = byteArrayOf(TypeIndicator.EmbedIndicator.byte, TRUE)
-                        setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+                        setValue(transaction, columnFamilies, keyBytes, reference, versionBytes, valueBytes)
                     }
                 }
             }
 
             if (isDeleted) {
-                transaction.put(columnFamilies.table, key.bytes + SOFT_DELETE_INDICATOR, versionBytes + TRUE)
+                transaction.put(columnFamilies.table, keyBytes + SOFT_DELETE_INDICATOR, versionBytes + TRUE)
                 if (columnFamilies is HistoricTableColumnFamilies) {
-                    val historicReference = key.bytes + SOFT_DELETE_INDICATOR + versionBytes
+                    val historicReference = keyBytes + SOFT_DELETE_INDICATOR + versionBytes
                     historicReference.invert(historicReference.size - versionBytes.size)
                     transaction.put(columnFamilies.historic.table, historicReference, byteArrayOf(TRUE))
                 }

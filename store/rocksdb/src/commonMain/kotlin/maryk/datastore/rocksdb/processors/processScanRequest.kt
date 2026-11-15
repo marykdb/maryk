@@ -13,6 +13,7 @@ import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.RocksDBReadContext
+import maryk.datastore.rocksdb.processors.helpers.prepareProjectedQualifiers
 import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.rocksdb.processors.helpers.getValue
@@ -58,6 +59,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
             scanRequest.toVersion,
             historicalReader
         )
+        var projectionPrepared = false
+        var projectionQualifiers: List<ByteArray>? = null
         transaction.getIterator(sequentialReadOptions, columnToScan).use { iterator ->
             historicalReader.use { reader ->
                 val dataFetchType = processScan(
@@ -74,7 +77,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
                             cache.readValue(dbIndex, key, reference, version, valueReader)
                         }
 
-                    val valuesWithMetaData = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                    if (!projectionPrepared) {
+                        projectionQualifiers = if (scanRequest.toVersion == null) scanRequest.dataModel.prepareProjectedQualifiers(scanRequest.select) else null
+                        projectionPrepared = true
+                    }
+                    val valuesWithMetaData = scanRequest.dataModel.readTransactionIntoValuesWithMetaDataPrepared(
                         iterator,
                         this,
                         creationVersion,
@@ -82,6 +89,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
                         key,
                         scanRequest.select,
                         scanRequest.toVersion,
+                        projectionQualifiers,
                         cacheReader
                     )?.let { values ->
                         if (scanRequest.toVersion == null && scanRequest.select?.properties?.isEmpty() != true) {

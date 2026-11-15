@@ -7,17 +7,20 @@ import maryk.lib.extensions.compare.matchesRangePart
 /** Find non historic qualifiers on [iterator] for [key] */
 internal fun DBIterator.nonHistoricQualifierRetriever(
     key: Key<*>
-): (((Int) -> Byte, Int) -> Unit) -> Boolean = { resultHandler ->
-    next()
-    if (!isValid()) {
-        false
-    } else {
-        val qualifier: ByteArray = key()
-        if (!qualifier.matchesRangePart(0, key.bytes)) {
+): (((Int) -> Byte, Int) -> Unit) -> Boolean {
+    val keyBytes = key.bytes
+    return { resultHandler ->
+        next()
+        if (!isValid()) {
             false
         } else {
-            resultHandler({ qualifier[key.bytes.size + it] }, qualifier.size - key.bytes.size)
-            true
+            val qualifier: ByteArray = key()
+            if (!qualifier.matchesRangePart(0, keyBytes)) {
+                false
+            } else {
+                resultHandler({ qualifier[keyBytes.size + it] }, qualifier.size - keyBytes.size)
+                true
+            }
         }
     }
 }

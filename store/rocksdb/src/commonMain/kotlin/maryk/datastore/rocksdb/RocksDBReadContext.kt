@@ -8,21 +8,20 @@ internal class RocksDBReadContext private constructor(
     private val db: OptimisticTransactionDB,
     private val snapshot: Snapshot,
     val defaultReadOptions: ReadOptions,
-    val sequentialReadOptions: ReadOptions,
     private val accessor: DBAccessor?,
 ) : AutoCloseable {
+    // Point reads ignore iterator seek flags. All request iterators already bound
+    // their ranges, so one immutable snapshot-bound option serves both paths.
+    val sequentialReadOptions: ReadOptions get() = defaultReadOptions
+
     inline fun <T> withAccessor(store: RocksDBDataStore, block: (DBAccessor) -> T): T =
-        accessor?.let(block) ?: DBAccessor(store).use(block)
+        block(accessor ?: store.readAccessor)
 
     override fun close() {
         try {
-            sequentialReadOptions.close()
+            defaultReadOptions.close()
         } finally {
-            try {
-                defaultReadOptions.close()
-            } finally {
-                db.releaseSnapshot(snapshot)
-            }
+            db.releaseSnapshot(snapshot)
         }
     }
 
@@ -32,22 +31,17 @@ internal class RocksDBReadContext private constructor(
                 "RocksDB did not return a snapshot"
             }
             var defaultReadOptions: ReadOptions? = null
-            var sequentialReadOptions: ReadOptions? = null
             try {
                 defaultReadOptions = ReadOptions()
-                defaultReadOptions.setPrefixSameAsStart(true)
+                defaultReadOptions.setTotalOrderSeek(true)
                 defaultReadOptions.setSnapshot(snapshot)
-                sequentialReadOptions = ReadOptions().setTotalOrderSeek(true)
-                sequentialReadOptions.setSnapshot(snapshot)
                 return RocksDBReadContext(
                     db,
                     snapshot,
                     defaultReadOptions,
-                    sequentialReadOptions,
                     accessor,
                 )
             } catch (throwable: Throwable) {
-                sequentialReadOptions?.close()
                 defaultReadOptions?.close()
                 db.releaseSnapshot(snapshot)
                 throw throwable

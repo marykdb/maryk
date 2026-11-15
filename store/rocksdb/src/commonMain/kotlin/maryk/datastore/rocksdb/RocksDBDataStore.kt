@@ -283,7 +283,7 @@ class RocksDBDataStore private constructor(
     private val indexKeyFormatMigrationMutex = Mutex()
     private val storeMetaMutex = Mutex()
 
-    private val blockCache = RocksDBBlockCache(tuning, tableConfiguration)
+    private val blockCache = RocksDBBlockCache(tuning, tableConfiguration, rocksDBOptions == null)
     private val ownStatistics = if (rocksDBOptions == null && tuning.enableStatistics) Statistics().apply {
         setStatsLevel(StatsLevel.EXCEPT_DETAILED_TIMERS)
     } else null
@@ -307,6 +307,8 @@ class RocksDBDataStore private constructor(
     internal val sequentialReadOptions = ReadOptions().setTotalOrderSeek(true)
     internal val maintenanceReadOptions = ReadOptions().setTotalOrderSeek(true).setFillCache(false)
 
+    internal val readAccessor = DBAccessor(this)
+
     internal fun createReadContext() = RocksDBReadContext.create(db)
 
     private val scheduledVersionUpdateHandlers = linkedMapOf<UInt, suspend () -> Unit>()
@@ -327,7 +329,7 @@ class RocksDBDataStore private constructor(
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
         val handles = mutableListOf<ColumnFamilyHandle>()
         this.db = try {
-            descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily, blockCache.createColumnFamilyOptions()))
+            descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily, blockCache.createColumnFamilyOptions(metadata = true)))
             for ((index, db) in dataModelsById) {
                 createColumnFamilyHandles(descriptors, index, db)
             }
@@ -1188,14 +1190,14 @@ class RocksDBDataStore private constructor(
             useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
         }
 
-        descriptors += Model.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
-        descriptors += Keys.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
+        descriptors += Model.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions(metadata = true))
+        descriptors += Keys.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions(metadata = true))
         descriptors += Table.getDescriptor(tableIndex, nameSize, tableOptions)
-        descriptors += Index.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
-        descriptors += Unique.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
-        descriptors += ReplicationTombstone.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
+        descriptors += Index.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions(metadata = true))
+        descriptors += Unique.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions(metadata = true))
+        descriptors += ReplicationTombstone.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions(metadata = true))
         if (keepUpdateHistoryIndex) {
-            descriptors += UpdateHistory.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
+            descriptors += UpdateHistory.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions(metadata = true))
         }
 
         if (keepAllVersions) {
@@ -1204,9 +1206,9 @@ class RocksDBDataStore private constructor(
                 useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
             }
 
-            val indexOptionsHistoric = blockCache.createVersionedColumnFamilyOptions(db.Meta.keyByteSize)
+            val indexOptionsHistoric = blockCache.createVersionedColumnFamilyOptions(db.Meta.keyByteSize, metadata = true)
 
-            val uniqueOptionsHistoric = blockCache.createVersionedColumnFamilyOptions(db.Meta.keyByteSize)
+            val uniqueOptionsHistoric = blockCache.createVersionedColumnFamilyOptions(db.Meta.keyByteSize, metadata = true)
 
             descriptors += HistoricTable.getDescriptor(tableIndex, nameSize, tableOptionsHistoric)
             descriptors += HistoricIndex.getDescriptor(tableIndex, nameSize, indexOptionsHistoric)
@@ -1247,8 +1249,9 @@ class RocksDBDataStore private constructor(
                 val modelId = name.decodeVarUInt(startIndex = 1)
                 val keySize = modelId?.let { storeMeta.models[it]?.keySize }
                 val columnFamilyOptions = when (tableType) {
-                    HistoricTable, HistoricIndex, HistoricUnique -> blockCache.createVersionedColumnFamilyOptions(keySize ?: 0)
-                    else -> blockCache.createColumnFamilyOptions()
+                    HistoricTable -> blockCache.createVersionedColumnFamilyOptions(keySize ?: 0)
+                    HistoricIndex, HistoricUnique -> blockCache.createVersionedColumnFamilyOptions(keySize ?: 0, metadata = true)
+                    else -> blockCache.createColumnFamilyOptions(metadata = tableType != null && tableType != Table)
                 }
                 descriptors += ColumnFamilyDescriptor(name, columnFamilyOptions)
             }
@@ -1598,6 +1601,21 @@ class RocksDBDataStore private constructor(
                 runProviderBlocking { contextualProvider.decrypt(FieldEncryptionContext(modelId, key, reference), value, payloadOffset, payloadLength) }
             }
         }
+    }
+
+    /** Avoid encoding context metadata for models with no sensitive qualifiers. */
+    internal inline fun <T> withDecryptedValueIfNeeded(
+        modelId: UInt,
+        key: () -> ByteArray,
+        reference: () -> ByteArray,
+        value: ByteArray,
+        offset: Int = 0,
+        length: Int = value.size - offset,
+        handle: (ByteArray, Int, Int) -> T,
+    ): T = if (sensitiveReferencePrefixesByModelId[modelId].isNullOrEmpty()) {
+        handle(value, offset, length)
+    } else {
+        withDecryptedValueIfNeeded(modelId, key(), reference(), value, offset, length, handle)
     }
 
     internal inline fun <T> withDecryptedValueIfNeeded(

@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb
 /** Resource limits are shared by all column families in one store. */
 data class RocksDBTuning(
     val blockCacheBytes: Long = 64L * 1024 * 1024,
-    val memtableBudgetBytes: Long = 32L * 1024 * 1024,
+    val memtableBudgetBytes: Long = 128L * 1024 * 1024,
     val enableStatistics: Boolean = true,
 ) {
     init {
@@ -12,7 +12,7 @@ data class RocksDBTuning(
     }
 }
 
-/** Approximate engine accounting, not process RSS. Cache reservations can overlap memtable accounting. */
+/** Approximate engine accounting, not process RSS. Read-cache and memtable budgets are separate. */
 data class RocksDBDiagnostics(
     val blockCacheCapacityBytes: Long,
     val blockCacheUsageBytes: Long,

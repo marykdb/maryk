@@ -29,6 +29,7 @@ import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
+import maryk.datastore.rocksdb.processors.helpers.prepareProjectedQualifiers
 import maryk.datastore.rocksdb.processors.helpers.projectedQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.readStoredValue
@@ -49,6 +50,21 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     select: RootPropRefGraph<DM>?,
     toVersion: ULong?,
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
+): ValuesWithMetaData<DM>? = readTransactionIntoValuesWithMetaDataPrepared(
+    iterator, dataStore, creationVersion, columnFamilies, key, select, toVersion,
+    if (toVersion == null) prepareProjectedQualifiers(select) else null, cachedRead,
+)
+
+internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaDataPrepared(
+    iterator: DBIterator,
+    dataStore: RocksDBDataStore,
+    creationVersion: ULong,
+    columnFamilies: TableColumnFamilies,
+    key: Key<DM>,
+    select: RootPropRefGraph<DM>?,
+    toVersion: ULong?,
+    projectionQualifiers: List<ByteArray>?,
+    cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
 ): ValuesWithMetaData<DM>? {
     if (toVersion != null && creationVersion > toVersion) return null
     var maxVersion = creationVersion
@@ -61,7 +77,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         checkExistence(iterator, key)
 
         // Will start by going to next key so will miss the creation timestamp
-        val getQualifier = projectedQualifierRetriever(iterator, key, select)
+        val getQualifier = projectedQualifierRetriever(iterator, key, projectionQualifiers)
             ?: iterator.nonHistoricQualifierRetriever(key)
 
         var index: Int
@@ -99,8 +115,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
 
                         dataStore.withDecryptedValueIfNeeded(
                             columnFamilies.modelId,
-                            key.bytes,
-                            requireNotNull(reference as? IsPropertyReference<*, *, *>).toStorageByteArray(),
+                            { key.bytes },
+                            { requireNotNull(reference as? IsPropertyReference<*, *, *>).toStorageByteArray() },
                             valueBytes,
                             VERSION_BYTE_SIZE,
                             valueBytes.size - VERSION_BYTE_SIZE,
@@ -204,10 +220,11 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                 if (valueBytes.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }
+                                val propertyReference = reference as? IsPropertyReference<*, *, *> ?: return@cachedRead null
                                 dataStore.withDecryptedValueIfNeeded(
                                     columnFamilies.modelId,
-                                    key.bytes,
-                                    (reference as? IsPropertyReference<*, *, *>)?.toStorageByteArray() ?: return@cachedRead null,
+                                    { key.bytes },
+                                    { propertyReference.toStorageByteArray() },
                                     valueBytes,
                                 ) { payload, offset, length ->
                                     val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition

@@ -7,26 +7,35 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.processors.SOFT_DELETE_INDICATOR
+import maryk.datastore.shared.simpleScalarReadProperty
 import maryk.lib.extensions.compare.compareTo
 
 /** Skip unselected collection subtrees, retaining the ordinary decoder for selected cells. */
-internal fun <DM : IsRootDataModel> DM.projectedQualifierRetriever(
-    iterator: DBIterator,
-    key: Key<DM>,
-    select: RootPropRefGraph<DM>?,
-): ((((Int) -> Byte, Int) -> Unit) -> Boolean)? {
+internal fun <DM : IsRootDataModel> DM.prepareProjectedQualifiers(select: RootPropRefGraph<DM>?): List<ByteArray>? {
     val properties = select?.properties ?: return null
-    if (properties.size !in 1..16 || properties.any {
-        it !is IsDefinitionWrapper<*, *, *, *> || it.definition !is IsSimpleValueDefinition<*, *>
-    }) return null
+    if (properties.size !in 1..16 || properties.any { simpleScalarReadProperty(it) == null }) return null
     // Small scalar records already have an efficient sequential path. Seek only
     // when an unselected complex property could contain many physical cells.
     if (none { property ->
         property.definition !is IsSimpleValueDefinition<*, *> && properties.none { it.index == property.index }
     }) return null
-    val targets = (properties.map {
-        key.bytes + (it as IsDefinitionWrapper<*, *, *, *>).ref().toStorageByteArray()
-    } + listOf(key.bytes + byteArrayOf(SOFT_DELETE_INDICATOR))).sortedWith { a, b -> a.compareTo(b) }
+    val qualifiers = ArrayList<ByteArray>(properties.size + 1)
+    for (property in properties) {
+        qualifiers += (property as IsDefinitionWrapper<*, *, *, *>).ref().toStorageByteArray()
+    }
+    qualifiers += byteArrayOf(SOFT_DELETE_INDICATOR)
+    return qualifiers.sortedWith { a, b -> a.compareTo(b) }
+}
+
+/** Qualifiers contain no record keys and can be reused within one request. */
+internal fun projectedQualifierRetriever(
+    iterator: DBIterator,
+    key: Key<*>,
+    qualifiers: List<ByteArray>?,
+): ((((Int) -> Byte, Int) -> Unit) -> Boolean)? {
+    if (qualifiers == null) return null
+    val keyBytes = key.bytes
+    val targets = qualifiers.map { keyBytes + it }
     var targetIndex = 0
     return findQualifier@{ resultHandler ->
         if (targetIndex >= targets.size) return@findQualifier false

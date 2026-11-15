@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
@@ -30,6 +31,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetChangesRequest(
     val defaultReadOptions = readContext.defaultReadOptions
     val sequentialReadOptions = readContext.sequentialReadOptions
     val getRequest = storeAction.request
+    // One scalar record visits each qualifier/version once and needs no structural snapshots.
+    val singlePassScalarHistory = getRequest.keys.size == 1 &&
+        getRequest.dataModel.all { it.definition is IsSimpleValueDefinition<*, *> }
     val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(getRequest.keys.size.coerceAtLeast(4))
 
     getRequest.checkToVersion(keepAllVersions)
@@ -81,7 +85,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetChangesRequest(
                             }
 
                             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                                cache.readValue(dbIndex, key, reference, version, valueReader)
+                                if (singlePassScalarHistory) valueReader()
+                                else cache.readValue(dbIndex, key, reference, version, valueReader)
                             }
 
                             val objectChange = getRequest.dataModel.readTransactionIntoObjectChanges(

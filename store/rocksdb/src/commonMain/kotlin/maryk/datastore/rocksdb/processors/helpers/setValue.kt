@@ -15,16 +15,25 @@ internal fun setValue(
     reference: ByteArray,
     version: ByteArray,
     value: ByteArray
+) = setValue(transaction, columnFamilies, key.bytes, reference, version, value)
+
+internal fun setValue(
+    transaction: Transaction,
+    columnFamilies: TableColumnFamilies,
+    keyBytes: ByteArray,
+    reference: ByteArray,
+    version: ByteArray,
+    value: ByteArray
 ) {
-    rememberIncrementingMapKeys(transaction, columnFamilies, key.bytes, reference, value)
+    rememberIncrementingMapKeys(transaction, columnFamilies, keyBytes, reference, value)
     transaction.put(
         columnFamilies.table,
-        key.bytes + reference,
+        keyBytes + reference,
         version + value
     )
 
     if (columnFamilies is HistoricTableColumnFamilies) {
-        val historicReference = combineToByteArray(key.bytes, reference, version)
+        val historicReference = combineToByteArray(keyBytes, reference, version)
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(historicReference.size - version.size)
 

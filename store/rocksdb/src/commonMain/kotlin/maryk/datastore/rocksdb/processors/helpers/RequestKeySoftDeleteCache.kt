@@ -13,8 +13,8 @@ internal class RequestKeySoftDeleteCache(
     private val toVersion: ULong?,
     private val historicalReader: HistoricalTableReader? = null
 ) {
-    private val softDeletedByKey = mutableMapOf<Bytes, Boolean>()
-    private val creationVersionByKey = mutableMapOf<Bytes, ULong?>()
+    private var softDeletedByKey: MutableMap<Bytes, Boolean>? = null
+    private var creationVersionByKey: MutableMap<Bytes, ULong?>? = null
 
     fun get(
         key: ByteArray,
@@ -22,7 +22,8 @@ internal class RequestKeySoftDeleteCache(
         keyLength: Int = key.size
     ): Boolean {
         val keyBytes = key.sliceKey(keyOffset, keyLength)
-        return softDeletedByKey.getOrPut(Bytes(keyBytes)) {
+        val values = softDeletedByKey ?: mutableMapOf<Bytes, Boolean>().also { softDeletedByKey = it }
+        return values.getOrPut(Bytes(keyBytes)) {
             isSoftDeleted(dbAccessor, columnFamilies, readOptions, toVersion, key, keyOffset, keyLength, historicalReader)
         }
     }
@@ -33,7 +34,8 @@ internal class RequestKeySoftDeleteCache(
         keyLength: Int = key.size
     ): ULong? {
         val keyBytes = key.sliceKey(keyOffset, keyLength)
-        return creationVersionByKey.getOrPut(Bytes(keyBytes)) {
+        val values = creationVersionByKey ?: mutableMapOf<Bytes, ULong?>().also { creationVersionByKey = it }
+        return values.getOrPut(Bytes(keyBytes)) {
             readCreationVersion(dbAccessor, columnFamilies, readOptions, keyBytes, toVersion)
         }
     }

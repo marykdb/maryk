@@ -39,6 +39,18 @@ internal fun IsPropertyDefinition<*>.canonicalCollectionQualifierBytes(bytes: By
 }
 
 private fun <T : Any> IsStorageBytesEncodable<T>.requireDistinctQualifiers(values: Iterable<T>) {
+    if (this is StringDefinition) {
+        // Valid UTF-8 strings have distinct encodings. Keep the preflight for
+        // malformed UTF-16, without allocating an encoded-key set.
+        for (value in values) {
+            try {
+                calculateStorageByteLength(value as String)
+            } catch (error: ClassCastException) {
+                throw ParseException("Collection member does not match its storage definition", error)
+            }
+        }
+        return
+    }
     val identities = mutableSetOf<Bytes>()
     for (value in values) {
         val encoded = try {
@@ -64,12 +76,18 @@ internal fun IsPropertyDefinition<*>.validateCollectionStorageIdentities(value: 
             val definition = this as IsMapDefinition<Any, Any, *>
             val map = value as Map<Any, Any>
             definition.keyDefinition.collectionStorageCodec(context)?.requireDistinctQualifiers(map.keys)
-            map.values.forEach { definition.valueDefinition.validateCollectionStorageIdentities(it, context) }
+            if (definition.valueDefinition !is IsSimpleValueDefinition<*, *>) {
+                map.values.forEach { definition.valueDefinition.validateCollectionStorageIdentities(it, context) }
+            }
         }
         this is IsSetDefinition<*, *> && value is Set<*> ->
             valueDefinition.collectionStorageCodec(context)?.requireDistinctQualifiers(value as Set<Any>)
-        this is IsListDefinition<*, *> && value is List<*> ->
-            value.forEach { if (it != null) valueDefinition.validateCollectionStorageIdentities(it, context) }
+        this is IsListDefinition<*, *> && value is List<*> -> {
+            // Scalar cells cannot contain persisted collection member qualifiers.
+            if (valueDefinition !is IsSimpleValueDefinition<*, *>) {
+                value.forEach { if (it != null) valueDefinition.validateCollectionStorageIdentities(it, context) }
+            }
+        }
         this is IsMultiTypeDefinition<*, *, *> && value is TypedValue<*, *> ->
             definition(value.type.index)?.validateCollectionStorageIdentities(value.value, context)
         this is IsEmbeddedValuesDefinition<*, *> && value is AbstractValues<*, *> ->

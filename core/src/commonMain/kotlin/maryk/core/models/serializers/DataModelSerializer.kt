@@ -22,6 +22,7 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.readTransportBytesToValues
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.BoundedProtoBufReader
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
@@ -380,30 +381,22 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         }
         val emptyCollections = mutableSetOf<UInt>()
         val seenFields = mutableSetOf<UInt>()
-        var byteCounter = 0
+        val byteReader = BoundedProtoBufReader.create(reader, length, "ProtoBuf field exceeds declared length")
 
-        val byteReader = {
-            if (byteCounter >= length) {
-                throw ParseException("ProtoBuf field exceeds declared length")
-            }
-            byteCounter++
-            reader()
-        }
-
-        while (byteCounter < length) {
+        while (byteReader.remaining > 0) {
             readProtoBufField(
                 valueMap,
-                ProtoBuf.readKey(byteReader),
-                byteReader,
+                ProtoBuf.readKey(byteReader.read),
+                byteReader.read,
                 context,
                 emptyCollections,
                 seenFields
             ) {
-                length - byteCounter
+                byteReader.remaining
             }
         }
 
-        if (byteCounter != length) {
+        if (byteReader.remaining != 0) {
             throw ParseException("ProtoBuf content did not match declared length")
         }
 

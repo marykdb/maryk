@@ -8,6 +8,7 @@ import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.graph
 import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.ChangeType.EMBED_EXISTS
 import maryk.core.processors.datastore.ChangeType.OBJECT_CREATE
@@ -42,8 +43,11 @@ import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
+import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.ObjectDeleteReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.DELETE
@@ -103,19 +107,38 @@ fun <DM : IsRootDataModel> DM.readStorageToChanges(
     creationVersion: ULong?,
     readValuesAtVersion: (ULong) -> Values<DM>?,
     processValue: ValueWithVersionReader
-): List<VersionedChanges> = readStorageToChangesImpl(getQualifier, select, creationVersion, readValuesAtVersion, processValue)
+): List<VersionedChanges> = readStorageToChangesImpl(getQualifier, select, creationVersion, { version, _ -> readValuesAtVersion(version) }, processValue)
+
+/** Like the snapshot overload, but requests only the selected roots needed for structural replay. */
+fun <DM : IsRootDataModel> DM.readStorageToChanges(
+    getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
+    select: RootPropRefGraph<DM>?,
+    creationVersion: ULong?,
+    readSelectedValuesAtVersion: (ULong, RootPropRefGraph<DM>) -> Values<DM>?,
+    processValue: ValueWithVersionReader,
+): List<VersionedChanges> = readStorageToChangesImpl(getQualifier, select, creationVersion, readSelectedValuesAtVersion, processValue)
 
 private fun <DM : IsRootDataModel> DM.readStorageToChangesImpl(
     getQualifier: (((Int) -> Byte, Int) -> Unit) -> Boolean,
     select: RootPropRefGraph<DM>?,
     creationVersion: ULong?,
-    readValuesAtVersion: ((ULong) -> Values<DM>?)?,
+    readValuesAtVersion: ((ULong, RootPropRefGraph<DM>) -> Values<DM>?)?,
     processValue: ValueWithVersionReader,
 ): List<VersionedChanges> {
+    val structures = if (readValuesAtVersion == null) emptyList() else filter {
+        it.definition !is IsSimpleValueDefinition<*, *> && (select == null || select.contains(it.index))
+    }
+    val directMapsOnly = structures.isNotEmpty() && structures.all { property ->
+        val definition = property.definition
+        definition is IsMapDefinition<*, *, *> && definition.valueDefinition is IsSimpleValueDefinition<*, *> &&
+            property.ref()::class == MapReference::class
+    }
+    val snapshotReader = if (structures.isEmpty()) null else readValuesAtVersion
     // Used to collect all found ValueItems
     val mutableVersionedChanges = mutableListOf<VersionedChanges>()
     val embeddedPresence = mutableMapOf<ULong, MutableSet<AnyPropertyReference>>()
     val collectionRoots = mutableMapOf<ULong, MutableSet<AnyPropertyReference>>()
+    var initialMaps: MutableMap<AnyPropertyReference, MutableMap<Any, Any>>? = null
 
     // Add changes to versionedChangesCollection
     val changeAdder: ChangeAdder = { version, changeType, changePart ->
@@ -124,7 +147,7 @@ private fun <DM : IsRootDataModel> DM.readStorageToChangesImpl(
         // A child change already proves that its embedded parents exist. Keeping an
         // empty parent assignment as well would replace unchanged siblings inside
         // maps, lists and typed values when replaying a partial historical delta.
-        if (changePart is IsReferenceValueOrNullPair<*> && index >= 0) {
+        if (changePart is IsReferenceValueOrNullPair<*> && index >= 0 && !embeddedPresence[version].isNullOrEmpty()) {
             val parents = changePart.reference.unwrap().dropLast(1)
             val redundant = embeddedPresence[version]?.filter { it in parents }.orEmpty()
             if (redundant.isNotEmpty()) {
@@ -151,15 +174,51 @@ private fun <DM : IsRootDataModel> DM.readStorageToChangesImpl(
 
     creationVersion?.let { changeAdder(it, OBJECT_CREATE, Unit) }
 
-    val valueReader: ValueWithVersionReader = if (readValuesAtVersion == null) processValue else { type, reference, reader ->
+    fun rememberRoot(version: ULong, reference: AnyPropertyReference) {
+        collectionRoots.getOrPut(version) { mutableSetOf() }.add(reference)
+        val versionIndex = mutableVersionedChanges.binarySearch { it.version compareTo version }
+        if (versionIndex < 0) mutableVersionedChanges.add(-versionIndex - 1, VersionedChanges(version, mutableListOf()))
+    }
+
+    val valueReader: ValueWithVersionReader = if (snapshotReader == null) processValue else if (directMapsOnly) { type, reference, reader ->
+        processValue(type, reference) { version, value ->
+            if (type == MapSize && value is Int && value > 0) {
+                if (version == creationVersion) {
+                    // Assemble the initial map once, without constructing and then
+                    // discarding a separate change for every member.
+                    val maps = initialMaps ?: mutableMapOf<AnyPropertyReference, MutableMap<Any, Any>>().also { initialMaps = it }
+                    maps[reference as AnyPropertyReference] = LinkedHashMap(minOf(value, 256))
+                } else rememberRoot(version, reference as AnyPropertyReference)
+            } else {
+                val member = reference as? MapValueReference<*, *, *>
+                val parent = member?.parentReference
+                val initialMap = parent?.let { initialMaps?.get(it) }
+                if (member != null && initialMap != null && version == creationVersion) {
+                    if (value != null) initialMap[member.key] = value
+                } else {
+                    if (initialMap != null && creationVersion != null && version != creationVersion) {
+                        // A capped cell history may omit the member's original value.
+                        // Recover the complete initial map rather than emitting an incomplete creation.
+                        rememberRoot(creationVersion, parent)
+                    }
+                    if (parent == null || collectionRoots[version]?.contains(parent) != true) reader(version, value)
+                }
+            }
+        }
+    } else { type, reference, reader ->
+        val path = (reference as? AnyPropertyReference)?.unwrap()
+        val listRoot = (path?.firstOrNull { it is ListItemReference<*, *> } as? ListItemReference<*, *>)?.parentReference
         processValue(type, reference) { version, value ->
             val embeddedExists = value == Unit && (reference as? AnyPropertyReference)?.comparablePropertyDefinition is IsEmbeddedValuesDefinition<*, *>
-            if (value != null && (type == ListSize || type == SetSize || type == MapSize || embeddedExists)) {
-                collectionRoots.getOrPut(version) { mutableSetOf() }.add(reference as AnyPropertyReference)
-                val versionIndex = mutableVersionedChanges.binarySearch { it.version compareTo version }
-                if (versionIndex < 0) mutableVersionedChanges.add(-versionIndex - 1, VersionedChanges(version, mutableListOf()))
+            val snapshotRoot = if (value != null && (type == ListSize || type == SetSize || type == MapSize || embeddedExists)) {
+                reference as AnyPropertyReference
+            } else listRoot
+            if (snapshotRoot != null) {
+                rememberRoot(version, snapshotRoot)
             }
-            reader(version, value)
+            // A complete snapshot will replace these cells. Avoid constructing
+            // per-item changes only to discard them during structural replay.
+            if (path == null || collectionRoots[version]?.none { it in path } != false) reader(version, value)
         }
     }
 
@@ -168,19 +227,15 @@ private fun <DM : IsRootDataModel> DM.readStorageToChangesImpl(
         this.readQualifier(qualifierReader, qualifierLength, 0, select, null, changeAdder, valueReader, addToCache)
     }
 
+    initialMaps?.forEach { (reference, map) ->
+        @Suppress("UNCHECKED_CAST")
+        changeAdder(checkNotNull(creationVersion), CHANGE,
+            ReferenceValuePair(reference as IsPropertyReference<Map<Any, Any>, IsChangeableValueDefinition<Map<Any, Any>, IsPropertyContext>, *>, map))
+    }
+
     // Create Values
-    return if (readValuesAtVersion == null) mutableVersionedChanges else mutableVersionedChanges.map { versioned ->
-        val indexedRoots = versioned.changes.flatMap { change ->
-            when (change) {
-                is Change -> change.referenceValuePairs.map { it.reference }
-                is MultiTypeChange -> change.referenceTypePairs.map { it.reference }
-                is SetChange -> change.setValueChanges.map { it.reference }
-                else -> emptyList()
-            }
-        }.mapNotNull { reference ->
-            reference.unwrap().filterIsInstance<ListItemReference<*, *>>().firstOrNull()?.parentReference
-        }
-        val candidates = (indexedRoots + collectionRoots[versioned.version].orEmpty()).map { reference ->
+    return if (snapshotReader == null || collectionRoots.isEmpty()) mutableVersionedChanges else mutableVersionedChanges.map { versioned ->
+        val candidates = collectionRoots[versioned.version].orEmpty().map { reference ->
             // A case assignment cannot create a missing typed parent by itself.
             reference.unwrap().filterIsInstance<TypedValueReference<*, *, *>>().firstOrNull()?.parentReference ?: reference
         }.distinct()
@@ -188,8 +243,20 @@ private fun <DM : IsRootDataModel> DM.readStorageToChangesImpl(
             candidates.none { other -> other != candidate && candidate.unwrap().any { it == other } }
         }
         if (roots.isEmpty()) versioned else {
-            val snapshot = readValuesAtVersion(versioned.version)
+            val rootIndexes = roots.mapTo(mutableSetOf()) { reference ->
+                val root = reference.unwrap().first()
+                (root as IsPropertyReferenceForValues<*, *, *, *>).index
+            }
+            val snapshotSelect = graph {
+                select?.properties?.filter { it.index in rootIndexes }
+                    ?: rootIndexes.sorted().map { index -> this[index] ?: throw DefNotFoundException("Unknown structural root $index") }
+            }
+            val snapshot = snapshotReader(versioned.version, snapshotSelect)
                 ?: throw StorageException("Missing record snapshot for committed structure version ${versioned.version}")
+            val missingRoots = roots.filterTo(mutableSetOf()) { root ->
+                @Suppress("UNCHECKED_CAST")
+                snapshot[root as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>] == null
+            }
             val emitted = mutableSetOf<AnyPropertyReference>()
             val replacements = mutableListOf<IsReferenceValueOrNullPair<Any>>()
             fun replaceCollection(reference: AnyPropertyReference): Boolean {
@@ -208,7 +275,12 @@ private fun <DM : IsRootDataModel> DM.readStorageToChangesImpl(
             val result = mutableListOf<IsChange>()
             for (change in versioned.changes) {
                 val retained = when (change) {
-                    is Change -> change.referenceValuePairs.filterNot { replaceCollection(it.reference) }.takeIf { it.isNotEmpty() }?.let(::Change)
+                    is Change -> change.referenceValuePairs.filterNot { pair ->
+                        // Deleting a structure has no replacement value in the snapshot.
+                        // Preserve its explicit deletion while discarding stale child cells.
+                        if (pair.value == null && pair.reference in missingRoots) false
+                        else replaceCollection(pair.reference)
+                    }.takeIf { it.isNotEmpty() }?.let(::Change)
                     is MultiTypeChange -> change.referenceTypePairs.filterNot { replaceCollection(it.reference) }.takeIf { it.isNotEmpty() }?.let(::MultiTypeChange)
                     is SetChange -> change.setValueChanges.filterNot { replaceCollection(it.reference) }.takeIf { it.isNotEmpty() }?.let(::SetChange)
                     else -> change

@@ -29,7 +29,8 @@ internal inline fun <T> withFilterNesting(
 }
 
 internal fun checkFilterNesting(filter: IsFilter) {
-    val pending = mutableListOf(filter to 0)
+    if (filter !is IsFilterList) return
+    val pending = mutableListOf<Pair<IsFilter, Int>>(filter to 0)
 
     while (pending.isNotEmpty()) {
         val (current, parentDepth) = pending.removeLast()

@@ -4,6 +4,7 @@ import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.types.numeric.Float32
@@ -280,6 +281,12 @@ private fun ValueRange<*>.normalized(
 private fun transformedEquals(reference: AnyPropertyReference, actual: Any?, expected: Any?): Boolean {
     val definition = reference.comparablePropertyDefinition
     val memberDefinition = (definition as? IsCollectionDefinition<*, *, *, *>)?.valueDefinition ?: definition
+    if (memberDefinition is StringDefinition && actual is Collection<*> && expected is Collection<*> &&
+        actual.size >= 16 && expected.size >= 16 && actual.all { it is String } && expected.all { it is String }
+    ) {
+        // Collection equality means containment; order and repeated expected members do not matter.
+        return actual.toHashSet().containsAll(expected)
+    }
     val qualifierIdentity = definition is IsSetDefinition<*, *> || reference is SetAnyValueReference<*, *> ||
         reference is SetItemReference<*, *> || reference is MapAnyKeyReference<*, *, *> || reference is MapKeyReference<*, *, *>
     return when {

@@ -36,6 +36,11 @@ fun IsPropertyDefinition<*>.validateValueType(value: Any?, refGetter: () -> AnyP
 
 /** Check container contents before generic bridges can cast or coerce them. */
 private fun IsPropertyDefinition<*>.requireValueType(value: Any?, refGetter: () -> AnyPropertyReference?, member: Boolean = false) {
+    if (this is StringDefinition && value is String) return
+    requireOtherValueType(value, refGetter, member)
+}
+
+private fun IsPropertyDefinition<*>.requireOtherValueType(value: Any?, refGetter: () -> AnyPropertyReference?, member: Boolean) {
     if (value == null) {
         if (member) throw InvalidValueException(serializableValidationReference(refGetter()), "Collection members cannot be null")
         return

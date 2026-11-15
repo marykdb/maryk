@@ -24,6 +24,16 @@ class WriteCache : WriteCacheReader, WriteCacheWriter {
     override fun nextContextFromCache() = contexts[contextCacheIndex++]
 }
 
+/** Sizing-only calculations retain neither lengths nor contexts and cannot be used for writing. */
+object LengthOnlyWriteCache : WriteCacheWriter {
+    override fun addLengthToCache(item: ByteLengthContainer) = Unit
+    override fun <CX : IsPropertyContext> addContextToCache(item: CX) = Unit
+}
+
+/** Reserve a parent's slot before sizing children, unless no write will follow. */
+internal fun WriteCacheWriter.reserveLength(): ByteLengthContainer? =
+    if (this === LengthOnlyWriteCache) null else ByteLengthContainer().also { addLengthToCache(it) }
+
 interface WriteCacheWriter {
     fun addLengthToCache(item: ByteLengthContainer)
     fun <CX : IsPropertyContext> addContextToCache(item: CX)

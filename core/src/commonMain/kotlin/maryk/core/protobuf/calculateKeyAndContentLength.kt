@@ -8,7 +8,7 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
  * Pass [wireType], [index] and [contentLengthCalculator] to calculate length
  * Values will be cached in [cacher]
  */
-internal fun calculateKeyAndContentLength(
+internal inline fun calculateKeyAndContentLength(
     wireType: WireType,
     index: UInt,
     cacher: WriteCacheWriter,
@@ -21,12 +21,11 @@ internal fun calculateKeyAndContentLength(
         // Take care length container is first cached before value is calculated
         // Otherwise byte lengths contained by value could be cached before
         // This way order is maintained
-        val container = ByteLengthContainer()
-        cacher.addLengthToCache(container)
+        val container = cacher.reserveLength()
 
         // calculate field length
         contentLengthCalculator().let {
-            container.length = it
+            container?.length = it
             totalByteLength = totalByteLength.addProtoByteLength(it)
             totalByteLength = totalByteLength.addProtoByteLength(it.calculateVarByteLength())
         }

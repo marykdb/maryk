@@ -12,6 +12,9 @@ import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.SetAnyValueReference
+import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
+import maryk.lib.bytes.calculateUTF8ByteLength
+import maryk.lib.bytes.decodeUtf8Strict
 import maryk.core.values.IsValuesGetter
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
@@ -62,9 +65,48 @@ private fun NumberDefinition<*>.toOrderedNumberBytes(bytes: ByteArray): ByteArra
     return requireNotNull(toOrderedFloatingPointBytes(value))
 }
 
-internal fun <T : Any> IsIndexablePropertyReference<T>.encodeIndexValue(value: T): ByteArray =
-    (componentDefinition() as? NumberDefinition<*>)?.toOrderedFloatingPointBytes(value, reversed = this is Reversed<*>)
+private fun IsIndexable.supportsDirectStringValue(): Boolean =
+    this::class == ValueWithFlexBytesPropertyReference::class ||
+        this is Reversed<*> && reference::class == ValueWithFlexBytesPropertyReference::class
+
+internal fun <T : Any> IsIndexablePropertyReference<T>.encodeIndexValue(value: T): ByteArray {
+    val definition = componentDefinition()
+    if (definition is StringDefinition && value is String && supportsDirectStringValue()) {
+        value.calculateUTF8ByteLength() // Keep malformed UTF-16 rejection from the ordinary codec.
+        return encodeStringIndexComponent(value, reversed = this is Reversed<*>)
+    }
+    return (definition as? NumberDefinition<*>)?.toOrderedFloatingPointBytes(value, reversed = this is Reversed<*>)
         ?: encodeIndexComponent(toStorageBytes(value))
+}
+
+/** Format-2 UTF-16 code units with zero escaping, written into their final buffer. */
+private fun encodeStringIndexComponent(text: String, partial: Boolean = false, reversed: Boolean = false): ByteArray {
+    val terminatorSize = if (partial) 0 else 2
+    require(text.length <= (Int.MAX_VALUE - terminatorSize) / 2) { "String index component exceeds maximum byte size" }
+    val baseSize = text.length * 2 + terminatorSize
+    var escapes = 0
+    for (char in text) {
+        if (char.code ushr 8 == 0) escapes++
+        if (char.code and 255 == 0) escapes++
+    }
+    require(escapes <= Int.MAX_VALUE - baseSize) { "String index component exceeds maximum byte size" }
+    val output = ByteArray(baseSize + escapes)
+    val mask = if (reversed) 255 else 0
+    var offset = 0
+    for (char in text) {
+        val high = char.code ushr 8
+        val low = char.code and 255
+        output[offset++] = (high xor mask).toByte()
+        if (high == 0) output[offset++] = (255 xor mask).toByte()
+        output[offset++] = (low xor mask).toByte()
+        if (low == 0) output[offset++] = (255 xor mask).toByte()
+    }
+    if (!partial) {
+        output[offset++] = mask.toByte()
+        output[offset] = mask.toByte()
+    }
+    return output
+}
 
 /** Encode boundaries as part of the component, before any following component or length. */
 internal fun IsIndexable.encodeIndexComponent(bytes: ByteArray, partial: Boolean = false): ByteArray {
@@ -76,15 +118,10 @@ internal fun IsIndexable.encodeIndexComponent(bytes: ByteArray, partial: Boolean
         val ordered = definition.toOrderedNumberBytes(source)
         return if (reversed) ByteArray(ordered.size) { ordered[it].toInt().inv().toByte() } else ordered
     }
-    val ordered = if (definition is StringDefinition) {
-        val text = source.decodeToString(throwOnInvalidSequence = true)
-        ByteArray(text.length * 2).also { output ->
-            text.forEachIndexed { index, char ->
-                output[index * 2] = (char.code ushr 8).toByte()
-                output[index * 2 + 1] = char.code.toByte()
-            }
-        }
-    } else source
+    if (definition is StringDefinition) {
+        return encodeStringIndexComponent(source.decodeUtf8Strict(), partial, reversed)
+    }
+    val ordered = source
     val result = ByteArray(ordered.size + ordered.count { it == 0.toByte() } + if (partial) 0 else 2)
     var index = 0
     for (byte in ordered) {
@@ -122,8 +159,11 @@ internal fun IsIndexable.forEachIndexComponent(values: IsValuesGetter, emit: (By
         is MapAnyKeyReference<*, *, *> -> forEachEncodedIndexComponent(values, emit)
         is SetAnyValueReference<*, *> -> forEachEncodedIndexComponent(values, emit)
         else -> {
-            val definition = componentDefinition() as? NumberDefinition<*>
-            if (this is IsIndexablePropertyReference<*> && (definition?.type == Float32 || definition?.type == Float64)) {
+            val definition = componentDefinition()
+            if (this is IsIndexablePropertyReference<*> &&
+                (definition is NumberDefinition<*> && (definition.type == Float32 || definition.type == Float64) ||
+                    definition is StringDefinition && supportsDirectStringValue())
+            ) {
                 indexComponentFromValue(values)?.let(emit)
             } else {
                 forEachStorageByteArray(values) { emit(encodeIndexComponent(it)) }

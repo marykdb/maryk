@@ -20,12 +20,14 @@ import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapValueReference
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.query.RequestContext
+import maryk.core.protobuf.BoundedProtoBufReader
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.protobuf.addProtoByteLength
+import maryk.core.protobuf.reserveLength
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -165,8 +167,7 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
             totalByteLength = totalByteLength.addProtoByteLength(ProtoBuf.calculateKeyLength(index.toUInt()))
 
             // Cache length for length delimiter
-            val container = ByteLengthContainer()
-            cacher.addLengthToCache(container)
+            val container = cacher.reserveLength()
 
             var fieldLength = 0
             fieldLength = fieldLength.addProtoByteLength(
@@ -177,7 +178,7 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
                     ProtoBuf.calculateKeyLength(EMPTY_COLLECTION_TAG_OFFSET + 2u) + 1
                 } else valueDefinition.calculateTransportByteLengthWithKey(2, item, cacher, context)
             )
-            container.length = fieldLength // set length for value
+            container?.length = fieldLength // set length for value
             fieldLength = fieldLength.addProtoByteLength(fieldLength.calculateVarByteLength()) // Add field length for length delimiter
 
             totalByteLength = totalByteLength.addProtoByteLength(fieldLength)
@@ -210,14 +211,7 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         context: CX?,
         earlierValue: Map<K, V>?
     ): Map<K, V> {
-        var lengthToGo = length
-        val countingReader = {
-            if (lengthToGo <= 0) {
-                throw ParseException("Map entry exceeds declared length")
-            }
-            lengthToGo--
-            reader()
-        }
+        val countingReader = BoundedProtoBufReader.create(reader, length, "Map entry exceeds declared length")
 
         if (length <= 0) {
             throw ParseException("Map entry should not be empty")
@@ -229,20 +223,20 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         var embeddedValue: ObjectValues<Any, *>? = null
         var emptyMarker = false
 
-        while (lengthToGo > 0) {
-            val entryField = ProtoBuf.readKey(countingReader)
+        while (countingReader.remaining > 0) {
+            val entryField = ProtoBuf.readKey(countingReader.read)
             when (entryField.tag) {
                 1u -> {
                     if (!keyDefinition.acceptsProtoBufWireType(entryField.wireType, context)) {
                         throw ParseException("Map key wire type does not match definition")
                     }
-                    val keyLength = ProtoBuf.getLength(entryField.wireType, countingReader)
-                    if (keyLength > lengthToGo) {
+                    val keyLength = ProtoBuf.getLength(entryField.wireType, countingReader.read)
+                    if (keyLength > countingReader.remaining) {
                         throw ParseException("Map key exceeds declared length")
                     }
                     key = keyDefinition.readTransportBytes(
                         keyLength,
-                        countingReader,
+                        countingReader.read,
                         context
                     )
                 }
@@ -251,23 +245,23 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
                     if (!valueDefinition.acceptsProtoBufWireType(entryField.wireType, context)) {
                         throw ParseException("Map value wire type does not match definition")
                     }
-                    val valueLength = ProtoBuf.getLength(entryField.wireType, countingReader)
-                    if (valueLength > lengthToGo) {
+                    val valueLength = ProtoBuf.getLength(entryField.wireType, countingReader.read)
+                    if (valueLength > countingReader.remaining) {
                         throw ParseException("Map value exceeds declared length")
                     }
                     if (valueDefinition is IsEmbeddedObjectDefinition<*, *, *, *>) {
                         @Suppress("UNCHECKED_CAST")
                         embeddedValue = (valueDefinition as IsEmbeddedObjectDefinition<Any, *, CX, *>).readTransportBytesToValues(
-                            valueLength, countingReader, context, embeddedValue,
+                            valueLength, countingReader.read, context, embeddedValue,
                         )
                     } else {
-                        value = valueDefinition.readTransportBytes(valueLength, countingReader, context, value)
+                        value = valueDefinition.readTransportBytes(valueLength, countingReader.read, context, value)
                     }
                 }
                 EMPTY_COLLECTION_TAG_OFFSET + 2u -> {
                     val empty = valueDefinition.emptyTransportCollection(context)
                         ?: throw ParseException("Empty map value marker does not match a collection definition")
-                    if (entryField.wireType != LENGTH_DELIMITED || ProtoBuf.getLength(entryField.wireType, countingReader) != 0) {
+                    if (entryField.wireType != LENGTH_DELIMITED || ProtoBuf.getLength(entryField.wireType, countingReader.read) != 0) {
                         throw ParseException("Empty map value marker must have zero length")
                     }
                     if (value != null) throw ParseException("Empty map value marker conflicts with another value")
@@ -275,11 +269,16 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
                     value = empty as V
                     emptyMarker = true
                 }
-                else -> ProtoBuf.skipField(entryField, countingReader)
+                else -> {
+                    if (context is RequestContext && context.rejectUnknownProtoBufFields) {
+                        throw ParseException("Unknown map entry field ${entryField.tag} cannot be decoded without data loss")
+                    }
+                    ProtoBuf.skipField(entryField, countingReader.read)
+                }
             }
         }
 
-        if (lengthToGo != 0) {
+        if (countingReader.remaining != 0) {
             throw ParseException("Map entry did not match declared length")
         }
 

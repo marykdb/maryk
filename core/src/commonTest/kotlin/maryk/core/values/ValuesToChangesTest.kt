@@ -7,6 +7,7 @@ import maryk.core.models.fromChanges
 import maryk.core.properties.enum.invoke
 import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.SubObjectChangeException
 import maryk.core.query.pairs.with
 import maryk.test.models.EmbeddedMarykModel
@@ -74,6 +75,49 @@ class ValuesToChangesTest {
         val restored = TestMarykModel.fromChanges(null, changes)
         assertEquals(mapOf(900u to "last"), restored { incMap })
         assertEquals("last child", restored[TestMarykModel.ref { embeddedValues { model { value } } }])
+        assertNull(restored.original { enum })
+    }
+
+    @Test
+    fun rootCreationGroupsKeepOrderingAndOwnMutableInputs() {
+        val entries = mutableListOf("source")
+        val string = TestMarykModel.ref { string }
+        val child = TestMarykModel.ref { embeddedValues { value } }
+        val restored = TestMarykModel.fromChanges(null, listOf(
+            Change(child with "seeded parent"),
+            Change(
+                string with "first",
+                TestMarykModel.ref { listOfString } with entries,
+                string with null,
+                string with "last",
+                TestMarykModel.ref { embeddedValues } with EmbeddedMarykModel.create(setDefaults = false) {
+                    value with "replacement"
+                },
+            ),
+            Change(child with "later child"),
+        ))
+        entries[0] = "mutated input"
+        assertEquals("last", restored[string])
+        assertEquals(listOf("source"), restored { listOfString })
+        assertEquals("later child", restored[child])
+        assertNull(restored.original { enum })
+    }
+
+    @Test
+    fun rootOnlyCreationChangesPreserveReplacementDeletionAndOwnership() {
+        val entries = mutableListOf("source")
+        val string = TestMarykModel.ref { string }
+        val number = TestMarykModel.ref { int }
+        val restored = TestMarykModel.fromChanges(null, listOf(
+            ObjectCreate,
+            Change(string with "first", number with 3, TestMarykModel.ref { listOfString } with entries),
+            Change(string with null, number with null),
+            Change(string with "last"),
+        ))
+        entries[0] = "mutated input"
+        assertEquals("last", restored[string])
+        assertEquals(listOf("source"), restored { listOfString })
+        assertNull(restored[number])
         assertNull(restored.original { enum })
     }
 

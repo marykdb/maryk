@@ -29,6 +29,7 @@ import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.query.RequestContext
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
@@ -87,7 +88,7 @@ data class DateTimeDefinition(
                 requireValidNanos(nanos)
                 Instant.fromEpochSeconds(seconds, nanos)
             } else {
-                readNanosMessage(length, reader)
+                readNanosMessage(length, reader, (context as? RequestContext)?.rejectUnknownProtoBufFields == true)
             }
         }.toLocalDateTime(UTC)
 
@@ -226,7 +227,7 @@ private fun requireValidNanos(nanos: Int) {
 }
 
 @OptIn(ExperimentalTime::class)
-private fun readNanosMessage(length: Int, reader: () -> Byte): Instant {
+private fun readNanosMessage(length: Int, reader: () -> Byte, rejectUnknownFields: Boolean): Instant {
     if (length < 0) throw ParseException("Invalid NANOS DateTime message length")
     var remaining = length
     val boundedReader = {
@@ -243,7 +244,10 @@ private fun readNanosMessage(length: Int, reader: () -> Byte): Instant {
                 if (key.wireType != VAR_INT) throw ParseException("Invalid NANOS DateTime field wire type")
                 if (key.tag == 1u) seconds = initLongByVar(boundedReader) else nanos = initIntByVar(boundedReader)
             }
-            else -> ProtoBuf.skipField(key, boundedReader)
+            else -> {
+                if (rejectUnknownFields) throw ParseException("Unknown NANOS DateTime field ${key.tag} cannot be decoded without data loss")
+                ProtoBuf.skipField(key, boundedReader)
+            }
         }
     }
     requireValidNanos(nanos)

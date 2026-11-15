@@ -12,17 +12,9 @@ import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
-import maryk.core.properties.definitions.contextual.ContextInjectCollectionOnWriteDefinition
-import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
-import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
-import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
-import maryk.core.properties.definitions.contextual.ContextualMapDefinition
-import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyValueDefinition
-import maryk.core.properties.definitions.contextual.ContextualSubDefinition
-import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IsCoreEnum
 import maryk.core.properties.enum.IsIndexedEnumDefinition
@@ -38,6 +30,7 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.BoundedProtoBufReader
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WireType.BIT_32
 import maryk.core.protobuf.WireType.BIT_64
@@ -380,24 +373,16 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         context: CX?,
         earlierValue: TypedValue<E, T>?
     ): TypedValue<E, T> {
-        var lengthToGo = length
         var value: T? = null
-
-        val wrappedReader = {
-            if (lengthToGo <= 0) {
-                throw ParseException("Multi type value exceeds declared length")
-            }
-            lengthToGo--
-            reader()
-        }
+        val wrappedReader = BoundedProtoBufReader.create(reader, length, "Multi type value exceeds declared length")
 
         var type: E? = null
         var emptyMarker = false
         var payloadRead = false
 
-        while (lengthToGo > 0) {
+        while (wrappedReader.remaining > 0) {
             // Read the proto buf where the key tag is the type
-            val key = ProtoBuf.readKey(wrappedReader)
+            val key = ProtoBuf.readKey(wrappedReader.read)
 
             val isEmptyMarker = key.tag >= EMPTY_MULTI_TYPE_COLLECTION_TAG_OFFSET
             val typeIndex = if (isEmptyMarker) key.tag - EMPTY_MULTI_TYPE_COLLECTION_TAG_OFFSET else key.tag
@@ -418,7 +403,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                 ?: throw ParseException("Unknown multi type ${key.tag}")
 
             if (isEmptyMarker) {
-                if (key.wireType != LENGTH_DELIMITED || ProtoBuf.getLength(key.wireType, wrappedReader) != 0) {
+                if (key.wireType != LENGTH_DELIMITED || ProtoBuf.getLength(key.wireType, wrappedReader.read) != 0) {
                     throw ParseException("Empty multi type collection marker must have zero length")
                 }
                 if (payloadRead || emptyMarker) throw ParseException("Empty multi type collection marker conflicts with another value")
@@ -435,22 +420,22 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                 throw ParseException("Unexpected wire type ${key.wireType} for multi type '${type.name}'")
             }
 
-            val valueLength = ProtoBuf.getLength(key.wireType, wrappedReader)
-            if (valueLength > lengthToGo) {
+            val valueLength = ProtoBuf.getLength(key.wireType, wrappedReader.read)
+            if (valueLength > wrappedReader.remaining) {
                 throw ParseException("Multi type value exceeds declared length")
             }
             value = if (def is IsEmbeddedObjectDefinition<*, *, CX, *>) {
                 @Suppress("UNCHECKED_CAST")
                 (def as IsEmbeddedObjectDefinition<Any, *, CX, IsPropertyContext>).readTransportBytesToValues(
                     valueLength,
-                    wrappedReader,
+                    wrappedReader.read,
                     context,
                     value
                 ) as T
             } else {
                 def.readTransportBytes(
                     valueLength,
-                    wrappedReader,
+                    wrappedReader.read,
                     context,
                     value
                 )
@@ -540,6 +525,8 @@ internal fun IsSerializablePropertyDefinition<*, *>.acceptsProtoBufWireType(
     }
 
     return when (this) {
+        is StringDefinition -> wireType == this.wireType
+        is EmbeddedObjectDefinition<*, *, *, *> -> wireType == this.wireType
         is DateTimeDefinition -> wireType == this.wireType || precision == TimePrecision.NANOS && wireType == VAR_INT
         is IsCollectionDefinition<*, *, *, *> -> when (val elementWireType = valueDefinition.collectionElementWireType(context)) {
             VAR_INT, BIT_32, BIT_64 -> wireType == LENGTH_DELIMITED || wireType == elementWireType
@@ -561,12 +548,7 @@ internal fun IsContextualEncodable<*, *>.acceptsContextualProtoBufWireType(
     wireType: WireType,
     context: IsPropertyContext?
 ): Boolean = when (this) {
-    is ContextTransformerDefinition<*, *, *> ->
-        (this as ContextTransformerDefinition<Any, IsPropertyContext, IsPropertyContext>)
-            .definition.acceptsProtoBufWireType(wireType, transformContext(context))
-    is ContextValueTransformDefinition<*, *> -> definition.acceptsProtoBufWireType(wireType, context)
-    is ContextCaptureDefinition<*, *> -> definition.acceptsProtoBufWireType(wireType, context)
-    is ContextInjectCollectionOnWriteDefinition<*, *, *> -> definition.acceptsProtoBufWireType(wireType, context)
+    is ContextualReferenceDefinition<*>, is ContextualPropertyReferenceDefinition<*> -> wireType == LENGTH_DELIMITED
     is ContextualPropertyValueDefinition<*, *, *> -> {
         val typed = this as ContextualPropertyValueDefinition<IsPropertyContext, IsPropertyContext, Any>
         val definition = typed.contextualResolver(context)
@@ -575,32 +557,5 @@ internal fun IsContextualEncodable<*, *>.acceptsContextualProtoBufWireType(
             wireType == LENGTH_DELIMITED
         } else definition.acceptsProtoBufWireType(wireType, innerContext)
     }
-    is ContextualValueDefinition<*, *, *, *> ->
-        (this as ContextualValueDefinition<IsPropertyContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>)
-            .contextualResolver(context)
-            .acceptsProtoBufWireType(wireType, this.contextTransformer(context))
-    is ContextualNumberDefinition<*> ->
-        (this as ContextualNumberDefinition<IsPropertyContext>)
-            .contextualResolver(context)
-            .wireType == wireType
-    is ContextualSubDefinition<*, *, *, *> ->
-        (this as ContextualSubDefinition<IsPropertyContext, IsPropertyContext, Any, IsSubDefinition<Any, IsPropertyContext>>)
-            .contextualResolver(context)
-            .acceptsProtoBufWireType(wireType, this.contextTransformer(context))
-    is ContextualCollectionDefinition<*> ->
-        wireType == LENGTH_DELIMITED ||
-            (this as ContextualCollectionDefinition<IsPropertyContext>)
-                .contextualResolver(context)
-                .acceptsProtoBufWireType(wireType, context)
-    is ContextualMapDefinition<*, *, *> ->
-        wireType == LENGTH_DELIMITED ||
-            (this as ContextualMapDefinition<Any, Any, IsPropertyContext>)
-                .contextualResolver(context)
-                .acceptsProtoBufWireType(wireType, context)
-    is ContextCollectionTransformerDefinition<*, *, *, *> ->
-        (this as ContextCollectionTransformerDefinition<Any, Collection<Any>, IsPropertyContext, IsPropertyContext>)
-            .definition
-            .acceptsProtoBufWireType(wireType, this.contextTransformer(context))
-    is IsValueDefinition<*, *> -> wireType == this.wireType
-    else -> wireType == LENGTH_DELIMITED
+    else -> acceptsOtherContextualProtoBufWireType(wireType, context)
 }

@@ -280,7 +280,12 @@ private fun readFilterListProtoBuf(
                 if (values == null) values = mutableListOf()
                 values.add(child)
             }
-            else -> ProtoBuf.skipField(key, read)
+            else -> {
+                if (filterContext.rejectUnknownProtoBufFields) {
+                    throw ParseException("Unknown filter list field ${key.tag} cannot be decoded without data loss")
+                }
+                ProtoBuf.skipField(key, read)
+            }
         }
     }
     values

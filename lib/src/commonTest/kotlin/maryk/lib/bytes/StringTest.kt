@@ -8,6 +8,47 @@ import maryk.lib.recyclableByteArray
 
 class StringTest {
     @Test
+    fun asciiGroupsPreserveUnicodeAndSurrogateBoundaries() {
+        for (length in 0..19) {
+            val prefix = "a".repeat(length)
+            for (suffix in listOf("", "é", "€", "🙂", "é🙂x")) {
+                val text = prefix + suffix
+                expect(text.encodeToByteArray().size) { text.calculateUTF8ByteLength() }
+            }
+            for (surrogate in listOf(0xD800.toChar(), 0xDC00.toChar())) {
+                assertFailsWith<IllegalArgumentException> { (prefix + surrogate).calculateUTF8ByteLength() }
+            }
+        }
+    }
+
+    @Test
+    fun checkedUtf8LengthsRejectOverflowBeforeWrapping() {
+        for (text in listOf("", "ASCII", "é", "ไทย", "😀", "aé😀\u0000")) {
+            val length = text.encodeToByteArray().size
+            expect(length) { text.calculateUTF8ByteLengthChecked(length) }
+            if (length > 0) assertFailsWith<IllegalArgumentException> {
+                text.calculateUTF8ByteLengthChecked(length - 1)
+            }
+        }
+        assertFailsWith<IllegalArgumentException> { "\uD800".calculateUTF8ByteLengthChecked() }
+        assertFailsWith<IllegalArgumentException> { "\uDC00".calculateUTF8ByteLengthChecked() }
+    }
+
+    @Test
+    fun boundedUtf8DecodingPreservesStrictValidation() {
+        for (padding in 0..19) for (suffix in listOf("", "ASCII\u0000\u007f", "Zoë", "ฉัน", "😃", "\uFEFFstart\uFEFFend")) {
+            val text = "a".repeat(padding) + suffix
+            val bytes = byteArrayOf(0x80.toByte()) + text.encodeToByteArray() + byteArrayOf(0xff.toByte())
+            expect(text) { bytes.decodeUtf8Strict(1, bytes.lastIndex) }
+        }
+        for (padding in 0..19) for (hex in listOf("80", "c0af", "e080af", "eda080", "f4908080", "c2", "f09f98")) {
+            val bytes = ByteArray(padding) { 0x61 } + hex.hexToByteArray()
+            assertFailsWith<CharacterCodingException> { bytes.decodeUtf8Strict() }
+        }
+        assertFailsWith<IllegalArgumentException> { byteArrayOf(1).decodeUtf8Strict(1, 0) }
+    }
+
+    @Test
     fun malformedUtf8IsRejectedAtEveryBufferSize() {
         val malformed = listOf("80", "c0af", "e080af", "eda080", "f4908080", "c2", "f09f98")
         for (padding in listOf(0, recyclableByteArray.size + 1)) for (hex in malformed) {
@@ -17,6 +58,32 @@ class StringTest {
                 initString(bytes.size) { bytes[index++] }
             }
         }
+    }
+
+    @Test
+    fun decoderRecoversAfterMalformedInput() {
+        assertFailsWith<CharacterCodingException> { byteArrayOf(0x80.toByte()).decodeUtf8Strict() }
+        expect("valid 😃") { "valid 😃".encodeToByteArray().decodeUtf8Strict() }
+    }
+
+    @Test
+    fun publicScratchBufferCannotOverwriteAnActiveDecoder() {
+        val bytes = "private decoder".encodeToByteArray()
+        var index = 0
+        expect("private decoder") {
+            initString(bytes.size) {
+                recyclableByteArray.fill(0)
+                bytes[index++]
+            }
+        }
+    }
+
+    @Test
+    fun failedReadersReleaseTheirScratchBuffer() {
+        assertFailsWith<IllegalStateException> { initString(3) { error("truncated") } }
+        val bytes = "next".encodeToByteArray()
+        var index = 0
+        expect("next") { initString(bytes.size) { bytes[index++] } }
     }
 
     @Test

@@ -29,6 +29,9 @@ private fun <T : Any, R : IsPropertyReference<T, IsPropertyDefinition<T>, *>> Ca
 ): R {
     while (true) {
         val current = cache.value
+        current?.firstOrNull()?.let {
+            if (it.owner === this && it.discriminator == discriminator) return it.reference as R
+        }
         current?.firstOrNull { it.owner === this && it.discriminator == discriminator }?.let {
             return it.reference as R
         }
@@ -43,6 +46,9 @@ private fun PersistentList<RefCacheEntry>.findCachedReference(
     parentRef: AnyPropertyReference?,
     discriminator: Any?
 ): IsPropertyReference<*, *, *>? {
+    firstOrNull()?.let { entry ->
+        if (entry.parentRef === parentRef && entry.discriminator == discriminator) return entry.reference
+    }
     for (entry in this) {
         if (entry.parentRef === parentRef && entry.discriminator == discriminator) {
             return entry.reference
@@ -63,7 +69,8 @@ interface CacheableReferenceCreator {
     ): R {
         if (parentRef is CanHaveComplexChildReference<*, *, *, *>) {
             // Shared definitions must not retain every newly decoded item parent forever.
-            return cacheChildReference(parentRef.childRefCache, discriminator, creator)
+            val cache = parentRef.childRefCache ?: return creator()
+            return cacheChildReference(cache, discriminator, creator)
         }
         while (true) {
             val currentCache = refCache.value

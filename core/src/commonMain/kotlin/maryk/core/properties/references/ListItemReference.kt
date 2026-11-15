@@ -20,6 +20,7 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.query.pairs.ReferenceValuePair
 import kotlin.js.JsName
+import kotlin.concurrent.Volatile
 
 /** Reference to a List Item on [parentReference] with [T] by [index] */
 class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
@@ -90,11 +91,12 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         }
     }
 
-    override val completeName: String by lazy {
-        this.parentReference?.let {
-            "${it.completeName}.@$index"
-        } ?: "@$index"
-    }
+    @Volatile
+    private var cachedCompleteName: String? = null
+
+    override val completeName: String
+        get() = cachedCompleteName ?: (parentReference?.let { "${it.completeName}.@$index" } ?: "@$index")
+            .also { cachedCompleteName = it }
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = parentReference?.calculateTransportByteLength(cacher) ?: 0

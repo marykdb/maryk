@@ -40,6 +40,36 @@ private object CollectionIdentityModel : RootDataModel<CollectionIdentityModel>(
 
 class CollectionStorageIdentityTest {
     @Test
+    fun stringIdentityPreflightPreservesUnicodeAndRejectsMalformedKeysBeforeWriting() {
+        val definition = MapDefinition(keyDefinition = StringDefinition(), valueDefinition = StringDefinition())
+        val valid = mapOf("ascii" to "one", "é" to "two", "e\u0301" to "three", "😀" to "four", "\u0000" to "five")
+        var written = 0
+        writeMapToStorage<IsPropertyDefinition<*>, String, String>(0, null, { _, _, _, _ -> written++ }, definition, valid)
+        assertEquals(valid.size + 1, written)
+        for (key in listOf("\uD800", "\uDC00", "a\uD800b")) {
+            written = 0
+            assertFailsWith<IllegalArgumentException> {
+                writeMapToStorage<IsPropertyDefinition<*>, String, String>(0, null, { _, _, _, _ -> written++ }, definition, mapOf("first" to "value", key to "invalid"))
+            }
+            assertEquals(0, written)
+        }
+    }
+
+    @Test
+    fun customStringCodecStillRejectsCollidingEncodedKeys() {
+        val codec = object : IsSimpleValueDefinition<String, IsPropertyContext> by StringDefinition() {
+            override fun writeStorageBytes(value: String, writer: (Byte) -> Unit) =
+                StringDefinition().writeStorageBytes(value.lowercase(), writer)
+        }
+        var writes = 0
+        assertFailsWith<ParseException> {
+            writeMapToStorage(0, null, { _, _, _, _ -> writes++ },
+                MapDefinition(keyDefinition = codec, valueDefinition = StringDefinition()), mapOf("A" to "one", "a" to "two"))
+        }
+        assertEquals(0, writes)
+    }
+
+    @Test
     fun numericNanReferencesShareQualifiersWithoutChangingValuePayloads() {
         val double = Double.fromBits(0x7ff8000000000001L)
         val float = Float.fromBits(0x7fc00001)

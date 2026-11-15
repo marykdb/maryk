@@ -6,6 +6,10 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.graph
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -15,6 +19,23 @@ import kotlin.test.expect
 
 
 class RootPropRefGraphTest {
+    @Test
+    fun rootScalarSubclassesRetainTheirCustomReferencePaths() {
+        val selected = TestMarykModel.graph { listOf(string) }
+        assertFalse(selected.contains(alias(TestMarykModel.string.ref(), TestMarykModel.int.ref())))
+        val unselected = TestMarykModel.graph { listOf(int) }
+        assertTrue(unselected.contains(alias(TestMarykModel.string.ref(), TestMarykModel.int.ref())))
+    }
+
+    private fun <T : Any, TO : Any, D : FlexBytesDefinitionWrapper<T, TO, *, *, *>, P : AnyPropertyReference> alias(
+        reference: ValueWithFlexBytesPropertyReference<T, TO, D, P>,
+        target: AnyPropertyReference,
+    ): ValueWithFlexBytesPropertyReference<T, TO, D, P> =
+        object : ValueWithFlexBytesPropertyReference<T, TO, D, P>(reference.propertyDefinition, reference.parentReference) {
+            override fun unwrap(listToUse: MutableList<IsPropertyReference<*, *, *>>?): List<IsPropertyReference<*, *, in Any>> =
+                target.unwrap(listToUse)
+        }
+
     private val graph = TestMarykModel.graph {
         listOf(
             string,

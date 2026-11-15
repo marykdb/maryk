@@ -10,11 +10,13 @@ import maryk.core.properties.definitions.acceptsProtoBufWireType
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.BoundedProtoBufReader
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.protobuf.calculateKeyAndContentLength
 import maryk.core.protobuf.writeKeyWithLength
+import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
@@ -113,25 +115,25 @@ data class ContextualPropertyValueDefinition<CX : IsPropertyContext, CXI : IsPro
             throw ParseException("Legacy collection-valued incrementing-map appends have ambiguous element boundaries; reconstruct the log from a known source or restore a fresh snapshot")
         }
         if (length < 0) throw ParseException("Collection replacement must be length-delimited")
-        var consumed = 0
-        val boundedReader = {
-            if (consumed >= length) throw ParseException("Collection replacement exceeds declared length")
-            consumed++
-            reader()
-        }
+        val boundedReader = BoundedProtoBufReader.create(reader, length, "Collection replacement exceeds declared length")
         @Suppress("UNCHECKED_CAST")
         var value = definition.emptyTransportCollection(innerContext) as? T
             ?: throw ParseException("Unsupported collection replacement definition")
-        while (consumed < length) {
-            val key = ProtoBuf.readKey(boundedReader)
+        while (boundedReader.remaining > 0) {
+            val key = ProtoBuf.readKey(boundedReader.read)
             if (key.tag == 1u) {
                 if (!definition.acceptsProtoBufWireType(key.wireType, innerContext)) {
                     throw ParseException("Collection replacement wire type does not match its definition")
                 }
-                val valueLength = ProtoBuf.getLength(key.wireType, boundedReader)
-                if (valueLength > length - consumed) throw ParseException("Collection replacement exceeds declared length")
-                value = definition.readTransportBytes(valueLength, boundedReader, innerContext, value)
-            } else ProtoBuf.skipField(key, boundedReader)
+                val valueLength = ProtoBuf.getLength(key.wireType, boundedReader.read)
+                if (valueLength > boundedReader.remaining) throw ParseException("Collection replacement exceeds declared length")
+                value = definition.readTransportBytes(valueLength, boundedReader.read, innerContext, value)
+            } else {
+                if (context is RequestContext && context.rejectUnknownProtoBufFields) {
+                    throw ParseException("Unknown collection replacement field ${key.tag} cannot be decoded without data loss")
+                }
+                ProtoBuf.skipField(key, boundedReader.read)
+            }
         }
         return value
     }

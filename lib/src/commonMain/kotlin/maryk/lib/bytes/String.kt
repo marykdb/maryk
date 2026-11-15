@@ -1,5 +1,7 @@
 package maryk.lib.bytes
 
+import maryk.lib.stringDecodeBufferPool
+
 private const val INITIAL_STRING_BUFFER_SIZE = 10_000
 
 private const val MIN_SUPPLEMENTARY_CODE_POINT = 0x010000
@@ -26,7 +28,19 @@ fun fromCodePoint(value: Int): String {
 fun initString(length: Int, reader: () -> Byte): String {
     require(length >= 0) { "String byte length cannot be negative: $length" }
 
-    // The byte supplier may perform nested decoding. Each invocation owns its buffer.
+    if (length == 0) return ""
+    val pool = stringDecodeBufferPool
+    if (length <= pool.bytes.size && !pool.inUse) {
+        pool.inUse = true
+        try {
+            for (index in 0 until length) pool.bytes[index] = reader()
+            return pool.bytes.decodeUtf8Strict(0, length)
+        } finally {
+            pool.inUse = false
+        }
+    }
+    // A nested supplier must not overwrite a leased buffer. Large inputs still
+    // grow incrementally so a bogus declared length cannot force a huge allocation.
     var bytes = ByteArray(minOf(length, INITIAL_STRING_BUFFER_SIZE))
     var index = 0
     while (index < length) {
@@ -36,7 +50,30 @@ fun initString(length: Int, reader: () -> Byte): String {
         }
         bytes[index++] = reader()
     }
-    return bytes.decodeToString(0, length, throwOnInvalidSequence = true)
+    return bytes.decodeUtf8Strict(0, length)
+}
+
+/** Decode a bounded UTF-8 slice, avoiding a strict decoder for provably valid ASCII. */
+fun ByteArray.decodeUtf8Strict(startIndex: Int = 0, endIndex: Int = size): String {
+    require(startIndex >= 0 && endIndex >= startIndex && endIndex <= size)
+    return decodeUtf8StrictPlatform(startIndex, endIndex)
+}
+
+internal expect fun ByteArray.decodeUtf8StrictPlatform(startIndex: Int, endIndex: Int): String
+
+internal fun ByteArray.decodeUtf8StrictFallback(startIndex: Int, endIndex: Int): String {
+    var index = startIndex
+    while (index <= endIndex - 8) {
+        val first = this[index].toInt() or this[index + 1].toInt() or this[index + 2].toInt() or this[index + 3].toInt()
+        val second = this[index + 4].toInt() or this[index + 5].toInt() or this[index + 6].toInt() or this[index + 7].toInt()
+        if ((first or second) < 0) return decodeToString(startIndex, endIndex, throwOnInvalidSequence = true)
+        index += 8
+    }
+    while (index < endIndex) {
+        if (this[index] < 0) return decodeToString(startIndex, endIndex, throwOnInvalidSequence = true)
+        index++
+    }
+    return decodeToString(startIndex, endIndex)
 }
 
 /**
@@ -44,8 +81,22 @@ fun initString(length: Int, reader: () -> Byte): String {
  * @throws IllegalArgumentException when string contains invalid UTF-16 surrogates or the UTF-8 length exceeds Int.MAX_VALUE
  */
 fun String.calculateUTF8ByteLength(): Int {
-    var utf8Length = 0
+    // At most three UTF-8 bytes per UTF-16 code unit. Keep ordinary strings on
+    // the Int-only path; oversized inputs need a non-wrapping accumulator.
+    if (length > Int.MAX_VALUE / 3) return calculateUTF8ByteLengthChecked()
     var i = 0
+    // Skip ASCII in groups; the scalar path still validates every non-ASCII sequence.
+    while (i <= length - 8) {
+        val first = this[i].code or this[i + 1].code or this[i + 2].code or this[i + 3].code
+        val second = this[i + 4].code or this[i + 5].code or this[i + 6].code or this[i + 7].code
+        if ((first or second) >= 0x80) break
+        i += 8
+    }
+    while (i <= length - 4) {
+        if ((this[i].code or this[i + 1].code or this[i + 2].code or this[i + 3].code) >= 0x80) break
+        i += 4
+    }
+    var utf8Length = i
     while (i < length) {
         val c = this[i]
         when {
@@ -68,6 +119,30 @@ fun String.calculateUTF8ByteLength(): Int {
         throw IllegalArgumentException("UTF-8 length overflow: ${utf8Length.toLong() and 0xFFFFFFFFL}")
     }
     return utf8Length
+}
+
+/** Checked slow path; the explicit budget also permits bounded tests without giant allocations. */
+internal fun CharSequence.calculateUTF8ByteLengthChecked(maxByteLength: Int = Int.MAX_VALUE): Int {
+    require(maxByteLength >= 0)
+    var size = 0L
+    var index = 0
+    while (index < length) {
+        val char = this[index]
+        size += when {
+            char.code < 0x80 -> 1
+            char.code < 0x800 -> 2
+            char.isHighSurrogate() -> {
+                require(index + 1 < length && this[index + 1].isLowSurrogate()) { "Unpaired surrogate at index $index" }
+                index++
+                4
+            }
+            char.isLowSurrogate() -> throw IllegalArgumentException("Unexpected low surrogate at index $index")
+            else -> 3
+        }
+        require(size <= maxByteLength.toLong()) { "UTF-8 length overflow: $size" }
+        index++
+    }
+    return size.toInt()
 }
 
 /**

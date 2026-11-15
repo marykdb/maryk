@@ -28,6 +28,7 @@ import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.toListIndex
@@ -36,6 +37,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.geoHashBits
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.IsChange
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.SetChange
 import maryk.core.query.pairs.IsReferenceValueOrNullPair
@@ -60,9 +62,17 @@ fun <DM : IsRootDataModel> DM.fromChanges(
 ): Values<DM> {
     var values = Values(this, ValueItems(), context)
     for (change in changes) {
+        if (change is ObjectCreate) continue
         if (change is Change) {
-            for (pair in change.referenceValuePairs) {
-                values = values.withCreationParents(pair).change(Change(pair))
+            if (change.referenceValuePairs.all {
+                val reference = it.reference
+                reference is IsPropertyReferenceForValues<*, *, *, *> && reference.parentReference == null
+            }) {
+                values = values.change(change)
+            } else {
+                for (pair in change.referenceValuePairs) {
+                    values = values.withCreationParents(pair).change(Change(pair))
+                }
             }
         } else if (change is SetChange) {
             for (setChange in change.setValueChanges) {

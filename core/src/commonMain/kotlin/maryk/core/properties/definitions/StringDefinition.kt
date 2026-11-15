@@ -66,7 +66,7 @@ data class StringDefinition(
     ) {
         if (newValue != null) {
             try {
-                newValue.calculateUTF8ByteLength()
+                newValue.requireUtf8Encodable()
             } catch (error: IllegalArgumentException) {
                 val reference = try {
                     serializableValidationReference(refGetter())
@@ -136,6 +136,24 @@ data class StringDefinition(
             maxSize = values(8u),
             regEx = values(9u)
         )
+    }
+}
+
+/** Ordinary strings only need surrogate validation; oversized inputs also need a byte count. */
+private fun String.requireUtf8Encodable() {
+    if (length > Int.MAX_VALUE / 3) {
+        calculateUTF8ByteLength()
+        return
+    }
+    var index = 0
+    while (index < length) {
+        val char = this[index]
+        if (char in Char.MIN_SURROGATE..Char.MAX_SURROGATE) {
+            require(char.isHighSurrogate()) { "Unexpected low surrogate at index $index" }
+            require(index + 1 < length && this[index + 1].isLowSurrogate()) { "Unpaired surrogate at index $index" }
+            index++
+        }
+        index++
     }
 }
 

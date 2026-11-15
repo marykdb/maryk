@@ -19,6 +19,7 @@ import maryk.core.protobuf.writeKeyWithLength
 import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.query.pairs.ReferenceValuePair
 import kotlin.js.JsName
+import kotlin.concurrent.Volatile
 
 /** Reference to map value [V] below [key] of [K] contained in map referred by [parentReference] */
 class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
@@ -33,11 +34,14 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     CanContainSetItemReference<V, IsSubDefinition<V, CX>, Map<K, V>>,
     IsPropertyReferenceWithParent<V, IsSubDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>>,
     HasEmbeddedPropertyReference<V> {
-    override val completeName by lazy {
-        this.parentReference?.let {
+    @Volatile
+    private var cachedCompleteName: String? = null
+
+    override val completeName: String
+        get() = cachedCompleteName ?: (parentReference?.let {
             "${it.completeName}.@${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment(allowEmpty = true)}"
-        } ?: "@${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment(allowEmpty = true)}"
-    }
+        } ?: "@${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment(allowEmpty = true)}")
+            .also { cachedCompleteName = it }
 
     /** Convenience infix method to create Reference [value] pairs */
     @Suppress("UNCHECKED_CAST")

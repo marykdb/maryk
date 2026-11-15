@@ -19,6 +19,22 @@ import kotlin.test.expect
 
 internal class StringDefinitionTest {
     @Test
+    fun encodabilityValidationPreservesSurrogateAndBmpBoundaries() {
+        val definition = StringDefinition()
+        val high = Char.MIN_HIGH_SURROGATE.toString()
+        val low = Char.MIN_LOW_SURROGATE.toString()
+        for (prefixLength in 0..32) {
+            val prefix = "a".repeat(prefixLength)
+            for (suffix in listOf("", "é", "\uD7FF", "\uE000", "\uFFFF", "🙂", "🙂🚀x")) {
+                definition.validateWithRef(newValue = prefix + suffix)
+            }
+            for (suffix in listOf(high, low, high + "x", "🙂" + low, high + high + low)) {
+                assertFailsWith<InvalidValueException> { definition.validateWithRef(newValue = prefix + suffix) }
+            }
+        }
+    }
+
+    @Test
     fun validationRejectsUnrepresentableUtf16() {
         val high = charArrayOf(0xD800.toChar()).concatToString()
         val invalid = listOf(

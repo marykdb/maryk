@@ -4,6 +4,10 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.references.IsPropertyReferenceWithParent
+import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 
 /** Defines a graph element */
 interface IsPropRefGraph<in DM : IsDataModel> {
@@ -37,6 +41,15 @@ interface IsPropRefGraph<in DM : IsDataModel> {
 
     /** Check if select can match [reference] */
     fun contains(reference: IsPropertyReference<*, *, *>): Boolean {
+        // Built-in root scalars have a one-element path. Custom references can
+        // override unwrap(), so retain the full matcher for every other shape.
+        if ((reference::class == ValueWithFixedBytesPropertyReference::class ||
+                reference::class == ValueWithFlexBytesPropertyReference::class) &&
+            (reference as IsPropertyReferenceWithParent<*, *, *, *>).parentReference == null
+        ) {
+            val index = (reference as IsPropertyReferenceForValues<*, *, *, *>).index
+            return properties.any { it.index == index }
+        }
         return matchesSelection(properties, reference.unwrap())
     }
 }

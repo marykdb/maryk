@@ -19,8 +19,8 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.BoundedProtoBufReader
 import maryk.core.protobuf.WireType.BIT_32
 import maryk.core.protobuf.WireType.BIT_64
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -28,6 +28,7 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.protobuf.addProtoByteLength
+import maryk.core.protobuf.reserveLength
 import maryk.core.query.writesMigrationSchemaIdentity
 import maryk.lib.extensions.compare.compareTo
 import maryk.core.query.RequestContext
@@ -170,6 +171,8 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     ): Int {
         validateCollectionStorageIdentities(value, context)
         val orderedValues = canonicalMigrationItems(value, context)
+        // Concrete strings cannot contain nested injections or collect child references.
+        val injectionContext = if (valueDefinition is StringDefinition) null else context as? RequestContext
         var totalByteSize = 0
 
         when ((this.valueDefinition as? IsValueDefinition<*, *>)?.transportWireType(context)) {
@@ -178,25 +181,25 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 val valueDefinition = this.valueDefinition as IsValueDefinition<T, CX>
 
                 // Cache length for length delimiter
-                val container = ByteLengthContainer()
-                cacher.addLengthToCache(container)
+                val container = cacher.reserveLength()
 
                 orderedValues.forEachIndexed { position, item ->
-                    if (context is RequestContext) {
-                        context.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
+                    if (injectionContext != null) {
+                        injectionContext.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
                     }
                     totalByteSize = totalByteSize.addProtoByteLength(
                         valueDefinition.calculateTransportByteLength(item, cacher, context)
                     )
                 }
-                container.length = totalByteSize
+                val contentLength = totalByteSize
+                container?.length = contentLength
 
                 totalByteSize = totalByteSize.addProtoByteLength(ProtoBuf.calculateKeyLength(index.toUInt()))
-                totalByteSize = totalByteSize.addProtoByteLength(container.length.calculateVarByteLength())
+                totalByteSize = totalByteSize.addProtoByteLength(contentLength.calculateVarByteLength())
             }
             else -> orderedValues.forEachIndexed { position, item ->
-                if (context is RequestContext) {
-                    context.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
+                if (injectionContext != null) {
+                    injectionContext.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
                 }
 
                 totalByteSize = totalByteSize.addProtoByteLength(
@@ -205,8 +208,8 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
             }
         }
 
-        if (context is RequestContext && value.isNotEmpty()) {
-            context.closeInjectLevel(this)
+        if (injectionContext != null && value.isNotEmpty()) {
+            injectionContext.closeInjectLevel(this)
         }
 
         return totalByteSize
@@ -293,19 +296,12 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
     private fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?): C {
-        var byteCounter = 0
-        val byteReader = {
-            if (byteCounter >= length) {
-                throw ParseException("Collection value exceeds declared length")
-            }
-            byteCounter++
-            reader()
-        }
+        val byteReader = BoundedProtoBufReader.create(reader, length, "Collection value exceeds declared length")
         val collection = this.newMutableCollection(context)
 
-        while (byteCounter < length) {
-            val remaining = length - byteCounter
-            collection += valueDefinition.readTransportBytes(remaining, byteReader, context)
+        while (byteReader.remaining > 0) {
+            val remaining = byteReader.remaining
+            collection += valueDefinition.readTransportBytes(remaining, byteReader.read, context)
         }
 
         @Suppress("UNCHECKED_CAST")

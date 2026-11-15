@@ -4,6 +4,7 @@ import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.collections.immutable.PersistentList
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.ChildRefCacheEntry
 
 /**
@@ -20,5 +21,7 @@ abstract class CanHaveComplexChildReference<
     parentReference: P?
 ) : CanHaveSimpleChildReference<T, D, P, C>(definition, parentReference) {
     // Child references share this parent's lifetime, including transient decoded collection items.
-    internal val childRefCache: AtomicRef<PersistentList<ChildRefCacheEntry>?> = atomic(null)
+    // String collection items have no children and need no cache holder.
+    internal val childRefCache: AtomicRef<PersistentList<ChildRefCacheEntry>?>? =
+        if (definition is StringDefinition) null else atomic(null)
 }

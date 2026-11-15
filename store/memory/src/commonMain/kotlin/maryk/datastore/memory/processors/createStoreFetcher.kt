@@ -12,5 +12,5 @@ internal fun createStoreRecordFetcher(
     { model: IsRootDataModel, keyToFetch: Key<*> ->
         @Suppress("UNCHECKED_CAST")
         val dataStore = (dataStoreFetcher as IsStoreFetcher<IsRootDataModel>)(model)
-        dataStore.getByKeyAtVersion(keyToFetch.bytes, toVersion)
+        dataStore.getByKeyAtVersion(keyToFetch, toVersion)
     }

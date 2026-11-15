@@ -155,7 +155,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
                     if (
                         excludedStartRecordKey != null &&
-                        Bytes(dataRecord.key.bytes) == excludedStartRecordKey &&
+                        dataRecord.key == excludedStartRecordKey &&
                         (continuation != null || indexRecord.value.contentEquals(excludedStartIndexValue))
                     ) {
                         continue
@@ -169,7 +169,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         continue
                     }
 
-                    if (!seenKeys.add(Bytes(dataRecord.key.bytes))) {
+                    if (!seenKeys.add(dataRecord.key)) {
                         continue
                     }
 
@@ -239,7 +239,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
                     if (
                         excludedStartRecordKey != null &&
-                        Bytes(dataRecord.key.bytes) == excludedStartRecordKey &&
+                        dataRecord.key == excludedStartRecordKey &&
                         (continuation != null || indexRecord.value.contentEquals(excludedStartIndexValue))
                     ) {
                         continue
@@ -253,7 +253,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         continue
                     }
 
-                    if (!seenKeys.add(Bytes(dataRecord.key.bytes))) {
+                    if (!seenKeys.add(dataRecord.key)) {
                         continue
                     }
 

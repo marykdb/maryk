@@ -20,6 +20,7 @@ import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.memory.records.DataRecord
+import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
@@ -44,7 +45,8 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
         return
     }
 
-    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val projection = scanRequest.select?.let { ScanProjection(scanRequest.dataModel, it) }
+    val expectedSize = scanRequest.limit.coerceIn(4u, 256u).toInt()
     val matchingKeys = ArrayList<Key<DM>>(expectedSize)
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
 
@@ -87,14 +89,16 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
             sortingKey = sortingKey,
             historyRecords = historyRecords,
             keepAllVersions = dataStore.keepAllVersions,
+            projectedQualifiers = projection?.qualifiers(record.values.size),
         ).forEach { (historyRecord, versionedChange) ->
             val changes = versionedChange.changes
 
             if (changes.contains(ObjectCreate)) {
                 scanRequest.dataModel.recordToValueWithMeta(
                     scanRequest.select,
-                    if (dataStore.keepAllVersions) HLC(versionedChange.version) else null,
-                    historyRecord
+                    historyRecord.creationSnapshotReadVersion(versionedChange.version, dataStore.keepAllVersions, scanRequest.select == null),
+                    historyRecord,
+                    projection?.qualifiers(historyRecord.values.size),
                 )?.let { valuesWithMeta ->
                     updates += AdditionUpdate(
                         key = historyRecord.key,
@@ -117,7 +121,8 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                     scanRequest.dataModel.recordToValueWithMeta(
                         scanRequest.select,
                         scanRequest.toVersion?.let(::HLC),
-                        historyRecord
+                        historyRecord,
+                        projection?.qualifiers(historyRecord.values.size),
                     )?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
                             key = historyRecord.key,
@@ -178,7 +183,8 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                     scanRequest.dataModel.recordToValueWithMeta(
                         scanRequest.select,
                         scanRequest.toVersion?.let(::HLC),
-                        record
+                        record,
+                        projection?.qualifiers(record.values.size),
                     )?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
                             record.key,
@@ -210,7 +216,8 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
     recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?
 ) {
     val scanRequest = storeAction.request
-    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val projection = scanRequest.select?.let { ScanProjection(scanRequest.dataModel, it) }
+    val expectedSize = scanRequest.limit.coerceIn(4u, 256u).toInt()
     val matchingKeys = ArrayList<Key<DM>>(expectedSize)
     val matchingVersions = mutableMapOf<Key<DM>, ULong>()
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
@@ -276,6 +283,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
             null,
             record,
             dataStore.keepAllVersions,
+            projection?.qualifiers(record.values.size),
         )?.let { objectChange ->
             for (versionedChange in objectChange.changes) {
                 val changes = versionedChange.changes
@@ -283,8 +291,9 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                 if (changes.contains(ObjectCreate)) {
                     scanRequest.dataModel.recordToValueWithMeta(
                         scanRequest.select,
-                        if (dataStore.keepAllVersions) HLC(versionedChange.version) else null,
-                        record
+                        record.creationSnapshotReadVersion(versionedChange.version, dataStore.keepAllVersions, scanRequest.select == null),
+                        record,
+                        projection?.qualifiers(record.values.size),
                     )?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
                             key = objectChange.key,
@@ -307,7 +316,8 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                         scanRequest.dataModel.recordToValueWithMeta(
                             scanRequest.select,
                             scanRequest.toVersion?.let(::HLC),
-                            record
+                            record,
+                            projection?.qualifiers(record.values.size),
                         )?.let { valuesWithMeta ->
                             updates += AdditionUpdate(
                                 key = objectChange.key,
@@ -390,3 +400,13 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
 
 private fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
     order == null && startKey == null && includeStart && fromVersion == 0uL && toVersion == null && maxVersions == 1u
+
+/** Current readers are equivalent only while the committed cells still describe this full creation. */
+private fun DataRecord<*>.creationSnapshotReadVersion(version: ULong, keepAllVersions: Boolean, fullRead: Boolean): HLC? {
+    if (!keepAllVersions) return null
+    if (fullRead && values.size >= 32 && firstVersion.timestamp == version && lastVersion.timestamp <= version &&
+        currentVersion().timestamp == version &&
+        values.none { it is DataRecordHistoricValues<*> && it.toAdd != null }
+    ) return null
+    return HLC(version)
+}

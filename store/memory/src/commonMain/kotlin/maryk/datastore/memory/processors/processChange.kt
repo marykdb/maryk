@@ -24,6 +24,7 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.datastore.shared.mayContainUniqueValues
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -97,6 +98,7 @@ import maryk.datastore.shared.requireWritableValueReference
 import maryk.datastore.shared.requireStoredReferenceParents
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.hasActiveStoredType
+import maryk.datastore.shared.indexesToReconcile
 import maryk.datastore.shared.diffIndexValues
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.FlowUpdateEmitter
@@ -217,7 +219,12 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
 
         val outChanges = mutableListOf<IsChange>()
 
-        val oldIndexValues = dataModel.Meta.indexes?.map {
+        val indexesToMaintain = dataModel.Meta.indexes?.indexesToReconcile(
+            changes,
+            changes.filterIsInstance<Change>().flatMap { change -> change.referenceValuePairs.map { it.reference } },
+            wasSoftDeleted,
+        )
+        val oldIndexValues = indexesToMaintain?.map {
             it.toStorageByteArraysForIndex(objectToChange, objectToChange.key.bytes)
         }
 
@@ -782,7 +789,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
         objectToChange.values = newValueList
 
         // Process indexes
-        dataModel.Meta.indexes?.forEachIndexed { index, it ->
+        indexesToMaintain?.forEachIndexed { index, it ->
             if (indexUpdates == null) {
                 indexUpdates = mutableListOf()
             }
@@ -880,16 +887,19 @@ private fun checkParentReference(
 private fun collectUniqueValues(
     dataModel: IsRootDataModel,
     values: List<DataRecordNode>,
-): Map<Bytes, DataRecordValue<Comparable<Any>>> = buildMap {
-    for (index in values.indices) {
-        val value = getValueAtIndex<Any>(values, index) ?: continue
-        if (value.reference.contentEquals(objectSoftDeleteQualifier)) continue
-        var offset = 0
-        val definition = dataModel.getPropertyReferenceByStorageBytes(value.reference.size, reader = { value.reference[offset++] })
-            .comparablePropertyDefinition
-        if (definition is IsComparableDefinition<*, *> && definition.unique) {
-            @Suppress("UNCHECKED_CAST")
-            put(Bytes(value.reference), value as DataRecordValue<Comparable<Any>>)
+): Map<Bytes, DataRecordValue<Comparable<Any>>> {
+    if (!dataModel.mayContainUniqueValues()) return emptyMap()
+    return buildMap {
+        for (index in values.indices) {
+            val value = getValueAtIndex<Any>(values, index) ?: continue
+            if (value.reference.contentEquals(objectSoftDeleteQualifier)) continue
+            var offset = 0
+            val definition = dataModel.getPropertyReferenceByStorageBytes(value.reference.size, reader = { value.reference[offset++] })
+                .comparablePropertyDefinition
+            if (definition is IsComparableDefinition<*, *> && definition.unique) {
+                @Suppress("UNCHECKED_CAST")
+                put(Bytes(value.reference), value as DataRecordValue<Comparable<Any>>)
+            }
         }
     }
 }

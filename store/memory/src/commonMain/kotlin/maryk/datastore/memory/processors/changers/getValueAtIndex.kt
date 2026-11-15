@@ -4,6 +4,7 @@ import maryk.core.clock.HLC
 import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
+import maryk.datastore.memory.records.lastVersionIndex
 
 /** Get a value from [values] at [valueIndex] */
 @Suppress("UNCHECKED_CAST")
@@ -27,16 +28,8 @@ internal fun <T : Any> getValueAtIndex(
                     else -> null // deletion
                 }
             } else {
-                // Get historic value max at given value
-                for (historicValue in node.history.asReversed()) {
-                    if (historicValue.version <= toVersion) {
-                        return when (historicValue) {
-                            is DataRecordValue<*> -> historicValue as DataRecordValue<T>
-                            else -> null // deletion
-                        }
-                    }
-                }
-                null // not found
+                val historicValue = node.history.getOrNull(node.history.lastVersionIndex(toVersion) { it.version })
+                historicValue as? DataRecordValue<T>
             }
         else -> null // Unknown type
     }

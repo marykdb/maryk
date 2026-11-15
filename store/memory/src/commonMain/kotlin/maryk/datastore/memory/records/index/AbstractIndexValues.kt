@@ -33,8 +33,8 @@ internal abstract class AbstractIndexValues<DM : IsRootDataModel, T : Any>(
             }
             indexValues[i] is HistoricalIndexValue<*, *> -> {
                 val lastIndexValue = indexValues[i] as HistoricalIndexValue<DM, T>
-                if (lastIndexValue.records.last().record == null) {
-                    lastIndexValue.records.add(
+                if (lastIndexValue.record == null) {
+                    lastIndexValue.addRecord(
                         IndexValue(value, record, version)
                     )
                 } else false
@@ -65,7 +65,7 @@ internal abstract class AbstractIndexValues<DM : IsRootDataModel, T : Any>(
             if (keepAllVersions) {
                 val newValue = RecordAtVersion<DM>(null, version)
                 if (oldValue is HistoricalIndexValue<DM, T>) {
-                    oldValue.records += newValue
+                    oldValue.addRecord(newValue, releasedRecord = record)
                 } else {
                     indexValues[i] = HistoricalIndexValue(
                         value,
@@ -85,7 +85,8 @@ internal abstract class AbstractIndexValues<DM : IsRootDataModel, T : Any>(
         return if (i >= 0 && indexValues[i].record == record) {
             val oldValue = indexValues[i]
             if (oldValue is HistoricalIndexValue<DM, T>) {
-                oldValue.records.removeAll { it.record == record }
+                oldValue.forgetRecord(record)
+                if (oldValue.records.isEmpty()) indexValues.removeAt(i)
             } else {
                 indexValues.removeAt(i)
             }

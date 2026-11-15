@@ -7,10 +7,13 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.DataObjectVersionedChange
+import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.VersionedChanges
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DeletedValue
+import maryk.datastore.memory.records.lastVersionIndex
 
 /** Processes [record] values to a DataObjectWithChanges object */
 internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
@@ -21,7 +24,40 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
     sortingKey: ByteArray?,
     record: DataRecord<DM>,
     keepAllVersions: Boolean,
+    projectedQualifiers: List<ByteArray>? = null,
 ): DataObjectVersionedChange<DM>? {
+    // Replication can leave the header behind its cells; prove both are older
+    // before skipping qualifier decoding for a caught-up reader.
+    if (record.firstVersion.timestamp < fromVersion && record.lastVersion.timestamp < fromVersion && record.values.none { node ->
+            val latest = when (node) {
+                is DataRecordHistoricValues<*> -> node.history.lastOrNull()
+                is DataRecordValue<*> -> node
+                is DeletedValue<*> -> node
+            }
+            latest != null && latest.version.timestamp >= fromVersion
+        }
+    ) return null
+
+    val creationVersion = record.firstVersion.timestamp
+    if (maxVersions > 0u && creationVersion >= fromVersion && (toVersion == null || creationVersion <= toVersion) &&
+        record.lastVersion == record.firstVersion && record.values.all { node ->
+            val value = when (node) {
+                is DataRecordValue<*> -> node
+                is DataRecordHistoricValues<*> -> node.history.singleOrNull() as? DataRecordValue<*>
+                else -> null
+            }
+            value != null && value.version == record.firstVersion && !node.reference.contentEquals(objectSoftDeleteQualifier)
+        }
+    ) {
+        recordToValueWithMeta(select, null, record, projectedQualifiers)?.let { snapshot ->
+            return DataObjectVersionedChange(record.key, sortingKey?.let(::Bytes), listOf(
+                VersionedChanges(creationVersion, buildList {
+                    add(ObjectCreate)
+                    if (snapshot.values.size > 0) addAll(snapshot.values.toChanges())
+                }),
+            ))
+        }
+    }
     var valueIndex = -1
 
     val changes = this.readStorageToChanges(
@@ -36,9 +72,9 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
         },
         select = select,
         creationVersion = if(record.firstVersion.timestamp >= fromVersion) record.firstVersion.timestamp else null,
-        readValuesAtVersion = { version ->
+        readSelectedValuesAtVersion = { version, snapshotSelect ->
             val readVersion = if (keepAllVersions) HLC(version) else null
-            recordToValueWithMeta(select, readVersion, record)?.values
+            recordToValueWithMeta(snapshotSelect, readVersion, record)?.values
         },
         processValue = { _, _, valueWithVersionReader ->
             when (val node = record.values[valueIndex]) {
@@ -55,7 +91,7 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
                         val lastIndex = if (toVersion == null) {
                             node.history.lastIndex
                         } else {
-                            node.history.indexOfLast { it.version <= toVersion }
+                            node.history.lastVersionIndex(HLC(toVersion)) { it.version }
                         }
 
                         if(lastIndex != -1) {

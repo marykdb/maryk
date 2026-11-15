@@ -26,10 +26,12 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.SetAnyValueReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.SimpleTypedValueReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.IsValuesGetter
@@ -41,6 +43,7 @@ import maryk.datastore.shared.hasActiveStoredType
 import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.requiresStoredReferenceStructure
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -55,6 +58,20 @@ internal data class DataRecord<DM : IsRootDataModel>(
     var lastVersion: HLC,
     var stateAllocations: StateBackupAllocations = emptyMap(),
 ) : IsValuesGetter {
+    /** The committed cells can be newer than the record header after replay. */
+    fun currentVersion(): HLC {
+        var version = lastVersion
+        for (node in values) {
+            val cellVersion = when (node) {
+                is DataRecordValue<*> -> node.version
+                is DeletedValue<*> -> node.version
+                is DataRecordHistoricValues<*> -> node.history.lastOrNull()?.version
+            }
+            if (cellVersion != null && cellVersion > version) version = cellVersion
+        }
+        return version
+    }
+
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
         propertyReference: IsPropertyReference<T, D, C>
     ): T? {
@@ -77,11 +94,12 @@ internal data class DataRecord<DM : IsRootDataModel>(
         val mapPrefix = propertyReference.toStorageByteArray()
         val map = linkedMapOf<Any, Any>()
 
-        for (index in values.indices) {
+        val start = values.binarySearch { it.reference compareTo mapPrefix }.let { if (it < 0) -it - 1 else it }
+        for (index in start until values.size) {
+            if (!values[index].reference.matchesRangePart(0, mapPrefix)) break
             val node = getValueAtIndex<Any>(values, index) ?: continue
             val reference = node.reference
             if (reference.size <= mapPrefix.size) continue
-            if (!reference.copyOfRange(0, mapPrefix.size).contentEquals(mapPrefix)) continue
 
             val key = try {
                 var readIndex = mapPrefix.size
@@ -133,11 +151,12 @@ internal data class DataRecord<DM : IsRootDataModel>(
         val setPrefix = propertyReference.toStorageByteArray()
         val set = linkedSetOf<Any>()
 
-        for (index in values.indices) {
+        val start = values.binarySearch { it.reference compareTo setPrefix }.let { if (it < 0) -it - 1 else it }
+        for (index in start until values.size) {
+            if (!values[index].reference.matchesRangePart(0, setPrefix)) break
             val node = getValueAtIndex<Any>(values, index) ?: continue
             val reference = node.reference
             if (reference.size <= setPrefix.size) continue
-            if (!reference.copyOfRange(0, setPrefix.size).contentEquals(setPrefix)) continue
 
             val setItem = try {
                 var readIndex = setPrefix.size
@@ -290,11 +309,17 @@ internal data class DataRecord<DM : IsRootDataModel>(
         return snapshot?.get(reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
     }
 
-    private fun hasActiveType(reference: AnyPropertyReference, toVersion: HLC?): Boolean = hasActiveStoredType(reference) { parent ->
-        when (val value = getValue<Any>(values, parent.toStorageByteArray(), toVersion)?.value) {
-            is TypedValue<*, *> -> value.type.index
-            is TypeEnum<*> -> value.index
-            else -> null
+    private fun hasActiveType(reference: AnyPropertyReference, toVersion: HLC?): Boolean {
+        // Root scalars have no discriminator to read. Check before constructing
+        // the captured reader for every record in a filtered scan.
+        if (reference !is TypedValueReference<*, *, *> && reference !is SimpleTypedValueReference<*, *, *> &&
+            (reference as? IsPropertyReferenceWithParent<*, *, *, *>)?.parentReference == null) return true
+        return hasActiveStoredType(reference) { parent ->
+            when (val value = getValue<Any>(values, parent.toStorageByteArray(), toVersion)?.value) {
+                is TypedValue<*, *> -> value.type.index
+                is TypeEnum<*> -> value.index
+                else -> null
+            }
         }
     }
 

@@ -4,8 +4,10 @@ import maryk.datastore.memory.records.index.AbstractIndexValues
 import maryk.datastore.memory.records.index.HistoricalIndexValue
 import maryk.datastore.memory.records.index.IndexValue
 import maryk.datastore.memory.records.index.RecordAtVersion
+import maryk.datastore.memory.records.index.OwnedIndexRelease
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.Bytes
 import maryk.datastore.memory.processors.changers.getValue
@@ -43,11 +45,11 @@ internal class DataStore<DM : IsRootDataModel>(
     /** Only targeted records are deep-copied. Untouched records and immutable history remain shared. */
     fun copyForAtomic(targetKeys: Set<Bytes>, budget: (Int) -> Unit): DataStore<DM> {
         val copy = DataStore<DM>(keepAllVersions, keepUpdateHistoryIndex, dataModel)
-        val originals = records.filter { Bytes(it.key.bytes) in targetKeys }.associateBy { Bytes(it.key.bytes) }
+        val originals = targetKeys.mapNotNull { key -> getByKey(key)?.let { key to it } }.toMap()
         val copies = mutableMapOf<Bytes, DataRecord<DM>>()
         fun record(original: DataRecord<DM>): DataRecord<DM> {
-            if (originals[Bytes(original.key.bytes)] !== original) return original
-            return copies.getOrPut(Bytes(original.key.bytes)) {
+            if (originals[original.key] !== original) return original
+            return copies.getOrPut(original.key) {
                 budget(1 + original.values.size)
                 original.copy(values = original.values.map { node ->
                     if (node is DataRecordHistoricValues<*>) {
@@ -57,28 +59,42 @@ internal class DataStore<DM : IsRootDataModel>(
                 })
             }
         }
-        copy.records.addAll(records.map(::record))
-        copy.hardDeletedRecords.addAll(hardDeletedRecords.map { HardDeletedRecord(record(it.record), it.deletedAtVersion) })
+        copy.records.addAll(records)
+        for (original in originals.values) {
+            val index = records.binarySearch { it.key compareTo original.key }
+            check(index >= 0)
+            copy.records[index] = record(original)
+        }
+        for (deleted in hardDeletedRecords) {
+            val mapped = record(deleted.record)
+            copy.hardDeletedRecords.add(if (mapped === deleted.record) deleted else HardDeletedRecord(mapped, deleted.deletedAtVersion))
+        }
         copy.hardDeleteTombstones.putAll(hardDeleteTombstones)
         copy.updateHistory.addAll(updateHistory)
         fun <T : Any> index(from: AbstractIndexValues<DM, T>, to: AbstractIndexValues<DM, T>) {
-            to.indexValues.addAll(from.indexValues.map { item ->
-                if (item is HistoricalIndexValue<DM, T>) {
+            for (item in from.indexValues) {
+                val copied = if (item is HistoricalIndexValue<DM, T>) {
                     val history = if (item.records.any { entry ->
-                        entry.record?.let { originals[Bytes(it.key.bytes)] === it } == true
+                        entry.record?.let { originals[it.key] === it } == true
                     }) {
                         budget(item.records.size)
                         item.records.map { entry ->
                             val mapped = entry.record?.let(::record)
-                            if (mapped === entry.record) entry else RecordAtVersion(mapped, entry.version)
+                            val releasedOwner = entry.releasedOwner
+                            when {
+                                mapped === entry.record -> entry
+                                releasedOwner != null -> OwnedIndexRelease(mapped, entry.version, releasedOwner)
+                                else -> RecordAtVersion(mapped, entry.version)
+                            }
                         }.toMutableList()
                     } else AtomicHistoryList(item.records, budget)
-                    HistoricalIndexValue(item.value, history)
+                    HistoricalIndexValue(item.value, history, item.orderedByVersion)
                 } else {
                     val mapped = item.record?.let(::record)
                     if (mapped === item.record) item else IndexValue(item.value, mapped, item.version)
                 }
-            })
+                to.indexValues.add(copied)
+            }
         }
         indexes.forEach { from ->
             IndexValues<DM>(from.indexReference).also { index(from, it); copy.indexes.add(it) }
@@ -94,7 +110,7 @@ internal class DataStore<DM : IsRootDataModel>(
             index.indexValues.forEachIndexed { i, item ->
                 if (item is HistoricalIndexValue<DM, T>) {
                     val records = item.records as? AtomicHistoryList ?: return@forEachIndexed
-                    index.indexValues[i] = HistoricalIndexValue(item.value, records.committed())
+                    index.indexValues[i] = HistoricalIndexValue(item.value, records.committed(), item.orderedByVersion)
                 }
             }
         }
@@ -105,15 +121,16 @@ internal class DataStore<DM : IsRootDataModel>(
     internal fun addToUpdateHistory(version: HLC, keyBytes: ByteArray, isHardDelete: Boolean = false) {
         if (keepUpdateHistoryIndex) {
             val historyRecord = UpdateHistoryRecord(version.timestamp, keyBytes.copyOf(), isHardDelete)
-            val insertionIndex = updateHistory.indexOfFirst {
-                it.version < version.timestamp ||
-                    it.version == version.timestamp && (it.keyBytes compareTo keyBytes) <= 0
+            var low = 0
+            var high = updateHistory.size
+            while (low < high) {
+                val middle = low + (high - low) / 2
+                val entry = updateHistory[middle]
+                if (entry.version < version.timestamp ||
+                    entry.version == version.timestamp && (entry.keyBytes compareTo keyBytes) <= 0
+                ) high = middle else low = middle + 1
             }
-            if (insertionIndex < 0) {
-                updateHistory.add(historyRecord)
-            } else {
-                updateHistory.add(insertionIndex, historyRecord)
-            }
+            updateHistory.add(low, historyRecord)
         }
     }
 
@@ -200,9 +217,10 @@ internal class DataStore<DM : IsRootDataModel>(
     /** Validate if value in [dataRecordValue] does not already exist and if it exists it is not [dataRecord] */
     internal fun validateUniqueNotExists(
         dataRecordValue: DataRecordValue<Comparable<Any>>,
-        dataRecord: DataRecord<DM>
+        dataRecord: DataRecord<DM>,
+        definition: IsComparableDefinition<*, *>? = null,
     ) {
-        getOrCreateUniqueIndex(dataRecordValue.reference)[dataRecordValue.value]?.let {
+        getOrCreateUniqueIndex(dataRecordValue.reference, definition)[dataRecordValue.value]?.let {
             // if not deleted and not the given record it already exists.
             if (it != dataRecord) {
                 throw UniqueException(dataRecordValue.reference, it.key)
@@ -226,13 +244,16 @@ internal class DataStore<DM : IsRootDataModel>(
     }
 
     /** Get unique index for [indexReference] or create it if it does not exist. */
-    internal fun getOrCreateUniqueIndex(indexReference: ByteArray): UniqueIndexValues<DM, Comparable<Any>> {
+    internal fun getOrCreateUniqueIndex(
+        indexReference: ByteArray,
+        definition: IsComparableDefinition<*, *>? = null,
+    ): UniqueIndexValues<DM, Comparable<Any>> {
         val i = uniqueIndices.binarySearch { it.indexReference compareTo indexReference }
         return if (i < 0) {
             var offset = 0
-            val definition = dataModel?.getPropertyReferenceByStorageBytes(indexReference.size, { indexReference[offset++] })
+            val valueDefinition = definition ?: dataModel?.getPropertyReferenceByStorageBytes(indexReference.size, { indexReference[offset++] })
                 ?.comparablePropertyDefinition
-            UniqueIndexValues<DM, Comparable<Any>>(indexReference, (definition as? NumberDefinition<*>)?.type?.type).also {
+            UniqueIndexValues<DM, Comparable<Any>>(indexReference, (valueDefinition as? NumberDefinition<*>)?.type?.type).also {
                 uniqueIndices.add(
                     i * -1 - 1,
                     it
@@ -245,7 +266,11 @@ internal class DataStore<DM : IsRootDataModel>(
 
     /** Get DataRecord by [key] */
     internal fun getByKey(key: ByteArray): DataRecord<DM>? {
-        val index = this.records.binarySearch { it.key.bytes compareTo key }
+        return getByKey(Bytes(key))
+    }
+
+    internal fun getByKey(key: Bytes): DataRecord<DM>? {
+        val index = this.records.binarySearch { it.key compareTo key }
 
         return if (index >= 0) this.records[index] else null
     }
@@ -279,6 +304,10 @@ internal class DataStore<DM : IsRootDataModel>(
 
     /** Get DataRecord by [key] visible at [toVersion] */
     internal fun getByKeyAtVersion(key: ByteArray, toVersion: HLC?): DataRecord<DM>? {
+        return getByKeyAtVersion(Bytes(key), toVersion)
+    }
+
+    internal fun getByKeyAtVersion(key: Bytes, toVersion: HLC?): DataRecord<DM>? {
         val currentRecord = getByKey(key)
         if (currentRecord != null && (toVersion == null || currentRecord.firstVersion <= toVersion)) {
             return currentRecord
@@ -288,12 +317,15 @@ internal class DataStore<DM : IsRootDataModel>(
     }
 
     /** Get hard deleted DataRecord by [key] when [toVersion] still points before its deletion */
-    internal fun getHardDeletedRecordByKey(key: ByteArray, toVersion: HLC?): DataRecord<DM>? {
+    internal fun getHardDeletedRecordByKey(key: ByteArray, toVersion: HLC?): DataRecord<DM>? =
+        getHardDeletedRecordByKey(Bytes(key), toVersion)
+
+    private fun getHardDeletedRecordByKey(key: Bytes, toVersion: HLC?): DataRecord<DM>? {
         if (toVersion == null) return null
 
         for (index in hardDeletedRecords.lastIndex downTo 0) {
             val deletedRecord = hardDeletedRecords[index]
-            val keyCompare = deletedRecord.record.key.bytes compareTo key
+            val keyCompare = deletedRecord.record.key compareTo key
             if (keyCompare == 0 &&
                 deletedRecord.record.firstVersion <= toVersion &&
                 toVersion < deletedRecord.deletedAtVersion
@@ -312,32 +344,39 @@ internal class DataStore<DM : IsRootDataModel>(
      * visible at [toVersion], if any.
      */
     internal fun getRecordHistoryByKey(key: ByteArray, toVersion: HLC?): List<DataRecord<DM>> {
-        val currentRecord = getByKey(key)
+        val lookupKey = Bytes(key)
+        val currentRecord = getByKey(lookupKey)
 
         if (currentRecord != null && (toVersion == null || currentRecord.firstVersion <= toVersion)) {
+            if (hardDeletedRecords.isEmpty()) return listOf(currentRecord)
             val previousRecords = hardDeletedRecords.mapNotNull { deletedRecord ->
                 deletedRecord.record.takeIf {
-                    it.key.bytes compareTo key == 0 && it.firstVersion < currentRecord.firstVersion
+                    it.key == lookupKey && it.firstVersion < currentRecord.firstVersion
                 }
             }
 
             return (previousRecords + currentRecord).sortedBy { it.firstVersion.timestamp }
         }
 
-        return getHardDeletedRecordByKey(key, toVersion)?.let(::listOf).orEmpty()
+        return getHardDeletedRecordByKey(lookupKey, toVersion)?.let(::listOf).orEmpty()
     }
 
     /** Check if any currently visible key was hard deleted before and later reused. */
     internal fun hasReusedKeys(): Boolean {
         if (hardDeletedRecords.isEmpty() || records.isEmpty()) return false
 
-        val currentKeys = records.map { Bytes(it.key.bytes) }.toHashSet()
-        return hardDeletedRecords.any { Bytes(it.record.key.bytes) in currentKeys }
+        if (hardDeletedRecords.size < records.size / 4) {
+            return hardDeletedRecords.any { getByKey(it.record.key) != null }
+        }
+        val currentKeys = records.mapTo(hashSetOf()) { it.key }
+        return hardDeletedRecords.any { it.record.key in currentKeys }
     }
 
     /** Get all records visible at [toVersion], sorted by key */
     internal fun getRecordsAtVersion(toVersion: HLC?): List<DataRecord<DM>> {
         if (toVersion == null) return records
+        // Current records are already ordered by key; only archived incarnations require merging.
+        if (hardDeletedRecords.isEmpty()) return records.filter { it.firstVersion <= toVersion }
 
         val visibleRecords = mutableListOf<DataRecord<DM>>()
         val visibleKeys = mutableSetOf<Bytes>()
@@ -345,22 +384,20 @@ internal class DataStore<DM : IsRootDataModel>(
         for (record in records) {
             if (record.firstVersion <= toVersion) {
                 visibleRecords += record
-                visibleKeys += Bytes(record.key.bytes)
+                visibleKeys += record.key
             }
         }
 
         for (index in hardDeletedRecords.lastIndex downTo 0) {
             val deletedRecord = hardDeletedRecords[index]
-            val key = Bytes(deletedRecord.record.key.bytes)
-            if (key in visibleKeys) continue
-
-            if (deletedRecord.record.firstVersion <= toVersion && toVersion < deletedRecord.deletedAtVersion) {
+            if (deletedRecord.record.firstVersion > toVersion || toVersion >= deletedRecord.deletedAtVersion) continue
+            val key = deletedRecord.record.key
+            if (visibleKeys.add(key)) {
                 visibleRecords += deletedRecord.record
-                visibleKeys += key
             }
         }
 
-        visibleRecords.sortBy { Bytes(it.key.bytes) }
+        visibleRecords.sortBy { it.key }
         return visibleRecords
     }
 }

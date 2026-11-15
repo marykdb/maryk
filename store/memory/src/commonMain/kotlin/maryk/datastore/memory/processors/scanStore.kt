@@ -24,7 +24,10 @@ internal fun <DM : IsRootDataModel> scanStore(
     processStoreValue: (DataRecord<DM>, ByteArray?) -> Unit
 ): DataFetchType {
     val toVersion = scanRequest.toVersion?.let(::HLC)
-    val scanRecords = dataStore.getRecordsAtVersion(toVersion)
+    // The filter below already rejects records created after toVersion. Without archived
+    // incarnations, scan the maintained key order directly and stop at the request limit.
+    val scanRecords = if (dataStore.hardDeletedRecords.isEmpty()) dataStore.records
+        else dataStore.getRecordsAtVersion(toVersion)
 
     var overallStartKey: ByteArray?
     var overallEndKey: ByteArray?

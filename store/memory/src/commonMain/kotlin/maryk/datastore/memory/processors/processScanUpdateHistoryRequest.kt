@@ -13,9 +13,8 @@ import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.memory.IsStoreFetcher
-import maryk.datastore.memory.records.DataStore.UpdateHistoryRecord
-import maryk.lib.extensions.compare.compareTo
 import maryk.datastore.memory.records.DataRecord
+import maryk.datastore.memory.records.scanUpdateHistory
 import maryk.datastore.shared.UpdateHistoryPaging
 import maryk.datastore.shared.StoreAction
 
@@ -34,12 +33,13 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
         throw updateHistoryNotAvailable()
     }
 
-    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val expectedSize = scanRequest.limit.coerceIn(4u, 256u).toInt()
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
 
-    val orderedHistory = dataStore.updateHistory.sortedWith(
-        compareByDescending<UpdateHistoryRecord> { it.version }
-            .thenComparator { left, right -> left.keyBytes compareTo right.keyBytes }
+    val orderedHistory = dataStore.updateHistory.scanUpdateHistory(
+        scanRequest.fromVersion,
+        minOf(paging.toVersion ?: ULong.MAX_VALUE, paging.continuation?.version ?: ULong.MAX_VALUE),
+        paging.continuation?.key?.bytes,
     )
     for (entry in orderedHistory) {
         if (entry.version > (paging.toVersion ?: ULong.MAX_VALUE)) continue

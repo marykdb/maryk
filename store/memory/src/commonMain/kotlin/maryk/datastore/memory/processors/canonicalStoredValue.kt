@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.TimeDefinition
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.TypeEnum
@@ -20,8 +21,11 @@ import maryk.core.properties.types.invoke
 import maryk.lib.exceptions.ParseException
 
 /** Retain the declared storage precision even though Memory keeps decoded cells. */
+internal fun <T : Any> canonicalStoredValue(definition: IsPropertyDefinition<*>, value: T, reference: AnyPropertyReference? = null): T =
+    if (definition is StringDefinition) value else canonicalNonStringStoredValue(definition, value, reference)
+
 @Suppress("UNCHECKED_CAST")
-internal fun <T : Any> canonicalStoredValue(definition: IsPropertyDefinition<*>, value: T, reference: AnyPropertyReference? = null): T {
+private fun <T : Any> canonicalNonStringStoredValue(definition: IsPropertyDefinition<*>, value: T, reference: AnyPropertyReference?): T {
     if (definition is IsDefinitionWrapper<*, *, *, *>) return canonicalStoredValue(definition.definition, value, reference)
     if (definition is IsMultiTypeDefinition<*, *, *> && value is TypedValue<*, *>) {
         val case = definition.definition(value.type.index) ?: return value

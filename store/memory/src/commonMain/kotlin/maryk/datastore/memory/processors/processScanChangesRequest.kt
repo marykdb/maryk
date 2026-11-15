@@ -19,11 +19,12 @@ internal fun <DM : IsRootDataModel> processScanChangesRequest(
     dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val scanRequest = storeAction.request
-    val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
+    val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(scanRequest.limit.coerceIn(4u, 256u).toInt())
 
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, scanRequest.toVersion?.let(::HLC))
 
     val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
+    val projection = scanRequest.select?.let { ScanProjection(scanRequest.dataModel, it) }
 
     scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 
@@ -41,6 +42,7 @@ internal fun <DM : IsRootDataModel> processScanChangesRequest(
             sortingKey = sortingKey,
             historyRecords = dataStore.getRecordHistoryByKey(record.key.bytes, scanRequest.toVersion?.let(::HLC)),
             keepAllVersions = dataStore.keepAllVersions,
+            projectedQualifiers = projection?.qualifiers(record.values.size),
         ).map { it.versionedChange }.takeIf { it.isNotEmpty() || storeAction.isFlowSnapshotRead }?.let {
             objectChanges += DataObjectVersionedChange(record.key, sortingKey?.let(::Bytes), it)
         }

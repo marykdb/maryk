@@ -9,15 +9,24 @@ import maryk.datastore.shared.applyRestoreVersion
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.query.requests.get
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.types.Key
+import maryk.core.query.responses.AddOrChangeResponse
+import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.datastore.memory.records.DataRecordHistoricValues
+import maryk.datastore.shared.mayContainUniqueValues
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
@@ -87,7 +96,6 @@ import maryk.datastore.shared.MAX_ATOMIC_STAGED_NODES
 import maryk.datastore.shared.AtomicReceiptCodec
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.AbstractDataStore
-import maryk.datastore.shared.DISPATCHER
 import maryk.datastore.shared.RequestExecutionKind
 import maryk.datastore.shared.ReplicationTombstoneCompactor
 import maryk.datastore.shared.SnapshotVersionProvider
@@ -116,12 +124,19 @@ class InMemoryDataStore private constructor(
     override val keepAllVersions: Boolean = false,
     override val keepUpdateHistoryIndex: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
-) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider, ReplicationTombstoneCompactor {
+) : AbstractDataStore(dataModelsById, Dispatchers.Default.limitedParallelism(1)), SnapshotVersionProvider, ReplicationTombstoneCompactor {
 
     override val atomicCapabilities: AtomicCapabilities = AtomicCapabilities(maxStagedNodes = MAX_ATOMIC_STAGED_NODES.toUInt())
     override val supportsAtomicRequests: Boolean = true
     private val atomicDataStores = mutableMapOf<UInt, DataStore<*>>()
     private val atomicReceipts = mutableMapOf<String, ByteArray>()
+
+    override suspend fun close() = withContext(NonCancellable) {
+        if (!startClosingDataStore()) return@withContext
+        cancelAndJoinDataStoreScope()
+        atomicDataStores.clear()
+        atomicReceipts.clear()
+    }
 
     override val transactionCapabilities = TransactionCapabilities(atomicCapabilities)
     private var transactionRevision = freshTransactionRevision()
@@ -131,6 +146,13 @@ class InMemoryDataStore private constructor(
     override val supportsVersionedRestore = true
 
     override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) {
+        val target = request.targets.entries.singleOrNull()
+        if (request.stateCreationVersions.isEmpty() && target != null && target.value.size == 1 &&
+            target.key.Meta.indexes.isNullOrEmpty() && !target.key.mayContainUniqueValues()
+        ) {
+            restoreUnindexedRecord(request, target.key, target.value.single())
+            return
+        }
         var nodes = 0L
         val budget: (Int) -> Unit = { count ->
             nodes += count
@@ -171,7 +193,7 @@ class InMemoryDataStore private constructor(
         if (request.stateCreationVersions.isNotEmpty()) {
             val data = fetcher(request.dataModel)
             for ((key, firstVersion) in request.stateCreationVersions) {
-                val index = data.records.indexOfFirst { it.key == key }
+                val index = data.records.binarySearch { it.key compareTo key }
                 check(index >= 0)
                 data.records[index].firstVersion = HLC(firstVersion)
                 data.records[index].stateAllocations = request.stateAllocations[key].orEmpty()
@@ -179,8 +201,38 @@ class InMemoryDataStore private constructor(
         }
         staged.values.forEach { it.finishAtomicCopy() }
         atomicDataStores.putAll(staged)
+        publishRestoredVersion(request.version, updates)
+    }
+
+    /** Ordinary record processors validate staged cells before committing an unindexed record. */
+    private suspend fun restoreUnindexedRecord(request: RestoreVersionRequest, model: IsRootDataModel, key: Key<IsRootDataModel>) {
+        val id = getDataModelId(model)
+        @Suppress("UNCHECKED_CAST")
+        val original = atomicDataStores[id] as? DataStore<IsRootDataModel>
+        val data = original ?: DataStore(keepAllVersions, keepUpdateHistoryIndex, model)
+        val record = data.getByKey(key)
+        if (record != null) {
+            var nodes = 1L + record.values.size
+            for (node in record.values) if (node is DataRecordHistoricValues<*>) nodes += node.history.size
+            if (nodes > MAX_ATOMIC_STAGED_NODES) rejectAtomicLimit("stagedNodes", MAX_ATOMIC_STAGED_NODES.toULong(), nodes.toULong())
+        }
+        val currentVersion = record?.currentVersion()?.timestamp
+        val updates = mutableListOf<Update<*>>()
+        if (currentVersion == null || currentVersion < request.version) {
+            val response = CompletableDeferred<ProcessResponse<IsRootDataModel>>()
+            processInitialChangesUpdate(StoreAction(request.updates.single(), response), { data }) { updates += it }
+            val statuses = (response.await().result as? AddOrChangeResponse<*>)?.statuses
+            if (statuses == null || statuses.size != 1 || statuses.any { it !is AddSuccess<*> && it !is ChangeSuccess<*> }) {
+                throw RequestException("Could not restore version ${request.version}: $statuses")
+            }
+        }
+        if (original == null) atomicDataStores[id] = data
+        publishRestoredVersion(request.version, updates)
+    }
+
+    private suspend fun publishRestoredVersion(version: ULong, updates: List<Update<*>>) {
         transactionRevision = freshTransactionRevision()
-        observeCommittedVersion(request.version)
+        observeCommittedVersion(version)
         publishCommittedTransactionUpdates { updates.forEach { emitFlowUpdate(it) } }
     }
 

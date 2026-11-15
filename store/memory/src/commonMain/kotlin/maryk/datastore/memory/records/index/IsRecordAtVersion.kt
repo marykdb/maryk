@@ -8,6 +8,7 @@ import maryk.datastore.memory.records.DataRecord
 internal interface IsRecordAtVersion<DM : IsRootDataModel> {
     val record: DataRecord<DM>?
     val version: HLC
+    val releasedOwner: IndexOwner<DM>? get() = null
     fun recordAtVersion(version: HLC) =
         if (version >= this.version) {
             this.record

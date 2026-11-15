@@ -67,7 +67,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
             if (!isDeleted && (definition is IsComparableDefinition<*, *>) && definition.unique) {
                 @Suppress("UNCHECKED_CAST")
                 val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
-                dataStore.validateUniqueNotExists(comparableValue, dataRecord)
+                dataStore.validateUniqueNotExists(comparableValue, dataRecord, definition)
                 when (uniquesToIndex) {
                     null -> uniquesToIndex = mutableListOf(comparableValue)
                     else -> uniquesToIndex.add(comparableValue)

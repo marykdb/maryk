@@ -7,6 +7,7 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.index.AbstractIndexValues
 import maryk.datastore.memory.records.index.HistoricalIndexValue
 import maryk.datastore.memory.records.index.IsIndexItem
+import maryk.datastore.memory.records.lastVersionIndex
 
 internal fun <DM : IsRootDataModel, T : Any> AbstractIndexValues<DM, T>.resolveRecordForValue(
     value: T,
@@ -27,7 +28,7 @@ internal fun <DM : IsRootDataModel, T : Any> resolveIndexRecord(
     includeSoftDeleted: Boolean
 ): DataRecord<DM>? {
     when (toVersion) {
-        null -> item.record?.let { return dataStore.getByKey(it.key.bytes) ?: it }
+        null -> item.record?.let { return dataStore.getByKey(it.key) ?: it }
         else -> item.recordAtVersion(toVersion)?.let { return it }
     }
 
@@ -36,9 +37,13 @@ internal fun <DM : IsRootDataModel, T : Any> resolveIndexRecord(
     val historicalItem = item as? HistoricalIndexValue<DM, T> ?: return null
     val deletedCandidate = when (toVersion) {
         null -> historicalItem.records.lastOrNull { it.record != null }?.record
-        else -> historicalItem.records.findLast { it.version <= toVersion && it.record != null }?.record
+        else -> {
+            val history = historicalItem.historyByVersion
+            val lastIndex = history.lastVersionIndex(toVersion) { it.version }
+            (lastIndex downTo 0).firstNotNullOfOrNull { history[it].record }
+        }
     } ?: return null
 
-    val canonicalRecord = dataStore.getByKey(deletedCandidate.key.bytes) ?: return null
+    val canonicalRecord = dataStore.getByKey(deletedCandidate.key) ?: return null
     return canonicalRecord.takeIf { it.isDeleted(toVersion) }
 }

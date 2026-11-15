@@ -22,15 +22,26 @@ internal fun <DM : IsRootDataModel> processScanRequest(
     dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val scanRequest = storeAction.request
-    val valuesWithMeta = ArrayList<ValuesWithMetaData<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
+    val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
+    // A complete current table scan has a useful bound from the store itself.
+    // Bound speculative space even when many current records are soft-deleted.
+    // Filtered, historical and paged scans keep the small initial allocation.
+    val capacity = if (scanRequest.where == null && scanRequest.toVersion == null &&
+        scanRequest.order == null && scanRequest.startKey == null && scanRequest.cursor == null
+    ) minOf(scanRequest.limit, dataStore.records.size.toUInt(), 16_384u).toInt().coerceAtLeast(4)
+        else scanRequest.limit.coerceIn(4u, 256u).toInt()
+    val valuesWithMeta = ArrayList<ValuesWithMetaData<DM>>(capacity)
 
     val aggregator = scanRequest.aggregations?.let {
         Aggregator(it)
     }
 
-    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, scanRequest.toVersion?.let(::HLC))
+    val toVersion = scanRequest.toVersion?.let(::HLC)
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, toVersion)
+    val projection = scanRequest.select?.let {
+        ScanProjection(scanRequest.dataModel, it)
+    }
 
-    val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
     var lastEmittedKey: Key<DM>? = null
     var lastEmittedOrderKey: ByteArray? = null
 
@@ -40,12 +51,11 @@ internal fun <DM : IsRootDataModel> processScanRequest(
         recordFetcher = recordFetcher,
         allowTableScanOverride = scanRequest.toVersion != null
     ) { record, orderKey ->
-        val toVersion = scanRequest.toVersion?.let(::HLC)
-
         val valuesWithMetaData = scanRequest.dataModel.recordToValueWithMeta(
             scanRequest.select,
             toVersion,
-            record
+            record,
+            projection?.qualifiers(record.values.size),
         )
         if (valuesWithMeta.size.toUInt() < scanRequest.limit && valuesWithMetaData != null) {
             valuesWithMeta.add(valuesWithMetaData)
@@ -73,3 +83,5 @@ internal fun <DM : IsRootDataModel> processScanRequest(
         )
     )
 }
+
+/** Prepare once, only after encountering a record large enough to benefit from seeking. */

@@ -8,7 +8,7 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 
 ## Selecting an Engine
 
-- Need the fastest feedback loop or CI determinism? Use Memory.
+- Need a store without external setup for tests or CI? Use Memory.
 - Need durable browser-local storage for JS/WasmJS apps? Use IndexedDB.
 - Want durable, embedded storage across desktop/mobile/server without running a service? Use RocksDB.
 - Need distributed ACID storage and scale‑out (JVM or native with `libfdb_c` present)? Use FoundationDB.
@@ -17,8 +17,6 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 All engines share the same API surface, so you can start with Memory in tests, use IndexedDB in browser apps, use RocksDB for embedded persistence, and move to FoundationDB on the server without changing your models or queries.
 
 For recovery and backend transfer, start with [Backup and restore](shared/docs/backup-restore.md).
-
-Below is a practical overview of each engine, why it was chosen, and when to use it.
 
 ## Atomic changes across models
 
@@ -41,68 +39,58 @@ rejections expose machine-readable details through `AtomicResponse.failure`.
 See [Atomic requests](../core/docs/query.md#atomic) for construction, limits,
 retry receipts, supported operations, and read/update-stream boundaries.
 
-## Inspecting data
-
-Use the Maryk CLI or the Maryk App to connect to a store, scan records, and edit values interactively while you evaluate or debug storage behavior.
+## Engine guides
 
 ### Memory
 
-- Type: In‑memory, non‑persistent.
-- Strengths: Extremely fast, zero setup, deterministic behavior; ideal for development and tests.
-- Why it’s a great fit: Mirrors the same higher‑level logic as the persistent engines, so it’s perfect for unit and integration tests that exercise real request flows without I/O. Minimal dependencies and instant startup.
-- Typical use cases: Unit tests, CI, prototyping, ephemeral caches, local experimentation.
-- Learn more: `store/memory/README.md`.
+Volatile storage for tests, CI and local experimentation, with no database
+service to configure. See the [Memory guide](memory/README.md).
 
 ### RocksDB
 
-- Type: Embedded, persistent key‑value store with column families.
-- Strengths: Ordered keyspace and efficient range scans; column family isolation; robust single‑node performance; broad platform support (JVM, iOS, macOS, watchOS, tvOS, Android, Windows, Linux).
-- Why it’s a great fit: Maryk stores each model in multiple column families (keys/table/index/unique and historic variants when `keepAllVersions` is enabled). RocksDB’s ordered iteration and prefix/range reads map directly to Maryk’s layout, making latest and historic queries efficient without extra services.
-- Typical use cases: Local‑first/embedded apps, desktop/mobile deployments, single‑node servers, moderate‑to‑large datasets without a separate database process.
-- Learn more: `store/rocksdb/README.md` and `store/rocksdb/documentation/storage.md`.
+Embedded persistent storage for desktop, mobile and single-node servers. See the
+[RocksDB guide](rocksdb/README.md) for setup, tuning, history and recovery.
 
 ### IndexedDB
 
-- Type: Browser-native, persistent ordered key/value storage.
-- Strengths: Runs in JS and WasmJS browser targets; supports real IndexedDB gets, batched writes, cursor scans, indexes, unique rows, history snapshots, update-history rows, fuzzy qualifier filters, sub-reference filters, model metadata migration/backfill, and WebCrypto/provider-backed sensitive field encryption.
-- Why it’s a great fit: Maryk’s ordered byte layouts map to IndexedDB array keys and cursor ranges, giving browser apps the same request API without falling back to an in-memory store.
-- Typical use cases: Local-first browser apps, offline-capable web clients, WasmJS apps that need Maryk queries over durable browser data.
-- Learn more: `store/indexeddb/README.md`.
+Persistent browser storage for JS and WasmJS, with native cursor scans, history,
+migrations and encryption support. See the [IndexedDB guide](indexeddb/README.md)
+for browser constraints and cross-context consistency.
 
 ### FoundationDB
 
-- Type: Distributed, transactional key‑value store accessed via the FoundationDB multiplatform client.
-- Strengths: Strict ACID transactions, ordered key space with fast range reads, subspaces/directories, horizontal scalability, and operational resilience.
-- Why it’s a great fit: Maryk maps models to FDB directories and encodes versions so “latest” and “as‑of” reads are both efficient. Historic index scanning is supported when `keepAllVersions` is enabled, aligning with Maryk’s version‑aware queries. Strong consistency makes complex multi‑key updates safe.
-- Typical use cases: Server‑side deployments needing strong consistency, online growth, and cluster operations; applications that benefit from time‑travel queries and transactional semantics.
-- Learn more: `store/foundationdb/README.md` and `store/foundationdb/docs/*`.
+Distributed transactional storage for server applications, using the
+multiplatform FoundationDB client. See the [FoundationDB guide](foundationdb/README.md)
+for client setup, cluster requirements and operations.
 
 ### Remote Store (HTTP/SSH)
 
-- Type: HTTP gateway that exposes any local store (RocksDB/FoundationDB) via Ktor.
-- Strengths: Remote access for tooling and apps without changing Maryk requests; optional SSH tunneling.
-- Why it’s a great fit: Keeps Maryk’s request/response protocol intact while letting clients connect over a network boundary.
-- Typical use cases: Remote App/programmatic connections, shared dev stores, server‑side stores accessed by local tooling. The CLI serves local stores but does not connect to remote endpoints.
-- Learn more: `store/remote/README.md`.
+Expose an existing store to applications and tooling over HTTP, optionally
+through SSH. The App and programmatic client can connect remotely; the CLI
+serves local stores but does not connect to remote endpoints. See the
+[Remote guide](remote/README.md).
+
+## Inspecting data
+
+Use the [CLI](../cli/README.md) or [desktop App](../app/README.md) to browse
+models, scan records and edit values while evaluating or debugging a store.
 
 ## Shared Code
 
-The `store/shared` module provides the common abstraction and orchestration used by every engine. This ensures identical behavior for requests, update streaming, and query semantics regardless of the underlying storage technology.
+[Store Shared](shared/README.md) provides the common request API, actor routing,
+scan optimization and listener lifecycle. Engines implement persistence and
+native commit boundaries. Decoded-value caches are request-local; see the
+[cache and ownership rules](shared/docs/store-behavior.md#decoded-value-cache).
 
-- Interface: `IsDataStore` defines the unified API (`execute`, `executeFlow` for live updates, `processUpdate` for syncing remote updates, `close`/`closeAllListeners`) plus capability flags such as `supportsFuzzyQualifierFiltering` and `supportsSubReferenceFiltering`.
-- Base implementation: `AbstractDataStore` implements the coroutine actor and update flow wiring. It routes all requests through a single store channel, manages listener lifecycles, and exposes `executeFlow` to stream `Addition/Change/Removal` updates derived from writes.
-- Update streaming: The `updates/*` utilities maintain per‑request listeners:
-    - `UpdateListenerForGet` and `UpdateListenerForScan` compute and emit `IsUpdateResponse` events (addition/change/removal) in response to live changes.
-    - `processUpdate` merges externally supplied `UpdateResponse` objects into the local store, enabling synchronization between engines or instances. Replication callers must submit updates in source-version order and await each call before sending the next update for that target. Stores serialize arrival order; they do not reorder, buffer, or guarantee convergence for independently retried or concurrently delivered updates.
-- Query optimization: `optimizeTableScan` converts eligible full‑table scans into index scans using equality filters, and enforces minimum key‑prefix requirements for efficient scans. This keeps scan behavior consistent across engines.
-- Caching: `Cache` provides a small LRU cache per model/key to reuse decoded values across reads, reducing allocations and decode work for repeated property access.
-
-Storage engines focus on the low‑level persistence (reads, writes, range iteration, encoding) while relying on this shared layer for request orchestration, update flows, and consistent semantics.
+For synchronization, submit updates in source-version order and await each
+call. Stores do not reorder concurrent deliveries or guarantee convergence for
+independently retried updates. See [replication ordering](shared/docs/store-behavior.md#replication).
 
 ### Consistency and Tests
 
-The `store/test` module contains a generic test suite (`runDataStoreTests`) that validates correctness and versioning across engines. Each engine reuses these tests to ensure uniform behavior for adds, changes, deletes, gets, scans, uniques, and update flows.
-
+The [store test module](test/README.md) supplies shared conformance cases for requests,
+history, transactions, uniqueness and update flows. Engine-specific tests cover
+behavior that depends on native storage or platform constraints.
 
 ## Transactions
 

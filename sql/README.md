@@ -66,64 +66,36 @@ The example prints `Text(value=Ada)`. It uses a fresh in-memory store on each ru
 Configure [execution budgets](docs/execution.md#resource-limits) for the workload.
 A selective query can still require a scan when the model has no suitable key or index.
 
-## Models, tables, and values
+## Capabilities and limits
 
-Registered models become tables. Missing stored values become SQL `NULL`; reads do not synthesize model defaults. See the reference for catalogs, scalar types and exposed columns.
+Registered models become tables. Use bounded SELECTs, joins, aggregates, windows,
+subqueries and supported UNNEST paths for reporting; use `execute`, `transaction`
+or `prepareAtomic` for the appropriate write boundary. DDL, JDBC, recursive CTEs
+and live SQL subscriptions are not provided.
 
-See [models, tables, and values](docs/queries.md#models-tables-and-values).
+Missing stored values become SQL `NULL`; reads do not synthesize model defaults.
+Current reads may observe changes between requests. Snapshot reads require
+retained history and a supporting snapshot provider; they are distinct from
+serializable write transactions. Resource limits fail explicitly rather than
+silently truncating results. Configure them for the workload.
 
-## Prepare and stream
+| Task | Reference |
+| --- | --- |
+| Model/table mapping, types, NULLs and catalogs | [Queries and values](docs/queries.md#models-tables-and-values) |
+| Joins, windows, subqueries and collection expansion | [Query surface](docs/queries.md#query-surface) |
+| Choose a write API; use transactions, upsert, joined mutations or commit recovery | [Writes and transactions](docs/writes.md) |
+| Prepare and stream queries; configure snapshots, budgets and diagnostics | [Execution and limits](docs/execution.md) |
 
-Reuse prepared queries with typed parameters and consume rows as a bounded flow. Each execution has one collector; stopping early is cancellation of a partial result.
+## CLI and desktop tools
 
-See [prepare and stream](docs/execution.md#prepare-and-stream).
+Use `sql SELECT ...` or `sql --file report.sql` on a connected CLI store. Writes
+require `sql --write ...`; interactive sessions support transactions and
+savepoints. The desktop App provides a SQL console with parameters, results,
+Explain and explicit write mode.
 
-## Query surface
-
-Use SELECT, filters, joins, aggregates, CTEs, subqueries, windows and supported UNNEST paths. DDL, JDBC, recursive CTEs and live SQL subscriptions are not provided.
-
-See [query surface](docs/queries.md#query-surface).
-
-## Numeric and null semantics
-
-Exact arithmetic stays exact; mixing exact and floating types requires a cast. SQL three-valued null logic applies to predicates, joins and grouping.
-
-See [numeric and null semantics](docs/queries.md#numeric-and-null-semantics).
-
-## Consistency and storage engines
-
-Current reads can observe changes between requests. Snapshot and AtVersion reads require retained history and an authoritative snapshot provider; they are distinct from serializable write transactions.
-
-See [consistency and storage engines](docs/execution.md#consistency-and-storage-engines).
-
-## Resource limits
-
-Execution is bounded by fetched/result rows, memory, groups, requests, work and time. Defaults include 100,000 fetched/result rows and a 30-second timeout. Limits fail explicitly rather than truncating results.
-
-See [resource limits](docs/execution.md#resource-limits).
-
-## Desktop app
-
-The desktop store browser also exposes a **SQL** button beside time travel. It opens
-a separate modal with syntax highlighting,
-catalog and alias completion, typed parameter inputs, Run/Cancel, Explain, results,
-and explicit write mode. See the [app guide](../app/docs/README.md#sql-queries-and-writes).
-
-## CLI
-
-On a connected CLI store:
-
-```text
-sql SELECT name FROM Person ORDER BY name LIMIT 20
-sql --snapshot SELECT category, SUM(amount) FROM Invoice GROUP BY category
-sql --file ./report.sql
-sql --write INSERT INTO Person (name, age) VALUES ('Ada', 37)
-sql --write UPDATE Person SET nickname = NULL WHERE __key = '<encoded-key>'
-```
-
-The CLI preserves SQL quotes and comments. For inline SQL beginning with a line comment, place `--` before the SQL text; files may start with comments directly. Files are bounded to 64 KiB. Output has a tab-separated header and data rows, quotes strings, distinguishes `NULL`, and escapes control characters. It enables table scans with limits of 10,000 result rows and 8 MiB of buffers; use `--no-table-scan` to require a selective native access path. Choose at most one of `--snapshot` and `--to-version`.
-
-The CLI runs queries by default. `--write` enables the bounded mutation surface and prints the commit status, confirmed affected rows and RETURNING rows. It cannot be combined with `--snapshot`, `--to-version`, or `--include-deleted`; use a SQL `__version` predicate to guard a write. Schema changes remain Maryk operations.
+See the [CLI command reference](../cli/docs/commands.md#sql) and
+[desktop SQL guide](../app/docs/README.md#sql-queries-and-writes) for options,
+limits and recovery behavior.
 
 ## Development and conformance
 
@@ -136,8 +108,9 @@ commonMain.dependencies {
 }
 ```
 
-
-`sql/src/commonTest` covers parser, binding, values, relational semantics, execution, budgets, and write syntax. The unpublished `:sql:conformance` module supplies one contract to each datastore's tests, including guarded soft and hard deletes, undelete, native projection behavior, paging, exact aggregation, missing values, and historical reads. Remote runs the same contract through HTTP.
+`sql/src/commonTest` covers parsing, binding, expressions, execution and budgets.
+The unpublished `:sql:conformance` module checks query and mutation behavior
+across stores, including Remote over HTTP.
 
 ```bash
 ./gradlew :sql:jvmTest
@@ -145,70 +118,4 @@ commonMain.dependencies {
 ./gradlew :store:memory:jvmTest --tests '*SqlConformanceTest'
 ```
 
-The existing CI matrix picks up SQL through its aggregate JVM, Native, JS, and WasmJS tasks. A configured target or CI task is not proof that it was executed locally; check test reports for the platform being deployed.
-
-## Choosing a SQL write API
-
-Use `execute` for a statement in serializable autocommit, `transaction` for dependent reads and writes, and `prepareAtomic` for a fixed retryable write set. These entry points have different read guarantees.
-
-See [choosing a sql write api](docs/writes.md#choosing-a-sql-write-api).
-
-## SQL transactions
-
-Statements see earlier staged writes. Results remain provisional until commit. Retain the transaction handle to resolve an uncertain commit; do not rerun a fresh statement to establish its outcome.
-
-See [sql transactions](docs/writes.md#sql-transactions).
-
-## Atomic SQL change sets
-
-Prepared atomic sets retain selected targets and guards. Keep the original set and ID for retries; preparation outside a transaction does not protect predicate reads.
-
-See [atomic sql change sets](docs/writes.md#atomic-sql-change-sets).
-
-## Execution strategies and diagnostics
-
-Use EXPLAIN and execution summaries to inspect access paths, counters and budgets. Optimizations preserve query results, error behavior and resource limits.
-
-See [execution strategies and diagnostics](docs/execution.md#execution-strategies-and-diagnostics).
-
-## Catalog discovery
-
-Query `information_schema` for exposed tables, columns and indexes. This local catalog is not an authorization boundary.
-
-See [catalog discovery](docs/queries.md#catalog-discovery).
-
-## Prepared mutations, embedded fields and upsert
-
-Prepare scalar writes, update embedded paths and use ON CONFLICT within serializable execution. Model validation, final fields, uniqueness and required-value constraints remain active.
-
-See [prepared mutations, embedded fields and upsert](docs/writes.md#prepared-mutations-embedded-fields-and-upsert).
-
-## Window functions and correlated queries
-
-Use bounded ranking, navigation and aggregate windows, plus supported correlated scalar, EXISTS and IN subqueries. They share the execution budgets.
-
-See [window functions and correlated queries](docs/queries.md#window-functions-and-correlated-queries).
-
-## Collection expansion
-
-UNNEST expands scalar collections and supported map/embedded paths. The reference defines supported shapes, ordering, empty collections and nesting limits.
-
-See [collection expansion](docs/queries.md#collection-expansion).
-
-## Joined mutations
-
-UPDATE FROM and DELETE USING run with their selection reads in one serializable transaction. Multiple source matches for a target reject the statement.
-
-See [joined mutations](docs/writes.md#joined-mutations).
-
-## Interactive transaction tools
-
-The CLI and desktop console support BEGIN, COMMIT, ROLLBACK and savepoints. Resolve uncertain commits before changing connections.
-
-See [interactive transaction tools](docs/writes.md#interactive-transaction-tools).
-
-## Aggregate execution improvements
-
-Aggregate execution uses bounded incremental state where supported. See execution strategies for fallback behavior and diagnostics.
-
-See [aggregate execution improvements](docs/execution.md#aggregate-execution).
+Check conformance on the storage engine and target platform being deployed.

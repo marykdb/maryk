@@ -41,3 +41,25 @@ Notes:
 - On macOS, the installer downloads and extracts the FoundationDB `.pkg` from GitHub releases if `fdbserver` is not on the `PATH`, and copies `libfdb_c.*` into `bin/lib`.
 - On Linux, if no package manager is detected, the installer downloads and extracts `.deb` artifacts locally.
 - Windows FoundationDB testing is not supported by this module's local tooling until release artifacts and checksums are pinned.
+
+## Binding development and performance probes
+
+The store targets FoundationDB client **7.3.81**, API version **730**, and Kotlin
+multiplatform binding **7.3.81.1**. Run the JVM suite from the repository root:
+
+```bash
+./gradlew :store:foundationdb:jvmTest
+```
+
+To test a sibling binding checkout before publishing its release, pass an explicit
+source path. The development adapter compiles those sources with Maryk's verified
+toolchain; normal builds keep using the pinned Maven dependency.
+
+```bash
+./gradlew -PfoundationDbBindingsPath=../foundationdb-multiplatform :store:foundationdb:jvmTest
+```
+
+For native development, first run `downloadFoundationDbHeaders` in the binding
+checkout. `:store:foundationdb:runFoundationDBPerformanceProbe` runs opt-in local
+comparisons for streaming modes, unique-owner lookup, bulk import and rebuilding.
+It validates results and reports timings without flaky timing assertions.

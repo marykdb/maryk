@@ -10,8 +10,6 @@ generation path per schema:
 
 Read a canonical Maryk YAML definition:
 
-Example with YAML:
-
 ```kotlin
 val yaml = """
 name: Person

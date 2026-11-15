@@ -193,6 +193,7 @@ export default defineConfig({
                             collapsed: true,
                             items: [
                                 {label: 'Overview', slug: 'stores/foundationdb'},
+                                {label: 'Configuration and limits', slug: 'stores/foundationdb/configuration'},
                                 {label: 'Architecture', slug: 'stores/foundationdb/architecture'},
                                 {label: 'Cluster-wide live updates', slug: 'stores/foundationdb/cluster-updates'},
                                 {label: 'Migrations', slug: 'stores/foundationdb/migrations'},

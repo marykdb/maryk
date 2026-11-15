@@ -9,7 +9,8 @@ For lifecycle and model registration, start with the [module overview](../README
 | Setting | Default |
 | --- | --- |
 | Shared block cache | 64 MiB |
-| Shared memtable budget | 32 MiB, charged to the block cache |
+| Shared memtable budget | 128 MiB, accounted separately from the block cache |
+| Write-ahead log | Enabled; asynchronous engine default |
 | SST Bloom filters | 10 bits per key |
 | Bytewise index search | Automatic |
 | Historic index search | Binary, using Maryk's custom comparator |
@@ -22,11 +23,17 @@ History retention is configured separately; see [history and transactions](histo
 
 ## Memory budgets and ownership
 
+Normal writes use the engine's asynchronous WAL default and return after the
+operating system accepts the log data. See [RocksDB write durability](https://github.com/meta/rocksdb/wiki/Basic-Operations#synchronous-writes)
+for the storage synchronisation semantics.
+
 Existing `open(...)` calls use the defaults above. To tune resources, use
 `tuning = RocksDBTuning(...)`. Defaults share a 64 MiB LRU block cache across
-all column families and use a 32 MiB write-buffer budget. Memtable reservations
-are charged to that cache; these numbers must not be summed as independent
-allocations. They are engine budgets, not a strict process-memory limit.
+all column families and use a separate 128 MiB write-buffer budget. The write-buffer
+manager uses its own accounting cache; its reservations cannot pin or evict the
+read cache. Budget for both read caching and memtables, plus retained conflict
+history, engine metadata and application memory. These are engine budgets, not a
+strict process-memory limit.
 
 With caller-owned `rocksDBOptions`, configure the write-buffer manager and
 statistics on those options yourself. `tuning.memtableBudgetBytes` and
@@ -41,9 +48,40 @@ RocksDB divides its cache into shards. Large SST index or Bloom-filter blocks ca
 compete for space within one shard, causing repeated metadata reads and a sharp
 performance drop even when total cache usage appears reasonable.
 
-A local Maryk workload exhibited this behavior at 8 MiB but not at the default
-64 MiB. This is workload-dependent: 64 MiB is a starting point, not a guaranteed
-minimum or optimum. Check cache misses and workload latency when tuning.
+Maryk targets at least 8 MiB per shard, using one shard for smaller caches and at
+most 64 shards. This keeps large metadata blocks from
+competing within the much smaller automatic shards, without increasing the cache
+budget. The cache remains workload-dependent: check misses and latency when tuning.
+
+### Dense imports with history
+
+The 128 MiB memtable budget gives large imports more room before flushing, at
+the cost of higher native memory use. With Maryk-owned DB options, metadata and
+index families also use smaller arena allocations. Matching packaged JVM builds
+perform historic comparisons natively; see the
+[comparator implementation](architecture.md#jvm-historic-comparator).
+
+On JVM and Android, Maryk-owned options also target 16 MiB of retained flushed
+memtables per column family for optimistic conflict checking. This target is
+approximate and can retain a whole larger buffer. Native bindings and caller-owned
+DB options keep the engine default. An optimistic native transaction that outlives
+its retained conflict history fails safely. Record versions continue to use the
+persisted history families.
+
+For tighter memory budgets, keep the 64 MiB block cache and explicitly use the
+previous 32 MiB memtable budget:
+
+```kotlin
+RocksDBTuning(memtableBudgetBytes = 32L * 1024 * 1024)
+```
+
+An explicit 64 MiB budget provides an intermediate capacity.
+
+Pass this as `tuning` to `RocksDBDataStore.open(...)`. Compare import time,
+immediate and reopened read latency, and peak process RSS: flushing can move work
+between those phases, and fewer allocations do not guarantee lower peak memory.
+Budgets apply per store instance. Changing them does not disable durability or
+history, force compaction, or change the stored format.
 
 ## Compression and existing stores
 
@@ -146,5 +184,5 @@ Call these while the store is open and coordinate them with store shutdown.
 WAL file count/bytes on the IO dispatcher. These are separate live inventories,
 not an atomic filesystem snapshot or total directory size: obsolete files and
 other metadata are not included. WAL usage can remain significant even when SST
-compression is effective. Pinned cache usage may also include write-buffer
-reservations after application iterators have closed.
+compression is effective. Pinned read-cache usage includes blocks retained by
+engine readers; write-buffer reservations are accounted separately.

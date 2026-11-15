@@ -57,6 +57,10 @@ relying on their framed response contract. Mixed protocol generations are not a
 supported batch compatibility target; keep legacy single-request framing only as
 a transition aid.
 
+For batch responses up to 16 KiB, the server sends one bounded body and the client decodes frames directly from slices of that body when its length is known. Larger responses and responses without a declared length retain incremental frame decoding. Frame counts, payload bounds, and trailing-byte validation apply to both paths.
+
+The client accumulates large bodies and frames as bytes arrive, transferring channel buffers without an intermediate staging array. Allocations based only on a declared length remain bounded to 16 KiB. Decoding still requires one complete frame in memory.
+
 ## State archive transport
 
 `RemoteStoreInfo.supportsStateBackup` is additive boolean field 13 and defaults

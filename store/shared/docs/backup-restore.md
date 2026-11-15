@@ -22,7 +22,7 @@ records and indexes; it does not clone the engine's operational metadata.
 | Memory (`InMemoryDataStore`) | Yes | Yes |
 | IndexedDB (browser storage) | Yes, with atomic support | Yes, with atomic support |
 | RocksDB | Yes | Yes |
-| FoundationDB | Yes, within its short snapshot window | Yes, with an application-coordinated Maryk snapshot version |
+| FoundationDB | Yes, with a stable datastore revision during capture | Yes, with an application-coordinated Maryk snapshot version |
 | Remote | Yes, with a compatible server and backing store | Yes, with compatible snapshot and restore capabilities |
 
 Remote inherits its backing store's limits. Check `supportsStateBackup` before
@@ -45,6 +45,8 @@ in a state backup does not recreate those earlier values.
 Restore into a new, isolated target with compatible model definitions. Read the
 whole archive, check the recovered data, and only then switch application traffic.
 A failed restore can leave earlier batches applied: discard that target and retry.
+Built-in portable decoders reject unknown fields rather than silently discarding
+archive data.
 
 Protect backup storage and transport as production data. Keep encryption keys
 separately, store recovery copies off-device, and rehearse restores. Portable

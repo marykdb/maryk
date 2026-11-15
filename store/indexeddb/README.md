@@ -53,13 +53,11 @@ at each event version before the returned selection is applied. See
 [history paging](../../core/docs/query.md#getscan-update-history) for bounds,
 continuation, and hard-delete retention limits.
 
-- IndexedDB transactions cannot safely wrap the whole suspend common request processor. Mutations are serialized with Web Locks when available, then written through native batched `readwrite` transactions.
-- Without Web Locks, mutations use a renewable lease stored atomically in IndexedDB. `BroadcastChannel` wakes waiting tabs promptly; timed retries cover browsers without it. Every write batch checks the lease in its native transaction, fencing out expired owners.
-- Snapshot capture reserves a version in the persisted commit clock under the same writer fence. It includes commits from other tabs before journal polling catches up, and later writers use a greater version.
-- A migration returning `Partial` pauses the open after persisting phase, attempt,
-  cursor, versions, and message. The next open resumes that phase through
-  `MigrationContext.previousState`.
-- Migration callbacks can use normal requests after existing journal history has been compacted. Version-update callbacks run after required index backfills and can query the new indexes.
+- Mutations use a writer lock or renewable fenced lease across browser contexts,
+  then commit through native `readwrite` batches. Snapshot capture includes
+  commits from other tabs. See [consistency](docs/architecture.md#mutation-consistency).
+- Interrupted or partial migrations persist their progress and resume on reopen.
+  See the [migration guide](docs/migrations.md) for callback and recovery rules.
 - After a pending migration or schema change in another context, existing contexts
   reject reads and writes and live listeners stop. Reopen with current models.
   See [migration behavior](docs/migrations.md) for callback and resume rules.
@@ -102,15 +100,10 @@ IndexedDB previews replay against a private byte-store overlay while the existin
 
 The [shared contract](../../core/docs/query.md#serializable-transactions) describes
 read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
-commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
-contracts outside an explicit transaction.
+commit resolution.
 
 
-SQL reporting, metadata, embedded scalar writes, transactional upsert, bounded
-windows, joined mutations, correlated queries and complex map/collection expansion
-use the common SQL engine over this store's public requests. See the [SQL guide](../../sql/README.md) for supported
-syntax, execution strategies, transaction tooling and resource limits. The shared
-SQL conformance contract verifies these features through this adapter.
+For optional SQL queries and writes, see the [SQL guide](../../sql/README.md).
 
 ## Upgrading existing stores
 

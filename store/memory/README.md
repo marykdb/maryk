@@ -1,7 +1,8 @@
 # Maryk Memory Store
 
 In-memory Maryk data store implementation.
-Fastest option for tests and local development. No persistence.
+Useful for tests and local development. No persistence. Requests are processed serially
+on the shared CPU dispatcher.
 
 ## Getting started
 
@@ -70,8 +71,7 @@ Memory replays into private copies and publishes the copies and receipt together
 
 The [shared contract](../../core/docs/query.md#serializable-transactions) describes
 read-your-own-writes, savepoints, conservative revision conflicts, deadlines and
-commit resolution. Query and mutation APIs shipped in 0.12.1 retain their existing
-contracts outside an explicit transaction.
+commit resolution.
 
 
 See [store behavior](../shared/docs/store-behavior.md) for staged Checks, typed
@@ -85,3 +85,28 @@ source history. Use `backup` / `restore` when retained revisions must survive;
 that mode requires history on source and target. A state restore target must be
 isolated, empty and history-disabled. See the [shared backup guide](../shared/docs/backup-restore.md)
 for examples, consistency rules, backend support and native alternatives.
+
+## Projection reads
+
+Narrow scalar projections can skip unselected collection data in current and
+historical Gets and Scans, including creation snapshots in change and update
+scans. Eligible current multi-key Gets can also reuse decoded
+repeated records. Each result retains independent mutable containers; filtering,
+ordering and version metadata are preserved. See the shared
+[cache and ownership rules](../shared/docs/store-behavior.md#decoded-value-cache).
+
+## Historical index ordering
+
+Historical index reads use version order even when replication delivers
+different records' histories out of order. The latest historical claim wins;
+equal versions retain applied order.
+A release identifies its owner by key and creation version, so an earlier owner's
+release cannot clear a replacement's historical claim. Current uniqueness checks
+continue to use the successfully applied owner independently of historical order.
+
+Point lookups over reordered histories scan directly for the first eight reads.
+Further lookups prepare an ordered view; consumers that enumerate an ordered
+history prepare it immediately. This adds sorting work and index metadata while
+sharing record payloads. Already ordered histories do not need that extra view.
+Preparation allocation also includes temporary work, so it is not the retained
+view size.

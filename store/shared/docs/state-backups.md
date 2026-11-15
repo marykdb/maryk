@@ -71,10 +71,15 @@ IndexedDB can delay writes while exporting; keep the destination fast. Never
 execute requests against the source from a writer callback, because the callback
 can end up waiting on its own export.
 
-FoundationDB has a short engine snapshot window. If capture cannot finish within
-it, the export fails. Smaller pages or an isolated cluster do not extend that
-window. Use [native FoundationDB backups](../../foundationdb/docs/backups.md) for
-recovery when portable state export is too slow.
+FoundationDB reads each bounded page from a fresh native snapshot and checks the
+same durable Maryk revision throughout the capture and before publication. This
+allows a quiescent export to span multiple native snapshot windows. An intervening
+Maryk mutation fails the export with `FoundationDBStateBackupChangedException`;
+discard the unfinished output and retry while writes are quiescent. Each page
+still has the normal read-byte and snapshot-age limits. Direct native writes
+outside Maryk's storage contract are not covered by the revision fence. Use
+[native FoundationDB backups](../../foundationdb/docs/backups.md) for online
+recovery while application writes continue.
 
 The archive verifies checksums and completion. Checksums do not authenticate a
 backup against deliberate replacement, and exported values may be decrypted.
@@ -84,7 +89,8 @@ Protect the archive and transport; discard incomplete output.
 
 The same calls work with `RemoteDataStore`. Export runs one capture on the server;
 restore sends bounded batches to the backing store. Upgrade both peers when the
-state capability is unavailable. FoundationDB's capture window still applies.
+state capability is unavailable. FoundationDB's revision fence and per-page limits
+still apply.
 
 The server requires `StateBackup` permission for every exported model, and
 `StateRestore` plus the relevant `ProcessUpdate` permissions for import. Ordinary

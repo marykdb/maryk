@@ -8,7 +8,7 @@ Maryk defines a storage‑engine‑independent core. Each engine implements the 
 
 At runtime:
 
-- `FoundationDBDataStore` owns the FDB client, opens the directory tree, and runs a single‑threaded coroutine actor that processes requests sequentially.
+- `FoundationDBDataStore` owns the FDB client and directory tree. Its actor orders actions, dispatches bounded concurrent reads and serializes mutations.
 - “Processors” map each request type to concrete reads/writes against FDB.
 - “Helpers” encapsulate encoding/decoding, qualifier matching, version math, and index/unique management.
 - An in‑memory `Cache` helps de‑duplicate value decoding when a request needs the same property multiple times (e.g. aggregations).
@@ -29,7 +29,7 @@ Capabilities in the FDB engine:
     Models with sensitive properties are rejected when this is enabled because cluster-log payload encryption is not implemented.
     Upgrading its legacy HLC-ordered log is coordinated: quiesce all readers and writers, upgrade every binary, then restart. Consumers drain persisted legacy entries before storing a one-way commit-ordered cursor. Mixed old/new binaries and rollback after activation are unsupported because old binaries cannot enforce or understand the transition.
 - Initializes per‑model directories via DirectoryLayer.
-- Launches the store actor (coroutine) to process incoming requests one by one. Add, change, and delete processors use one FDB transaction per object; multi-object requests can therefore return partial results. Reads use transactions or iterators scoped to the required operation.
+- Launches the store actor and read workers. Ordinary add, change and delete processors use one FDB transaction per object; multi-object requests can therefore return partial results. Reads use transactions or iterators scoped to the required operation.
 
 ### Process lifecycle
 
@@ -151,7 +151,8 @@ when filtering deleted records.
    - Check existence (creation version) and run filter/soft‑delete checks.
    - Read either latest from `table` or historic from `table_versioned` up to `toVersion`.
    - Apply `select` graph to avoid unnecessary reads.
-3. Aggregate fields if requested, using `Cache` to avoid re‑decoding the same value twice.
+3. Aggregate selected values and fetch any additional metric inputs within the
+   same transaction. Repeated metric reads can reuse values within the record.
 
 ### Scan
 1. Compute key ranges and/or index ranges (depending on `order`).
@@ -236,54 +237,65 @@ reading the bucket in each mutation. This internal metadata must retain its
 canonical encoding; corrupt watermark metadata requires recovery rather than
 using normal writes as a repair mechanism.
 
-Main table and index scans start with at most the requested row count and grow
-bounded candidate batches up to 512 when more candidates are needed. Batches use
-the binding's default streaming mode; Java `asList` already optimizes finite
-limits, and the local probe found no benefit from forcing `WANT_ALL`. Current
-table scans reuse the creation version in their key row. Current index scans
-prefetch candidate creation markers before filtering, and cluster-log payloads
-fetch up to eight chunks together. Outstanding futures are canceled when a
-batch completes or fails; decoding and results preserve storage order and the
-request's pinned read version.
+Table and index scans grow bounded candidate batches as needed. Gets and value
+scans prefetch at most eight records, decode in request order and release native
+reads on completion, failure or cancellation. Eligible scalar projections reuse
+one selection layout and overlap value reads with creation and schema checks.
+Unused speculative reads are canceled; decoded rows still pass the normal
+existence, deletion and filter checks and the record/request byte budgets.
+Current reads can reuse the prepared soft-delete marker. Full single-record
+current Gets without aggregations use `WANT_ALL`; finite scans retain the
+binding's default streaming mode. Streaming hints do not replace byte limits.
+Current table scans also batch deletion and filter lookups before applying the
+normal predicates. Version-history scans retain bounded, request-local creation
+and deletion metadata caches under the pinned read version. Exact-version
+deletion lookups use point reads; range reads start at the requested bound and
+close native iterators on completion or early exit.
+
+Ordinary Gets use one native transaction's snapshot. Scans and reusable contexts
+pin a read version, while explicit contexts and flow boundaries capture it before
+callbacks can suspend. Later native transactions reuse that version and check the
+current schema fence. Schema readiness is checked within each transaction,
+including when metadata reads overlap record preparation.
+
+State backup uses the datastore's durable mutation revision instead of retaining
+one native snapshot. Each page and allocation read checks that revision in a
+fresh snapshot; schema fences and the revision are checked again before archive
+publication. Quiescent exports can therefore span native MVCC windows. An
+intervening Maryk mutation rejects the unfinished archive. See
+[state backup limits](../../shared/docs/state-backups.md#capture-limits-that-affect-operation).
 
 Request/maintenance policies and per-attempt tracing hooks are described in the
-[configuration guide](../README.md#transaction-policies-and-diagnostics).
+[configuration guide](configuration.md#transaction-policies-and-diagnostics).
 
 ### Retry markers and asynchronous ownership
 
-Ordinary native write attempts share one invocation ID and retained outcome,
-created outside the retry callback. Private markers live in `__meta__/ordinary_receipts`,
-separate from durable serialized atomic receipts and their format conversion.
-Successful invocation cleanup uses a bounded queue of unique invocation keys rather
-than copying a growing set for each acknowledgement. Failed cleanup batches are
-restored ahead of newer keys within the existing 65,536-key cap; clearing replayed
-keys is idempotent. Abandoned markers require quiescent
-maintenance if they accumulate after crashes. Markers do not provide cross-call
-idempotence without an application-supplied stable transaction ID.
+Ordinary writes retain one receipt key and outcome across native retries. A
+store allocates a durable owner ID on its first mutation; reads and no-ops do not
+allocate one. Private markers live in `__meta__/ordinary_receipts`, separate from
+public atomic receipts. The owner counter survives reopen and native backup,
+and close clears only the current instance's namespace.
 
-Suspending transaction callbacks run in a supervisor scope so one failed attempt
-cannot cancel its parent before FoundationDB retries it. A canceled operation
-cancels its native transactions as well as its futures. Prepared range readers
-use the common Flow adapter to own iterator/future cleanup, and enforce atomic
-byte budgets before collecting rows. Ordinary reads, transaction previews/commits
-and restores all use the configured request limit. A native attempt shares one
-request budget across its members; the next attempt receives a fresh budget. Each
-decoded Get record releases its raw buffers immediately, while at most eight
-record reads remain prefetched. Get decoding uses
-already-awaited rows; synchronous codec/filter callbacks keep a compatibility
-bridge rather than introducing a second coroutine inside every value callback.
+Successful invocation markers enter a bounded cleanup queue. Failed cleanup
+batches are retried; a crash or queue overflow can leave orphan markers requiring
+quiescent maintenance. Markers protect retries within one invocation. Cross-call
+idempotence requires an application-supplied stable transaction ID.
 
-Cluster head values are compared with the previous idle pass before committed
-watches are armed, covering the scan/watch gap. Separate HLC and tailer baselines
-avoid consuming each other's signals. A local conflated listener signal wakes
-the tailer when subscriptions change. Watch cancellation propagates through the
-JVM mapped future to its native source; native awaiting-coroutine cancellation
-also cancels the underlying future.
+Suspending database operations retain one native transaction through SDK
+`onError` retries, preserving retry counts, timeouts and backoff. Each attempt
+waits for its child work and checks cancellation before commit. Closing cancels
+owned transactions and futures. Prepared reads release their native resources
+and raw rows after decoding; synchronous codecs and filters retain a compatibility
+bridge. Transaction attempts share one request read budget across their members,
+with a fresh budget for each replay attempt.
 
-Maintenance split points are derived from data/history bytes and normalized to
-whole record keys. Workers keep the same schema fence, independent scratch
-record namespaces and bounded native transactions. Final schema publication
-waits until all workers complete; cancellation leaves the rebuild fenced and
+Cluster-log readers compare idle-pass heads before arming committed watches and
+also wake when local subscriptions change. These checks cover the gap between
+scanning and watching without relying only on periodic polling.
+
+Maintenance workers use disjoint whole-record partitions, independent scratch
+namespaces and bounded native transactions under the same schema fence. Final
+publication waits for all workers; cancellation leaves the rebuild fenced and
 recoverable.
 
 ### Reproducing performance measurements
@@ -307,11 +319,12 @@ control. Both modes check their results, warm up, and report allocation counters
 when the JVM exposes them. JVM and Native release measurements should be kept
 separate from debug-test timings.
 
-Stores without sensitive fields pass payload slices directly to the decoder;
-sensitive stores retain context-bound decryption. Canonical strings decode from
-bounded byte arrays without rebuilding a streaming buffer. Other definitions and
-noncanonical markers use the general decoder. Persisted encodings and read budgets
-are unchanged.
+Compare throughput, latency and peak process memory together, using repeated
+matched runs with named source revisions. Include cold reads and full-record
+workloads as well as projections. Keep rejected variants and unfavorable results
+with the benchmark evidence: fewer allocations, deeper prefetch or more
+concurrency do not by themselves establish an improvement. In particular, a
+streaming hint that helps a full-record read need not help finite scans.
 
 ### Optional JVM direct-buffer queries
 

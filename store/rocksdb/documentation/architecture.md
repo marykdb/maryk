@@ -42,7 +42,7 @@ RocksDB options:
 - `Table` and `HistoricTable` use a fixed-length prefix extractor sized to the model key for efficient key‑range scans.
 - `Historic*` families use `VersionedComparator`, which sorts by key/qualifier first and version second, so qualifiers stay grouped.
 - Presence-only index and migration-marker checks use exact `keyExists` reads, avoiding value copies. Transactional checks retain transaction reads for pending-write visibility, conflict tracking, and atomic work accounting. `keyMayExist` is not treated as proof of presence.
-- Sequential readers explicitly enable RocksDB's total-order seeks, including snapshot readers, so scans can cross model-key prefixes. Record-local readers retain prefix-restricted seeks.
+- Request contexts share one immutable, snapshot-bound total-order read option for point reads and scans. Readers enforce their record, key and prefix boundaries explicitly; store-level maintenance readers can retain prefix-restricted options.
 - Transactional range/prefix deletion uses total-order iterators and checks iterator status before staging each bounded batch of deletes. This includes pending writes and supports savepoint rollback without relying on non-transactional range tombstones.
 
 ## Keys, Qualifiers, and Values
@@ -122,6 +122,84 @@ Change readers merge a recovered current transition with existing history and
 retain at most `maxVersions` soft-delete transitions, independently of other
 properties. Active-record history still includes a restoration transition when
 its historic row is missing.
+
+## JVM historic comparator
+
+On matching macOS, Linux (including Alpine/musl) and Windows x64 JNI builds, a small native comparator avoids JVM
+callbacks during historic comparisons. It retains the `maryk.VersionedComparator`
+name and ordering, including short metadata keys. Unsupported platforms, model
+keys shorter than eight bytes, missing resources and mismatched native binaries
+use the common implementation. No storage migration is needed.
+
+The loader verifies the active JNI image against its build manifest. Unix libraries
+link to that same image. The Windows DLL is a standalone MSVC-compatible subclass:
+it uses the matching RocksDB headers and shared Microsoft runtime, with local
+overrides for its option-free configuration behavior. It links no RocksDB engine
+or support implementation and leaves the Java JNI DLL unchanged. In the build's
+header copy, `novtable` suppresses the unused `Configurable` base vtable without
+changing its members or virtual slots. Only the complete concrete comparator is
+instantiated. Native resources are built against checksum-pinned RocksDB
+headers. Gradle builds and verifies the resources directly using a C/C++ compiler;
+Python is not required. Without a compiler, the JVM build uses the common comparator.
+Gradle skips unchanged local builds using declared source, JNI and JDK inputs and
+generated resource outputs. Shared build-cache reuse is disabled because native
+outputs depend on the host compiler and SDK. Offline builds use the common
+comparator when the source archive is not cached. To build the native comparator
+offline, provide the verified archive with
+`-Pmaryk.rocksdbNativeSourceArchive=/path/to/archive`. Supplied archives and native
+bundles still require valid checksums; invalid inputs fail the build. Fallback
+builds retry preparation on the next invocation so an available archive can enable
+native output. Dedicated native CI jobs continue to require the native comparator.
+Publication assembles tested platform resources from the successful Build run
+for the exact source commit and verifies their inputs and checksums again.
+
+### Cross-compilation on macOS
+
+The JVM bundles are macOS ARM64/x64, Linux glibc ARM64/x64, Linux musl ARM64/x64
+and Windows x64. Windows ARM64 retains the common comparator.
+
+For compilation without running foreign code, install LLVM/LLD and the musl
+cross-compilers, and prepare Kotlin/Native's Linux sysroots:
+
+```bash
+brew install llvm lld FiloSottile/musl-cross/musl-cross
+./gradlew :store:rocksdb:compileKotlinLinuxX64 :store:rocksdb:compileKotlinLinuxArm64
+LLVM_LINKER="$(brew --prefix lld)/bin/ld.lld" \
+  WINDOWS_SDK_ROOT=/path/to/msvc-sdk \
+  WINDOWS_LINKER="$(brew --prefix lld)/bin/lld-link" \
+  bash store/rocksdb/scripts/compile-jvm-comparator.sh all --offline
+```
+
+The offline command requires the verified RocksDB source archive to be cached
+or supplied through `-Pmaryk.rocksdbNativeSourceArchive=/path/to/archive`.
+Pass one platform instead of `all` to compile only that bundle. `LLVM_BIN`,
+`LLVM_LINKER`, `MUSL_CROSS_BIN` and `KONAN_DATA_DIR` can select existing toolchains.
+Unix targets reuse the host JDK's JNI declarations, whose primitive sizes and
+calling convention match these 64-bit Unix targets.
+
+For Windows, prepare Microsoft's headers and import libraries with
+[xwin](https://github.com/Jake-Shadle/xwin), then set `WINDOWS_SDK_ROOT` to its
+output directory. CI uses xwin 0.6.5, SDK 10.0.22621 and CRT 14.44.17.14:
+
+```bash
+xwin --accept-license --arch x86_64 --sdk-version 10.0.22621 \
+  --crt-version 14.44.17.14 splat --output /path/to/msvc-sdk
+WINDOWS_SDK_ROOT=/path/to/msvc-sdk \
+  bash store/rocksdb/scripts/compile-jvm-comparator.sh windows-x86_64
+```
+
+Clang targets `x86_64-pc-windows-msvc`, not MinGW, with the shared release CRT
+and iterator debugging disabled. The host JDK's platform-neutral `jni.h` uses
+the small Windows x64 platform definitions in `src/jvmNative/jni-windows`.
+
+Outputs are isolated under `build/generated/jvmNativeComparatorCrossResources/<platform>`.
+These are compile results until tested: CI cross-compiles the additional Linux
+and Windows bundles on macOS, then downloads and tests those exact files on ARM64
+Linux, architecture-matched Alpine containers or Windows. Tests require native loading,
+compare ordering with the common implementation, verify flush/reopen and OPTIONS
+serialization through the JNI engine, and run the RocksDB module suite.
+Only successful test jobs upload resources under the publication artifact names.
+The publication verifier requires all seven platform bundles.
 
 ## Transactions and Concurrency
 

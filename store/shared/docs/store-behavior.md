@@ -6,48 +6,33 @@ or synchronizing records.
 
 ## Decoded-value cache
 
-FoundationDB and RocksDB use a shared decoded-value cache within each request.
-It reuses a value only when its reference and version match. This cache is
-separate from RocksDB's block cache and does not cache queries between requests.
+FoundationDB and RocksDB can reuse decoded values within one request when the
+property reference and version match. Datastore paths use an estimated 2 MiB
+pool across keys and models where repeated decoding is useful. Single-record
+Gets and known scalar reads bypass this pool. Large or unsupported values use
+normal decoding. Existing `Cache(...)` callers retain their constructor defaults
+and per-key limits.
 
-`Cache(...)` keeps its constructor, defaults and per-key limits for existing
-callers. Datastore paths select `Cache.forRequest(request)`: known scalar Get/Scan
-reads bypass value admission because they materialize each field once. Repeated
-Get rows reuse decoded records instead. Complex/custom reads, large Get requests
-beyond the record-planning bound, and mutations retain the pooled estimated
-2 MiB budget across models and keys. Individual values can borrow that pool,
-instead of being rejected at the former 128 KiB per-key boundary. Both paths
-retain the 1,024-key-per-model and 128-reference-per-key safeguards. Least recently
-used entries are evicted when a limit is reached; linked nodes are reused on hits.
-The request pool accounts for record/index metadata as well as decoded values.
+Repeated Get keys can reuse decoded records from the same snapshot and retry
+attempt. Result order, duplicate rows, filters, projections, version metadata and
+aggregation contributions are preserved. Each reused result copies built-in
+mutable containers. Planning and copy work are bounded; larger or custom graphs
+use normal reads. FoundationDB also charges reused rows against its request
+materialization budget.
 
-Sizing uses a portable allowance for object metadata, two bytes per string
-character, and the payload size of byte wrappers and primitive arrays. Known
-fixed-size scalars use a constant allowance. Sizing never copies payloads or
-traverses arbitrary object graphs. Unknown/composite values and values larger
-than the available pool bypass caching. Replacement/deletion releases accounting,
-and older-version reads cannot replace newer cached values.
+RocksDB and FoundationDB reuse records within their read snapshots. IndexedDB
+limits reuse to unfiltered current Gets read together in one native transaction.
+Memory enables it for eligible large current full/container Gets without filters
+or aggregations. No decoded-value or record cache survives its request.
 
-Get requests with repeated keys can reuse already-decoded records in the same
-snapshot and retry attempt. Result order, duplicates, filters, projections,
-historic metadata and aggregation multiplicity are preserved. Reused results
-copy built-in mutable containers. Planning is limited to 4,096 input keys and
-copy eligibility to bounded built-in graphs; larger/custom graphs use normal
-reads. Memoized payloads are already owned by the response, with bounded planning
-metadata. Missing/filtered repeated keys can reuse negative results. FoundationDB
-charges reused results against its request materialization budget using the
-original encoded row size, preserving that safeguard despite fewer physical reads.
+Cache sizes are portable estimates, not exact heap or response-size limits.
+Returned results remain in caller-owned memory after eviction. The pool also
+accounts for its metadata and retains per-model and per-key safeguards; unknown
+object graphs are not traversed merely to estimate their size. Native caches,
+memtables, transactions and responses consume memory separately.
 
-RocksDB and FoundationDB share a strict decoder for canonical string payloads in
-already-bounded byte arrays. Other types and storage markers retain the general
-streaming decoder. The general decoder's allocation safeguards are unchanged.
-
-These budgets are estimates, not exact runtime heap limits or response-size
-limits. A single hot record may retain more than under the legacy per-key limit;
-the pooled budget prevents many keys from multiplying that allowance. Returned
-results still own memory after eviction, and working sets larger than the pool
-can require repeated decoding. No cache survives its request or snapshot scope.
-No persisted encodings or storage migration changes.
+String reads retain strict UTF-8 validation, including optimized decoding from
+bounded payloads. These optimizations do not change persisted encodings.
 
 Run `:store:shared:runCachePerformanceProbe --args=request` to compare strict
 per-key and pooled behavior, bounded decoding, allocations and retained heap.
@@ -77,6 +62,13 @@ native memory than steady-state reads. Size engine resources for the workload
 and inspect native diagnostics; the request cache is not a total-memory limit.
 Avoid opening a separate datastore/native cache per patient when one indexed
 store can serve the patient population.
+
+## Mutation bookkeeping
+
+Mutations can skip independent built-in indexes and unrelated unique claims when
+the model and changed references prove they are unaffected. Custom dependencies,
+nested changes and deletion retain full reconciliation. Validation and mutation
+atomicity still apply; no transaction results are cached across requests.
 
 ## Write validation and collection boundaries
 

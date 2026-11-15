@@ -77,10 +77,13 @@ Inspect `SqlExecutionSummary` for completion status, fetched/result rows, store 
 
 ## Execution strategies and diagnostics
 
-Simple aggregate projections without HAVING use incremental state per group rather
-than retaining every input row. DISTINCT aggregate state remains bounded by the
-buffer budget. Conditional or complex aggregate projections keep bounded retained
-groups to preserve lazy expression errors; this fallback never relaxes limits.
+Eligible aggregates, including eager arithmetic around aggregate calls, retain
+incremental state per group rather than every source row. HAVING queries can use
+this path for safe COUNT/MIN/MAX calls. Lazy branches, unsafe argument expressions
+and HAVING queries involving SUM/AVG keep bounded retained groups so execution
+preserves lazy errors and NULL semantics. DISTINCT aggregate state remains bounded
+by the buffer budget; the fallback never relaxes limits.
+
 Ordered queries with finite LIMIT and OFFSET, without DISTINCT, retain only the
 best LIMIT + OFFSET rows in a stable heap. All candidate expressions still run, so
 an optimization cannot hide a failing expression. Oversized offsets fall back to
@@ -102,16 +105,6 @@ readable rendering; `EXPLAIN ANALYZE` adds execution evidence. Each
 path, the index encoding when supplied by the store, requests and fetched rows.
 Unknown native paths are reported explicitly. Counters describe public store
 requests, not hidden physical index visits or exact heap allocation.
-
-### Aggregate execution
-
-Arithmetic around eager aggregate calls can use incremental aggregation, retaining
-one accumulator per group instead of all source rows. HAVING queries using safe
-COUNT/MIN/MAX calls also stream their group state. Lazy branches, unsafe argument
-expressions and HAVING expressions that could hide SUM/AVG failures keep the bounded
-reference execution path. These choices preserve NULL handling and error semantics.
-Top-N sorting, index ordering and batched reference joins remain available; all
-optimizations share the same limits and consistency policy.
 
 Capabilities report `complexCollectionExpansion`, `boundedWindowFrames` and
 `joinedMutations`; joinedMutations requires the store's serializable transaction

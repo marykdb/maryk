@@ -40,6 +40,9 @@ and historic cursor pages in both directions, variable string prefixes, complete
 list/set/map transaction replacements, atomic empty replacements and retries,
 nullable removal, and collection/missing-property Checks with rollback. Run it on
 Memory, RocksDB, FoundationDB, IndexedDB and Remote.
+`HistoricalOwnershipConformance` checks reversed valid record histories,
+equal-version ownership transfers and key reincarnation. Its explicit erasure
+expectation preserves Memory's archived values and persistent stores' hard erasure.
 Keep regressions with the implementation commit that fixes them. Native RocksDB
 iterator-loop regressions also use an iterator budget because a coroutine
 timeout cannot interrupt a runnable native scanner.

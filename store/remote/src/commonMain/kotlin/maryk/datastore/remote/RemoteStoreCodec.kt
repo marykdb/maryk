@@ -66,8 +66,10 @@ internal object RemoteStoreCodec {
         serializer: IsObjectDataModelSerializer<DO, *, CX, CX>,
         bytes: ByteArray,
         context: CX?,
+        offset: Int = 0,
+        length: Int = bytes.size - offset,
     ): DO {
-        val values = decodeValues(serializer, bytes, context)
+        val values = decodeValues(serializer, bytes, context, offset, length)
         return try {
             values.toDataObject()
         } catch (error: Throwable) {
@@ -80,16 +82,31 @@ internal object RemoteStoreCodec {
         serializer: IsObjectDataModelSerializer<DO, DM, CX, CX>,
         bytes: ByteArray,
         context: CX?,
+        offset: Int = 0,
+        length: Int = bytes.size - offset,
     ): ObjectValues<DO, DM> {
-        var index = 0
+        require(offset >= 0 && offset <= bytes.size && length >= 0 && length <= bytes.size - offset) {
+            "Invalid proto payload range: offset=$offset length=$length size=${bytes.size}"
+        }
+        val endIndex = offset + length
+        var index = offset
+        // The array bound already isolates the last frame and ordinary unframed payloads.
+        val reader: () -> Byte = if (endIndex == bytes.size) {
+            { bytes[index++] }
+        } else {
+            {
+                check(index < endIndex) { "Proto payload truncated" }
+                bytes[index++]
+            }
+        }
         val values = try {
-            serializer.readProtoBuf(bytes.size, { bytes[index++] }, context)
+            serializer.readProtoBuf(length, reader, context)
         } catch (error: Throwable) {
             error.rethrowIfFatal()
             throw IllegalStateException("Invalid proto payload or trailing bytes", error)
         }
-        if (index != bytes.size) {
-            throw IllegalStateException("Proto payload has trailing bytes: consumed=$index total=${bytes.size}")
+        if (index != endIndex) {
+            throw IllegalStateException("Proto payload has trailing bytes: consumed=${index - offset} total=$length")
         }
         return values
     }

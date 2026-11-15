@@ -10,8 +10,8 @@ import maryk.datastore.shared.DataStoreStateBackupOptions
 import maryk.datastore.shared.supportsStateBackup
 
 import maryk.datastore.shared.VersionedRestoreDataStore
-import maryk.datastore.shared.RestoreVersionRequest
-import maryk.datastore.shared.validateRestoreVersion
+import maryk.datastore.shared.changeRequestTypes
+import maryk.datastore.shared.RestoreVersionTransportCodec
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -63,7 +63,6 @@ import maryk.core.properties.references.ObjectReferencePropertyReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
-import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.filters.Exists
@@ -437,18 +436,38 @@ internal fun Application.remoteStoreModule(
                     responseChunks.add(responseBytes)
                     totalSize += chunkSize
                 }
-                val responseBytes = if (!useBatchProtocol) {
-                    responseChunks[1]
+                val contentType = ContentType.parse(RemoteStoreProtocol.contentType)
+                if (!useBatchProtocol) {
+                    call.respondBytes(responseChunks[1], contentType)
+                } else if (totalSize <= RemoteStoreProtocol.smallBatchResponseBytes) {
+                    // Tiny responses cost less as one bounded body than a writer coroutine.
+                    val bytes = ByteArray(totalSize)
+                    var offset = 0
+                    for (chunk in responseChunks) {
+                        chunk.copyInto(bytes, offset)
+                        offset += chunk.size
+                    }
+                    responseChunks.clear()
+                    call.respondBytes(bytes, contentType)
                 } else {
-                    ByteArray(totalSize).also { bytes ->
-                        var offset = 0
-                        for (chunk in responseChunks) {
-                            chunk.copyInto(bytes, offset)
-                            offset += chunk.size
+                    // All requests and encodings have succeeded before starting the response.
+                    // Write retained frames directly instead of allocating another full batch buffer.
+                    val permit = call.attributes[RemoteStoreCallAdmissionPermitKey]
+                    permit.deferRelease()
+                    try {
+                        call.respondBytesWriter(contentType, contentLength = totalSize.toLong()) {
+                            try {
+                                for (chunk in responseChunks) writeFully(chunk)
+                            } finally {
+                                responseChunks.clear()
+                                permit.release()
+                            }
                         }
+                    } catch (error: Throwable) {
+                        permit.release()
+                        throw error
                     }
                 }
-                call.respondBytes(responseBytes, ContentType.parse(RemoteStoreProtocol.contentType))
             }
         }
 
@@ -619,7 +638,7 @@ internal fun Application.remoteStoreModule(
                     addAll(record.values.toChanges())
                     if (record.isDeleted) add(ObjectSoftDeleteChange(true))
                 } }
-                for (type in authorizationRequestTypes(changes)) {
+                for (type in changeRequestTypes(changes)) {
                     if (!call.authorize(config, principal, RemoteStoreOperation.ProcessUpdate, type, chunk.modelName)) return@respondValidationErrors
                 }
                 val model = dataStore.dataModelsById.values.single { it.Meta.name == chunk.modelName }
@@ -637,15 +656,11 @@ internal fun Application.remoteStoreModule(
                 val bytes = readRequestBytes(call, "restore-version", limits)
                 val context = createRequestContext(dataStore).also { it.rejectUnknownProtoBufFields = true }
                 val request = decodeRequest("restore-version") {
-                    val wire = RemoteStoreCodec.decode(RemoteRestoreVersion.Serializer, bytes, context)
-                    @Suppress("UNCHECKED_CAST")
-                    RestoreVersionRequest(wire.updates as List<UpdateResponse<IsRootDataModel>>).also { validateRestoreVersion(it, capabilities) }
+                    RestoreVersionTransportCodec.decode(bytes, context, MAX_REQUEST_BODY_BYTES, capabilities)
                 }
-                for (update in request.updates) {
-                    val types = (update.update as InitialChangesUpdate).changes.flatMap { it.changes }
-                        .flatMapTo(mutableSetOf()) { authorizationRequestTypes(it.changes) }
+                for ((model, types) in request.requiredRequestTypes()) {
                     val authorized = if (types.isEmpty()) config.authorizer == null else types.all { type ->
-                        call.authorize(config, principal, RemoteStoreOperation.ProcessUpdate, type, update.dataModel.Meta.name, respondOnFailure = false)
+                        call.authorize(config, principal, RemoteStoreOperation.ProcessUpdate, type, model.Meta.name, respondOnFailure = false)
                     }
                     if (!authorized) throw RequestValidationException(HttpStatusCode.Forbidden, "Remote restore operation is not authorized")
                 }
@@ -676,12 +691,12 @@ internal fun Application.remoteStoreModule(
                 }
                 val requestTypes = when (val update = updateRequest.update) {
                     is AdditionUpdate<*> -> setOf(RequestType.Add)
-                    is ChangeUpdate<*> -> authorizationRequestTypes(update.changes)
+                    is ChangeUpdate<*> -> changeRequestTypes(update.changes)
                     is RemovalUpdate<*> -> setOf(RequestType.Delete)
                     is InitialChangesUpdate<*> -> update.changes
                         .flatMap { it.changes }
                         .flatMapTo(mutableSetOf()) { versionedChanges ->
-                            authorizationRequestTypes(versionedChanges.changes)
+                            changeRequestTypes(versionedChanges.changes)
                         }
                     else -> emptySet()
                 }
@@ -941,7 +956,7 @@ private suspend fun ApplicationCall.authorizeRequestModels(
     // A ChangeRequest can contain a deletion (or creation). Apply the same semantic
     // permissions as update ingestion, including requests unwrapped from Collect.
     if (request is ChangeRequest<*>) {
-        val changeTypes = authorizationRequestTypes(request.objects.flatMap { it.changes })
+        val changeTypes = changeRequestTypes(request.objects.flatMap { it.changes })
         for (changeType in changeTypes) {
             if (changeType == requestType) continue
             if (!authorize(config, principal, operation, changeType, primaryModelName, respondOnFailure)) return false
@@ -1140,15 +1155,6 @@ private fun authorizationFailureForUpdate(
     )
     else -> null
 }
-
-private fun authorizationRequestTypes(changes: List<IsChange>): Set<RequestType> =
-    changes.mapTo(mutableSetOf()) { change ->
-        when {
-            change === ObjectCreate -> RequestType.Add
-            change is ObjectSoftDeleteChange && change.isDeleted -> RequestType.Delete
-            else -> RequestType.Change
-        }
-    }.ifEmpty { setOf(RequestType.Change) }
 
 private fun resolveRequest(rawRequest: Any, operation: String): IsTransportableRequest<*> = when (rawRequest) {
     is IsTransportableRequest<*> -> rawRequest

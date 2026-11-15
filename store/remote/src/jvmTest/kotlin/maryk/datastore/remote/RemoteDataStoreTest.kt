@@ -102,6 +102,27 @@ class RemoteDataStoreTest {
     }
 
     @Test
+    fun knownLengthResponsesRetainActualBodyHandlingForMismatchedHeaders() = runBoundedIntegrationTest {
+        val info = RemoteStoreInfo(
+            RemoteDataStore.collectDefinitions(listOf(SimpleMarykModel)),
+            listOf(RemoteStoreModelId(1u, SimpleMarykModel.Meta.name)),
+            keepAllVersions = true, supportsFuzzyQualifierFiltering = false, supportsSubReferenceFiltering = false,
+        )
+        val payload = RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info, DefinitionsConversionContext())
+        for (length in listOf(payload.size, 1, payload.size + 8)) {
+            val client = HttpClient(MockEngine {
+                respond(content = ByteReadChannel(payload), status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType to listOf(RemoteStoreProtocol.contentType),
+                        HttpHeaders.ContentLength to listOf(length.toString())))
+            })
+            try {
+                val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://localhost", httpClient = client))
+                try { assertTrue(remote.keepAllVersions) } finally { remote.close() }
+            } finally { client.close() }
+        }
+    }
+
+    @Test
     fun nonFlowErrorPreviewStopsBeforeEof() = runBoundedIntegrationTest {
         val failure = rejectOpenInfoResponse(bytesToWrite = 4097, status = HttpStatusCode.Forbidden)
         assertTrue(failure.message.orEmpty().contains("HTTP 403"))
@@ -1341,6 +1362,36 @@ class RemoteDataStoreTest {
             assertIs<AddResponse<*>>(responses[0])
             assertIs<AddResponse<*>>(responses[1])
             Unit
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun smallAndLargeResponseBatchesPreserveValuesAndOrdering() = runBoundedIntegrationTest {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val engine = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
+            remoteStoreModule(store)
+        }.start(wait = false)
+        val port = engine.engine.resolvedConnectors().single().port
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+        try {
+            for ((round, size) in listOf(64, 20_000, 64).withIndex()) {
+                val values = List(2) { index ->
+                    SimpleMarykModel.create { value with "ha-$round-$index-${"x".repeat(size)}" }
+                }
+                val added = remote.execute(SimpleMarykModel.add(*values.toTypedArray()))
+                val keys = added.statuses.map { assertIs<AddSuccess<SimpleMarykModel>>(it).key }
+                val responses = remote.execute(Requests(keys.reversed().map { SimpleMarykModel.get(it) }))
+                assertEquals(2, responses.size)
+                responses.forEachIndexed { index, response ->
+                    val record = assertIs<ValuesResponse<SimpleMarykModel>>(response).values.single()
+                    assertEquals(keys[1 - index], record.key)
+                    assertEquals(values[1 - index] { value }, record.values { value })
+                }
+            }
         } finally {
             remote.close()
             engine.stop(500, 500)

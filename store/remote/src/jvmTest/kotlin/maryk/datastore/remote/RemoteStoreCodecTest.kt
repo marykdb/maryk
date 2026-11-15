@@ -125,6 +125,58 @@ class RemoteStoreCodecTest {
     }
 
     @Test
+    fun decodeReadsOnlyTheSelectedFrame() {
+        val info = RemoteStoreInfo(
+            definitions = RemoteDataStore.collectDefinitions(emptyList()),
+            modelIds = emptyList(),
+            keepAllVersions = true,
+            supportsFuzzyQualifierFiltering = false,
+            supportsSubReferenceFiltering = false,
+        )
+        val encoded = RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info, DefinitionsConversionContext())
+        val framed = byteArrayOf(0xFF.toByte()) + encoded + byteArrayOf(0xFF.toByte())
+        val decoded = RemoteStoreCodec.decode(
+            RemoteStoreInfo.Serializer, framed, DefinitionsConversionContext(), offset = 1, length = encoded.size,
+        )
+        assertTrue(decoded.keepAllVersions)
+        assertEquals(emptyList(), decoded.modelIds)
+        assertFailsWith<IllegalStateException> {
+            RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, framed, DefinitionsConversionContext(), 1, encoded.size + 1)
+        }
+        // A length-delimited field declares two bytes but has only one inside its frame.
+        // The remaining byte in the backing array must not be available to the decoder.
+        assertFailsWith<IllegalStateException> {
+            RemoteStoreCodec.decode(
+                RemoteStoreInfo.Serializer, byteArrayOf(0, 0x0A, 2, 0x08, 0), DefinitionsConversionContext(), 1, 3,
+            )
+        }
+    }
+
+    @Test
+    fun rangedDecodeRejectsInvalidBoundsAndOverreads() {
+        val bytes = byteArrayOf(1, 2, 3)
+        for ((offset, length) in listOf(-1 to 1, 4 to 0, 1 to -1, 1 to Int.MAX_VALUE)) {
+            assertFailsWith<IllegalArgumentException> {
+                RemoteStoreCodec.decode(FatalReadSerializer, bytes, null, offset, length)
+            }
+        }
+        var consumed = 0
+        val serializer = object : ThrowingSerializer() {
+            override fun readProtoBuf(length: Int, reader: () -> Byte, context: IsPropertyContext?): ObjectValues<Any, IsObjectDataModel<Any>> {
+                repeat(length + 1) {
+                    reader()
+                    consumed++
+                }
+                error("Reading past a frame must fail")
+            }
+        }
+        assertFailsWith<IllegalStateException> { RemoteStoreCodec.decode(serializer, bytes, null, 1, 1) }
+        assertEquals(1, consumed)
+        assertFailsWith<OutOfMemoryError> { RemoteStoreCodec.decode(FatalReadSerializer, bytes, null, 1, 1) }
+        assertFailsWith<CancellationException> { RemoteStoreCodec.decode(CancellingReadSerializer, bytes, null, 1, 1) }
+    }
+
+    @Test
     fun encodeRejectsPayloadAboveMaxBeforeAllocation() {
         val info = RemoteStoreInfo(
             definitions = RemoteDataStore.collectDefinitions(emptyList()),

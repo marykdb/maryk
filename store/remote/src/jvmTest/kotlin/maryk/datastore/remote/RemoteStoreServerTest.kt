@@ -16,6 +16,7 @@ import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.utils.io.readBuffer
 import java.net.Socket
+import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -128,6 +129,50 @@ class RemoteStoreServerTest {
 
             assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
             assertEquals("Remote Store is at call capacity", response.bodyAsText())
+        }
+    }
+
+    @Test
+    fun executeKeepsItsPermitUntilTheBatchWriterFinishesOrIsCancelled() = runBoundedIntegrationTest {
+        val delegate = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val executions = AtomicInteger()
+        withServer(dataStore = LargeAddResponseStore(delegate, executions),
+            limits = RemoteStoreServerLimits(maxConcurrentCalls = 1)) { baseUrl, client ->
+            val port = baseUrl.substringAfterLast(':').toInt()
+            val socket = Socket().apply {
+                receiveBufferSize = 1024
+                soTimeout = 5000
+                connect(InetSocketAddress("127.0.0.1", port))
+            }
+            try {
+                val payload = RemoteStoreCodec.encode(Requests.Serializer, Requests(List(2) { index ->
+                    SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-writer$index" })
+                }), testRequestContext())
+                val headers = buildString {
+                    append("POST ${RemoteStoreProtocol.executePath} HTTP/1.1\r\n")
+                    append("Host: 127.0.0.1:$port\r\n")
+                    append("Content-Type: ${RemoteStoreProtocol.contentType}\r\n")
+                    append("Content-Length: ${payload.size}\r\n")
+                    append("${RemoteStoreProtocol.executeProtocolHeader}: ${RemoteStoreProtocol.batchExecuteProtocol}\r\n\r\n")
+                }.encodeToByteArray()
+                socket.getOutputStream().apply { write(headers); write(payload); flush() }
+                val input = socket.getInputStream().bufferedReader()
+                assertTrue(input.readLine().contains("200"))
+                val responseHeaders = generateSequence { input.readLine()?.takeIf { it.isNotEmpty() } }.toList()
+                assertTrue(responseHeaders.any { it.startsWith("Content-Length:", ignoreCase = true) })
+                assertEquals(2, executions.get())
+                assertEquals(HttpStatusCode.ServiceUnavailable,
+                    client.get("$baseUrl${RemoteStoreProtocol.infoPath}").status)
+                socket.close()
+                withTimeout(5.seconds) {
+                    while (true) {
+                        val status = client.get("$baseUrl${RemoteStoreProtocol.infoPath}").status
+                        if (status == HttpStatusCode.OK) break
+                        assertEquals(HttpStatusCode.ServiceUnavailable, status)
+                        delay(10)
+                    }
+                }
+            } finally { socket.close() }
         }
     }
 

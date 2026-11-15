@@ -16,6 +16,7 @@ import maryk.datastore.shared.StateBackupAllocations
 import maryk.core.exceptions.RequestException
 import maryk.datastore.shared.VersionedRestoreDataStore
 import maryk.datastore.shared.RestoreVersionRequest
+import maryk.datastore.shared.RestoreVersionTransportCodec
 import maryk.datastore.shared.validateRestoreVersion
 import io.ktor.client.HttpClient
 import io.ktor.client.request.headers
@@ -34,6 +35,7 @@ import io.ktor.http.Url
 import io.ktor.http.URLParserException
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readAvailable
+import io.ktor.utils.io.readBuffer
 import io.ktor.utils.io.readFully
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
@@ -60,8 +62,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.IOException
-import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
+import maryk.lib.bytes.combineToByteArray
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsTypedObjectDataModel
@@ -464,7 +466,7 @@ class RemoteDataStore private constructor(
         payload: ByteArray,
         descriptors: List<BatchRequestDescriptor>,
     ): List<IsResponse> {
-        val responseBytes = readNonFlowResponseBytes("execute", MAX_BATCH_RESPONSE_BODY_BYTES) {
+        return executeNonFlowRequest(request = {
             httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.executePath)) {
                 headers {
                     append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -477,7 +479,32 @@ class RemoteDataStore private constructor(
                 }
                 setBody(payload)
             }
+        }) { statement ->
+            statement.execute { response ->
+                requireSuccess(response, "execute")
+                requireContentType(response, RemoteStoreProtocol.contentType, "execute")
+                if (descriptors.size > 1) {
+                    val length = validateResponseLength(response, "execute", MAX_BATCH_RESPONSE_BODY_BYTES)
+                    if (length != null && length <= RemoteStoreProtocol.smallBatchResponseBytes) {
+                        val bytes = readResponseBytes(response, "execute", RemoteStoreProtocol.smallBatchResponseBytes)
+                        decodeFramedBatchResponse(bytes, descriptors)
+                    } else {
+                        readExecuteFrames(response.bodyAsChannel(), descriptors.size) { frame, index ->
+                            decodeResponse(frame, descriptors[index])
+                        }
+                    }
+                } else {
+                    val bytes = readResponseBytes(response, "execute", MAX_BATCH_RESPONSE_BODY_BYTES)
+                    decodeSingleExecuteResponse(bytes, descriptors)
+                }
+            }
         }
+    }
+
+    private fun decodeSingleExecuteResponse(
+        responseBytes: ByteArray,
+        descriptors: List<BatchRequestDescriptor>,
+    ): List<IsResponse> {
         if (responseBytes.isEmpty()) {
             throw IllegalStateException("Remote store execute returned an empty payload")
         }
@@ -521,8 +548,10 @@ class RemoteDataStore private constructor(
                 throw IllegalStateException("Response payload truncated for batch item $index")
             }
             responses += decodeResponse(
-                responseBytes.copyOfRange(lengthResult.nextOffset, endIndex),
+                responseBytes,
                 descriptor,
+                offset = lengthResult.nextOffset,
+                length = lengthResult.length,
             )
             offset = endIndex
         }
@@ -535,6 +564,8 @@ class RemoteDataStore private constructor(
     private fun decodeResponse(
         payload: ByteArray,
         descriptor: BatchRequestDescriptor,
+        offset: Int = 0,
+        length: Int = payload.size - offset,
     ): IsResponse {
         val responseContext = requestContext(descriptor.dataModel)
         @Suppress("UNCHECKED_CAST")
@@ -542,6 +573,8 @@ class RemoteDataStore private constructor(
             descriptor.responseModel.Serializer,
             payload,
             responseContext,
+            offset,
+            length,
         ).let { response ->
             when {
                 response is TransactionResponse && descriptor.transactionRequest != null -> restoreTransactionGeneratedValues(response, descriptor.transactionRequest)
@@ -909,7 +942,7 @@ class RemoteDataStore private constructor(
         val context = requestContext(request.dataModel, request.updates.map { it.dataModel }).also {
             it.rejectUnknownProtoBufFields = true
         }
-        val payload = RemoteStoreCodec.encode(RemoteRestoreVersion.Serializer, RemoteRestoreVersion(request.updates), context, MAX_REQUEST_BODY_BYTES)
+        val payload = RestoreVersionTransportCodec.encode(request, context, MAX_REQUEST_BODY_BYTES)
         val response = readNonFlowResponseBytes("restore-version") {
             httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.restoreVersionPath)) {
                 headers {
@@ -1248,6 +1281,17 @@ private suspend fun readResponseBytes(
     operation: String,
     maxBytes: Int = MAX_FRAME_SIZE_BYTES,
 ): ByteArray {
+    val expectedSize = validateResponseLength(response, operation, maxBytes)
+    val bytes = response.bodyAsChannel()
+        .readBoundedBytes(maxBytes + 1, expectedSize)
+    if (bytes.size > maxBytes) {
+        response.call.cancel()
+        throw IllegalStateException("Remote store $operation response exceeds max size: ${bytes.size} > $maxBytes")
+    }
+    return bytes
+}
+
+private fun validateResponseLength(response: HttpResponse, operation: String, maxBytes: Int): Int? {
     val rawContentLength = response.headers[HttpHeaders.ContentLength]
     val contentLength = rawContentLength?.toLongOrNull()
     if (rawContentLength != null) {
@@ -1260,29 +1304,79 @@ private suspend fun readResponseBytes(
             throw IllegalStateException("Remote store $operation response exceeds max size: $contentLength > $maxBytes")
         }
     }
-    val bytes = response.bodyAsChannel()
-        .readBoundedBytes(maxBytes + 1)
-    if (bytes.size > maxBytes) {
-        response.call.cancel()
-        throw IllegalStateException("Remote store $operation response exceeds max size: ${bytes.size} > $maxBytes")
-    }
-    return bytes
+    return contentLength?.toInt()
 }
 
-private suspend fun ByteReadChannel.readBoundedBytes(limit: Int): ByteArray {
-    // Stop at the bound without waiting for another byte or EOF.
-    val result = Buffer()
-    val chunk = ByteArray(minOf(8192, limit))
-    var remaining = limit
-    while (remaining > 0) {
-        val count = readAvailable(chunk, 0, minOf(chunk.size, remaining))
-        if (count < 0) {
-            closedCause?.let { throw it }
-            break
+/** Decode one bounded frame at a time, retaining no whole-batch wire buffer. */
+internal suspend fun <T> readExecuteFrames(
+    channel: ByteReadChannel,
+    frameCount: Int,
+    maxBytes: Int = MAX_BATCH_RESPONSE_BODY_BYTES,
+    decode: (ByteArray, Int) -> T,
+): List<T> {
+    val responses = ArrayList<T>(frameCount)
+    val prefix = ByteArray(4)
+    var consumed = 0
+    repeat(frameCount) { index ->
+        try {
+            channel.readFully(prefix, 0, prefix.size)
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            throw IllegalStateException("Missing response length prefix for batch item $index", error)
         }
-        result.write(chunk, 0, count)
-        remaining -= count
+        val length = requireNotNull(RemoteStoreCodec.readLengthPrefix(prefix, 0)).length
+        check(length > 0) { "Invalid response length prefix: $length" }
+        check(length <= MAX_FRAME_SIZE_BYTES) { "Response frame exceeds max size: $length > $MAX_FRAME_SIZE_BYTES" }
+        check(consumed <= maxBytes - prefix.size && length <= maxBytes - consumed - prefix.size) {
+            "Remote store execute response exceeds max size: limit is $maxBytes"
+        }
+        val frame = try {
+            if (length <= RemoteStoreProtocol.smallBatchResponseBytes) {
+                ByteArray(length).also { channel.readFully(it, 0, it.size) }
+            } else {
+                // A prefix is only a claim. Allocate large payloads as their bytes
+                // arrive, retaining the direct array path for bounded small frames.
+                channel.readBoundedBytes(length).also {
+                    check(it.size == length) { "Expected $length bytes, received ${it.size}" }
+                }
+            }
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            throw IllegalStateException("Response payload truncated for batch item $index", error)
+        }
+        consumed += prefix.size + length
+        responses += decode(frame, index)
     }
+    check(channel.readAvailable(prefix, 0, 1) == -1) { "Response contains trailing bytes after payload" }
+    channel.closedCause?.let { throw it }
+    return responses
+}
+
+internal suspend fun ByteReadChannel.readBoundedBytes(limit: Int, expectedSize: Int? = null): ByteArray {
+    // Large Content-Length headers must not allocate an unread response body.
+    if (expectedSize != null && expectedSize <= RemoteStoreProtocol.smallBatchResponseBytes) {
+        val bytes = ByteArray(expectedSize)
+        var offset = 0
+        while (offset < bytes.size) {
+            val count = readAvailable(bytes, offset, bytes.size - offset)
+            if (count < 0) {
+                closedCause?.let { throw it }
+                return bytes.copyOf(offset)
+            }
+            offset += count
+        }
+        val extra = ByteArray(1)
+        if (readAvailable(extra, 0, 1) < 0) {
+            closedCause?.let { throw it }
+            return bytes
+        }
+        // Keep the bounded actual-body behavior when a transport supplies a mismatched header.
+        return combineToByteArray(bytes, extra, readBoundedBytes(limit - bytes.size - 1))
+    }
+    // Stop at the bound without waiting for another byte or EOF.
+    // Transfer channel segments directly, without an intermediate byte array.
+    val result = readBuffer(limit.toLong())
+    closedCause?.let { throw it }
     return result.readByteArray()
 }
 

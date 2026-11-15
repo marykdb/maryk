@@ -25,14 +25,24 @@ kotlin {
                 api(projects.store.shared)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.cio)
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.cio)
+            }
+        }
+        getByName("jvmMain") {
+            dependencies {
+                implementation(libs.ktor.client.java)
+            }
+        }
+        getByName("nativeMain") {
+            dependencies {
+                implementation(libs.ktor.client.cio)
             }
         }
         getByName("commonTest") {
             dependencies {
                 implementation(kotlin("test"))
+                implementation(libs.ktor.client.cio)
                 implementation(projects.sql.conformance)
                 implementation(projects.testmodels)
                 implementation(projects.store.memory)

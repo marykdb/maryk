@@ -76,7 +76,7 @@ class RemoteRestoreSchemaTest {
             ))
             val update = UpdateResponse(NewRemoteRestoreSchema, InitialChangesUpdate(11uL, listOf(record)))
             val context = RequestContext(DefinitionsContext(mutableMapOf(NewRemoteRestoreSchema.Meta.name to DataModelReference(NewRemoteRestoreSchema))), NewRemoteRestoreSchema)
-            val payload = RemoteStoreCodec.encode(RemoteRestoreVersion.Serializer, RemoteRestoreVersion(listOf(update)), context)
+            val payload = RemoteStoreCodec.encode(LegacyRestoreVersion.Serializer, LegacyRestoreVersion(listOf(update)), context)
             val response = client.post("http://127.0.0.1:$port${RemoteStoreProtocol.restoreVersionPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 header(RemoteStoreProtocol.valueStorageFormatHeader, StorageFormat.CURRENT.toString())

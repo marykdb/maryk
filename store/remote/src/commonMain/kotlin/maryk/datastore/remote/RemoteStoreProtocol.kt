@@ -6,6 +6,7 @@ internal object RemoteStoreProtocol {
     const val streamContentType = "application/x-maryk-protobuf-stream"
     const val executeProtocolHeader = "X-Maryk-Execute-Protocol"
     const val batchExecuteProtocol = "2"
+    const val smallBatchResponseBytes = 16 * 1024
     const val flowProtocolHeader = "X-Maryk-Flow-Protocol"
     const val resumableFlowProtocol = "2"
     const val mutationOutcomeHeader = "X-Maryk-Mutation-Outcome"

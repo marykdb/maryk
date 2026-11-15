@@ -28,6 +28,9 @@ import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNu
 import maryk.datastore.foundationdb.processors.helpers.FDBIterator
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.boundedRows
+import maryk.datastore.foundationdb.processors.helpers.prepareStructuralRecordRead
+import maryk.datastore.foundationdb.processors.helpers.PreparedRecordRead
+import maryk.datastore.foundationdb.processors.helpers.prepareRecordRead
 import maryk.datastore.foundationdb.processors.helpers.checkExistence
 import maryk.datastore.foundationdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.foundationdb.processors.helpers.isHistoricDeleteMarker
@@ -53,204 +56,219 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?,
     decryptValue: DecryptValue? = null,
     readBudget: FoundationDBReadBudget,
+    preparedRead: PreparedRecordRead? = null,
 ): DataObjectVersionedChange<DM>? {
-    val recordBudget = FoundationDBReadBudget(tableDirs.dataStore.executionConfiguration.maxRecordReadBytes, readBudget)
-    val changes: List<VersionedChanges>
-    val readValuesAtVersion = { version: ULong ->
-        val snapshotVersion = if (tableDirs is HistoricTableDirectories) version else null
-        requireNotNull(readTransactionIntoValuesWithMetaData(
-            tr, creationVersion, tableDirs, key, select, snapshotVersion,
-            { _, _, reader -> reader() }, decryptValue, readBudget = recordBudget,
-        )).values
-    }
+    val ownedRead = if (preparedRead == null && maxVersions == 1u) {
+        prepareRecordRead(tr, tableDirs, key.bytes, select, toVersion, readBudget)
+    } else null
+    val effectiveRead = preparedRead ?: ownedRead
+    try {
+        val recordBudget = effectiveRead?.readBudget
+            ?: FoundationDBReadBudget(tableDirs.dataStore.executionConfiguration.maxRecordReadBytes, readBudget)
+        val changes: List<VersionedChanges>
+        val readValuesAtVersion = { version: ULong, snapshotSelect: RootPropRefGraph<DM> ->
+            val snapshotVersion = if (tableDirs is HistoricTableDirectories) version else null
+            val prepared = prepareStructuralRecordRead(tr, tableDirs, key.bytes, snapshotSelect, snapshotVersion, recordBudget)
+            try {
+                requireNotNull(readTransactionIntoValuesWithMetaData(
+                    tr, creationVersion, tableDirs, key, snapshotSelect, snapshotVersion,
+                    { _, _, reader -> reader() }, decryptValue, preparedRead = prepared, readBudget = recordBudget,
+                )).values
+            } finally { prepared.release() }
+        }
 
-    if (toVersion == null && maxVersions == 1u) {
-        val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
+        if (toVersion == null && maxVersions == 1u) {
+            val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
 
-        val iterator = FDBIterator(
-            tr.boundedRows(FDBRange.startsWith(prefixWithKeyRange), recordBudget).awaitResult().iterator()
-        )
+            val iterator = FDBIterator(
+                (effectiveRead?.awaitRows()
+                    ?: tr.boundedRows(FDBRange.startsWith(prefixWithKeyRange), recordBudget).awaitResult()).iterator()
+            )
 
-        checkExistence(iterator, prefixWithKeyRange)
+            checkExistence(iterator, prefixWithKeyRange)
 
-        // Will start by going to next key so will miss the creation timestamp
-        val getQualifier = iterator.nonHistoricQualifierRetriever(prefixWithKeyRange)
+            // Will start by going to next key so will miss the creation timestamp
+            val getQualifier = iterator.nonHistoricQualifierRetriever(prefixWithKeyRange)
 
-        var index: Int
-        changes = this.readStorageToChanges(
-            getQualifier = getQualifier,
-            select = select,
-            creationVersion = if (creationVersion >= fromVersion) creationVersion else null,
-            readValuesAtVersion = readValuesAtVersion,
-            processValue = { storageType, reference, valueWithVersionReader ->
-                val currentVersion: ULong
-                val keyBytes = iterator.current.key
-                val valueBytes = iterator.current.value
+            var index: Int
+            changes = this.readStorageToChanges(
+                getQualifier = getQualifier,
+                select = select,
+                creationVersion = if (creationVersion >= fromVersion) creationVersion else null,
+                readSelectedValuesAtVersion = readValuesAtVersion,
+                processValue = { storageType, reference, valueWithVersionReader ->
+                    val currentVersion: ULong
+                    val keyBytes = iterator.current.key
+                    val valueBytes = iterator.current.value
 
-                val value = when (storageType) {
-                    ObjectDelete -> {
-                        val deleted = valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
-                            if (length == 1) payload[offset] == TRUE else null
-                        }
-                        if (deleted == null) {
-                            currentVersion = 0uL
-                            null
-                        } else {
-                            currentVersion = valueBytes.readVersionBytes()
-                            cachedRead(reference, currentVersion) {
-                                if (currentVersion >= fromVersion && keyBytes[prefixWithKeyRange.size] == 0.toByte()) {
-                                    deleted
-                                } else null
+                    val value = when (storageType) {
+                        ObjectDelete -> {
+                            val deleted = valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
+                                if (length == 1) payload[offset] == TRUE else null
+                            }
+                            if (deleted == null) {
+                                currentVersion = 0uL
+                                null
+                            } else {
+                                currentVersion = valueBytes.readVersionBytes()
+                                cachedRead(reference, currentVersion) {
+                                    if (currentVersion >= fromVersion && keyBytes[prefixWithKeyRange.size] == 0.toByte()) {
+                                        deleted
+                                    } else null
+                                }
                             }
                         }
-                    }
-                    Value -> {
-                        currentVersion = valueBytes.readVersionBytes()
-                        if (currentVersion >= fromVersion) {
-                            cachedRead(reference, currentVersion) {
-                                val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
-                                    ?: reference.propertyDefinition
+                        Value -> {
+                            currentVersion = valueBytes.readVersionBytes()
+                            if (currentVersion >= fromVersion) {
+                                cachedRead(reference, currentVersion) {
+                                    val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                        ?: reference.propertyDefinition
 
-                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
-                                    index = offset
-                                    val reader = { payload[index++] }
+                                    valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
+                                        index = offset
+                                        val reader = { payload[index++] }
 
-                                    readValue(definition, reader) {
-                                        offset + length - index
+                                        readValue(definition, reader) {
+                                            offset + length - index
+                                        }
                                     }
                                 }
-                            }
-                        } else null
-                    }
-                    ListSize -> {
-                        currentVersion = valueBytes.readVersionBytes()
-                        if (currentVersion >= fromVersion) {
-                            cachedRead(reference, currentVersion) {
-                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
-                                    readStoredCount(payload, offset, length)
-                                }
-                            }
-                        } else null
-                    }
-                    SetSize -> {
-                        currentVersion = valueBytes.readVersionBytes()
-                        if (currentVersion >= fromVersion) {
-                            cachedRead(reference, currentVersion) {
-                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
-                                    readStoredCount(payload, offset, length)
-                                }
-                            }
-                        } else null
-                    }
-                    MapSize -> {
-                        currentVersion = valueBytes.readVersionBytes()
-                        if (currentVersion >= fromVersion) {
-                            cachedRead(reference, currentVersion) {
-                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
-                                    readStoredCount(payload, offset, length)
-                                }
-                            }
-                        } else null
-                    }
-                    Embed -> {
-                        currentVersion = valueBytes.readVersionBytes()
-                        null
-                    }
-                    TypeValue -> throw StorageException("Not used in direct encoding")
-                }
-                if (currentVersion >= fromVersion) {
-                    valueWithVersionReader(currentVersion, value)
-                }
-            }
-        )
-    } else {
-        if (tableDirs !is HistoricTableDirectories) {
-            throw RequestException("No historic table present so cannot use `toVersion` on get changes")
-        }
-
-        val prefixWithKeyRange = packKey(tableDirs.historicTablePrefix, key.bytes)
-        val iterator = FDBIterator(
-            tr.boundedRows(FDBRange.startsWith(prefixWithKeyRange), recordBudget).awaitResult().iterator()
-        )
-
-        checkExistence(iterator, prefixWithKeyRange)
-
-        var currentVersion: ULong = creationVersion
-        // Will start by going to next key so will miss the creation timestamp
-        val getQualifier = iterator.historicQualifierRetriever(prefixWithKeyRange, toVersion ?: ULong.MAX_VALUE, maxVersions) { version ->
-            currentVersion = version
-        }
-
-        var index: Int
-        changes = this.readStorageToChanges(
-            getQualifier = getQualifier,
-            select = select,
-            creationVersion = if (creationVersion >= fromVersion) creationVersion else null,
-            readValuesAtVersion = readValuesAtVersion,
-            processValue = { storageType, reference, valueWithVersionReader ->
-                if (currentVersion >= fromVersion) {
-                    val storedKey = iterator.current.key
-                    val qualifierEnd = storedKey.size - VERSION_BYTE_SIZE - 1
-                    val qualifier = decodeZeroFreeUsing01OrNull(
-                        storedKey, prefixWithKeyRange.size, qualifierEnd - prefixWithKeyRange.size
-                    ) ?: return@readStorageToChanges
-                    val value = cachedRead(reference, currentVersion) {
-                        when (storageType) {
-                            ObjectDelete -> {
-                                if (iterator.current.key[prefixWithKeyRange.size] == 0.toByte()) {
-                                    val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
-                                    if (v.isNotEmpty()) v[0] == TRUE else true
-                                } else null
-                            }
-                            Value -> {
-                                val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
-                                if (v.isHistoricDeleteMarker()) {
-                                    return@cachedRead null
-                                }
-                                index = 0
-                                val reader = { v[index++] }
-
-                                val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
-                                    ?: reference.propertyDefinition
-                                readValue(definition, reader) {
-                                    v.size - index
-                                }
-                            }
-                            ListSize -> {
-                                val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
-                                if (v.isHistoricDeleteMarker()) {
-                                    return@cachedRead null
-                                }
-                                readStoredCount(v)
-                            }
-                            SetSize -> {
-                                val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
-                                if (v.isHistoricDeleteMarker()) {
-                                    return@cachedRead null
-                                }
-                                readStoredCount(v)
-                            }
-                            MapSize -> {
-                                val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
-                                if (v.isHistoricDeleteMarker()) {
-                                    return@cachedRead null
-                                }
-                                readStoredCount(v)
-                            }
-                            Embed -> {}
-                            TypeValue -> throw StorageException("Not used in direct encoding")
+                            } else null
                         }
+                        ListSize -> {
+                            currentVersion = valueBytes.readVersionBytes()
+                            if (currentVersion >= fromVersion) {
+                                cachedRead(reference, currentVersion) {
+                                    valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
+                                        readStoredCount(payload, offset, length)
+                                    }
+                                }
+                            } else null
+                        }
+                        SetSize -> {
+                            currentVersion = valueBytes.readVersionBytes()
+                            if (currentVersion >= fromVersion) {
+                                cachedRead(reference, currentVersion) {
+                                    valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
+                                        readStoredCount(payload, offset, length)
+                                    }
+                                }
+                            } else null
+                        }
+                        MapSize -> {
+                            currentVersion = valueBytes.readVersionBytes()
+                            if (currentVersion >= fromVersion) {
+                                cachedRead(reference, currentVersion) {
+                                    valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
+                                        readStoredCount(payload, offset, length)
+                                    }
+                                }
+                            } else null
+                        }
+                        Embed -> {
+                            currentVersion = valueBytes.readVersionBytes()
+                            null
+                        }
+                        TypeValue -> throw StorageException("Not used in direct encoding")
                     }
-                    valueWithVersionReader(currentVersion, value)
+                    if (currentVersion >= fromVersion) {
+                        valueWithVersionReader(currentVersion, value)
+                    }
                 }
+            )
+        } else {
+            if (tableDirs !is HistoricTableDirectories) {
+                throw RequestException("No historic table present so cannot use `toVersion` on get changes")
             }
-        )
-    }
 
-    if (changes.isEmpty()) return null
-    return DataObjectVersionedChange(
-        key = key,
-        sortingKey = sortingKey?.let(::Bytes),
-        changes = changes
-    )
+            val prefixWithKeyRange = packKey(tableDirs.historicTablePrefix, key.bytes)
+            val iterator = FDBIterator(
+                (effectiveRead?.awaitRows()
+                    ?: tr.boundedRows(FDBRange.startsWith(prefixWithKeyRange), recordBudget).awaitResult()).iterator()
+            )
+
+            checkExistence(iterator, prefixWithKeyRange)
+
+            var currentVersion: ULong = creationVersion
+            // Will start by going to next key so will miss the creation timestamp
+            val getQualifier = iterator.historicQualifierRetriever(prefixWithKeyRange, toVersion ?: ULong.MAX_VALUE, maxVersions) { version ->
+                currentVersion = version
+            }
+
+            var index: Int
+            changes = this.readStorageToChanges(
+                getQualifier = getQualifier,
+                select = select,
+                creationVersion = if (creationVersion >= fromVersion) creationVersion else null,
+                readSelectedValuesAtVersion = readValuesAtVersion,
+                processValue = { storageType, reference, valueWithVersionReader ->
+                    if (currentVersion >= fromVersion) {
+                        val storedKey = iterator.current.key
+                        val qualifierEnd = storedKey.size - VERSION_BYTE_SIZE - 1
+                        val qualifier = decodeZeroFreeUsing01OrNull(
+                            storedKey, prefixWithKeyRange.size, qualifierEnd - prefixWithKeyRange.size
+                        ) ?: return@readStorageToChanges
+                        val value = cachedRead(reference, currentVersion) {
+                            when (storageType) {
+                                ObjectDelete -> {
+                                    if (iterator.current.key[prefixWithKeyRange.size] == 0.toByte()) {
+                                        val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
+                                        if (v.isNotEmpty()) v[0] == TRUE else true
+                                    } else null
+                                }
+                                Value -> {
+                                    val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
+                                    if (v.isHistoricDeleteMarker()) {
+                                        return@cachedRead null
+                                    }
+                                    index = 0
+                                    val reader = { v[index++] }
+
+                                    val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                        ?: reference.propertyDefinition
+                                    readValue(definition, reader) {
+                                        v.size - index
+                                    }
+                                }
+                                ListSize -> {
+                                    val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
+                                    if (v.isHistoricDeleteMarker()) {
+                                        return@cachedRead null
+                                    }
+                                    readStoredCount(v)
+                                }
+                                SetSize -> {
+                                    val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
+                                    if (v.isHistoricDeleteMarker()) {
+                                        return@cachedRead null
+                                    }
+                                    readStoredCount(v)
+                                }
+                                MapSize -> {
+                                    val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
+                                    if (v.isHistoricDeleteMarker()) {
+                                        return@cachedRead null
+                                    }
+                                    readStoredCount(v)
+                                }
+                                Embed -> {}
+                                TypeValue -> throw StorageException("Not used in direct encoding")
+                            }
+                        }
+                        valueWithVersionReader(currentVersion, value)
+                    }
+                }
+            )
+        }
+
+        if (changes.isEmpty()) return null
+        return DataObjectVersionedChange(
+            key = key,
+            sortingKey = sortingKey?.let(::Bytes),
+            changes = changes
+        )
+    } finally {
+        ownedRead?.release()
+    }
 }

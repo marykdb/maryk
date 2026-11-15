@@ -17,6 +17,11 @@ internal fun <T> foundationDbFuture(block: suspend () -> T): FdbFuture<T> = fdbF
 internal suspend fun <T> TrackingTransactionContext.runSuspending(
     context: FoundationDBTransactionContext,
     block: suspend (Transaction) -> T,
+): T = runSuspendingConfigured(context, block)
+
+internal suspend fun <T> TrackingTransactionContext.runSuspendingThroughAsync(
+    context: FoundationDBTransactionContext,
+    block: suspend (Transaction) -> T,
 ): T = supervisorScope {
     val future = runAsyncConfigured(context) { transaction ->
         CoroutineFdbFuture(async { block(transaction) })

@@ -36,9 +36,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
     tableDirs: IsTableDirectories,
     readContext: FoundationDBReadContext,
     scanSetup: ((ScanType) -> Unit)? = null,
+    scanComplete: ((Transaction) -> Unit)? = null,
     processRecord: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType = runReadTransaction(readContext, getDataModelId(scanRequest.dataModel)) { transaction ->
-    processScanInTransaction(scanRequest, tableDirs, readContext, transaction, scanSetup, processRecord)
+    processScanInTransaction(scanRequest, tableDirs, readContext, transaction, scanSetup, processRecord).also {
+        scanComplete?.invoke(transaction)
+    }
 }
 
 private fun <DM : IsRootDataModel> FoundationDBDataStore.processScanInTransaction(

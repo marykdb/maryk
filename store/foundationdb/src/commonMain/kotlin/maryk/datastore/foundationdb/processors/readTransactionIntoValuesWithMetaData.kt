@@ -95,7 +95,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
 
                 when (storageType) {
                     ObjectDelete -> {
-                        val deleted = value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
+                        val deleted = value.withCurrentPayload(decryptValue, tableDirs.modelId, { key.bytes }, { iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size) }) { payload, offset, length ->
                             if (length == 1) payload[offset] == TRUE else null
                         }
                         if (deleted != null) {
@@ -110,7 +110,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     Value -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, { key.bytes }, { iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size) }) { payload, offset, length ->
                                 val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                     ?: reference.propertyDefinition
 
@@ -121,7 +121,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     ListSize -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, { key.bytes }, { iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size) }) { payload, offset, length ->
                                 readStoredCount(payload, offset, length)
                             }
                         }
@@ -129,7 +129,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     SetSize -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, { key.bytes }, { iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size) }) { payload, offset, length ->
                                 readStoredCount(payload, offset, length)
                             }
                         }
@@ -137,7 +137,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     MapSize -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, { key.bytes }, { iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size) }) { payload, offset, length ->
                                 readStoredCount(payload, offset, length)
                             }
                         }

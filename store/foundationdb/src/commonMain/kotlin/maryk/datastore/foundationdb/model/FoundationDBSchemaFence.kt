@@ -5,6 +5,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.foundationdb.Transaction
+import maryk.foundationdb.FdbFuture
 import maryk.foundationdb.TransactionContext
 import kotlin.random.Random
 
@@ -119,8 +120,16 @@ internal fun Transaction.requireModelSchemaRebuildOwner(
 internal fun Transaction.requireModelSchemaReady(
     modelPrefix: ByteArray,
     expectedEpoch: ByteArray?,
+    preparedState: FdbFuture<ByteArray?>? = null,
 ) {
-    when (val actual = readModelSchemaState(this, modelPrefix)) {
+    val bytes = (preparedState ?: get(packKey(modelPrefix, modelSchemaStateKey))).awaitResult()
+    validateModelSchemaReady(bytes, expectedEpoch)
+}
+
+internal fun validateModelSchemaReady(bytes: ByteArray?, expectedEpoch: ByteArray?) {
+    if (expectedEpoch != null && bytes != null && matchesReadySchemaFence(bytes, expectedEpoch)) return
+    val actual = bytes?.let(::decodeSchemaState)
+    when (actual) {
         null -> if (expectedEpoch != null) {
             throw StorageException("Model schema epoch was removed while this store was open")
         }
@@ -132,6 +141,21 @@ internal fun Transaction.requireModelSchemaReady(
         )
     }
 }
+
+/** Only canonical, exact matches bypass the full parser; every other state retains its validation. */
+internal fun matchesReadySchemaFence(bytes: ByteArray, epoch: ByteArray): Boolean {
+    if (bytes.size != readySchemaPrefix.size + epoch.size * 2 + 1 || bytes.last() != '\n'.code.toByte()) return false
+    for (index in readySchemaPrefix.indices) if (bytes[index] != readySchemaPrefix[index]) return false
+    for (index in epoch.indices) {
+        val value = epoch[index].toInt() and 0xff
+        if (bytes[readySchemaPrefix.size + index * 2] != hexDigits[value ushr 4].code.toByte() ||
+            bytes[readySchemaPrefix.size + index * 2 + 1] != hexDigits[value and 15].code.toByte()) return false
+    }
+    return true
+}
+
+private val readySchemaPrefix = "v=1\nstate=ready\nepoch=".encodeToByteArray()
+private const val hexDigits = "0123456789abcdef"
 
 internal fun Transaction.publishModelSchemaReady(
     modelPrefix: ByteArray,

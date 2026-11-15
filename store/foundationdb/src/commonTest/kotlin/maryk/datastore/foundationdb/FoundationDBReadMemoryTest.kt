@@ -23,6 +23,7 @@ import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.datastore.foundationdb.processors.helpers.PreparedRecordRead
+import maryk.datastore.foundationdb.processors.helpers.PreparedRangeRead
 import maryk.datastore.foundationdb.processors.helpers.readStoredValue
 import maryk.datastore.shared.RestoreVersionRequest
 import maryk.datastore.shared.TransactionException
@@ -33,9 +34,60 @@ import maryk.foundationdb.FutureCancellation
 import maryk.foundationdb.KeyValue
 import maryk.foundationdb.asFdbFuture
 import maryk.foundationdb.completedFdbFuture
+import maryk.foundationdb.async.AsyncIterator
 import maryk.test.models.SimpleMarykModel
 
 class FoundationDBReadMemoryTest {
+    @Test fun deferredSnapshotPinsOnceAndRejectsAnotherVersion() {
+        var captures = 0
+        val context = FoundationDBReadContext(
+            readBudget = FoundationDBReadBudget(8192),
+            readVersionSource = { captures++; 42L },
+        )
+        assertEquals(null, context.pinnedReadVersion)
+        context.captureSnapshot()
+        context.captureSnapshot()
+        assertEquals(42L, context.readVersion)
+        assertEquals(1, captures)
+        context.pinReadVersion(42L)
+        assertFailsWith<IllegalStateException> { context.pinReadVersion(43L) }
+    }
+
+    @Test fun firstReadCanSupplyTheSnapshotWithoutAnotherNativeCapture() {
+        val context = FoundationDBReadContext(
+            readBudget = FoundationDBReadBudget(8192),
+            readVersionSource = { error("Should use the first read transaction") },
+        )
+        context.pinReadVersion(42L)
+        context.captureSnapshot()
+        assertEquals(42L, context.readVersion)
+    }
+
+    @Test fun actorGetsUseOneNativeSnapshotWhileExplicitAndReusableContextsStillPin() = runBlocking<Unit> {
+        val store = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "single-transaction-snapshot", Uuid.random().toString()),
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = false,
+        )
+        try {
+            val singleUse = store.createReadContext(deferSnapshot = true, retainImplicitSnapshot = false)
+            val nativeVersion = store.runReadTransactionSuspending(singleUse, 1u) { it.getReadVersion().await() }
+            assertEquals(null, singleUse.pinnedReadVersion)
+
+            val explicit = store.createReadContext(deferSnapshot = true, retainImplicitSnapshot = false)
+            explicit.captureSnapshot()
+            val pinned = explicit.pinnedReadVersion
+            assertTrue(requireNotNull(pinned) >= nativeVersion)
+            assertEquals(pinned, store.runReadTransactionSuspending(explicit, 1u) { it.getReadVersion().await() })
+            assertEquals(pinned, explicit.pinnedReadVersion)
+
+            val reusable = store.createReadContext(deferSnapshot = true)
+            val first = store.runReadTransactionSuspending(reusable, 1u) { it.getReadVersion().await() }
+            assertEquals(first, reusable.pinnedReadVersion)
+            assertEquals(first, store.runReadTransactionSuspending(reusable, 1u) { it.getReadVersion().await() })
+        } finally { store.close() }
+    }
+
     @Test fun repeatedRecordsStillRespectTheRequestMaterializationBudget() = runBlocking<Unit> {
         val store = FoundationDBDataStore.open(
             directoryPath = listOf("maryk", "memo-budget", Uuid.random().toString()),
@@ -143,7 +195,7 @@ class FoundationDBReadMemoryTest {
 
     @Test fun releaseDropsPreparedRowsAndRejectsAccidentalReuse() = runBlocking<Unit> {
         val rows = listOf(KeyValue(byteArrayOf(1), byteArrayOf(2)))
-        val read = PreparedRecordRead(emptyList(),listOf(completedFdbFuture(rows)),FoundationDBReadBudget(1024))
+        val read = PreparedRecordRead(emptyList(), listOf(preparedRange(rows)), FoundationDBReadBudget(1024))
         assertEquals(rows,read.awaitRowsSuspending())
         read.cancel()
         assertEquals(rows,read.awaitRowsSuspending())
@@ -152,9 +204,19 @@ class FoundationDBReadMemoryTest {
     }
 
     @Test fun releasingUnconsumedReadCancelsOwnedWork() = runBlocking {
-        val rows = CompletableDeferred<List<KeyValue>>()
-        val read = PreparedRecordRead(emptyList(),listOf(rows.asFdbFuture(FutureCancellation.PROPAGATE)),FoundationDBReadBudget(1024))
+        val ready = CompletableDeferred<Boolean>()
+        val read = PreparedRecordRead(emptyList(), listOf(preparedRange(emptyList(), ready)), FoundationDBReadBudget(1024))
         read.release()
-        assertTrue(rows.isCancelled)
+        assertTrue(ready.isCancelled)
+    }
+
+    private fun preparedRange(rows: List<KeyValue>, ready: CompletableDeferred<Boolean>? = null): PreparedRangeRead {
+        var index = 0
+        return PreparedRangeRead(object : AsyncIterator<KeyValue> {
+            override fun hasNext() = index < rows.size
+            override fun onHasNext() = ready?.asFdbFuture(FutureCancellation.PROPAGATE) ?: completedFdbFuture(hasNext())
+            override suspend fun next() = rows[index++]
+            override fun cancel() { ready?.cancel() }
+        }, FoundationDBReadBudget(1024))
     }
 }

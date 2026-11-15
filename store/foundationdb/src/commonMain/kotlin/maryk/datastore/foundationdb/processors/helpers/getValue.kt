@@ -2,6 +2,7 @@ package maryk.datastore.foundationdb.processors.helpers
 
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
+import maryk.foundationdb.FdbFuture
 import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
@@ -20,18 +21,19 @@ internal fun <T : Any> Transaction.getValue(
     keyAndReference: ByteArray,
     keyLength: Int? = null,
     decryptValue: DecryptValue? = null,
+    preparedValue: FdbFuture<ByteArray?>? = null,
     handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
     return if (toVersion == null) {
-        val packedKey = packKey(tableDirs.tablePrefix, keyAndReference)
-        val value = this.get(packedKey).awaitResult() ?: return null
-        value.handleCurrentValue(
+        val value = (preparedValue ?: get(packKey(tableDirs.tablePrefix, keyAndReference))).awaitResult() ?: return null
+        value.withCurrentPayload(
             decryptValue,
             tableDirs.modelId,
-            keyAndReference.copyOfRange(0, keyLength ?: keyAndReference.size),
-            keyAndReference.copyOfRange(keyLength ?: keyAndReference.size, keyAndReference.size),
-            handleResult
-        )
+            { keyAndReference.copyOfRange(0, keyLength ?: keyAndReference.size) },
+            { keyAndReference.copyOfRange(keyLength ?: keyAndReference.size, keyAndReference.size) },
+        ) { payload, offset, length ->
+            if (isStoredPropertyDeleteMarker(payload, offset, length)) null else handleResult(payload, offset, length)
+        }
     } else {
         val historicDirs = tableDirs as? HistoricTableDirectories
             ?: throw RequestException("Cannot use toVersion on a non historic table")
@@ -112,7 +114,7 @@ internal fun <T : Any> Transaction.getValue(
     }
 }
 
-private inline fun <T : Any> ByteArray.handleCurrentValue(
+internal inline fun <T : Any> ByteArray.handleCurrentValue(
     noinline decryptValue: DecryptValue?,
     modelId: UInt,
     keyBytes: ByteArray,

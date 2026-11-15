@@ -18,7 +18,6 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.packKey
-import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.Cache
@@ -49,6 +48,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
 
     val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
+    val historyMetadata = HistoryReadMetadataCache(tableDirs)
     val keySize = scanRequest.dataModel.Meta.keyByteSize
     val historyPrefix = tableDirs.updateHistoryPrefix
     val historyStart = paging.continuation?.let {
@@ -87,7 +87,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     }
                     return@forEachInRangeBatch updates.size.toUInt() < paging.scanLimit
                 }
-                val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, version)
+                val creationVersion = historyMetadata.creationVersion(tr, key, version)
                     ?: return@forEachInRangeBatch true
 
                 if (scanRequest.shouldBeFiltered(
@@ -155,6 +155,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     objectChange = objectChange,
                     toVersion = version,
                     maxVersions = 1u,
+                    currentStateCache = historyMetadata,
                 )
                 updatedObjectChange?.changes?.forEach { versionedChange ->
                     val changes = versionedChange.changes

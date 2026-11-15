@@ -31,6 +31,7 @@ internal fun <T : Any> Transaction.matchQualifier(
     reference: IsPropertyReference<T, *, *>,
     toVersion: ULong?,
     decryptValue: DecryptValue? = null,
+    preparedValues: PreparedFilterRead? = null,
     matcher: (T?) -> Boolean
 ): Boolean =
     this.matchQualifier(
@@ -42,6 +43,7 @@ internal fun <T : Any> Transaction.matchQualifier(
         qualifierMatcher = reference.toQualifierMatcher(),
         toVersion = toVersion,
         decryptValue = decryptValue,
+        preparedValues = preparedValues,
         matcher = matcher
     )
 
@@ -54,6 +56,7 @@ internal fun <T : Any> Transaction.matchQualifier(
     qualifierMatcher: IsQualifierMatcher,
     toVersion: ULong?,
     decryptValue: DecryptValue? = null,
+    preparedValues: PreparedFilterRead? = null,
     matcher: (T?) -> Boolean
 ): Boolean {
     when (qualifierMatcher) {
@@ -80,7 +83,8 @@ internal fun <T : Any> Transaction.matchQualifier(
                         toVersion,
                         qualifier,
                         keyLength = keyLength,
-                        decryptValue = decryptValue
+                        decryptValue = decryptValue,
+                        preparedValue = if (toVersion == null) preparedValues?.get(qualifierMatcher.qualifier) else null
                     ) { valueBytes, offset, length ->
                         valueBytes.convertToValue(reference, offset, length)
                     }

@@ -32,6 +32,8 @@ import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.PreparedFilterRead
+import maryk.datastore.foundationdb.processors.helpers.filterReadQualifiers
 import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.RangeBatchResult
@@ -157,6 +159,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
         val ranges = indexScanRange.ranges
         var emitted = 0u
         val seenKeys = mutableSetOf<ByteArrayKey>()
+        val filterQualifiers = filterReadQualifiers(scanRequest.where, scanRequest.filterSoftDeleted)
 
         when (indexScan.direction) {
             ASC -> {
@@ -186,8 +189,8 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         val result = transactionRunner.run { tr ->
                             tr.forEachCurrentIndexBatch(
                                 Range(nextBegin, end), false, batches.nextSize(), tableDirs,
-                                valueOffset, keySize, indexPartCount,
-                            ) { kv, creationRead ->
+                                valueOffset, keySize, indexPartCount, filterQualifiers,
+                            ) { kv, creationRead, filterRead ->
                                 if (emitted >= scanRequest.limit) return@forEachCurrentIndexBatch false
                                 val indexKeyBytes = kv.key
                                 val totalLen = indexKeyBytes.size
@@ -207,7 +210,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                 if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachCurrentIndexBatch true
                                 val createdVersion = creationRead?.awaitResult()?.readHLCTimestampIfExact()
                                     ?: return@forEachCurrentIndexBatch true
-                                if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) {
+                                if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index, filterRead)) {
                                     return@forEachCurrentIndexBatch true
                                 }
                                 if (effectiveStartKey != null) {
@@ -270,16 +273,20 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
                     val startSeg = range.getAscendingStartKey(null, true)
                     val begin = concatArrays(base, startSeg)
-                    val end = if (!startUpperBoundApplied && startIndexKey != null &&
-                        !range.keyOutOfRange(startIndexKey, 0, startIndexKey.size)
-                    ) {
+                    val rangeEnd = when (val endExclusiveSeg = range.getDescendingStartKey()) {
+                        null -> baseEnd
+                        else -> if (endExclusiveSeg.isEmpty()) baseEnd else concatArrays(base, endExclusiveSeg)
+                    }
+                    val startEnd = startIndexKey?.let {
+                        packDescendingExclusiveEnd(keyScanRange.includeStart, base, it)
+                    }
+                    // Compare exclusive storage boundaries: an inclusive prefix's raw
+                    // end sorts before every complete index value inside that prefix.
+                    val end = if (!startUpperBoundApplied && startEnd != null && startEnd <= rangeEnd) {
                         startUpperBoundApplied = true
-                        packDescendingExclusiveEnd(keyScanRange.includeStart, base, startIndexKey)
+                        startEnd
                     } else {
-                        when (val endExclusiveSeg = range.getDescendingStartKey()) {
-                            null -> baseEnd
-                            else -> if (endExclusiveSeg.isEmpty()) baseEnd else concatArrays(base, endExclusiveSeg)
-                        }
+                        rangeEnd
                     }
 
                     val cmpLength = min(begin.size, end.size)
@@ -294,8 +301,8 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         val result = transactionRunner.run { tr ->
                             tr.forEachCurrentIndexBatch(
                                 Range(begin, nextEnd), true, batches.nextSize(), tableDirs,
-                                valueOffset, keySize, indexPartCount,
-                            ) { kv, creationRead ->
+                                valueOffset, keySize, indexPartCount, filterQualifiers,
+                            ) { kv, creationRead, filterRead ->
                                 if (emitted >= scanRequest.limit) return@forEachCurrentIndexBatch false
                                 val indexKeyBytes = kv.key
                                 val totalLen = indexKeyBytes.size
@@ -325,7 +332,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                 if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachCurrentIndexBatch true
                                 val createdVersion = creationRead?.awaitResult()?.readHLCTimestampIfExact()
                                     ?: return@forEachCurrentIndexBatch true
-                                if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) {
+                                if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index, filterRead)) {
                                     return@forEachCurrentIndexBatch true
                                 }
                                 if (continuation != null) {
@@ -1025,18 +1032,36 @@ private fun Transaction.forEachCurrentIndexBatch(
     valueOffset: Int,
     keySize: Int,
     indexPartCount: Int,
-    process: (KeyValue, FdbFuture<ByteArray?>?) -> Boolean,
+    filterQualifiers: List<ByteArray>,
+    process: (KeyValue, FdbFuture<ByteArray?>?, PreparedFilterRead?) -> Boolean,
 ): RangeBatchResult {
     val creations = mutableMapOf<ByteArrayKey, FdbFuture<ByteArray?>>()
+    val filters = mutableMapOf<ByteArrayKey, PreparedFilterRead>()
+    var batch: List<KeyValue> = emptyList()
+    var position = 0
     try {
         return forEachInRangeBatch(range, reverse, batchSize, prepareBatch = { rows ->
+            batch = rows
             for (row in rows) {
                 if (findIndexValueSize(row.key, valueOffset, row.key.size, keySize, indexPartCount) < 0) continue
                 val key = row.key.copyOfRange(row.key.size - keySize, row.key.size)
                 creations[row.key.asByteArrayKey()] = get(packKey(directories.keysPrefix, key))
             }
-        }) { row -> process(row, creations[row.key.asByteArrayKey()]) }
+        }) { row ->
+            if (position % 8 == 0 && filterQualifiers.isNotEmpty()) {
+                filters.values.forEach { it.cancel() }
+                filters.clear()
+                for (index in position until minOf(position + 8, batch.size)) {
+                    val candidate = batch[index]
+                    if (findIndexValueSize(candidate.key, valueOffset, candidate.key.size, keySize, indexPartCount) < 0) continue
+                    val key = candidate.key.copyOfRange(candidate.key.size - keySize, candidate.key.size)
+                    filters[candidate.key.asByteArrayKey()] = PreparedFilterRead(this, directories, key, filterQualifiers)
+                }
+            }
+            position++
+            process(row, creations[row.key.asByteArrayKey()], filters[row.key.asByteArrayKey()])
+        }
     } finally {
-        creations.values.forEach { it.cancel() }
+        try { filters.values.forEach { it.cancel() } } finally { creations.values.forEach { it.cancel() } }
     }
 }

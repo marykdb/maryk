@@ -118,11 +118,16 @@ class FoundationDBChangeReadBudgetTest {
         } finally { writer.close() }
         val reader = open(path, 1024, 8192)
         try {
-            // Even an unchanged small projection traverses the full raw history.
+            // A prepared scalar projection does not fetch the unselected payload history.
+            assertEquals(0, reader.execute(ChangeBudgetRecord.getChanges(added.key,
+                select = ChangeBudgetRecord.graph { listOf(label) }, fromVersion = middle,
+                toVersion = last, maxVersions = 1u,
+            )).changes.size)
+            // Both selected payload revisions must still be charged to this record.
             assertFailsWith<FoundationDBReadLimitExceededException> {
                 reader.execute(ChangeBudgetRecord.getChanges(added.key,
-                    select = ChangeBudgetRecord.graph { listOf(label) }, fromVersion = middle,
-                    toVersion = last, maxVersions = 1u,
+                    select = ChangeBudgetRecord.graph { listOf(payload) }, fromVersion = middle,
+                    toVersion = last, maxVersions = 2u,
                 ))
             }
         } finally { reader.close() }

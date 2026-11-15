@@ -2,6 +2,7 @@ package maryk.datastore.foundationdb.processors
 
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
+import maryk.foundationdb.KeyValue
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -15,6 +16,9 @@ import maryk.core.query.responses.FetchByTableScan
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.AdaptiveRangeBatch
+import maryk.datastore.foundationdb.processors.helpers.PreparedFilterRead
+import maryk.datastore.foundationdb.processors.helpers.RangeBatchResult
+import maryk.datastore.foundationdb.processors.helpers.filterReadQualifiers
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
@@ -37,6 +41,9 @@ internal fun <DM : IsRootDataModel> scanStore(
     val prefix = tableDirs.keysPrefix
     val prefixSize = prefix.size
     val prefixEnd = Range.startsWith(prefix).end
+    val filterQualifiers = if (scanRequest.toVersion == null) {
+        filterReadQualifiers(scanRequest.where, scanRequest.filterSoftDeleted)
+    } else emptyList()
 
     var responseStartKey: ByteArray?
     var responseStopKey: ByteArray?
@@ -90,26 +97,28 @@ internal fun <DM : IsRootDataModel> scanStore(
                 var nextBegin = begin
                 while (streamed < limit) {
                     val result = transactionRunner.run { tr ->
-                        tr.forEachInRangeBatch(Range(nextBegin, end), false, batchSize = batches.nextSize()) { kv ->
-                            if (streamed >= limit) return@forEachInRangeBatch false
+                        tr.forEachTableBatch(Range(nextBegin, end), false, batches.nextSize(), tableDirs, prefixSize,
+                            scanRange.keySize, filterQualifiers) { kv, filterRead ->
+                            if (streamed >= limit) return@forEachTableBatch false
                             val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
 
-                            if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) return@forEachInRangeBatch true
-                            if (!scanRange.matchesPartials(modelKeyBytes)) return@forEachInRangeBatch true
+                            if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) return@forEachTableBatch true
+                            if (!scanRange.matchesPartials(modelKeyBytes)) return@forEachTableBatch true
 
                             if (effectiveStart != null) {
                                 val cmp = modelKeyBytes.compareDefinedRange(effectiveStart, 0, scanRange.keySize)
-                                if (cmp < 0) return@forEachInRangeBatch true
-                                if (!effectiveInclude && cmp == 0) return@forEachInRangeBatch true
+                                if (cmp < 0) return@forEachTableBatch true
+                                if (!effectiveInclude && cmp == 0) return@forEachTableBatch true
                             }
 
                             val key = scanRequest.dataModel.key(modelKeyBytes)
                             // Current key rows already contain the creation version.
                             val creationVersion = (if (scanRequest.toVersion == null) kv.value.readHLCTimestampIfExact()
                                 else tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion))
-                                ?: return@forEachInRangeBatch true
-                            if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) {
-                                return@forEachInRangeBatch true
+                                ?: return@forEachTableBatch true
+                            if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue,
+                                preparedValues = filterRead)) {
+                                return@forEachTableBatch true
                             }
 
                             processStoreValue(tr, key, creationVersion, null)
@@ -173,26 +182,28 @@ internal fun <DM : IsRootDataModel> scanStore(
                 var nextEnd = end
                 while (emitted < limit) {
                     val result = transactionRunner.run { tr ->
-                        tr.forEachInRangeBatch(Range(begin, nextEnd), true, batchSize = batches.nextSize()) { kv ->
-                            if (emitted >= limit) return@forEachInRangeBatch false
+                        tr.forEachTableBatch(Range(begin, nextEnd), true, batches.nextSize(), tableDirs, prefixSize,
+                            scanRange.keySize, filterQualifiers) { kv, filterRead ->
+                            if (emitted >= limit) return@forEachTableBatch false
                             val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
 
                             if (startKeyFilter != null) {
                                 val cmp = modelKeyBytes.compareDefinedRange(startKeyFilter, 0, scanRange.keySize)
-                                if (cmp > 0) return@forEachInRangeBatch true
-                                if (!includeStartFilter && cmp == 0) return@forEachInRangeBatch true
+                                if (cmp > 0) return@forEachTableBatch true
+                                if (!includeStartFilter && cmp == 0) return@forEachTableBatch true
                             }
 
-                            if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) return@forEachInRangeBatch true
-                            if (!scanRange.matchesPartials(modelKeyBytes)) return@forEachInRangeBatch true
+                            if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) return@forEachTableBatch true
+                            if (!scanRange.matchesPartials(modelKeyBytes)) return@forEachTableBatch true
 
                             val key = scanRequest.dataModel.key(modelKeyBytes)
                             // Current key rows already contain the creation version.
                             val creationVersion = (if (scanRequest.toVersion == null) kv.value.readHLCTimestampIfExact()
                                 else tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion))
-                                ?: return@forEachInRangeBatch true
-                            if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) {
-                                return@forEachInRangeBatch true
+                                ?: return@forEachTableBatch true
+                            if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue,
+                                preparedValues = filterRead)) {
+                                return@forEachTableBatch true
                             }
 
                             processStoreValue(tr, key, creationVersion, null)
@@ -213,4 +224,38 @@ internal fun <DM : IsRootDataModel> scanStore(
         startKey = responseStartKey,
         stopKey = responseStopKey,
     )
+}
+
+/** Start at most eight candidates' current filter reads, retaining table order. */
+private fun Transaction.forEachTableBatch(
+    range: Range,
+    reverse: Boolean,
+    batchSize: Int,
+    directories: IsTableDirectories,
+    prefixSize: Int,
+    keySize: Int,
+    qualifiers: List<ByteArray>,
+    process: (KeyValue, PreparedFilterRead?) -> Boolean,
+): RangeBatchResult {
+    if (qualifiers.isEmpty()) return forEachInRangeBatch(range, reverse, batchSize) { process(it, null) }
+    val filters = ArrayList<PreparedFilterRead?>(8)
+    var batch: List<KeyValue> = emptyList()
+    var position = 0
+    try {
+        return forEachInRangeBatch(range, reverse, batchSize, prepareBatch = { batch = it }) { row ->
+            if (position % 8 == 0) {
+                filters.forEach { it?.cancel() }
+                filters.clear()
+                for (index in position until minOf(position + 8, batch.size)) {
+                    val candidate = batch[index]
+                    filters += if (candidate.key.size == prefixSize + keySize && candidate.value.readHLCTimestampIfExact() != null) {
+                        PreparedFilterRead(this, directories, candidate.key.copyOfRange(prefixSize, candidate.key.size), qualifiers)
+                    } else null
+                }
+            }
+            process(row, filters[position++ % 8])
+        }
+    } finally {
+        filters.forEach { it?.cancel() }
+    }
 }

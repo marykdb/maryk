@@ -15,6 +15,8 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.orders.Direction
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
@@ -48,6 +50,7 @@ import maryk.datastore.shared.Cache
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
+import maryk.datastore.shared.fromReplicationChanges
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.foundationdb.Transaction
 import maryk.lib.bytes.combineToByteArray
@@ -204,7 +207,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 for (versionedChange in oc.changes) {
                     val changes = versionedChange.changes
                     val update = if (changes.find { it is ObjectCreate } != null) {
-                        getSingleValues(tr, key, creationVersion, versionedChange.version, cacheReader)?.let { valuesWithMeta ->
+                        (scanRequest.dataModel.singleCreationValues(oc, creationVersion)
+                            ?: getSingleValues(tr, key, creationVersion, versionedChange.version, cacheReader))?.let { valuesWithMeta ->
                             AdditionUpdate(
                                 key = oc.key,
                                 version = versionedChange.version,
@@ -417,7 +421,8 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
 
                     if (changes.contains(ObjectCreate)) {
                         val readChangeVersion = versionedChange.version.takeIf { tableDirs is HistoricTableDirectories }
-                        scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                        (scanRequest.dataModel.singleCreationValues(objectChange, creationVersion)
+                            ?: scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                             tr = tr,
                             creationVersion = creationVersion,
                             tableDirs = tableDirs,
@@ -432,7 +437,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                             tableDirs,
                             key.bytes,
                             readChangeVersion
-                        )?.let { valuesWithMeta ->
+                        ))?.let { valuesWithMeta ->
                             AdditionUpdate(
                                 key = objectChange.key,
                                 version = versionedChange.version,
@@ -593,6 +598,22 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
             updates = updates,
             dataFetchType = FetchByUpdateHistoryIndex(),
         )
+    )
+}
+
+/** A sole creation contains every selected value; mixed histories still reread that version. */
+private fun <DM : IsRootDataModel> DM.singleCreationValues(
+    objectChange: DataObjectVersionedChange<DM>,
+    creationVersion: ULong,
+): ValuesWithMetaData<DM>? {
+    val creation = objectChange.changes.singleOrNull()
+        ?.takeIf { it.version == creationVersion && ObjectCreate in it.changes } ?: return null
+    return ValuesWithMetaData(
+        key = objectChange.key,
+        values = fromReplicationChanges(null, creation.changes),
+        isDeleted = creation.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: false,
+        firstVersion = creationVersion,
+        lastVersion = creationVersion,
     )
 }
 

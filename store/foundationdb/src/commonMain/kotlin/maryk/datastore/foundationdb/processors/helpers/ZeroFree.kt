@@ -51,7 +51,7 @@ internal fun encodeZeroFreeSuffixUsing01(prefix: ByteArray, suffix: ByteArray): 
     return out
 }
 
-private fun encodeZeroFreeUsing01Into(
+internal fun encodeZeroFreeUsing01Into(
     src: ByteArray,
     offset: Int,
     length: Int,

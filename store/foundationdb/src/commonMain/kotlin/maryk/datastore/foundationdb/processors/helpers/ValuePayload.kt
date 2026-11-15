@@ -15,3 +15,20 @@ internal inline fun <T> ByteArray.withCurrentPayload(
         handle(payload, 0, payload.size)
     }
 }
+
+/** Construct encryption context only when the model needs decryption. */
+internal inline fun <T> ByteArray.withCurrentPayload(
+    noinline decryptValue: DecryptValue?,
+    modelId: UInt,
+    keyBytes: () -> ByteArray,
+    referenceBytes: () -> ByteArray,
+    handle: (ByteArray, Int, Int) -> T,
+): T {
+    requireVersionedValue(this)
+    return if (decryptValue == null) {
+        handle(this, VERSION_BYTE_SIZE, size - VERSION_BYTE_SIZE)
+    } else {
+        val payload = decryptValue(modelId, this, VERSION_BYTE_SIZE, size - VERSION_BYTE_SIZE, keyBytes(), referenceBytes())
+        handle(payload, 0, payload.size)
+    }
+}

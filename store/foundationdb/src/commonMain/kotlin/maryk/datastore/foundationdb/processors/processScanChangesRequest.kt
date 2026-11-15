@@ -9,6 +9,9 @@ import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.FoundationDBReadContext
 import maryk.datastore.foundationdb.HistoricTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.prepareRecordRead
+import maryk.datastore.foundationdb.processors.helpers.prepareRecordSelection
+import maryk.foundationdb.Transaction
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
@@ -29,12 +32,13 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
 
     scanRequest.checkMaxVersions(keepAllVersions)
 
-    val dataFetchType = this.processScan(
-        scanRequest = scanRequest,
-        tableDirs = tableDirs,
-        readContext = readContext,
-        scanSetup = { /* no-op */ },
-    ) { tr, key, creationVersion, sortingKey ->
+    val pending = ArrayList<PendingScanRecord<DM>>(8)
+    val selection = if (scanRequest.maxVersions == 1u) {
+        scanRequest.dataModel.prepareRecordSelection(scanRequest.select, scanRequest.toVersion)
+    } else null
+
+    fun materialize(tr: Transaction, record: PendingScanRecord<DM>) {
+            val (key, creationVersion, sortingKey, preparedRead) = record
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                 cache.readValue(dbIndex, key, reference, version, valueReader)
             }
@@ -52,6 +56,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
                 cachedRead = cacheReader,
                 decryptValue = valueDecryptor,
                 readBudget = readContext.readBudget,
+                preparedRead = preparedRead,
             )
             val updated = if (scanRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
                 addSoftDeleteChangeIfMissing(
@@ -76,8 +81,35 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
                     changes = emptyList()
                 )
             }
+    }
+    fun drain(tr: Transaction) {
+        for (record in pending) {
+            readContext.requireUsable()
+            materialize(tr, record)
+            record.read?.release()
         }
-
+        pending.clear()
+    }
+    val dataFetchType = try {
+        processScan(
+            scanRequest = scanRequest,
+            tableDirs = tableDirs,
+            readContext = readContext,
+            scanComplete = ::drain,
+        ) { tr, key, creationVersion, sortingKey ->
+            if (selection == null) {
+                materialize(tr, PendingScanRecord(key, creationVersion, sortingKey, null))
+            } else {
+                val read = scanRequest.dataModel.prepareRecordRead(
+                    tr, tableDirs, key.bytes, selection, scanRequest.toVersion, readContext.readBudget,
+                )
+                pending += PendingScanRecord(key, creationVersion, sortingKey, read)
+                if (pending.size == 8) drain(tr)
+            }
+        }
+    } finally {
+        pending.forEach { it.read?.release() }
+    }
 
     storeAction.response.complete(
         ChangesResponse(

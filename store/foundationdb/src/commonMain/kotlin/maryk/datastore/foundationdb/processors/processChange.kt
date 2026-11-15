@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.validateValueWithRef
 import maryk.core.properties.definitions.validateValueType
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
+import maryk.foundationdb.FdbFuture
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -129,6 +130,8 @@ import maryk.datastore.shared.requireStoredReferenceParents
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.normalizeReplicationChanges
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.indexesToReconcile
+import maryk.datastore.shared.CurrentUniqueClaim
 import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
@@ -191,20 +194,24 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                     readStoredCount(bytes, offset, length)
                 } },
             )
-            val tombstoneRead = if (ignoreIfVersionNotNewer) {
-                tr.get(packKey(tableDirs.replicationTombstonePrefix, keyBytes))
-            } else null
-            val createdRead = tr.get(packKey(tableDirs.keysPrefix, keyBytes))
-            val latestRead = tr.get(packKey(tableDirs.tablePrefix, keyBytes))
-            val (createdBytes, latest, tombstoneVersion) = try {
-                Triple(
-                    createdRead.awaitResult(),
-                    latestRead.awaitResult(),
-                    tombstoneRead?.awaitResult()?.readHLCTimestampIfExact(),
-                )
+            var tombstoneRead: FdbFuture<ByteArray?>? = null
+            var createdRead: FdbFuture<ByteArray?>? = null
+            var latestRead: FdbFuture<ByteArray?>? = null
+            val createdBytes: ByteArray?
+            val latest: ByteArray?
+            val tombstoneVersion: ULong?
+            try {
+                tombstoneRead = if (ignoreIfVersionNotNewer) {
+                    tr.get(packKey(tableDirs.replicationTombstonePrefix, keyBytes))
+                } else null
+                createdRead = tr.get(packKey(tableDirs.keysPrefix, keyBytes))
+                latestRead = tr.get(packKey(tableDirs.tablePrefix, keyBytes))
+                createdBytes = requireNotNull(createdRead).await()
+                latest = requireNotNull(latestRead).await()
+                tombstoneVersion = tombstoneRead?.await()?.readHLCTimestampIfExact()
             } finally {
-                createdRead.cancel()
-                latestRead.cancel()
+                createdRead?.cancel()
+                latestRead?.cancel()
                 tombstoneRead?.cancel()
             }
             if (createdBytes?.readHLCTimestampIfExact() == null) {
@@ -245,10 +252,12 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                 changes.none { it is ObjectSoftDeleteChange && it.isDeleted }
             val uniqueReferencesToReconcile = if (changes.any { it is ObjectSoftDeleteChange }) null else
                 requestedChangedReferences.map { it.toStorageByteArray() }
-            val initialUniqueClaims = (if (currentIsDeleted || targetIsDeleted) emptyList() else captureCurrentUniqueClaims(dataModel, tr, tableDirs, key.bytes, uniqueReferencesToReconcile)).toMutableList()
+            val initialUniqueClaims = (if (currentIsDeleted || targetIsDeleted) emptyList() else captureCurrentUniqueClaims(dataModel, tr, tableDirs, keyBytes, uniqueReferencesToReconcile)).toMutableList()
             val rememberUniqueClaim = { reference: ByteArray, candidates: List<ByteArray> ->
                 initialUniqueClaims += CurrentUniqueClaim(reference.copyOf(), candidates.map { it.copyOf() })
             }
+
+            val indexesToMaintain = dataModel.Meta.indexes?.indexesToReconcile(changes, requestedChangedReferences, currentIsDeleted)?.takeIf { it.isNotEmpty() }
 
             // Capture initial index values BEFORE any writes
             val storeGetter = object : IsValuesGetter {
@@ -315,7 +324,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                 }
             }
             val initialIndexValues: MutableMap<IsIndexable, List<ByteArray>> = mutableMapOf()
-            dataModel.Meta.indexes?.forEach { idx ->
+            indexesToMaintain?.forEach { idx ->
                 initialIndexValues[idx] = try {
                     idx.toStorageByteArraysForIndex(storeGetter, keyBytes)
                 } catch (error: Throwable) {
@@ -370,7 +379,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                     throw EarlyStatus(ValidationFail<DM>(exceptions))
                 } else {
                     if (ignoreIfVersionNotNewer) {
-                        setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
+                        setLatestVersion(tr, tableDirs, keyBytes, versionBytes)
                         persistDurableClockWatermark(tr, tableDirs, keyBytes, writeVersion)
                         return@runRequestTransaction ChangeSuccess(writeVersion.timestamp, emptyList())
                     }
@@ -398,6 +407,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
 
             // Helper to put overlay value
             fun putOverlay(reference: IsPropertyReference<*, *, *>, value: Any?) {
+                if (indexesToMaintain == null) return
                 overlay[reference.toStorageByteArray().asByteArrayKey(copy = true)] = value
             }
 
@@ -424,7 +434,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                 changeLoop@ for (change in changes) {
                     when (change) {
                         is ObjectSoftDeleteChange -> {
-                            val softDeleteKey = key.bytes + SOFT_DELETE_INDICATOR
+                            val softDeleteKey = keyBytes + SOFT_DELETE_INDICATOR
                             val wasDeleted = tr.getValue(tableDirs, null, softDeleteKey, decryptValue = valueDecryptor) { b, o, l ->
                                 if (l == 1) b[o] == TRUE else false
                             } == true
@@ -436,7 +446,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                             setValue(
                                 tr,
                                 tableDirs,
-                                key.bytes,
+                                keyBytes,
                                 byteArrayOf(SOFT_DELETE_INDICATOR),
                                 versionBytes,
                                 byteArrayOf(if (change.isDeleted) TRUE else 0)
@@ -444,7 +454,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
 
                             if (change.isDeleted) {
                                 getUniqueIndices(dataModelId, tableDirs.uniquePrefix, tr).forEach { reference ->
-                                    deleteCurrentUniqueIndexEntryForKey(tr, tableDirs, reference, key.bytes, versionBytes)
+                                    deleteCurrentUniqueIndexEntryForKey(tr, tableDirs, reference, keyBytes, versionBytes)
                                 }
                             }
 
@@ -620,8 +630,8 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         // Delete existing typed value placeholder entries
                                         val current = getCurrentValuesForPrefix(tr, tableDirs, key, referenceBytes)
                                         for ((qualifier, _) in current) {
-                                            tr.clear(packKey(tableDirs.tablePrefix, key.bytes, qualifier))
-                                            writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, HISTORIC_DELETE_MARKER)
+                                            tr.clear(packKey(tableDirs.tablePrefix, keyBytes, qualifier))
+                                            writeHistoricTable(tr, tableDirs, keyBytes, qualifier, versionBytes, HISTORIC_DELETE_MARKER)
                                         }
                                         val keep = mutableListOf<ByteArray>()
                                         val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, null, skipCurrentUniqueOwnership = targetIsDeleted, onUniqueClaim = rememberUniqueClaim, allowUniqueOwnershipRepairScan = allowUniqueOwnershipRepairScan)
@@ -816,7 +826,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
 
                                                 @Suppress("UNCHECKED_CAST")
                                                 val valueBytes = (setItemRef.propertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
-                                                setValue(tr, tableDirs, key.bytes, setItemRef.toStorageByteArray(), versionBytes, valueBytes)
+                                                setValue(tr, tableDirs, keyBytes, setItemRef.toStorageByteArray(), versionBytes, valueBytes)
                                                 setChanged(true)
                                             } catch (e: ValidationException) {
                                                 addException(e)
@@ -829,12 +839,12 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                     if (!hadSet && setRef is MapValueReference<*, *, *>) {
                                         handleMapAdditionCount(tr, tableDirs, key, setRef, versionBytes)
                                     }
-                                    val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, setChange.reference.toStorageByteArray())).awaitResult()
+                                    val countEntry = tr.get(packKey(tableDirs.tablePrefix, keyBytes, setChange.reference.toStorageByteArray())).awaitResult()
                                     val prevCount = countEntry?.let { arr ->
                                         readStoredCount(arr, VERSION_BYTE_SIZE, arr.size - VERSION_BYTE_SIZE)
                                     } ?: 0
                                     setDef.validateSize((prevCount + countChange).toUInt()) { setRef }
-                                    setValue(tr, tableDirs, key.bytes, setChange.reference.toStorageByteArray(), versionBytes, (prevCount + countChange).toVarBytes())
+                                    setValue(tr, tableDirs, keyBytes, setChange.reference.toStorageByteArray(), versionBytes, (prevCount + countChange).toVarBytes())
                                 }
                             }
                         }
@@ -876,12 +886,12 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                                         )
                                     }
 
-                                    val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, valueChange.reference.toStorageByteArray())).awaitResult()
+                                    val countEntry = tr.get(packKey(tableDirs.tablePrefix, keyBytes, valueChange.reference.toStorageByteArray())).awaitResult()
                                     val prevCount = countEntry?.let { arr ->
                                         readStoredCount(arr, VERSION_BYTE_SIZE, arr.size - VERSION_BYTE_SIZE)
                                     } ?: 0
                                     incDef.validateSize((prevCount + addValues.size).toUInt()) { incMapRef }
-                                    setValue(tr, tableDirs, key.bytes, valueChange.reference.toStorageByteArray(), versionBytes, (prevCount + addValues.size).toVarBytes())
+                                    setValue(tr, tableDirs, keyBytes, valueChange.reference.toStorageByteArray(), versionBytes, (prevCount + addValues.size).toVarBytes())
                                 }
                             }
                         }
@@ -912,27 +922,27 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
             if (!isChanged) {
                 if (ignoreIfVersionNotNewer) {
                     // An accepted replication event fences older events even when its value is equal.
-                    setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
+                    setLatestVersion(tr, tableDirs, keyBytes, versionBytes)
                     persistDurableClockWatermark(tr, tableDirs, keyBytes, writeVersion)
                     return@runRequestTransaction ChangeSuccess(writeVersion.timestamp, outChanges)
                 }
                 return@runRequestTransaction ChangeSuccess(latestVersion, outChanges)
             }
 
-            reconcileCurrentUniqueClaims(dataModel, tr, tableDirs, key.bytes, versionBytes,
+            reconcileCurrentUniqueClaims(dataModel, tr, tableDirs, keyBytes, versionBytes,
                 initialUniqueClaims, targetIsDeleted, uniqueReferencesToReconcile)
 
             // Update latest version if anything changed
-            if (writeVersion.timestamp > latestVersion) setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
+            if (writeVersion.timestamp > latestVersion) setLatestVersion(tr, tableDirs, keyBytes, versionBytes)
 
             // Process indexes
             var indexUpdates: MutableList<IsIndexUpdate>? = null
-            dataModel.Meta.indexes?.let { indexes ->
+            indexesToMaintain?.let { indexes ->
                 indexUpdates = mutableListOf()
                 for (index in indexes) {
                     val oldValues = initialIndexValues[index].orEmpty()
                     val finalValues = try {
-                        index.toStorageByteArraysForIndex(overlayGetter, key.bytes)
+                        index.toStorageByteArraysForIndex(overlayGetter, keyBytes.copyOf())
                     } catch (error: Throwable) {
                         error.rethrowIfFatal()
                         if (
@@ -1010,7 +1020,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
 
             val finalChanges = changes + outChanges
             tableDirs.updateHistoryPrefix?.let { prefix ->
-                tr.set(packKey(prefix, writeVersion.timestamp.toReversedVersionBytes(), key.bytes), EMPTY_BYTEARRAY)
+                tr.set(packKey(prefix, writeVersion.timestamp.toReversedVersionBytes(), keyBytes), EMPTY_BYTEARRAY)
             }
             persistDurableClockWatermark(tr, tableDirs, keyBytes, writeVersion)
             updateToEmit = Update.Change(dataModel, key, writeVersion.timestamp, finalChanges)
@@ -1018,7 +1028,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
             clusterUpdateLog?.append(
                 tr = tr,
                 modelId = dataModelId,
-                update = ClusterLogChange(Bytes(key.bytes), writeVersion.timestamp, finalChanges),
+                update = ClusterLogChange(Bytes(keyBytes), writeVersion.timestamp, finalChanges),
             )
 
             ChangeSuccess(writeVersion.timestamp, outChanges)

@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.shared.DataStoreStateBackupChunk
 import maryk.datastore.shared.DataStoreStateBackupOptions
 import maryk.datastore.shared.DataStoreStateBackupWriter
@@ -25,6 +26,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -60,7 +62,7 @@ class PortableStateBackupTest {
     }
 
     @Test
-    fun expiredCaptureNeverCompletesAndLeavesStoreUsable() = runTest(timeout = 3.minutes) {
+    fun quiescentCaptureCanOutliveTheNativeSnapshotWindow() = runTest(timeout = 3.minutes) {
         val source = FoundationDBDataStore.open(
             directoryPath = listOf("maryk", "test", "state-expiry", Uuid.random().toString()),
             dataModelsById = mapOf(1u to SimpleMarykModel),
@@ -72,17 +74,43 @@ class PortableStateBackupTest {
                 SimpleMarykModel.create { value with "ha expiry two" },
             ))
             val archive = SerializedStateBackup(source)
-            assertFailsWith<FoundationDBSnapshotExpiredException> {
+            var delayed = false
+            source.backupState(object : DataStoreStateBackupWriter by archive {
+                    override suspend fun write(chunk: DataStoreStateBackupChunk) {
+                        archive.write(chunk)
+                        if (!delayed) {
+                            delayed = true
+                            withContext(Dispatchers.Default) { delay(4200) }
+                        }
+                    }
+                }, DataStoreStateBackupOptions(batchSize = 1u))
+            assertEquals(true, archive.completed)
+            assertEquals(2, source.execute(SimpleMarykModel.scan(allowTableScan = true)).values.size)
+        } finally { source.close() }
+    }
+
+    @Test
+    fun aWriteAfterTheFinalPagePreventsArchivePublication() = runTest(timeout = 3.minutes) {
+        val path = listOf("maryk", "test", "state-revision", Uuid.random().toString())
+        val source = FoundationDBDataStore.open(directoryPath = path, dataModelsById = mapOf(1u to SimpleMarykModel))
+        val peer = FoundationDBDataStore.open(directoryPath = path, dataModelsById = mapOf(1u to SimpleMarykModel))
+        try {
+            assertIs<AddSuccess<SimpleMarykModel>>(source.execute(SimpleMarykModel.add(
+                SimpleMarykModel.create { value with "ha before" },
+            )).statuses.single())
+            val archive = SerializedStateBackup(source)
+            assertFailsWith<FoundationDBStateBackupChangedException> {
                 source.backupState(object : DataStoreStateBackupWriter by archive {
                     override suspend fun write(chunk: DataStoreStateBackupChunk) {
                         archive.write(chunk)
-                        // The backend explicitly expires pinned contexts after four real seconds.
-                        withContext(Dispatchers.Default) { delay(4200) }
+                        assertIs<AddSuccess<SimpleMarykModel>>(peer.execute(SimpleMarykModel.add(
+                            SimpleMarykModel.create { value with "ha concurrent" },
+                        )).statuses.single())
                     }
-                }, DataStoreStateBackupOptions(batchSize = 1u))
+                })
             }
             assertFalse(archive.completed)
             assertEquals(2, source.execute(SimpleMarykModel.scan(allowTableScan = true)).values.size)
-        } finally { source.close() }
+        } finally { source.close(); peer.close() }
     }
 }

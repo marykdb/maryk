@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
 import kotlinx.coroutines.currentCoroutineContext
+import maryk.foundationdb.FdbFuture
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
@@ -32,7 +33,6 @@ import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
 import maryk.datastore.foundationdb.processors.helpers.setCreatedVersion
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
-import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.setTypedValue
 import maryk.datastore.foundationdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.foundationdb.processors.helpers.setValue
@@ -54,25 +54,36 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
     isDeleted: Boolean = false,
     ignoreIfVersionNotNewer: Boolean = false,
 ): IsAddResponseStatus<DM> = try {
+    val keyBytes = key.bytes
     val dataModelId = getDataModelId(dataModel)
     objectToAdd.validate()
 
     var updateToEmit: Update<DM>? = null
     val initialState = currentCoroutineContext()[FoundationDBBulkAddContext]
         ?.takeIf { it.owner === this }
-        ?.initialRecords?.remove(dataModelId to Bytes(key.bytes))
+        ?.initialRecords?.remove(dataModelId to Bytes(keyBytes))
 
     runRequestTransaction(dataModelId) { tr ->
         updateToEmit = null
-        val packedKey = packKey(tableDirs.keysPrefix, key.bytes)
-        val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, key.bytes)
+        val packedKey = packKey(tableDirs.keysPrefix, keyBytes)
+        val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, keyBytes)
 
-        val existing = if (initialState != null) initialState.existing else tr.get(packedKey).awaitResult()
-        val tombstoneVersion = if (initialState != null) initialState.tombstoneVersion
-            else tr.get(tombstoneKey).awaitResult()?.readHLCTimestampIfExact()
+        val existingRead = if (initialState == null) tr.get(packedKey) else null
+        var tombstoneRead: FdbFuture<ByteArray?>? = null
+        val existing: ByteArray?
+        val tombstoneVersion: ULong?
+        try {
+            tombstoneRead = if (initialState == null) tr.get(tombstoneKey) else null
+            existing = if (initialState != null) initialState.existing else requireNotNull(existingRead).await()
+            tombstoneVersion = if (initialState != null) initialState.tombstoneVersion
+                else requireNotNull(tombstoneRead).await()?.readHLCTimestampIfExact()
+        } finally {
+            existingRead?.cancel()
+            tombstoneRead?.cancel()
+        }
         if (ignoreIfVersionNotNewer) {
             val currentVersion = if (existing != null) {
-                tr.get(packKey(tableDirs.tablePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact()
+                tr.get(packKey(tableDirs.tablePrefix, keyBytes)).await()?.readHLCTimestampIfExact()
             } else null
             val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
             if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
@@ -89,20 +100,19 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
             tr.clear(tombstoneKey)
 
             // Store first and last version markers
-            setCreatedVersion(tr, tableDirs, key.bytes, versionBytes)
-            setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
+            setCreatedVersion(tr, tableDirs, keyBytes, versionBytes)
             tableDirs.updateHistoryPrefix?.let { prefix ->
-                tr.set(packKey(prefix, writeVersion.timestamp.toReversedVersionBytes(), key.bytes), EMPTY_BYTEARRAY)
+                tr.set(packKey(prefix, writeVersion.timestamp.toReversedVersionBytes(), keyBytes), EMPTY_BYTEARRAY)
             }
 
-            val checks: MutableList<() -> Unit> = mutableListOf()
-            val uniqueWrites: MutableList<ByteArray> = mutableListOf()
+            var checks: MutableList<() -> Unit>? = null
+            var uniqueWrites: MutableList<ByteArray>? = null
 
             // Indexes
             if (!isDeleted) {
                 dataModel.Meta.indexes?.forEach { indexDef ->
                     val indexRef = indexDef.referenceStorageByteArray.bytes
-                    indexDef.toStorageByteArraysForIndex(objectToAdd, key.bytes).forEach { valueAndKeyBytes ->
+                    indexDef.toStorageByteArraysForIndex(objectToAdd, keyBytes.copyOf()).forEach { valueAndKeyBytes ->
                         setIndexValue(tr, tableDirs, indexRef, valueAndKeyBytes, versionBytes)
                     }
                 }
@@ -123,11 +133,12 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                                 .map { uniqueValue -> reference + uniqueValue }
                             val uniqueRef = uniqueRefs.first()
                             createUniqueIndexIfNotExists(dataModelId, tableDirs.uniquePrefix, reference, tr)
-                            checks += {
+                            val pendingChecks = checks ?: ArrayList<() -> Unit>().also { checks = it }
+                            pendingChecks += {
                                 for (candidateRef in uniqueRefs) {
                                     val uniqueKey = packKey(tableDirs.uniquePrefix, candidateRef)
                                     val uniqueExists = tr.get(uniqueKey).awaitResult()
-                                    if (uniqueExists?.size == VERSION_BYTE_SIZE + key.bytes.size) {
+                                    if (uniqueExists?.size == VERSION_BYTE_SIZE + keyBytes.size) {
                                         val existingKeyBytes = uniqueExists.copyOfRange(
                                             VERSION_BYTE_SIZE,
                                             uniqueExists.size
@@ -137,18 +148,19 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                                 }
                             }
                             // Defer writing unique index until after checks to avoid read-your-writes conflicts
-                            uniqueWrites += uniqueRef
+                            val pendingWrites = uniqueWrites ?: ArrayList<ByteArray>().also { uniqueWrites = it }
+                            pendingWrites += uniqueRef
                         }
 
-                        val encryptedValue = encryptValueIfSensitive(dataModelId, key.bytes, reference, valueBytes)
-                        setValue(tr, tableDirs, key.bytes, reference, versionBytes, encryptedValue)
+                        val encryptedValue = encryptValueIfSensitive(dataModelId, keyBytes, reference, valueBytes)
+                        setValue(tr, tableDirs, keyBytes, reference, versionBytes, encryptedValue)
                     }
 
                     ListSize,
                     SetSize,
                     MapSize -> {
                         val intSize = (value as Int).toVarBytes()
-                        setValue(tr, tableDirs, key.bytes, reference, versionBytes, intSize)
+                        setValue(tr, tableDirs, keyBytes, reference, versionBytes, intSize)
                     }
 
                     TypeValue -> {
@@ -166,7 +178,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                     Embed -> {
                         // Root marker for embedded value objects
                         val valueBytes = byteArrayOf(TypeIndicator.EmbedIndicator.byte, TRUE)
-                        setValue(tr, tableDirs, key.bytes, reference, versionBytes, valueBytes)
+                        setValue(tr, tableDirs, keyBytes, reference, versionBytes, valueBytes)
                     }
                 }
             }
@@ -175,7 +187,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                 setValue(
                     tr,
                     tableDirs,
-                    key.bytes,
+                    keyBytes,
                     byteArrayOf(SOFT_DELETE_INDICATOR),
                     versionBytes,
                     byteArrayOf(TRUE)
@@ -183,16 +195,16 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
             }
 
             // Run uniqueness checks right before commit to keep all reads in txn
-            for (c in checks) c()
+            checks?.forEach { it() }
 
             // After all checks pass, write unique index values
-            if (uniqueWrites.isNotEmpty()) {
-                for (uniqueRef in uniqueWrites) {
-                    setUniqueIndexValue(tr, tableDirs, uniqueRef, versionBytes, key.bytes)
+            uniqueWrites?.let { pendingWrites ->
+                for (uniqueRef in pendingWrites) {
+                    setUniqueIndexValue(tr, tableDirs, uniqueRef, versionBytes, keyBytes)
                 }
             }
 
-            persistDurableClockWatermark(tr, tableDirs, key.bytes, writeVersion)
+            persistDurableClockWatermark(tr, tableDirs, keyBytes, versionBytes)
 
             val finalValues = objectToAdd.change(emptyList())
             updateToEmit = Update.Addition(
@@ -206,7 +218,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
             clusterUpdateLog?.append(
                 tr = tr,
                 modelId = dataModelId,
-                update = ClusterLogAddition(Bytes(key.bytes), writeVersion.timestamp, finalValues, isDeleted),
+                update = ClusterLogAddition(Bytes(keyBytes), writeVersion.timestamp, finalValues, isDeleted),
             )
 
             AddSuccess(key, writeVersion.timestamp, emptyList())

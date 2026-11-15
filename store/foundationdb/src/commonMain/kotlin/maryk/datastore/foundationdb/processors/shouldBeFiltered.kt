@@ -13,6 +13,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.matchQualifierPresence
 import maryk.datastore.foundationdb.processors.helpers.matchQualifier
+import maryk.datastore.foundationdb.processors.helpers.PreparedFilterRead
 
 /**
  * Test if record at [key] should be filtered based on given FetchRequest
@@ -28,14 +29,17 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
     createdVersion: ULong?, // Can be null in cases when creationVersion is certainly lower than toVersion
     toVersion: ULong?,
     decryptValue: DecryptValue? = null,
-    normalizingIndex: IsIndexable? = null
+    normalizingIndex: IsIndexable? = null,
+    preparedValues: PreparedFilterRead? = null,
+    preparedSoftDeleted: Boolean? = null,
 ) = when {
     toVersion != null && createdVersion != null && createdVersion > toVersion -> true
-    this.filterSoftDeleted && isSoftDeleted(transaction, tableDirs, toVersion, key, keyOffset, keyLength, decryptValue) -> true
-    else -> !matchesFilterWithPresence(
+    this.filterSoftDeleted && (preparedSoftDeleted ?: isSoftDeleted(transaction, tableDirs, toVersion, key, keyOffset, keyLength, decryptValue,
+        preparedValues?.get(byteArrayOf(SOFT_DELETE_INDICATOR)))) -> true
+    else -> where != null && !matchesFilterWithPresence(
         where,
         valueMatcher = { propertyReference, valueMatcher ->
-            transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, valueMatcher)
+            transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, preparedValues, valueMatcher)
         },
         presenceMatcher = { propertyReference ->
             transaction.matchQualifierPresence(tableDirs, key.copyOfRange(keyOffset, keyOffset + keyLength), propertyReference, toVersion, decryptValue)
@@ -49,17 +53,17 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
         },
         searchMatcher = { name, value ->
             this.dataModel.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
-                transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, valueMatcher)
+                transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, matcher = valueMatcher)
             }
         },
         searchPrefixMatcher = { name, value ->
             this.dataModel.matchesNamedSearchIndexPrefix(name, value) { propertyReference, valueMatcher ->
-                transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, valueMatcher)
+                transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, matcher = valueMatcher)
             }
         },
         searchRegexMatcher = { name, regex ->
             this.dataModel.matchesNamedSearchIndexRegex(name, regex) { propertyReference, valueMatcher ->
-                transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, valueMatcher)
+                transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, matcher = valueMatcher)
             }
         }
     )

@@ -1,6 +1,15 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.async
@@ -48,6 +57,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
@@ -134,6 +144,26 @@ class FoundationDBRobustnessTest {
     }
 
     @Test
+    fun nativeAdmissionRejectsOversizedWritesWithoutWorkSizeInstrumentation() = runBoundedIntegrationTest {
+        val store = openStore()
+        try {
+            val values = RobustRecord.create {
+                label with "native oversized"; payload with (0 until 1_000).associate { "$it" to "p".repeat(12_000) }
+            }
+            val key = RobustRecord.key(values)
+            val response = store.execute(RobustRecord.add(key to values))
+            val failed = assertIs<ServerFail<RobustRecord>>(response.statuses.single())
+            assertEquals(2101, assertIs<FDBException>(failed.cause).getCode())
+            assertEquals(0L, store.largestOrdinaryTransactionBytes.value)
+            assertTrue(store.execute(RobustRecord.get(key)).values.isEmpty())
+            assertIs<AddSuccess<RobustRecord>>(store.execute(RobustRecord.add(
+                RobustRecord.create { label with "usable after native rejection" },
+            )).statuses.single())
+            Unit
+        } finally { store.close() }
+    }
+
+    @Test
     fun closeReclaimsOnlyItsOwnPrivateReceiptNamespace() = runBoundedIntegrationTest {
         val root = listOf("maryk", "receipt-close", Uuid.random().toString())
         val first = openStore(root)
@@ -150,12 +180,61 @@ class FoundationDBRobustnessTest {
     }
 
     @Test
+    fun concurrentReceiptOwnersKeepTheirWriteConflictWhenHooksSuppressAutomaticRanges() = runBoundedIntegrationTest {
+        val count = 16
+        val root = listOf("maryk", "receipt-owner-conflicts", Uuid.random().toString())
+        val enabled = atomic(false)
+        val arrivals = atomic(0)
+        val ready = CompletableDeferred<Unit>()
+        val configuration = FoundationDBTransactionConfiguration(optionsSetter = { context ->
+            if (enabled.value && context.kind == FoundationDBTransactionKind.Maintenance && context.dataModelId == null) {
+                setNextWriteNoWriteConflictRange()
+                if (arrivals.incrementAndGet() == count) ready.complete(Unit)
+                runBlocking { withTimeout(5.seconds) { ready.await() } }
+            }
+        })
+        val stores = List(count) {
+            FoundationDBDataStore.open(directoryPath = root, dataModelsById = mapOf(1u to RobustRecord),
+                transactionConfiguration = configuration)
+        }
+        try {
+            enabled.value = true
+            val keys = stores.map { store -> async(Dispatchers.IO) { store.ordinaryReceiptKey() } }.awaitAll()
+            assertEquals(count, keys.map { it.toHexString() }.toSet().size)
+        } finally {
+            enabled.value = false
+            ready.complete(Unit)
+            stores.forEach { it.close() }
+        }
+    }
+
+    @Test
+    fun readsAndNoOpMutationsDoNotAllocateAPrivateReceiptOwner() = runBoundedIntegrationTest {
+        val store = openStore()
+        try {
+            val missing = RobustRecord.key(RobustRecord.create { label with "missing" })
+            assertTrue(store.execute(RobustRecord.get(missing)).values.isEmpty())
+            store.execute(RobustRecord.delete(missing))
+            assertFailsWith<IllegalStateException> { store.ordinaryReceiptRange() }
+            assertIs<AddSuccess<RobustRecord>>(store.execute(RobustRecord.add(
+                RobustRecord.create { label with "actual mutation" },
+            )).statuses.single())
+            val first = store.ordinaryReceiptKey()
+            val second = store.ordinaryReceiptKey()
+            assertTrue(!first.contentEquals(second))
+        } finally { store.close() }
+    }
+
+    @Test
     fun defaultAdmissionAllowsLargeStagedWorkWithASmallFinalCommit() = runBoundedIntegrationTest {
         val store = openStore()
         try {
             val added = assertIs<AddSuccess<RobustRecord>>(store.execute(RobustRecord.add(RobustRecord.create {
                 label with "overwritten"; payload with mapOf("a" to "initial")
             })).statuses.single())
+            assertEquals(0L, store.largestOrdinaryTransactionBytes.value)
+            // Request internal instrumentation without configuring a conservative work limit.
+            store.afterOrdinaryMutationPrepared.value = {}
             val changes = (0 until 300).map { index ->
                 Change(RobustRecord.ref { payload } with mapOf("a" to "$index-${"p".repeat(20_000)}"))
             }
@@ -324,8 +403,9 @@ class FoundationDBRobustnessTest {
             val key = packKey(store.getTableDirs(1u).modelPrefix, "cancel-attempt".encodeToByteArray())
             val prepared = CompletableDeferred<Unit>()
             val operation = launch {
-                store.tc.runSuspending(FoundationDBTransactionContext(FoundationDBTransactionKind.Request)) { transaction ->
+                store.runRequestTransaction(1u) { transaction ->
                     transaction.set(key, byteArrayOf(1))
+                    store.tc.markMutation(transaction)
                     prepared.complete(Unit)
                     awaitCancellation()
                 }
@@ -333,6 +413,112 @@ class FoundationDBRobustnessTest {
             withTimeout(2.seconds) { prepared.await() }
             withTimeout(2.seconds) { operation.cancelAndJoin() }
             assertEquals(null, store.tc.run { it.get(key).awaitResult() })
+        } finally { store.close() }
+    }
+
+    @Test
+    fun completingOneSuspendingRequestKeepsAnotherOwnedTransactionCancellable() = runBoundedIntegrationTest {
+        val root = listOf("maryk", "suspending-ownership", Uuid.random().toString())
+        val writer = openStore(root)
+        val observer = openStore(root)
+        val release = CompletableDeferred<Unit>()
+        try {
+            val prefix = writer.getTableDirs(1u).modelPrefix
+            val firstKey = packKey(prefix, "committed-owner".encodeToByteArray())
+            val secondKey = packKey(prefix, "cancelled-owner".encodeToByteArray())
+            val prepared = CompletableDeferred<Unit>()
+            val second = async {
+                runCatching {
+                    writer.runRequestTransaction(1u) { transaction ->
+                        transaction.set(secondKey, byteArrayOf(2))
+                        writer.tc.markMutation(transaction)
+                        prepared.complete(Unit)
+                        release.await()
+                    }
+                }
+            }
+            withTimeout(2.seconds) { prepared.await() }
+            writer.runRequestTransaction(1u) { transaction ->
+                transaction.set(firstKey, byteArrayOf(1))
+                writer.tc.markMutation(transaction)
+            }
+            writer.tc.cancelActive()
+            release.complete(Unit)
+            assertTrue(withTimeout(2.seconds) { second.await() }.isFailure)
+            assertContentEquals(byteArrayOf(1), observer.tc.run { it.get(firstKey).awaitResult() })
+            assertEquals(null, observer.tc.run { it.get(secondKey).awaitResult() })
+        } finally {
+            release.complete(Unit)
+            writer.close()
+            observer.close()
+        }
+    }
+
+    @Test
+    fun aSuspendingBodyCannotCommitAfterItCatchesCancellation() = runBoundedIntegrationTest {
+        val store = openStore()
+        try {
+            val key = packKey(store.getTableDirs(1u).modelPrefix, "cancelled-body".encodeToByteArray())
+            val prepared = CompletableDeferred<Unit>()
+            val operation = launch {
+                store.tc.runSuspending(FoundationDBTransactionContext(FoundationDBTransactionKind.Request)) { transaction ->
+                    transaction.set(key, byteArrayOf(1))
+                    prepared.complete(Unit)
+                    try { awaitCancellation() } catch (_: CancellationException) {}
+                }
+            }
+            withTimeout(2.seconds) { prepared.await() }
+            withTimeout(2.seconds) { operation.cancelAndJoin() }
+            assertEquals(null, store.tc.run { it.get(key).awaitResult() })
+        } finally { store.close() }
+    }
+
+    @Test
+    fun suspendingAttemptsWaitForTheirChildrenBeforeCommitting() = runBoundedIntegrationTest {
+        val store = openStore()
+        try {
+            val key = packKey(store.getTableDirs(1u).modelPrefix, "structured-child".encodeToByteArray())
+            supervisorScope {
+                val started = CompletableDeferred<Unit>()
+                val release = CompletableDeferred<Unit>()
+                val returned = CompletableDeferred<Unit>()
+                val operation = async {
+                    store.tc.runSuspending(FoundationDBTransactionContext(FoundationDBTransactionKind.Request)) { transaction ->
+                        CoroutineScope(currentCoroutineContext()).launch(start = CoroutineStart.UNDISPATCHED) {
+                            started.complete(Unit)
+                            release.await()
+                            transaction.set(key, byteArrayOf(1))
+                        }
+                    }
+                    returned.complete(Unit)
+                }
+                try {
+                    withTimeout(2.seconds) { started.await() }
+                    assertNull(withTimeoutOrNull(100) { returned.await() })
+                    release.complete(Unit)
+                    withTimeout(2.seconds) { operation.await() }
+                    assertContentEquals(byteArrayOf(1), store.tc.run { it.get(key).awaitResult() })
+                } finally {
+                    release.complete(Unit)
+                    operation.cancelAndJoin()
+                }
+            }
+        } finally { store.close() }
+    }
+
+    @Test
+    fun nativeRetryLimitIsRetainedByASuspendingTransactionOwner() = runBoundedIntegrationTest {
+        val store = openStore()
+        try {
+            var attempts = 0
+            assertFailsWith<FDBException> {
+                store.tc.runSuspending(FoundationDBTransactionContext(FoundationDBTransactionKind.Request)) { transaction ->
+                    attempts++
+                    transaction.options().setRetryLimit(0)
+                    throw FDBException("injected conflict", 1020)
+                }
+            }
+            assertEquals(1, attempts)
         } finally { store.close() }
     }
 

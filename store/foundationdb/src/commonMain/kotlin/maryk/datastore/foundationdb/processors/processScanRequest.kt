@@ -1,10 +1,13 @@
 package maryk.datastore.foundationdb.processors
 
-import maryk.core.aggregations.Aggregator
+import maryk.foundationdb.Transaction
+import maryk.datastore.foundationdb.processors.helpers.cachedValueReader
+import maryk.datastore.foundationdb.processors.helpers.PreparedRecordRead
+import maryk.datastore.foundationdb.processors.helpers.prepareRecordRead
+import maryk.datastore.shared.createRecordAggregator
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
@@ -31,51 +34,74 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
     val dbIndex = getDataModelId(scanRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex)
 
-    val aggregator = scanRequest.aggregations?.let(::Aggregator)
+    val aggregator = scanRequest.aggregations?.let { scanRequest.dataModel.createRecordAggregator(it, scanRequest.select) }
     var lastEmittedKey: Key<DM>? = null
     var lastEmittedOrderKey: ByteArray? = null
 
-    val responseFetchType = this.processScan(
-        scanRequest = scanRequest,
-        tableDirs = tableDirs,
-        readContext = readContext,
-        scanSetup = { /* nothing */ }
-    ) { tr, key, creationVersion, orderKey ->
-            val keyBytes = key.bytes
-            val cacheReader = { ref: IsPropertyReferenceForCache<*, *>, version: ULong, reader: () -> Any? ->
-                cache.readValue(dbIndex, key, ref, version, reader)
-            }
+    val pending = ArrayList<PendingScanRecord<DM>>(8)
+    fun materialize(tr: Transaction, record: PendingScanRecord<DM>) {
+        val (key, creationVersion, orderKey, preparedRead) = record
+        val keyBytes = key.bytes
+        val cacheReader = cache.cachedValueReader(dbIndex, key)
 
-            val vwm = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                tr = tr,
-                creationVersion = creationVersion,
-                tableDirs = tableDirs,
-                key = key,
-                select = scanRequest.select,
-                toVersion = scanRequest.toVersion,
-                cachedRead = cacheReader,
-                readBudget = readContext.readBudget,
-                decryptValue = valueDecryptor
-            )
-            if (valuesWithMeta.size.toUInt() < scanRequest.limit && vwm != null) {
-                valuesWithMeta.add(vwm)
-                lastEmittedKey = key
-                lastEmittedOrderKey = orderKey
-            }
+        val vwm = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
+            tr = tr,
+            creationVersion = creationVersion,
+            tableDirs = tableDirs,
+            key = key,
+            select = scanRequest.select,
+            toVersion = scanRequest.toVersion,
+            cachedRead = cacheReader,
+            readBudget = readContext.readBudget,
+            decryptValue = valueDecryptor,
+            preparedRead = preparedRead,
+        )
+        if (valuesWithMeta.size.toUInt() < scanRequest.limit && vwm != null) {
+            valuesWithMeta.add(vwm)
+            lastEmittedKey = key
+            lastEmittedOrderKey = orderKey
+        }
 
-            aggregator?.aggregate {
-                @Suppress("UNCHECKED_CAST")
-                vwm?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
-                    ?: tr.getValue(
-                        tableDirs = tableDirs,
-                        toVersion = scanRequest.toVersion,
-                        keyBytes = keyBytes,
-                        referenceBytes = it.toStorageByteArray(),
-                        decryptValue = valueDecryptor
-                    ) { valueBytes, offset, length ->
-                        valueBytes.convertToValue(it, offset, length)
-                    }
+        aggregator?.aggregate {
+            @Suppress("UNCHECKED_CAST")
+            vwm?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
+                ?: tr.getValue(
+                    tableDirs = tableDirs,
+                    toVersion = scanRequest.toVersion,
+                    keyBytes = keyBytes,
+                    referenceBytes = it.toStorageByteArray(),
+                    decryptValue = valueDecryptor
+                ) { valueBytes, offset, length ->
+                    valueBytes.convertToValue(it, offset, length)
+                }
+        }
+    }
+    fun drain(tr: Transaction) {
+        for (record in pending) {
+            readContext.requireUsable()
+            materialize(tr, record)
+            record.read?.release()
+        }
+        pending.clear()
+    }
+
+    val responseFetchType = try {
+        processScan(
+            scanRequest = scanRequest,
+            tableDirs = tableDirs,
+            readContext = readContext,
+            scanComplete = ::drain,
+        ) { tr, key, creationVersion, orderKey ->
+            val read = if (scanRequest.select?.properties?.isEmpty() == true) null else {
+                scanRequest.dataModel.prepareRecordRead(
+                    tr, tableDirs, key.bytes, scanRequest.select, scanRequest.toVersion, readContext.readBudget,
+                )
             }
+            pending += PendingScanRecord(key, creationVersion, orderKey, read)
+            if (pending.size == 8) drain(tr)
+        }
+    } finally {
+        pending.forEach { it.read?.release() }
     }
 
     storeAction.response.complete(
@@ -90,3 +116,10 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
         )
     )
 }
+
+internal data class PendingScanRecord<DM : IsRootDataModel>(
+    val key: Key<DM>,
+    val creationVersion: ULong,
+    val orderKey: ByteArray?,
+    val read: PreparedRecordRead?,
+)

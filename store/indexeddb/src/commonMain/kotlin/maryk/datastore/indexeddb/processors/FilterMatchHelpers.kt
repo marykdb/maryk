@@ -95,7 +95,7 @@ internal fun <DM : IsRootDataModel> ValuesWithMetaData<DM>.toCreationChanges(
     if (toVersion != null && firstVersion > toVersion) return emptyList()
 
     val changes = (listOf(ObjectCreate) + values.toChanges().toList()).mapNotNull { change ->
-        select?.let { change.filterWithSelect(it) } ?: change
+        if (select == null) change else change.filterWithSelect(select)
     }
     if (changes.isEmpty()) return emptyList()
 

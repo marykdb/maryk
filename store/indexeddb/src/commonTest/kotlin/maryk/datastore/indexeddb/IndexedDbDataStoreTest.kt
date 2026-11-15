@@ -180,6 +180,7 @@ class IndexedDbDataStoreTest {
         )
 
         try {
+            dataStore.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-prime-cache" }))
             dataStore.byteStore.put(CommitConsumerStoreName, byteArrayOf(42), byteArrayOf())
             val values = SimpleMarykModel.create { value with "hard-delete" }
             val add = SimpleMarykModel.add(values)

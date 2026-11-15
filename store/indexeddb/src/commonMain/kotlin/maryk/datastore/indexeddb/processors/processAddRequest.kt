@@ -122,14 +122,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                     }
                 }
 
-                for (row in uniqueRows) {
-                    for (candidateKey in row.candidateKeys) {
-                        val existingKey = byteStore.get(uniqueStoreName, candidateKey)
-                        if (existingKey != null) {
-                            throw UniqueException(row.qualifier, request.dataModel.key(existingKey))
-                        }
-                    }
-                }
+                validateUniqueRows(request.dataModel, key.bytes, uniqueStoreName, uniqueRows, allowSameOwner = false)
 
                 for ((rowKey, encodedValue) in tableRows) {
                     operations.put(tableStoreName, rowKey, encodedValue)

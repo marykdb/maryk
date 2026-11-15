@@ -39,6 +39,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
     val historicTableStoreName = "ht:$modelId"
     val historicIndexStoreName = "hi:$modelId"
     val changeStoreName = "c:$modelId"
+    val readSelect = request.dataModel.requiredReadSelection(request.select, request.where, null)
     val keyScanRange = request.dataModel.createScanRange(request.where, request.startKey?.bytes, request.includeStart)
     val changes = mutableListOf<DataObjectVersionedChange<DM>>()
     val scanType = request.dataModel.orderToScanType(request.order, keyScanRange.equalPairs)
@@ -100,12 +101,12 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
 
             val toVersion = request.toVersion
             val record = if (toVersion == null) {
-                decodeCurrentSnapshotRecord(request.dataModel, keyBytes, rowValue, null) { qualifier, value ->
+                decodeCurrentSnapshotRecord(request.dataModel, keyBytes, rowValue, readSelect) { qualifier, value ->
                     sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value)
                 }
-                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
+                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
             } else {
-                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
+                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
             }
                 ?: return@scanInBatches true
             if (request.filterSoftDeleted && record.isDeleted) return@scanInBatches true
@@ -161,11 +162,12 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
     indexScan: IndexScan,
     includeEmptyMembers: Boolean,
 ): ChangesResponse<DM> {
-    val changes = ArrayList<DataObjectVersionedChange<DM>>(request.limit.toInt().coerceAtLeast(4))
-    val seenKeys = mutableSetOf<String>()
+    val changes = ArrayList<DataObjectVersionedChange<DM>>(request.limit.coerceIn(4u, 256u).toInt())
+    val seenKeys = mutableSetOf<Bytes>()
     val keySize = request.dataModel.Meta.keyByteSize
     val indexPrefix = createIndexKeyPrefix(indexScan.index.referenceStorageByteArray.bytes)
     val toVersion = request.toVersion
+    val readSelect = request.dataModel.requiredReadSelection(request.select, request.where, null, indexScan.index)
     val indexKeyScanRange = if (request.startKey == null) {
         keyScanRange
     } else {
@@ -180,11 +182,12 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
         )
     }
     val startIndexValue = request.startKey?.let { startKey ->
+        val startSelect = request.dataModel.requiredIndexReadSelection(indexScan.index)
         val record = if (toVersion != null) {
-            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, startKey.bytes, toVersion, null)
+            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, startKey.bytes, toVersion, startSelect)
         } else {
-            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, startKey.bytes, null)
-                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, startKey.bytes, null)
+            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, startKey.bytes, startSelect)
+                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, startKey.bytes, startSelect)
         }
         record?.let {
             val allIndexValues = indexScan.index.toStorageByteArraysForIndex(it.values, startKey.bytes)
@@ -253,7 +256,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
             )
         }
 
-        suspend fun processIndexChangeRow(rowKey: ByteArray): Boolean {
+        suspend fun processIndexChangeRow(rowKey: ByteArray, snapshot: PreparedCurrentSnapshot? = null, prefetched: Boolean = false): Boolean {
             if (!rowKey.matchesRangePart(0, indexPrefix, sourceLength = rowKey.size, length = indexPrefix.size)) return true
             val valueAndKey = rowKey.copyOfRange(indexPrefix.size, rowKey.size)
             val valueSize = resolveIndexValueSize(valueAndKey, keySize, indexScan.index.indexPartCount) ?: return true
@@ -274,15 +277,20 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
             val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
             if (!indexKeyScanRange.keyWithinRanges(keyBytes, 0) || !indexKeyScanRange.matchesPartials(keyBytes, 0)) return true
 
-            val dedupe = keyBytes.joinToString(",")
+            val dedupe = Bytes(keyBytes)
             if (!seenKeys.add(dedupe)) return true
 
-            val record = if (toVersion != null) {
-                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
+            val record = (if (toVersion != null) {
+                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
+            } else if (prefetched) {
+                if (snapshot == null) return true
+                decodeCurrentSnapshotRecord(request.dataModel, keyBytes, snapshot, readSelect) { qualifier, value ->
+                    sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value)
+                } ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
             } else {
-                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, null)
-                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
-            } ?: return true
+                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, readSelect)
+                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
+            }) ?: return true
             if (request.filterSoftDeleted && record.isDeleted) return true
             if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion, indexScan.index)) return true
 
@@ -317,7 +325,18 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
             return changes.size.toUInt() < request.limit
         }
 
-        if (historicRows == null) {
+        if (historicRows == null && supportsBatchedIndexReads && request.limit > 1u) {
+            scanIndexSnapshots(
+                indexStoreName, keyStoreName, indexPrefix, keySize,
+                createIndexScanStart(indexPrefix, range, startIndexValue, keyScanRange.includeStart, indexScan.direction),
+                createIndexScanEnd(indexScan.index.referenceStorageByteArray.bytes, indexPrefix, range, startIndexValue, indexScan.direction),
+                includeEnd = indexScan.direction == DESC && startIndexValue != null && request.includeStart,
+                reverse = indexScan.direction == DESC,
+                remaining = { request.limit - changes.size.toUInt() },
+                prepareSnapshot = { PreparedCurrentSnapshot.prepare(request.dataModel, it, readSelect) },
+                processRow = ::processIndexChangeRow,
+            )
+        } else if (historicRows == null) {
             byteStore.scanInBatches(
                 storeName = indexStoreName,
                 startKey = startKey,

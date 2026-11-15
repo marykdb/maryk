@@ -4,7 +4,6 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.query.changes.ObjectCreate
-import maryk.core.values.Values
 import maryk.core.query.changes.change
 import maryk.core.query.requests.change
 import maryk.core.query.responses.UpdatesResponse
@@ -29,17 +28,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
     val modelId = getDataModelId(request.dataModel)
     val historicTableStoreName = "ht:$modelId"
     val select = request.select
+    val readSelect = request.dataModel.requiredReadSelection(select, request.where, null)
     val updates = mutableListOf<IsUpdateResponse<DM>>()
-
-    suspend fun matchesHistoryFilter(keyBytes: ByteArray, version: ULong, selectedValues: Values<DM>): Boolean {
-        val valuesForFilter = if (select != null && request.where != null) {
-            readHistoricRecordDecrypted(
-                byteStore, request.dataModel, historicTableStoreName, keyBytes, version, select = null,
-            )?.values ?: return false
-        } else selectedValues
-        return valuesMatchFilter(request.dataModel, valuesForFilter, request.where, version)
-    }
-
 
     byteStore.scanInBatches(
         storeName = "uh:$modelId",
@@ -73,14 +63,15 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
                 storeName = historicTableStoreName,
                 keyBytes = keyBytes,
                 toVersion = version,
-                select = request.select,
+                select = readSelect,
             )
             if (historicRecord?.firstVersion != version) return@scanInBatches true
 
             if (request.filterSoftDeleted && historicRecord.isDeleted) return@scanInBatches true
-            if (!matchesHistoryFilter(keyBytes, version, historicRecord.values)) return@scanInBatches true
+            if (!valuesMatchFilter(request.dataModel, historicRecord.values, request.where, version)) return@scanInBatches true
 
-            val changes = (listOf(ObjectCreate) + historicRecord.values.toChanges().toList()).mapNotNull { change ->
+            val selectedValues = if (readSelect === select) historicRecord.values else historicRecord.values.filterWithSelect(select)
+            val changes = (listOf(ObjectCreate) + selectedValues.toChanges().toList()).mapNotNull { change ->
                 if (select == null) change else change.filterWithSelect(select)
             }
             if (changes.isEmpty()) return@scanInBatches true
@@ -91,7 +82,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
                 firstVersion = historicRecord.firstVersion,
                 insertionIndex = updates.size,
                 isDeleted = historicRecord.isDeleted,
-                values = historicRecord.values,
+                values = selectedValues,
             )
             return@scanInBatches updates.size.toUInt() < paging.scanLimit
         }
@@ -107,10 +98,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
             storeName = historicTableStoreName,
             keyBytes = decoded.key.bytes,
             toVersion = version,
-            select = request.select,
+            select = readSelect,
         ) ?: return@scanInBatches true
         if (request.filterSoftDeleted && historicRecord.isDeleted) return@scanInBatches true
-        if (!matchesHistoryFilter(keyBytes, version, historicRecord.values)) return@scanInBatches true
+        if (!valuesMatchFilter(request.dataModel, historicRecord.values, request.where, version)) return@scanInBatches true
 
         val versionedChanges = decoded.changes.firstOrNull() ?: return@scanInBatches true
         val filteredChanges = versionedChanges.changes.mapNotNull { change ->
@@ -119,13 +110,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
         if (filteredChanges.isEmpty()) return@scanInBatches true
 
         if (filteredChanges.any { it is ObjectCreate }) {
+            val selectedValues = if (readSelect === select) historicRecord.values else historicRecord.values.filterWithSelect(select)
             updates += AdditionUpdate(
                 key = decoded.key,
                 version = versionedChanges.version,
                 firstVersion = historicRecord.firstVersion,
                 insertionIndex = updates.size,
                 isDeleted = historicRecord.isDeleted,
-                values = historicRecord.values,
+                values = selectedValues,
             )
         } else {
             updates += ChangeUpdate(

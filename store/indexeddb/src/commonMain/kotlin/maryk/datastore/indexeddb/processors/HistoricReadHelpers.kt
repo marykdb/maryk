@@ -6,6 +6,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.emptyValues
 import maryk.core.models.key
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.types.Bytes
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
@@ -139,10 +140,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readHistoricRecor
     decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
 ): ValuesWithMetaData<DM>? {
     val value = readHistoricSnapshotBytes(storeName, keyBytes, toVersion) ?: return null
-    val (meta, storageRows) = decodeHistoricSnapshot(value)
+    val (meta, storageRows) = decodeSelectedSnapshot(dataModel, value, select)
     val values = decodeStorageRowsToValues(
         dataModel,
-        decryptSelectedStorageRows(dataModel, storageRows, select, decryptValue),
+        decryptSelectedStorageRows(dataModel, storageRows, null, decryptValue),
         select,
     )
         ?: dataModel.emptyValues()
@@ -240,7 +241,7 @@ internal suspend fun IndexedDbByteStore.readHistoricIndexRows(
     toVersion: ULong,
     reverse: Boolean,
 ): List<Pair<ByteArray, ByteArray>> {
-    val latestByBaseKey = mutableMapOf<String, Triple<ByteArray, ULong, ByteArray>>()
+    val latestByBaseKey = mutableMapOf<Bytes, Pair<ULong, ByteArray>>()
 
     scanInBatches(
         storeName = storeName,
@@ -254,18 +255,19 @@ internal suspend fun IndexedDbByteStore.readHistoricIndexRows(
         val version = rowKey.readTrailingInvertedVersion()
         if (version > toVersion) return@scanInBatches true
 
-        val mapKey = baseKey.contentToString()
+        val mapKey = Bytes(baseKey)
         val current = latestByBaseKey[mapKey]
-        if (current == null || version > current.second) {
-            latestByBaseKey[mapKey] = Triple(baseKey, version, rowValue)
+        if (current == null || version > current.first) {
+            latestByBaseKey[mapKey] = version to rowValue
         }
         true
     }
 
-    val activeRows = latestByBaseKey.values
-        .filter { (_, _, value) -> value.firstOrNull() == 1.toByte() }
-        .map { (baseKey, _, value) -> baseKey to value }
-        .sortedWith { a, b -> a.first compareTo b.first }
+    val activeRows = mutableListOf<Pair<ByteArray, ByteArray>>()
+    for ((key, visible) in latestByBaseKey) {
+        if (visible.second.firstOrNull() == 1.toByte()) activeRows += key.bytes to visible.second
+    }
+    activeRows.sortWith { first, second -> first.first compareTo second.first }
 
     return if (reverse) activeRows.asReversed() else activeRows
 }

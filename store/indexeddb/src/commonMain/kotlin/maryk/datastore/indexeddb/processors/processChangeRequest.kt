@@ -40,6 +40,7 @@ import maryk.datastore.indexeddb.encodeStorageValue
 import maryk.datastore.indexeddb.tableQualifierFromRowKey
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.diffIndexValues
+import maryk.datastore.shared.indexesToReconcile
 import maryk.datastore.shared.updates.Update
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequest(
@@ -185,16 +186,34 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     return@transaction
                 }
 
-                val storagePlan = createStoragePlan(request.dataModel, modelId, keyBytes, changedValues, sensitiveFields)
+                val indexes = request.dataModel.Meta.indexes.orEmpty().indexesToReconcile(
+                    objectChange.changes,
+                    objectChange.changes.filterIsInstance<Change>().flatMap { change -> change.referenceValuePairs.map { it.reference } },
+                    currentMeta.isDeleted || targetIsDeleted,
+                )
+                // Each affected index is encoded once per state. Unrelated root
+                // scalar changes leave its current and historical entries intact.
+                val indexValues = indexes.map { index ->
+                    val oldValues = if (currentMeta.isDeleted) emptyList()
+                        else index.toStorageByteArraysForIndex(currentValues, keyBytes)
+                    val newValues = if (targetIsDeleted) emptyList()
+                        else index.toStorageByteArraysForIndex(changedValues, keyBytes)
+                    Triple(index, oldValues, newValues)
+                }
+                val oldIndexRows = indexValues.flatMap { (index, values, _) ->
+                    values.map { createIndexRowKey(index.referenceStorageByteArray.bytes, it) }
+                }
+                val newIndexRows = indexValues.flatMap { (index, _, values) ->
+                    values.map { createIndexRowKey(index.referenceStorageByteArray.bytes, it) }
+                }
+                val storagePlan = createStoragePlan(request.dataModel, modelId, keyBytes, changedValues, sensitiveFields,
+                    precomputedIndexRows = newIndexRows)
                 if (!targetIsDeleted) {
                     validateUniqueRows(request.dataModel, keyBytes, uniqueStoreName, storagePlan.uniqueRows)
                 }
 
                 val oldTableRows = encodedCurrentRows?.map { (qualifier, value) -> createTableRowKey(keyBytes, qualifier) to value }
                     ?: scanTableRows(tableStoreName, keyBytes)
-                val oldIndexRows = request.dataModel.Meta.indexes.orEmpty().flatMap { index ->
-                    index.toStorageByteArraysForIndex(currentValues, keyBytes).map { createIndexRowKey(index.referenceStorageByteArray.bytes, it) }
-                }
                 val oldUniqueRows = collectCurrentUniqueRows(
                     request.dataModel,
                     modelId,
@@ -205,13 +224,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     oldTableRows,
                 )
                 val indexChanges = buildList {
-                    request.dataModel.Meta.indexes?.forEach { index ->
-                        val oldValues = index.toStorageByteArraysForIndex(currentValues, keyBytes)
-                        val newValues = if (targetIsDeleted) {
-                            emptyList()
-                        } else {
-                            index.toStorageByteArraysForIndex(changedValues, keyBytes)
-                        }
+                    indexValues.forEach { (index, oldValues, newValues) ->
                         val (removed, added) = diffIndexValues(oldValues, newValues)
                         if (removed.size == 1 && added.size == 1) {
                             add(IndexUpdate(index.referenceStorageByteArray, Bytes(added.first()), Bytes(removed.first())))

@@ -58,6 +58,7 @@ import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.indexeddb.createObjectRowKeyPrefix
 import maryk.datastore.indexeddb.readCurrentValues
 import maryk.datastore.indexeddb.readRecord
+import maryk.datastore.indexeddb.getBatch
 import maryk.datastore.indexeddb.tableQualifierFromRowKey
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.hasStoredReferenceValue
@@ -89,10 +90,12 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectCurrentInd
     dataModel: DM,
     keyBytes: ByteArray,
 ): List<ByteArray> {
+    val indexes = dataModel.Meta.indexes ?: return emptyList()
+    if (indexes.isEmpty()) return emptyList()
     val values = readCurrentValuesDecrypted(byteStore, dataModel, "t:${getDataModelId(dataModel)}", keyBytes, null)
         ?: return emptyList()
     val rows = mutableListOf<ByteArray>()
-    dataModel.Meta.indexes?.forEach { index ->
+    indexes.forEach { index ->
         index.toStorageByteArraysForIndex(values, keyBytes).forEach { valueAndKey ->
             rows += createIndexRowKey(index.referenceStorageByteArray.bytes, valueAndKey)
         }
@@ -122,19 +125,22 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectCurrentUni
             val encodedValue = sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, rowValue)
             val uniqueKeys = sensitiveFields.mapUniqueValueByteCandidates(modelId, qualifier, encodedValue)
                 .map { uniqueValue -> createUniqueRowKey(qualifier, uniqueValue) }
-            val existingKeys = uniqueKeys.filter { candidateKey ->
-                uniqueStore.get(uniqueStoreName, candidateKey)?.contentEquals(keyBytes) == true
-            }
             rows += IndexedDbUniqueRow(
                 uniqueKey = uniqueKeys.first(),
                 keyBytes = keyBytes,
                 qualifier = qualifier,
                 candidateKeys = uniqueKeys,
-                existingKeys = existingKeys,
+                existingKeys = emptyList(),
             )
         }
     }
-    return rows
+    val owners = uniqueStore.getBatch(uniqueStoreName, rows.flatMap { it.candidateKeys })
+    var ownerIndex = 0
+    return rows.map { row ->
+        row.copy(existingKeys = row.candidateKeys.filter {
+            owners[ownerIndex++]?.contentEquals(keyBytes) == true
+        })
+    }
 }
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.validateUniqueRows(
@@ -142,12 +148,42 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.validateUniqueRow
     keyBytes: ByteArray,
     uniqueStoreName: String,
     uniqueRows: List<IndexedDbUniqueRow>,
+    allowSameOwner: Boolean = true,
 ) {
-    for (row in uniqueRows) {
-        for (candidateKey in row.candidateKeys) {
-            val existingKey = byteStore.get(uniqueStoreName, candidateKey) ?: continue
-            if (!existingKey.contentEquals(keyBytes)) {
-                throw UniqueException(row.qualifier, dataModel.key(existingKey))
+    if (uniqueRows.isEmpty()) return
+    if (uniqueRows.size == 1 && uniqueRows[0].candidateKeys.size == 1) {
+        val row = uniqueRows[0]
+        val existing = byteStore.get(uniqueStoreName, row.candidateKeys[0])
+        if (existing != null && (!allowSameOwner || !existing.contentEquals(keyBytes))) {
+            throw UniqueException(row.qualifier, dataModel.key(existing))
+        }
+        return
+    }
+    var rowIndex = 0
+    var candidateIndex = 0
+    while (rowIndex < uniqueRows.size) {
+        val keys = ArrayList<ByteArray>(minOf(256, uniqueRows.size))
+        val qualifiers = ArrayList<ByteArray>(minOf(256, uniqueRows.size))
+        while (keys.size < 256 && rowIndex < uniqueRows.size) {
+            val row = uniqueRows[rowIndex]
+            if (candidateIndex == row.candidateKeys.size) {
+                rowIndex++
+                candidateIndex = 0
+            } else {
+                keys += row.candidateKeys[candidateIndex++]
+                qualifiers += row.qualifier
+                if (candidateIndex == row.candidateKeys.size) {
+                    rowIndex++
+                    candidateIndex = 0
+                }
+            }
+        }
+        if (keys.isEmpty()) break
+        val owners = byteStore.getBatch(uniqueStoreName, keys)
+        for (index in owners.indices) {
+            val existing = owners[index] ?: continue
+            if (!allowSameOwner || !existing.contentEquals(keyBytes)) {
+                throw UniqueException(qualifiers[index], dataModel.key(existing))
             }
         }
     }

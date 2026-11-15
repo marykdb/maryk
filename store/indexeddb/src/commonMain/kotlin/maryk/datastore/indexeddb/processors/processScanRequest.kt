@@ -8,6 +8,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.Bytes
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
@@ -37,7 +38,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
     storeAction: ScanStoreAction<DM>,
 ) {
     val request = storeAction.request
-    val readSelect = if (request.where == null && request.aggregations == null) request.select else null
+    val readSelect = request.dataModel.requiredReadSelection(request.select, request.where, request.aggregations)
     request.checkToVersion(keepAllVersions)
     val continuation = request.resolveCursor()
 
@@ -68,7 +69,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
         throw RequestException("Scans including soft-deleted records require primary-key ordering; secondary-index ordering is not supported")
     }
     val aggregator = request.aggregations?.let(::Aggregator)
-    val values = ArrayList<ValuesWithMetaData<DM>>(request.limit.toInt().coerceAtLeast(4))
+    val values = ArrayList<ValuesWithMetaData<DM>>(request.limit.coerceIn(4u, 256u).toInt())
 
     if (keyScanRange.isSingleKey()) {
         if (continuation != null) {
@@ -334,9 +335,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
     indexScan: IndexScan,
     aggregator: Aggregator?,
 ): ValuesResponse<DM> {
-    val values = ArrayList<ValuesWithMetaData<DM>>(request.limit.toInt().coerceAtLeast(4))
+    val readSelect = request.dataModel.requiredReadSelection(request.select, request.where, request.aggregations, indexScan.index)
+    val values = ArrayList<ValuesWithMetaData<DM>>(request.limit.coerceIn(4u, 256u).toInt())
     var processed = 0u
-    val seenKeys = mutableSetOf<String>()
+    val seenKeys = mutableSetOf<Bytes>()
     val keySize = request.dataModel.Meta.keyByteSize
     val indexPrefix = createIndexKeyPrefix(indexScan.index.referenceStorageByteArray.bytes)
     val continuation = request.resolveCursor()
@@ -376,12 +378,13 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
     val startIndexValue = continuation?.let {
         it.orderKey?.bytes ?: throw RequestException("Scan cursor has no index ordering boundary")
     } ?: request.startKey?.let { startKey ->
+        val startSelect = request.dataModel.requiredIndexReadSelection(indexScan.index)
         val toVersion = request.toVersion
         val record = if (toVersion != null) {
-            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, startKey.bytes, toVersion, null)
+            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, startKey.bytes, toVersion, startSelect)
         } else {
-            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, startKey.bytes, null)
-                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, startKey.bytes, null)
+            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, startKey.bytes, startSelect)
+                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, startKey.bytes, startSelect)
         }
         record?.let {
             selectCanonicalIndexValue(it.values, startKey.bytes)
@@ -404,33 +407,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
 
     val rangeList = if (indexScan.direction == ASC) indexRanges.ranges else indexRanges.ranges.asReversed()
     for (range in rangeList) {
-        val startKey = when (indexScan.direction) {
-            ASC -> createIndexKeyWithPrefix(
-                indexPrefix,
-                startIndexValue?.let { range.getAscendingStartKey(it, keyScanRange.includeStart) } ?: range.start
-            )
-            DESC -> createIndexKeyWithPrefix(indexPrefix, range.getAscendingStartKey())
-        }
-        val endKey = when (indexScan.direction) {
-            ASC -> when (val rangeEnd = range.getDescendingStartKey()) {
-                null -> createIndexRangeEnd(indexScan.index.referenceStorageByteArray.bytes)
-                else -> if (rangeEnd.isEmpty()) {
-                    createIndexRangeEnd(indexScan.index.referenceStorageByteArray.bytes)
-                } else {
-                    createIndexKeyWithPrefix(indexPrefix, rangeEnd)
-                }
-            }
-            // IndexedDB applies the cursor's inclusivity to the range itself. Using
-            // the predecessor here would exclude an adjacent record a second time.
-            DESC -> when (val descendingStart = range.getDescendingStartKey(startIndexValue, inclusiveStartKey = true)) {
-                null -> createIndexRangeEnd(indexScan.index.referenceStorageByteArray.bytes)
-                else -> if (descendingStart.isEmpty()) {
-                    createIndexRangeEnd(indexScan.index.referenceStorageByteArray.bytes)
-                } else {
-                    createIndexKeyWithPrefix(indexPrefix, descendingStart)
-                }
-            }
-        }
+        val startKey = createIndexScanStart(indexPrefix, range, startIndexValue, keyScanRange.includeStart, indexScan.direction)
+        val endKey = createIndexScanEnd(indexScan.index.referenceStorageByteArray.bytes, indexPrefix, range, startIndexValue, indexScan.direction)
 
         val rows = request.toVersion?.let { toVersion ->
             byteStore.readHistoricIndexRows(
@@ -443,7 +421,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
             )
         }
 
-        suspend fun processIndexRow(rowKey: ByteArray): Boolean {
+        suspend fun processIndexRow(rowKey: ByteArray, snapshot: PreparedCurrentSnapshot? = null, prefetched: Boolean = false): Boolean {
             if (!rowKey.matchesRangePart(0, indexPrefix, sourceLength = rowKey.size, length = indexPrefix.size)) return true
             val valueAndKey = rowKey.copyOfRange(indexPrefix.size, rowKey.size)
             val valueSize = resolveIndexValueSize(valueAndKey, keySize, indexScan.index.indexPartCount) ?: return true
@@ -462,16 +440,21 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
             if (!indexKeyScanRange.keyWithinRanges(keyBytes, 0) || !indexKeyScanRange.matchesPartials(keyBytes, 0)) return true
             if (continuation?.key?.bytes?.contentEquals(keyBytes) == true) return true
 
-            val dedupe = keyBytes.joinToString(",")
+            val dedupe = Bytes(keyBytes)
             if (!seenKeys.add(dedupe)) return true
 
             val toVersion = request.toVersion
-            val record = if (toVersion != null) {
-                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
+            val record = (if (toVersion != null) {
+                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, readSelect)
+            } else if (prefetched) {
+                if (snapshot == null) return true
+                decodeCurrentSnapshotRecord(request.dataModel, keyBytes, snapshot, readSelect) { qualifier, value ->
+                    sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value)
+                } ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
             } else {
-                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, null)
-                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
-            }
+                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, readSelect)
+                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, readSelect)
+            })
                 ?: return true
             if (request.filterSoftDeleted && record.isDeleted) return true
             if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion, indexScan.index)) return true
@@ -491,7 +474,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
             return ++processed < request.limit
         }
 
-        if (rows == null) {
+        if (rows == null && supportsBatchedIndexReads && request.limit > 1u) {
+            scanIndexSnapshots(
+                indexStoreName, keyStoreName, indexPrefix, keySize, startKey, endKey,
+                includeEnd = indexScan.direction == DESC && startIndexValue != null && keyScanRange.includeStart,
+                reverse = indexScan.direction == DESC,
+                remaining = { request.limit - processed },
+                prepareSnapshot = { PreparedCurrentSnapshot.prepare(request.dataModel, it, readSelect) },
+                processRow = ::processIndexRow,
+            )
+        } else if (rows == null) {
             byteStore.scanInBatches(
                 storeName = indexStoreName,
                 startKey = startKey,

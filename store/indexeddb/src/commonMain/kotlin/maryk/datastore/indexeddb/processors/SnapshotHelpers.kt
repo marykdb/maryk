@@ -6,6 +6,9 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.references.decodeStorageIndex
+import maryk.lib.exceptions.ParseException
 import maryk.core.query.ValuesWithMetaData
 import maryk.datastore.indexeddb.IndexedDbByteStore
 import maryk.datastore.indexeddb.IndexedDbRecordMeta
@@ -13,6 +16,9 @@ import maryk.datastore.indexeddb.decodeRecordMeta
 import maryk.datastore.indexeddb.decryptSelectedStorageRows
 import maryk.datastore.indexeddb.decodeStorageRowsToValues
 import maryk.datastore.indexeddb.encodeRecordMeta
+import maryk.datastore.shared.simpleScalarReadProperty
+
+private const val MAX_PREPARED_SNAPSHOT_ROWS = 256
 
 
 
@@ -34,13 +40,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readCurrentSnapsh
     val snapshot = get(keyStoreName, keyBytes) ?: return null
     if (snapshot.size == 17) return null
 
-    val (meta, rows) = decodeCurrentSnapshot(snapshot)
+    val decoded = decodeSelectedSnapshot(dataModel, snapshot, select)
+    val (meta, rows) = decoded
     // Released non-history soft deletes could retain table cells but omit this
     // cached payload. Let the caller recover the authoritative table rows.
-    if (meta.isDeleted && rows.isEmpty()) return null
+    if (meta.isDeleted && decoded.storedRowCount == 0) return null
     val values = decodeStorageRowsToValues(
         dataModel,
-        decryptSelectedStorageRows(dataModel, rows, select, decryptValue),
+        decryptSelectedStorageRows(dataModel, rows, null, decryptValue),
         select,
     ) ?: return null
 
@@ -63,13 +70,14 @@ internal suspend fun <DM : IsRootDataModel> decodeCurrentSnapshotRecord(
 ): ValuesWithMetaData<DM>? {
     if (snapshot.size == 17) return null
 
-    val (meta, rows) = decodeCurrentSnapshot(snapshot)
+    val decoded = decodeSelectedSnapshot(dataModel, snapshot, select)
+    val (meta, rows) = decoded
     // A journal snapshot is self-contained, and a deleted record can validly
     // have no optional fields. Table reads instead recover retained legacy cells.
-    if (!allowEmptyDeletedSnapshot && meta.isDeleted && rows.isEmpty()) return null
+    if (!allowEmptyDeletedSnapshot && meta.isDeleted && decoded.storedRowCount == 0) return null
     val values = decodeStorageRowsToValues(
         dataModel,
-        decryptSelectedStorageRows(dataModel, rows, select, decryptValue),
+        decryptSelectedStorageRows(dataModel, rows, null, decryptValue),
         select,
     ) ?: return null
 
@@ -126,12 +134,13 @@ internal fun encodeRowsSnapshot(
     var index = 0
     encodeRecordMeta(meta).copyInto(bytes, destinationOffset = index)
     index += 17
-    rows.size.writeVarBytes { bytes[index++] = it }
+    val writer: (Byte) -> Unit = { bytes[index++] = it }
+    rows.size.writeVarBytes(writer)
     for ((qualifier, value) in rows) {
-        qualifier.size.writeVarBytes { bytes[index++] = it }
+        qualifier.size.writeVarBytes(writer)
         qualifier.copyInto(bytes, destinationOffset = index)
         index += qualifier.size
-        value.size.writeVarBytes { bytes[index++] = it }
+        value.size.writeVarBytes(writer)
         value.copyInto(bytes, destinationOffset = index)
         index += value.size
     }
@@ -142,22 +151,119 @@ internal fun decodeHistoricSnapshot(bytes: ByteArray): Pair<IndexedDbRecordMeta,
     return decodeRowsSnapshot(bytes)
 }
 
-internal fun decodeRowsSnapshot(bytes: ByteArray): Pair<IndexedDbRecordMeta, List<Pair<ByteArray, ByteArray>>> {
-    var index = 0
-    val meta = decodeRecordMeta(bytes.copyOfRange(0, 17))
-    index = 17
-    val count = initIntByVar { bytes[index++] }
-    val rows = ArrayList<Pair<ByteArray, ByteArray>>(count)
-    repeat(count) {
-        val qualifierSize = initIntByVar { bytes[index++] }
-        val qualifier = bytes.copyOfRange(index, index + qualifierSize)
-        index += qualifierSize
-        val valueSize = initIntByVar { bytes[index++] }
-        val value = bytes.copyOfRange(index, index + valueSize)
-        index += valueSize
-        rows += qualifier to value
+internal fun decodeRowsSnapshot(bytes: ByteArray): Pair<IndexedDbRecordMeta, List<Pair<ByteArray, ByteArray>>> =
+    decodeSnapshotRows(bytes).let { it.meta to it.rows }
+
+internal data class DecodedIndexedDbSnapshot(
+    val meta: IndexedDbRecordMeta,
+    val rows: List<Pair<ByteArray, ByteArray>>,
+    val storedRowCount: Int,
+)
+
+/** Inspect qualifiers before allocating payload arrays, retaining selected structural parents. */
+internal fun decodeSelectedSnapshot(
+    dataModel: IsRootDataModel,
+    bytes: ByteArray,
+    select: RootPropRefGraph<*>?,
+): DecodedIndexedDbSnapshot = when {
+    select == null -> decodeSnapshotRows(bytes)
+    select.properties.isEmpty() -> decodeSnapshotRows(bytes, skipAll = true)
+    else -> decodeSnapshotRows(bytes) { offset, length -> snapshotRowIsSelected(dataModel, bytes, select, offset, length) }
+}
+
+internal fun isNarrowSnapshotSelection(dataModel: IsRootDataModel, select: RootPropRefGraph<*>?): Boolean =
+    select != null && select.properties.size <= 64 &&
+        (select.properties.size < dataModel.count() || select.properties.any { it !is IsDefinitionWrapper<*, *, *, *> })
+
+/** Inspect spans first so a wide selected payload never creates a second blob copy. */
+internal fun prepareNarrowSnapshot(
+    dataModel: IsRootDataModel,
+    bytes: ByteArray,
+    select: RootPropRefGraph<*>,
+): DecodedIndexedDbSnapshot? {
+    if (!isNarrowSnapshotSelection(dataModel, select)) return null
+    val meta = decodeRecordMeta(bytes)
+    lateinit var spans: IntArray
+    var selectedCount = 0
+    var selectedBytes = 0L
+    val rowLimit = if (select.properties.all { simpleScalarReadProperty(it) != null }) {
+        select.properties.size + 1
+    } else MAX_PREPARED_SNAPSHOT_ROWS
+    val count = visitSnapshotRows(bytes, { rows -> spans = IntArray(minOf(rows, rowLimit) * 4) }) { qualifierOffset, qualifierSize, valueOffset, valueSize ->
+        if (select.properties.isNotEmpty() && snapshotRowIsSelected(dataModel, bytes, select, qualifierOffset, qualifierSize)) {
+            selectedBytes += qualifierSize.toLong() + valueSize
+            if (selectedBytes > bytes.size / 2 || selectedCount >= spans.size / 4) return@visitSnapshotRows false
+            val base = selectedCount++ * 4
+            spans[base] = qualifierOffset; spans[base + 1] = qualifierSize
+            spans[base + 2] = valueOffset; spans[base + 3] = valueSize
+        }
+        true
     }
-    return meta to rows
+    if (count < 0) return null
+    val rows = ArrayList<Pair<ByteArray, ByteArray>>(selectedCount)
+    repeat(selectedCount) { index ->
+        val base = index * 4
+        rows += bytes.copyOfRange(spans[base], spans[base] + spans[base + 1]) to
+            bytes.copyOfRange(spans[base + 2], spans[base + 2] + spans[base + 3])
+    }
+    return DecodedIndexedDbSnapshot(meta, rows, count)
+}
+
+private fun snapshotRowIsSelected(
+    dataModel: IsRootDataModel, bytes: ByteArray, select: RootPropRefGraph<*>, offset: Int, length: Int,
+): Boolean {
+    var index = offset
+    val rootIndex = decodeStorageIndex({
+        if (index >= offset + length) throw ParseException("Property reference exceeds declared length")
+        bytes[index++]
+    }) { propertyIndex, _ -> propertyIndex }
+    // Unselected roots need no nested map/key decoding; unknown roots remain validated.
+    if (dataModel[rootIndex] != null && select.properties.none { it.index == rootIndex }) return false
+    index = offset
+    return select.contains(dataModel.getPropertyReferenceByStorageBytes(length, reader = { bytes[index++] }))
+}
+
+private fun decodeSnapshotRows(
+    bytes: ByteArray,
+    skipAll: Boolean = false,
+    includeRow: ((offset: Int, length: Int) -> Boolean)? = null,
+): DecodedIndexedDbSnapshot {
+    val meta = decodeRecordMeta(bytes)
+    lateinit var rows: ArrayList<Pair<ByteArray, ByteArray>>
+    val count = visitSnapshotRows(bytes, { count ->
+        rows = ArrayList(if (skipAll) 0 else if (includeRow == null) count else minOf(count, 16))
+    }) { qualifierOffset, qualifierSize, valueOffset, valueSize ->
+        if (!skipAll && (includeRow == null || includeRow(qualifierOffset, qualifierSize))) {
+            rows += bytes.copyOfRange(qualifierOffset, qualifierOffset + qualifierSize) to
+                bytes.copyOfRange(valueOffset, valueOffset + valueSize)
+        }
+        true
+    }
+    return DecodedIndexedDbSnapshot(meta, rows, count)
+}
+
+/** A negative result means the visitor declined preparation; malformed rows still throw. */
+private inline fun visitSnapshotRows(
+    bytes: ByteArray,
+    beforeRows: (Int) -> Unit,
+    row: (qualifierOffset: Int, qualifierSize: Int, valueOffset: Int, valueSize: Int) -> Boolean,
+): Int {
+    var index = 17
+    val reader = { bytes[index++] }
+    val count = initIntByVar(reader)
+    require(count >= 0 && count <= (bytes.size - index) / 2) { "Invalid IndexedDB snapshot row count" }
+    beforeRows(count)
+    repeat(count) {
+        val qualifierSize = initIntByVar(reader)
+        require(qualifierSize >= 0 && qualifierSize <= bytes.size - index) { "Invalid IndexedDB snapshot qualifier size" }
+        val qualifierOffset = index
+        index += qualifierSize
+        val valueSize = initIntByVar(reader)
+        require(valueSize >= 0 && valueSize <= bytes.size - index) { "Invalid IndexedDB snapshot value size" }
+        if (!row(qualifierOffset, qualifierSize, index, valueSize)) return -1
+        index += valueSize
+    }
+    return count
 }
 
 internal fun ULong.toBigEndianBytes(): ByteArray {

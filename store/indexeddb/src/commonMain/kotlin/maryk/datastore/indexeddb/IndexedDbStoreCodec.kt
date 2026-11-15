@@ -19,6 +19,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.readStorageToValues
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.TypeEnum
@@ -30,6 +31,7 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.Values
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.readValue
+import maryk.lib.bytes.decodeUtf8Strict
 import maryk.lib.extensions.compare.matchesRangePart
 
 internal data class IndexedDbRecordMeta(
@@ -202,11 +204,20 @@ internal fun decodeStorageValue(
     reference: IsPropertyReferenceForCache<*, *>,
     valueBytes: ByteArray,
 ): Any? {
-    var index = 0
     val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
         ?: reference.propertyDefinition
+    // Short strings retain the pooled reader. For larger buffered strings,
+    // avoid its byte-by-byte copy and incremental buffer growth.
+    if (valueBytes.size >= minimumDirectStringBytes && definition is StringDefinition &&
+        valueBytes.firstOrNull() == TypeIndicator.NoTypeIndicator.byte
+    ) {
+        return valueBytes.decodeUtf8Strict(startIndex = 1)
+    }
+    var index = 0
     return readValue(definition, { valueBytes[index++] }) { valueBytes.size - index }
 }
+
+private const val minimumDirectStringBytes = 1_024
 
 internal fun createTableRowKey(keyBytes: ByteArray, qualifier: ByteArray): ByteArray {
     val keyPrefix = createObjectRowKeyPrefix(keyBytes)

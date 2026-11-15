@@ -18,14 +18,18 @@ import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.indexeddb.getBatch
+import maryk.datastore.indexeddb.IndexedDbBatchReadStore
 import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.fromReplicationChanges
 import maryk.datastore.shared.normalizeReplicationChanges
+import maryk.datastore.shared.RequestRecordCache
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetRequest(
     storeAction: GetStoreAction<DM>,
-) {
+    prefetchedSnapshots: List<ByteArray?>? = null,
+    preparedSnapshots: MutableMap<Int, DecodedIndexedDbSnapshot>? = null,
+): Boolean {
     val request = storeAction.request
     request.checkToVersion(keepAllVersions)
 
@@ -35,28 +39,65 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetRequest
     val historicTableStoreName = "ht:$modelId"
     val aggregator = request.aggregations?.let(::Aggregator)
     val values = ArrayList<ValuesWithMetaData<DM>>(request.keys.size.coerceAtLeast(4))
+    // Referenced filters fetch other records outside the co-read native snapshot.
+    val hasPrefetchedSnapshots = prefetchedSnapshots != null || preparedSnapshots != null
+    var usedOnlyPrefetchedSnapshots = hasPrefetchedSnapshots && request.where?.hasReferencedQualifier() != true
 
     // Filter and project the same record version instead of fetching it twice.
-    val readSelect = if (request.where != null && request.select != null) null else request.select
-    for (keys in request.keys.chunked(256)) {
-        val snapshots = if (request.toVersion == null && keys.size > 1) {
-            byteStore.getBatch(keyStoreName, keys.map { it.bytes })
+    val readSelect = request.dataModel.requiredReadSelection(request.select, request.where, request.aggregations)
+    // Only co-read native heads prove a shared view. Legacy row fallbacks and
+    // filters retain their original paths, including schema validation.
+    var records = if (hasPrefetchedSnapshots && request.where == null) {
+        if (request.toVersion == null && request.aggregations == null && request.select == null) {
+            RequestRecordCache.create(request.keys, maxValueNodes = 16_384)
+        } else RequestRecordCache.create(request.keys)
+    } else null
+    for (keys in request.keys.asSequence().chunked(256)) {
+        var selectedRows = preparedSnapshots
+        val snapshots = prefetchedSnapshots ?: if (preparedSnapshots == null && request.toVersion == null && keys.size > 1) {
+            val batchStore = byteStore
+            if (readSelect != null && isNarrowSnapshotSelection(request.dataModel, readSelect) && batchStore is IndexedDbBatchReadStore) {
+                batchStore.mapBatchValues(keyStoreName, keys.map { it.bytes }) { index, bytes ->
+                    if (bytes != null && bytes.size >= PREPARED_SNAPSHOT_MIN_BYTES) {
+                        val selected = prepareNarrowSnapshot(request.dataModel, bytes, readSelect)
+                        if (selected == null) bytes else {
+                            val rows = selectedRows ?: HashMap<Int, DecodedIndexedDbSnapshot>().also { selectedRows = it }
+                            rows[index] = selected
+                            null
+                        }
+                    } else bytes
+                }
+            } else batchStore.getBatch(keyStoreName, keys.map { it.bytes })
         } else null
         for ((keyIndex, key) in keys.withIndex()) {
             val toVersion = request.toVersion
-            val record = if (toVersion != null) {
+            val prepared = selectedRows?.remove(keyIndex)
+            val record = (if (records?.contains(key) == true) records.get(key) else (if (toVersion != null) {
                 readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, key.bytes, toVersion, readSelect)
             } else {
-                if (snapshots != null) {
+                if (prepared != null) {
+                    val snapshot = prepared
+                    decodeCurrentSnapshotRecord(request.dataModel, key.bytes, snapshot, readSelect) { qualifier, value ->
+                        sensitiveFields.decryptValueIfNeeded(modelId, key.bytes, qualifier, value)
+                    } ?: run {
+                        usedOnlyPrefetchedSnapshots = false
+                        records = null
+                        readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, key.bytes, readSelect)
+                    }
+                } else if (snapshots != null) {
                     val snapshot = snapshots[keyIndex] ?: continue
                     decodeCurrentSnapshotRecord(request.dataModel, key.bytes, snapshot, readSelect) { qualifier, value ->
                         sensitiveFields.decryptValueIfNeeded(modelId, key.bytes, qualifier, value)
-                    } ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, key.bytes, readSelect)
+                    } ?: run {
+                        usedOnlyPrefetchedSnapshots = false
+                        records = null
+                        readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, key.bytes, readSelect)
+                    }
                 } else {
                     readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, key.bytes, readSelect)
                         ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, key.bytes, readSelect)
                 }
-            }
+            }).also { records?.put(key, it) })
                 ?: continue
             if (request.filterSoftDeleted && record.isDeleted) continue
             if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)) continue
@@ -64,7 +105,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetRequest
             val selectedRecord = if (readSelect == request.select) record
                 else record.copy(values = record.values.filterWithSelect(request.select))
             values += selectedRecord
-            aggregator?.aggregate { reference -> selectedRecord.values[reference] }
+            aggregator?.aggregate { reference -> record.values[reference] }
 
         }
     }
@@ -77,6 +118,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetRequest
             dataFetchType = FetchByKey,
         )
     )
+    return usedOnlyPrefetchedSnapshots
 }
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetChangesRequest(

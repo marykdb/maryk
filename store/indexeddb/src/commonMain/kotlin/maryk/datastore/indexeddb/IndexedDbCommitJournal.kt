@@ -16,6 +16,7 @@ import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.datastore.shared.updates.Update
+import maryk.lib.bytes.combineToByteArray
 
 internal const val CommitJournalStoreName = "__maryk_commit_journal"
 internal const val CommitConsumerStoreName = "__maryk_commit_consumers"
@@ -87,7 +88,7 @@ internal suspend fun encodeChangeJournalPayload(
             is IndexDelete -> parts += encodeSizedBytes(change.indexKey.bytes)
         }
     }
-    return parts.fold(byteArrayOf()) { result, part -> result + part }
+    return combineToByteArray(*parts.toTypedArray())
 }
 
 private suspend fun decodeChangeJournalPayload(

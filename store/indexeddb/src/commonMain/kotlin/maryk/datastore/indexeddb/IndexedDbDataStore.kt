@@ -71,6 +71,11 @@ import maryk.datastore.indexeddb.processors.processAddRequest
 import maryk.datastore.indexeddb.processors.processChangeRequest
 import maryk.datastore.indexeddb.processors.processDeleteRequest
 import maryk.datastore.indexeddb.processors.processGetChangesRequest
+import maryk.datastore.indexeddb.processors.DecodedIndexedDbSnapshot
+import maryk.datastore.indexeddb.processors.PREPARED_SNAPSHOT_MIN_BYTES
+import maryk.datastore.indexeddb.processors.prepareNarrowSnapshot
+import maryk.datastore.indexeddb.processors.isNarrowSnapshotSelection
+import maryk.datastore.indexeddb.processors.requiredReadSelection
 import maryk.datastore.indexeddb.processors.processGetRequest
 import maryk.datastore.indexeddb.processors.processGetUpdatesRequest
 import maryk.datastore.indexeddb.processors.processScanChangesRequest
@@ -136,6 +141,7 @@ class IndexedDbDataStore private constructor(
 ) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider, ReplicationTombstoneCompactor {
 
     private val nativeByteStore = byteStore
+    internal val supportsBatchedIndexReads: Boolean get() = nativeByteStore is IndexedDbBatchReadStore
     internal val byteStore: IndexedDbByteStore = AtomicAwareIndexedDbByteStore(byteStore, this)
     // Startup callbacks run under the startup fence before this successful-open baseline is captured.
     private var schemaSnapshot: IndexedDbSchemaSnapshot? = null
@@ -315,7 +321,48 @@ class IndexedDbDataStore private constructor(
         }
     }
 
-    override suspend fun onBeforeFlowSnapshotBoundary() = pollExternalCommits()
+    private var activeUpdateListeners = 0
+
+    override fun onUpdateListenerAdded(dataModelId: UInt) { activeUpdateListeners++ }
+    override fun onUpdateListenerRemoved(dataModelId: UInt) { activeUpdateListeners-- }
+
+    override suspend fun onBeforeReadBoundary(isFlowSnapshot: Boolean) {
+        if (isFlowSnapshot) {
+            pollExternalCommits()
+        } else if (activeUpdateListeners > 0) {
+            val previous = lastDrainedJournalClock
+            val now = byteStore.currentEpochMillis()
+            if (previous == null || now < previous.acknowledgedAtMillis ||
+                now - previous.acknowledgedAtMillis >= JournalConsumerTimeoutMillis / 2uL) {
+                pollExternalCommits()
+                return
+            }
+            // Every logical journal commit advances the persisted clock. A read
+            // with no new commits needs neither a writer fence nor another ack.
+            val current = nativeByteStore.getBatch("meta", listOf(CommitClockMetadataKey, SchemaRevisionMetadataKey))
+            if (schemaSnapshot?.matches(nativeByteStore, current[1]) == false) {
+                val failure = StaleIndexedDbSchemaException()
+                failAllListeners(failure)
+                throw failure
+            }
+            if (externalCommitPending || !previous.bytes.contentEquals(current[0])) pollExternalCommits()
+        }
+    }
+
+    private class JournalClockSnapshot(
+        val bytes: ByteArray?,
+        val journalEmpty: Boolean,
+        val acknowledgedAtMillis: ULong,
+    )
+    private class MutationJournalScope(
+        val caughtUp: Boolean,
+        val journalWasEmpty: Boolean,
+        var prepared: Boolean = false,
+        var soleConsumer: Boolean = false,
+        var canPruneWithCommit: Boolean = false,
+    )
+    private var lastDrainedJournalClock: JournalClockSnapshot? = null
+    private var mutationJournalScope: MutationJournalScope? = null
 
     private var mutationClock = HLC()
     private var journalSequence = 0u
@@ -346,30 +393,61 @@ class IndexedDbDataStore private constructor(
             return
         }
         journalCursorMutex.withLock {
-            drainExternalCommitsLocked()
-            validateJournalConsumersLocked()
-            val persistedVersion = maxOf(mutationClock.timestamp, update.version)
-            val journalKey = createCommitJournalKey(persistedVersion, journalSequence++)
-            operations += IndexedDbWriteOperation.Put("meta", CommitClockMetadataKey, persistedVersion.toBigEndianBytes())
-            operations += IndexedDbWriteOperation.Put(
-                CommitJournalStoreName,
-                journalKey,
-                encodeCommitJournalEntry(getDataModelId(update.dataModel), update, journalPayload),
-            )
-            operations += journalConsumerOperation(journalKey)
-            byteStore.writeBatch(operations)
-            lastJournalKey = journalKey
-            observeCommittedVersion(persistedVersion)
-            emitFlowUpdate(update)
-            collectCommittedJournalEntriesLocked()
-            byteStore.signalCommittedUpdate()
+            try {
+                val preparation = mutationJournalScope
+                if (preparation?.prepared != true) {
+                    if (preparation?.caughtUp != true) drainExternalCommitsLocked()
+                    val soleConsumer = validateJournalConsumersLocked()
+                    preparation?.let {
+                        it.soleConsumer = soleConsumer
+                        it.canPruneWithCommit = soleConsumer && it.caughtUp && it.journalWasEmpty
+                    }
+                    // The request retains its fenced writer lease: no peer can
+                    // add commits or consumers between records in this scope.
+                    preparation?.prepared = true
+                }
+                val persistedVersion = maxOf(mutationClock.timestamp, update.version)
+                val journalKey = createCommitJournalKey(persistedVersion, journalSequence++)
+                val clockBytes = persistedVersion.toBigEndianBytes()
+                operations += IndexedDbWriteOperation.Put("meta", CommitClockMetadataKey, clockBytes)
+                operations += IndexedDbWriteOperation.Put(
+                    CommitJournalStoreName,
+                    journalKey,
+                    encodeCommitJournalEntry(getDataModelId(update.dataModel), update, journalPayload),
+                )
+                val acknowledgedAt = byteStore.currentEpochMillis()
+                operations += journalConsumerOperation(journalKey, acknowledgedAt)
+                val pruneWithCommit = preparation?.canPruneWithCommit == true
+                if (pruneWithCommit) {
+                    // Preparation proved a sole consumer and an empty journal.
+                    // The request fence prevents a peer registering mid-batch.
+                    operations += IndexedDbWriteOperation.Delete(CommitJournalStoreName, journalKey)
+                    operations += IndexedDbWriteOperation.Put("meta", CommitJournalFloorMetadataKey, journalKey)
+                }
+                byteStore.writeBatch(operations)
+                lastJournalKey = journalKey
+                observeCommittedVersion(persistedVersion)
+                emitFlowUpdate(update)
+                val journalEmpty = pruneWithCommit || collectCommittedJournalEntriesLocked()
+                lastDrainedJournalClock = JournalClockSnapshot(clockBytes, journalEmpty, acknowledgedAt)
+                byteStore.signalCommittedUpdate()
+            } catch (error: Throwable) {
+                lastDrainedJournalClock = null
+                throw error
+            }
         }
     }
 
     private suspend fun drainExternalCommits() = journalCursorMutex.withLock {
+        lastDrainedJournalClock = null
+        // Anchor before catch-up. If a fence is lost mid-drain, caching a later
+        // clock could otherwise hide commits which this scan never observed.
+        val clockBefore = byteStore.get("meta", CommitClockMetadataKey)
         drainExternalCommitsLocked()
-        byteStore.writeBatch(listOf(journalConsumerOperation(lastJournalKey)))
-        collectCommittedJournalEntriesLocked()
+        val acknowledgedAt = byteStore.currentEpochMillis()
+        byteStore.writeBatch(listOf(journalConsumerOperation(lastJournalKey, acknowledgedAt)))
+        val journalEmpty = collectCommittedJournalEntriesLocked()
+        lastDrainedJournalClock = JournalClockSnapshot(clockBefore, journalEmpty, acknowledgedAt)
     }
 
     private suspend fun pollExternalCommits() = byteStore.transaction(
@@ -394,12 +472,12 @@ class IndexedDbDataStore private constructor(
             failAllListeners(gap)
             throw gap
         }
-        val entries = byteStore.scan(
+        byteStore.scanInBatches(
             storeName = CommitJournalStoreName,
             startKey = cursor,
             includeStart = false,
-        )
-        for ((key, value) in entries) {
+            targetLimit = UInt.MAX_VALUE,
+        ) { key, value ->
             val update = try {
                 decodeCommitJournalEntry(indexedDbModelsById, sensitiveFields, key, value)
             } catch (exception: Throwable) {
@@ -415,23 +493,27 @@ class IndexedDbDataStore private constructor(
             lastJournalKey = key
             if (update == null) {
                 observeCommittedVersion(value.readBigEndianULong(1 + UInt.SIZE_BYTES))
-                continue
+                return@scanInBatches true
             }
             observeCommittedVersion(update.version)
             emitFlowUpdate(update)
+            true
         }
     }
 
-    private fun journalConsumerOperation(cursor: ByteArray?) = IndexedDbWriteOperation.Put(
+    private fun journalConsumerOperation(
+        cursor: ByteArray?,
+        heartbeatMillis: ULong = byteStore.currentEpochMillis(),
+    ) = IndexedDbWriteOperation.Put(
         CommitConsumerStoreName,
         journalConsumerKey,
-        encodeJournalConsumer(byteStore.currentEpochMillis(), cursor),
+        encodeJournalConsumer(heartbeatMillis, cursor),
     )
 
-    private suspend fun validateJournalConsumersLocked() {
-        for ((consumerKey, encoded) in byteStore.scan(CommitConsumerStoreName)) {
-            decodeJournalConsumerOrThrow(consumerKey, encoded)
-        }
+    private suspend fun validateJournalConsumersLocked(): Boolean {
+        val consumers = byteStore.scan(CommitConsumerStoreName)
+        for ((consumerKey, encoded) in consumers) decodeJournalConsumerOrThrow(consumerKey, encoded)
+        return consumers.size == 1 && consumers.single().first.contentEquals(journalConsumerKey)
     }
 
     private fun decodeJournalConsumerOrThrow(consumerKey: ByteArray, encoded: ByteArray): JournalConsumer =
@@ -445,7 +527,7 @@ class IndexedDbDataStore private constructor(
             )
         }
 
-    private suspend fun collectCommittedJournalEntriesLocked() {
+    private suspend fun collectCommittedJournalEntriesLocked(): Boolean {
         val now = byteStore.currentEpochMillis()
         val consumers = byteStore.scan(CommitConsumerStoreName)
         val operations = mutableListOf<IndexedDbWriteOperation>()
@@ -459,21 +541,28 @@ class IndexedDbDataStore private constructor(
             }
         }
 
-        val journalEntries = byteStore.scan(CommitJournalStoreName)
+        val journalKeys = byteStore.getAllKeys(CommitJournalStoreName)
         var deleteThrough: ByteArray? = activeCursors.minWithOrNull { first, second -> first.compareTo(second) }
-        if (journalEntries.size > indexedDbMaxRetainedJournalEntries) {
-            val cappedFloor = journalEntries[journalEntries.size - indexedDbMaxRetainedJournalEntries - 1].first
+        if (journalKeys.size > indexedDbMaxRetainedJournalEntries) {
+            val cappedFloor = journalKeys[journalKeys.size - indexedDbMaxRetainedJournalEntries - 1]
             if (deleteThrough == null || cappedFloor.compareTo(deleteThrough) > 0) deleteThrough = cappedFloor
         }
         val floor = deleteThrough
+        var deletedJournalEntries = 0
         if (floor != null) {
-            val deletions = journalEntries.takeWhile { (key, _) -> key.compareTo(floor) <= 0 }
-            for ((key, _) in deletions) operations += IndexedDbWriteOperation.Delete(CommitJournalStoreName, key)
+            val deletions = journalKeys.takeWhile { key -> key.compareTo(floor) <= 0 }
+            deletedJournalEntries = deletions.size
+            for (key in deletions) operations += IndexedDbWriteOperation.Delete(CommitJournalStoreName, key)
             if (deletions.isNotEmpty()) {
-                operations += IndexedDbWriteOperation.Put("meta", CommitJournalFloorMetadataKey, deletions.last().first)
+                operations += IndexedDbWriteOperation.Put("meta", CommitJournalFloorMetadataKey, deletions.last())
             }
         }
         if (operations.isNotEmpty()) byteStore.writeBatch(operations)
+        val journalEmpty = deletedJournalEntries == journalKeys.size
+        mutationJournalScope?.let { scope ->
+            scope.canPruneWithCommit = scope.soleConsumer && journalEmpty
+        }
+        return journalEmpty
     }
 
     /** Called under the writer fence before callbacks or listener registration can process updates. */
@@ -670,13 +759,20 @@ class IndexedDbDataStore private constructor(
                     collector.snapshot()
                 }) { storeAction ->
                     try {
-                        suspend fun process(action: StoreAction<*, *, *> = storeAction) {
+                        var needsFinalSchemaCheck = true
+                        suspend fun process(
+                            action: StoreAction<*, *, *> = storeAction,
+                            prefetchedSnapshots: List<ByteArray?>? = null,
+                            preparedSnapshots: MutableMap<Int, DecodedIndexedDbSnapshot>? = null,
+                        ) {
                             @Suppress("UNCHECKED_CAST")
                             when (action.request) {
                                 is AddRequest<*> -> processAddRequest(clock, action as AddStoreAction<IsRootDataModel>)
                                 is ChangeRequest<*> -> processChangeRequest(clock, action as ChangeStoreAction<IsRootDataModel>)
                                 is DeleteRequest<*> -> processDeleteRequest(clock, action as DeleteStoreAction<IsRootDataModel>)
-                                is GetRequest<*> -> processGetRequest(action as GetStoreAction<IsRootDataModel>)
+                                is GetRequest<*> -> {
+                                    needsFinalSchemaCheck = !processGetRequest(action as GetStoreAction<IsRootDataModel>, prefetchedSnapshots, preparedSnapshots)
+                                }
                                 is GetChangesRequest<*> -> processGetChangesRequest(action as GetChangesStoreAction<IsRootDataModel>)
                                 is GetUpdatesRequest<*> -> processGetUpdatesRequest(action as GetUpdatesStoreAction<IsRootDataModel>)
                                 is ScanRequest<*> -> processScanRequest(action as ScanStoreAction<IsRootDataModel>)
@@ -694,8 +790,8 @@ class IndexedDbDataStore private constructor(
                                 IndexedDbTransactionMode.READWRITE,
                             ) {
                                 if (!isSchemaCurrent()) throw RequestException(StaleSchemaMessage)
-                                val persistedClock = byteStore.get("meta", CommitClockMetadataKey)
-                                    ?.readBigEndianULong()
+                                val persistedClockBytes = byteStore.get("meta", CommitClockMetadataKey)
+                                val persistedClock = persistedClockBytes?.readBigEndianULong()
                                 clock = nextMutationClock(
                                     clock,
                                     maxOf(
@@ -705,12 +801,52 @@ class IndexedDbDataStore private constructor(
                                 )
                                 mutationClock = clock
                                 journalSequence = 0u
-                                process()
+                                val knownJournal = lastDrainedJournalClock?.takeIf { it.bytes.contentEquals(persistedClockBytes) }
+                                mutationJournalScope = MutationJournalScope(
+                                    caughtUp = knownJournal != null,
+                                    journalWasEmpty = knownJournal?.journalEmpty == true,
+                                )
+                                try {
+                                    process()
+                                } finally {
+                                    mutationJournalScope = null
+                                }
                             }
                         } else {
                             // Schema transitions can run in another browser context while this
                             // multi-read request suspends. Do not publish values decoded across it.
-                            if (!isSchemaCurrent()) throw RequestException(StaleSchemaMessage)
+                            val getRequest = storeAction.request as? GetRequest<*>
+                            // Read the revision and bounded current heads together. Validate
+                            // before decoding; the final check still guards publication.
+                            val projection = getRequest?.let { it.dataModel.requiredReadSelection(it.select, it.where, it.aggregations) }
+                            val prepareProjection = getRequest != null && getRequest.keys.size in 2..256 && isNarrowSnapshotSelection(getRequest.dataModel, projection)
+                            var preparedRows: MutableMap<Int, DecodedIndexedDbSnapshot>? = null
+                            val guardedHeads = if (nativeByteStore is IndexedDbSchemaReadStore && getRequest != null &&
+                                getRequest.toVersion == null && getRequest.keys.size in 1..256
+                            ) {
+                                val keys = getRequest.keys.map { it.bytes }
+                                if (prepareProjection) {
+                                    var knownSchema = false
+                                    nativeByteStore.mapRecordsWithSchemaRevision("k:${getDataModelId(getRequest.dataModel)}", keys) { index, bytes ->
+                                        if (index == 0) {
+                                            knownSchema = bytes != null && bytes.contentEquals(schemaSnapshot?.validatedReadRevision)
+                                            bytes
+                                        } else if (knownSchema && bytes != null && bytes.size >= PREPARED_SNAPSHOT_MIN_BYTES) {
+                                            val selected = prepareNarrowSnapshot(getRequest.dataModel, bytes, checkNotNull(projection))
+                                            if (selected == null) bytes else {
+                                                val rows = preparedRows ?: HashMap<Int, DecodedIndexedDbSnapshot>().also { preparedRows = it }
+                                                rows[index - 1] = selected
+                                                null
+                                            }
+                                        } else bytes
+                                    }
+                                } else nativeByteStore.getRecordsWithSchemaRevision("k:${getDataModelId(getRequest.dataModel)}", keys)
+                            } else null
+                            val schemaCurrent = if (guardedHeads != null) {
+                                schemaSnapshot?.matches(nativeByteStore, guardedHeads[0]) != false
+                            } else isSchemaCurrent()
+                            if (!schemaCurrent) throw RequestException(StaleSchemaMessage)
+                            val startingSchemaRevision = schemaSnapshot?.validatedReadRevision
                             val response = CompletableDeferred<IsResponse>()
                             @Suppress("UNCHECKED_CAST")
                             val readAction = StoreAction(
@@ -718,9 +854,14 @@ class IndexedDbDataStore private constructor(
                                 storeAction.onBeforeReadContext, storeAction.onFlowSnapshotBoundary,
                                 storeAction.executionContext,
                             )
-                            process(readAction)
+                            process(readAction, guardedHeads?.subList(1, guardedHeads.size), preparedRows)
                             val result = response.await()
-                            if (!isSchemaCurrent()) throw RequestException(StaleSchemaMessage)
+                            // Complete heads and their schema came from one native snapshot.
+                            // Legacy table fallbacks and other multi-read paths still need a
+                            // final guard because their bytes can span schema generations.
+                            if (needsFinalSchemaCheck &&
+                                schemaSnapshot?.matchesReadRevision(nativeByteStore, startingSchemaRevision) == false
+                            ) throw RequestException(StaleSchemaMessage)
                             @Suppress("UNCHECKED_CAST")
                             (storeAction.response as CompletableDeferred<IsResponse>).complete(result)
                         }
@@ -792,7 +933,7 @@ class IndexedDbDataStore private constructor(
             val snapshotsForKey = mutableListOf<Pair<ByteArray, ByteArray>>()
 
             suspend fun replayHistoricSnapshotsForKey(snapshots: List<Pair<ByteArray, ByteArray>>) {
-                var previousRowsByKey = emptyMap<String, ByteArray>()
+                var previousRowsByKey = emptyMap<Bytes, ByteArray>()
                 val chronologicalSnapshots = snapshots.sortedWith { first, second ->
                     first.first.readTrailingInvertedVersion().compareTo(second.first.readTrailingInvertedVersion())
                 }
@@ -800,7 +941,7 @@ class IndexedDbDataStore private constructor(
                 for ((rowKey, snapshot) in chronologicalSnapshots) {
                     val keyBytes = objectKeyBytesFromScopedRowKey(rowKey)
                     val version = rowKey.readTrailingInvertedVersion()
-                    val currentRowsByKey = mutableMapOf<String, ByteArray>()
+                    val currentRowsByKey = mutableMapOf<Bytes, ByteArray>()
                     val (meta, storageRows) = decodeHistoricSnapshot(snapshot)
                     if (!meta.isDeleted) {
                         val values = decodeStorageRowsToValues(
@@ -813,7 +954,7 @@ class IndexedDbDataStore private constructor(
                         if (values != null) {
                             val plan = createStoragePlan(dataModel, modelId, keyBytes, values, sensitiveFields)
                             for (indexRow in plan.filteredIndexRows()) {
-                                currentRowsByKey[indexRow.contentToString()] = indexRow
+                                currentRowsByKey[Bytes(indexRow)] = indexRow
                             }
                         }
                     }

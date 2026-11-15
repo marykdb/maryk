@@ -13,21 +13,27 @@ import maryk.datastore.shared.IncrementingMapMaximum
 import maryk.datastore.shared.incrementingMapWatermarkPrefix
 import maryk.datastore.shared.encodeIncrementingMapMaximum
 import maryk.datastore.shared.migration.legacyIncrementingMapProofKey
+import maryk.datastore.shared.migration.hasLegacyIncrementingMapStorage
 
 internal data class IncrementingMapWatermarkWrites(
     val operations: List<IndexedDbWriteOperation>,
     val advanced: Boolean,
 )
 
-internal fun <DM : IsRootDataModel> collectIncrementingMapMaxima(values: Values<DM>): List<IncrementingMapMaximum> = buildList {
-    values.writeToStorage { type, qualifier, definition, _ ->
-        if (type != MapSize || definition !is IncrementingMapDefinition<*, *, *>) return@writeToStorage
-        var readIndex = 0
-        @Suppress("UNCHECKED_CAST")
-        val reference = values.dataModel.getPropertyReferenceByStorageBytes(qualifier.size, { qualifier[readIndex++] })
-            as? IncMapReference<out Comparable<Any>, out Any, *> ?: return@writeToStorage
-        val maximum = values[reference].orEmptyComparableMap().keys.maxOrNull() ?: return@writeToStorage
-        add(IncrementingMapMaximum(reference, maximum))
+internal fun <DM : IsRootDataModel> collectIncrementingMapMaxima(values: Values<DM>): List<IncrementingMapMaximum> {
+    // Inspect definitions before expanding every stored value/qualifier. This also
+    // covers incrementing maps inside embedded, collection and typed definitions.
+    if (!values.dataModel.hasLegacyIncrementingMapStorage()) return emptyList()
+    return buildList {
+        values.writeToStorage { type, qualifier, definition, _ ->
+            if (type != MapSize || definition !is IncrementingMapDefinition<*, *, *>) return@writeToStorage
+            var readIndex = 0
+            @Suppress("UNCHECKED_CAST")
+            val reference = values.dataModel.getPropertyReferenceByStorageBytes(qualifier.size, { qualifier[readIndex++] })
+                as? IncMapReference<out Comparable<Any>, out Any, *> ?: return@writeToStorage
+            val maximum = values[reference].orEmptyComparableMap().keys.maxOrNull() ?: return@writeToStorage
+            add(IncrementingMapMaximum(reference, maximum))
+        }
     }
 }
 

@@ -18,16 +18,17 @@ internal suspend fun <DM : IsRootDataModel> createStoragePlan(
     keyBytes: ByteArray,
     values: Values<DM>,
     sensitiveFields: IndexedDbSensitiveFieldSupport,
+    precomputedIndexRows: List<ByteArray>? = null,
 ): CurrentStateStoragePlan {
     val rows = mutableListOf<StorageRowToWrite>()
-    val indexRows = mutableListOf<ByteArray>()
-    val uniqueRows = mutableListOf<IndexedDbUniqueRow>()
-
-    dataModel.Meta.indexes?.forEach { index ->
-        index.toStorageByteArraysForIndex(values, keyBytes).forEach { valueAndKey ->
-            indexRows += createIndexRowKey(index.referenceStorageByteArray.bytes, valueAndKey)
+    val indexRows = precomputedIndexRows ?: buildList {
+        dataModel.Meta.indexes?.forEach { index ->
+            index.toStorageByteArraysForIndex(values, keyBytes).forEach { valueAndKey ->
+                add(createIndexRowKey(index.referenceStorageByteArray.bytes, valueAndKey))
+            }
         }
     }
+    val uniqueRows = mutableListOf<IndexedDbUniqueRow>()
 
     values.writeToStorage { type, qualifier, definition, value ->
         if (type == ObjectDelete) return@writeToStorage

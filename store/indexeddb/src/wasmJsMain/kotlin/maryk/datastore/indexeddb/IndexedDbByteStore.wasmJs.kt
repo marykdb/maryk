@@ -85,7 +85,7 @@ private class WasmIndexedDbByteStore(
     private val database: JsAny,
     private val databaseName: String,
     private val lockName: String,
-) : AtomicIndexedDbByteStore, IndexedDbLifecycleAware, IndexedDbBatchReadStore {
+) : AtomicIndexedDbByteStore, IndexedDbLifecycleAware, IndexedDbBatchReadStore, IndexedDbKeyReadStore, IndexedDbSchemaReadStore {
     // Startup handlers can call the datastore actor, which runs in a separate coroutine.
     // The store is not exposed to general callers until this startup-only owner is cleared.
     private var startupLeaseOwnerId: String? = null
@@ -128,18 +128,62 @@ private class WasmIndexedDbByteStore(
         }
     }
 
-    override suspend fun getBatchValues(storeName: String, keys: List<ByteArray>): List<ByteArray?> {
+    override suspend fun getRecordsWithSchemaRevision(storeName: String, keys: List<ByteArray>): List<ByteArray?> =
+        readBatchValues(storeName, listOf(SchemaRevisionMetadataKey) + keys, includesSchemaRevision = true)
+
+    override suspend fun getBatchValues(storeName: String, keys: List<ByteArray>): List<ByteArray?> =
+        readBatchValues(storeName, keys, includesSchemaRevision = false)
+
+    override suspend fun <T> mapBatchValues(storeName: String, keys: List<ByteArray>, transform: (Int, ByteArray?) -> T): List<T> =
+        readBatchValues(storeName, keys, false, transform)
+
+    override suspend fun <T> mapRecordsWithSchemaRevision(storeName: String, keys: List<ByteArray>, transform: (Int, ByteArray?) -> T): List<T> =
+        readBatchValues(storeName, listOf(SchemaRevisionMetadataKey) + keys, true, transform)
+
+    private suspend fun readBatchValues(storeName: String, keys: List<ByteArray>, includesSchemaRevision: Boolean): List<ByteArray?> =
+        readBatchValues(storeName, keys, includesSchemaRevision) { _, value -> value }
+
+    private suspend fun <T> readBatchValues(
+        storeName: String, keys: List<ByteArray>, includesSchemaRevision: Boolean, transform: (Int, ByteArray?) -> T,
+    ): List<T> {
         if (keys.isEmpty()) return emptyList()
         val nativeKeys = JsArray<JsArray<JsNumber>>()
         keys.forEachIndexed { index, key -> nativeKeys[index] = key.toIndexedDbKey() }
-        val results = suspendCancellableCoroutine<JsArray<JsAny?>> { continuation ->
-            getIndexedDbValues(database, storeName, nativeKeys,
+        val results = MutableList<T?>(keys.size) { null }
+        return suspendCancellableCoroutine { continuation ->
+            var cancelRead: (() -> Unit)? = null
+            getIndexedDbValues(database, storeName, nativeKeys, includesSchemaRevision,
+                onValue = { index, value ->
+                    if (continuation.isActive) {
+                        try {
+                            results[index] = transform(index, value?.toByteArrayFromIndexed())
+                        } catch (error: Throwable) {
+                            cancelRead?.invoke()
+                            continuation.resumeWithException(error)
+                        }
+                    }
+                },
+                onSuccess = {
+                    if (continuation.isActive) {
+                        @Suppress("UNCHECKED_CAST")
+                        continuation.resume(results as List<T>)
+                    }
+                },
+                onError = { if (continuation.isActive) continuation.resumeWithException(IllegalStateException(it)) },
+                onCancel = { cancel -> cancelRead = cancel; continuation.invokeOnCancellation { cancel() } },
+            )
+        }
+    }
+
+    override suspend fun getAllKeys(storeName: String): List<ByteArray> {
+        val keys = suspendCancellableCoroutine<JsArray<JsAny>> { continuation ->
+            getIndexedDbKeys(database, storeName,
                 onSuccess = { if (continuation.isActive) continuation.resume(it) },
                 onError = { if (continuation.isActive) continuation.resumeWithException(IllegalStateException(it)) },
                 onCancel = { cancel -> continuation.invokeOnCancellation { cancel() } },
             )
         }
-        return keys.indices.map { results[it]?.toByteArrayFromIndexed() }
+        return keys.toList().map { it.toByteArrayFromIndexed() }
     }
 
     override suspend fun get(storeName: String, key: ByteArray): ByteArray? {
@@ -156,49 +200,24 @@ private class WasmIndexedDbByteStore(
         return result.toByteArrayFromIndexed()
     }
 
-    override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) {
-        activeLeaseOwnerId()?.let {
-            writeBatch(listOf(IndexedDbWriteOperation.Put(storeName, key, value)))
-            return
-        }
+    override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) =
+        writeBatch(listOf(IndexedDbWriteOperation.Put(storeName, key, value)))
 
-        suspendCancellableCoroutine<Unit> { continuation ->
-            putIndexedDbValue(
-                database = database,
-                storeName = storeName,
-                key = key.toIndexedDbKey(),
-                value = value.toIndexedDbValue(),
-                onSuccess = { continuation.resume(Unit) },
-                onError = { continuation.resumeWithException(IllegalStateException(it)) },
-                onCancel = { cancel -> continuation.invokeOnCancellation { cancel() } },
-            )
-        }
-    }
-
-    override suspend fun delete(storeName: String, key: ByteArray) {
-        activeLeaseOwnerId()?.let {
-            writeBatch(listOf(IndexedDbWriteOperation.Delete(storeName, key)))
-            return
-        }
-
-        suspendCancellableCoroutine<Unit> { continuation ->
-            deleteIndexedDbValue(
-                database = database,
-                storeName = storeName,
-                key = key.toIndexedDbKey(),
-                onSuccess = { continuation.resume(Unit) },
-                onError = { continuation.resumeWithException(IllegalStateException(it)) },
-                onCancel = { cancel -> continuation.invokeOnCancellation { cancel() } },
-            )
-        }
-    }
+    override suspend fun delete(storeName: String, key: ByteArray) =
+        writeBatch(listOf(IndexedDbWriteOperation.Delete(storeName, key)))
 
     override suspend fun writeBatch(operations: List<IndexedDbWriteOperation>) {
         if (operations.isEmpty()) return
+        val changesSchema = operations.any { it.changesSchemaMetadata() }
+        if (changesSchema && activeLeaseOwnerId() == null) {
+            transaction(setOf("meta"), IndexedDbTransactionMode.READWRITE) { writeBatch(operations) }
+            return
+        }
+        val writes = if (changesSchema) withSchemaRevision(operations) else operations
 
         val leaseOwnerId = activeLeaseOwnerId()?.toJsString()
         val indexedOperations = JsArray<JsAny>().also { array ->
-            operations.forEachIndexed { index, operation ->
+            writes.forEachIndexed { index, operation ->
                 array[index] = when (operation) {
                     is IndexedDbWriteOperation.Delete -> createDeleteOperation(
                         storeName = operation.storeName,
@@ -509,11 +528,10 @@ private fun writeIndexedDbBatch(
     )
 }
 
-private fun getIndexedDbValues(
+private fun getIndexedDbKeys(
     database: JsAny,
     storeName: String,
-    keys: JsArray<JsArray<JsNumber>>,
-    onSuccess: (JsArray<JsAny?>) -> Unit,
+    onSuccess: (JsArray<JsAny>) -> Unit,
     onError: (String) -> Unit,
     onCancel: ((() -> Unit) -> Unit),
 ) {
@@ -521,16 +539,43 @@ private fun getIndexedDbValues(
         """
         let done = false;
         const transaction = database.transaction([storeName], "readonly");
-        const rows = new Array(keys.length).fill(null);
         const fail = message => { if (!done) { done = true; onError(message); } };
         onCancel(() => { done = true; try { transaction.abort(); } catch (_) {} });
-        transaction.oncomplete = () => { if (!done) { done = true; onSuccess(rows); } };
+        const request = transaction.objectStore(storeName).getAllKeys();
+        request.onsuccess = () => { if (!done) { done = true; onSuccess(request.result); } };
+        request.onerror = () => fail(request.error?.message ?? "IndexedDB key read failed");
+        transaction.onerror = () => fail(transaction.error?.message ?? "IndexedDB key read failed");
+        transaction.onabort = () => fail(transaction.error?.message ?? "IndexedDB key read aborted");
+        """
+    )
+}
+
+private fun getIndexedDbValues(
+    database: JsAny,
+    storeName: String,
+    keys: JsArray<JsArray<JsNumber>>,
+    includesSchemaRevision: Boolean,
+    onValue: (Int, JsAny?) -> Unit,
+    onSuccess: () -> Unit,
+    onError: (String) -> Unit,
+    onCancel: ((() -> Unit) -> Unit),
+) {
+    js(
+        """
+        let done = false;
+        const transaction = database.transaction(includesSchemaRevision ? ["meta", storeName] : [storeName], "readonly");
+        const fail = message => { if (!done) { done = true; onError(message); } };
+        onCancel(() => { done = true; try { transaction.abort(); } catch (_) {} });
+        transaction.oncomplete = () => { if (!done) { done = true; onSuccess(); } };
         transaction.onerror = () => fail(transaction.error?.message ?? "IndexedDB batch read failed");
         transaction.onabort = () => fail(transaction.error?.message ?? "IndexedDB batch read aborted");
         const store = transaction.objectStore(storeName);
         keys.forEach((key, index) => {
-            const request = store.get(key);
-            request.onsuccess = () => { if (!done) rows[index] = request.result ?? null; };
+            const source = includesSchemaRevision && index === 0 ? transaction.objectStore("meta") : store;
+            const request = source.get(key);
+            request.onsuccess = () => {
+                if (!done) onValue(index, request.result ?? null);
+            };
             request.onerror = () => fail(request.error?.message ?? "IndexedDB batch get failed");
         });
         """

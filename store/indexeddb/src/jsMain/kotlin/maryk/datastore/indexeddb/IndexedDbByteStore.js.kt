@@ -77,7 +77,7 @@ private class BrowserIndexedDbByteStore(
     private val database: dynamic,
     private val databaseName: String,
     private val lockName: String,
-) : AtomicIndexedDbByteStore, IndexedDbLifecycleAware, IndexedDbBatchReadStore {
+) : AtomicIndexedDbByteStore, IndexedDbLifecycleAware, IndexedDbBatchReadStore, IndexedDbKeyReadStore, IndexedDbSchemaReadStore {
     // Startup handlers can call the datastore actor, which runs in a separate coroutine.
     // The store is not exposed to general callers until this startup-only owner is cleared.
     private var startupLeaseOwnerId: String? = null
@@ -121,10 +121,26 @@ private class BrowserIndexedDbByteStore(
         }
     }
 
-    override suspend fun getBatchValues(storeName: String, keys: List<ByteArray>): List<ByteArray?> {
+    override suspend fun getRecordsWithSchemaRevision(storeName: String, keys: List<ByteArray>): List<ByteArray?> =
+        readBatchValues(storeName, listOf(SchemaRevisionMetadataKey) + keys, includesSchemaRevision = true)
+
+    override suspend fun getBatchValues(storeName: String, keys: List<ByteArray>): List<ByteArray?> =
+        readBatchValues(storeName, keys, includesSchemaRevision = false)
+
+    override suspend fun <T> mapBatchValues(storeName: String, keys: List<ByteArray>, transform: (Int, ByteArray?) -> T): List<T> =
+        readBatchValues(storeName, keys, false, transform)
+
+    override suspend fun <T> mapRecordsWithSchemaRevision(storeName: String, keys: List<ByteArray>, transform: (Int, ByteArray?) -> T): List<T> =
+        readBatchValues(storeName, listOf(SchemaRevisionMetadataKey) + keys, true, transform)
+
+    // Keep ordinary full reads on the direct path, without per-result mapper dispatch.
+    private suspend fun readBatchValues(
+        storeName: String, keys: List<ByteArray>, includesSchemaRevision: Boolean,
+    ): List<ByteArray?> {
         if (keys.isEmpty()) return emptyList()
         return suspendCancellableCoroutine { continuation ->
-            val transaction = database.transaction(arrayOf(storeName), "readonly")
+            val stores = if (includesSchemaRevision) arrayOf("meta", storeName) else arrayOf(storeName)
+            val transaction = database.transaction(stores, "readonly")
             val results = MutableList<ByteArray?>(keys.size) { null }
             var completed = false
             fun fail(message: String) {
@@ -147,7 +163,8 @@ private class BrowserIndexedDbByteStore(
             transaction.onabort = { _: dynamic -> fail("IndexedDB batch read aborted") }
             val store = transaction.objectStore(storeName)
             keys.forEachIndexed { index, key ->
-                val request = store.get(key.toIndexedDbKey())
+                val source = if (includesSchemaRevision && index == 0) transaction.objectStore("meta") else store
+                val request = source.get(key.toIndexedDbKey())
                 request.onsuccess = { _: dynamic ->
                     val value = request.result
                     if (!completed && value != null && value != undefined) results[index] = toByteArrayValue(value)
@@ -157,6 +174,70 @@ private class BrowserIndexedDbByteStore(
         }
     }
 
+    private suspend fun <T> readBatchValues(
+        storeName: String, keys: List<ByteArray>, includesSchemaRevision: Boolean, transform: (Int, ByteArray?) -> T,
+    ): List<T> {
+        if (keys.isEmpty()) return emptyList()
+        return suspendCancellableCoroutine { continuation ->
+            val stores = if (includesSchemaRevision) arrayOf("meta", storeName) else arrayOf(storeName)
+            val transaction = database.transaction(stores, "readonly")
+            val results = MutableList<T?>(keys.size) { null }
+            var completed = false
+            fun fail(error: Throwable) {
+                if (!completed) {
+                    completed = true
+                    abortTransaction(transaction)
+                    if (continuation.isActive) continuation.resumeWithException(error)
+                }
+            }
+            continuation.invokeOnCancellation {
+                completed = true
+                abortTransaction(transaction)
+            }
+            transaction.oncomplete = { _: dynamic ->
+                if (!completed && continuation.isActive) {
+                    completed = true
+                    @Suppress("UNCHECKED_CAST")
+                    continuation.resume(results as List<T>)
+                }
+            }
+            transaction.onerror = { _: dynamic -> fail(IllegalStateException("IndexedDB batch read failed")) }
+            transaction.onabort = { _: dynamic -> fail(IllegalStateException("IndexedDB batch read aborted")) }
+            val store = transaction.objectStore(storeName)
+            keys.forEachIndexed { index, key ->
+                val source = if (includesSchemaRevision && index == 0) transaction.objectStore("meta") else store
+                val request = source.get(key.toIndexedDbKey())
+                request.onsuccess = { _: dynamic ->
+                    try {
+                        if (!completed) {
+                            val value = request.result
+                            results[index] = transform(index, if (value == null || value == undefined) null else toByteArrayValue(value))
+                        }
+                    } catch (error: Throwable) {
+                        fail(error)
+                    }
+                }
+                request.onerror = { _: dynamic -> fail(IllegalStateException("IndexedDB batch get failed")) }
+            }
+        }
+    }
+
+    override suspend fun getAllKeys(storeName: String): List<ByteArray> {
+        val transaction = database.transaction(arrayOf(storeName), "readonly")
+        val keys = suspendCancellableCoroutine<dynamic> { continuation ->
+            val request = transaction.objectStore(storeName).getAllKeys()
+            continuation.invokeOnCancellation { abortTransaction(transaction) }
+            request.onsuccess = { _: dynamic -> if (continuation.isActive) continuation.resume(request.result) }
+            request.onerror = { _: dynamic ->
+                if (continuation.isActive) continuation.resumeWithException(IllegalStateException("IndexedDB key read failed"))
+            }
+            transaction.onabort = { _: dynamic ->
+                if (continuation.isActive) continuation.resumeWithException(IllegalStateException("IndexedDB key read aborted"))
+            }
+        }
+        return List(keys.length.unsafeCast<Int>()) { toByteArrayKey(keys[it]) }
+    }
+
     override suspend fun get(storeName: String, key: ByteArray): ByteArray? {
         val transaction = database.transaction(arrayOf(storeName), "readonly")
         val request = transaction.objectStore(storeName).get(key.toIndexedDbKey())
@@ -164,52 +245,30 @@ private class BrowserIndexedDbByteStore(
         return toByteArrayValue(result)
     }
 
-    override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) {
-        activeLeaseOwnerId()?.let { ownerId ->
-            writeBatchWithLease(
-                listOf(IndexedDbWriteOperation.Put(storeName, key, value)),
-                ownerId,
-            )
-            return
-        }
+    override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) =
+        writeBatch(listOf(IndexedDbWriteOperation.Put(storeName, key, value)))
 
-        val transaction = database.transaction(arrayOf(storeName), "readwrite")
-        val completion = observeCompletion(transaction)
-        awaitWriteCompletion(transaction) {
-            awaitResult(transaction.objectStore(storeName).put(value.toIndexedDbValue(), key.toIndexedDbKey()))
-            completion.await()
-        }
-    }
-
-    override suspend fun delete(storeName: String, key: ByteArray) {
-        activeLeaseOwnerId()?.let { ownerId ->
-            writeBatchWithLease(
-                listOf(IndexedDbWriteOperation.Delete(storeName, key)),
-                ownerId,
-            )
-            return
-        }
-
-        val transaction = database.transaction(arrayOf(storeName), "readwrite")
-        val completion = observeCompletion(transaction)
-        awaitWriteCompletion(transaction) {
-            awaitResult(transaction.objectStore(storeName).delete(key.toIndexedDbKey()))
-            completion.await()
-        }
-    }
+    override suspend fun delete(storeName: String, key: ByteArray) =
+        writeBatch(listOf(IndexedDbWriteOperation.Delete(storeName, key)))
 
     override suspend fun writeBatch(operations: List<IndexedDbWriteOperation>) {
         if (operations.isEmpty()) return
+        val changesSchema = operations.any { it.changesSchemaMetadata() }
+        if (changesSchema && activeLeaseOwnerId() == null) {
+            transaction(setOf("meta"), IndexedDbTransactionMode.READWRITE) { writeBatch(operations) }
+            return
+        }
+        val writes = if (changesSchema) withSchemaRevision(operations) else operations
 
         activeLeaseOwnerId()?.let { ownerId ->
-            writeBatchWithLease(operations, ownerId)
+            writeBatchWithLease(writes, ownerId)
             return
         }
 
-        val transaction = database.transaction(operations.map { it.storeName }.distinct().sorted().toTypedArray(), "readwrite")
+        val transaction = database.transaction(writes.map { it.storeName }.distinct().sorted().toTypedArray(), "readwrite")
         val completion = observeCompletion(transaction)
         try {
-            for (operation in operations) {
+            for (operation in writes) {
                 val store = transaction.objectStore(operation.storeName)
                 when (operation) {
                     is IndexedDbWriteOperation.Delete ->
@@ -446,29 +505,18 @@ private fun ByteArray.compareIndexedDbKey(other: ByteArray): Int {
     return size - other.size
 }
 
-private fun ByteArray.toIndexedDbValue(): dynamic {
-    val byteLength = size
-    val array = js("new Int8Array(byteLength)")
-    for (index in indices) {
-        array[index] = this[index]
-    }
-    return array
-}
+// IndexedDB clones values synchronously when put is queued. A second JavaScript
+// buffer would only be copied again by the browser before returning from put.
+private fun ByteArray.toIndexedDbValue(): dynamic = asDynamic()
 
-private fun toByteArrayKey(value: dynamic): ByteArray {
-    return toByteArrayFromIndexed(value)
-}
+private fun toByteArrayKey(value: dynamic): ByteArray =
+    js("new Int8Array(value)").unsafeCast<ByteArray>()
 
-private fun toByteArrayValue(value: dynamic): ByteArray {
-    return toByteArrayFromIndexed(value)
-}
-
-private fun toByteArrayFromIndexed(value: dynamic): ByteArray {
-    val size = value.length.unsafeCast<Int>()
-    return ByteArray(size) { index ->
-        value[index].unsafeCast<Int>().toByte()
-    }
-}
+// Each successful IndexedDB read owns its structured clone. Adopt that buffer;
+// legacy numeric-array values still need conversion to Kotlin's signed bytes.
+private fun toByteArrayValue(value: dynamic): ByteArray =
+    if (js("value instanceof Int8Array").unsafeCast<Boolean>()) value.unsafeCast<ByteArray>()
+    else js("new Int8Array(value)").unsafeCast<ByteArray>()
 
 private suspend fun awaitResult(request: dynamic): dynamic = suspendCancellableCoroutine { continuation ->
     request.onsuccess = { _: dynamic -> continuation.resume(request.result) }

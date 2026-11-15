@@ -1,6 +1,8 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.delay
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
@@ -45,27 +47,87 @@ private val ModelDefinitionMetadataPrefix = byteArrayOf(3)
 private val ModelDependentsMetadataPrefix = byteArrayOf(4)
 private val MigrationStateMetadataPrefix = byteArrayOf(5)
 
-/** Successful-open schema baseline; checking it requires the same fence as the following mutation. */
+private val SourceSchemaFormatMetadataPrefix = "maryk.storage/source-schema-format:".encodeToByteArray()
+
+internal fun isSchemaMetadataKey(key: ByteArray): Boolean =
+    key.contentEquals(OptionsMetadataKey) || key.contentEquals(StorageFormatMetadataKey) ||
+        key.contentEquals(StorageFormatUpgradeStateKey) ||
+        key.size == 5 && (key[0] == ModelDefinitionMetadataPrefix[0] ||
+            key[0] == ModelDependentsMetadataPrefix[0] || key[0] == MigrationStateMetadataPrefix[0]) ||
+        key.size >= SourceSchemaFormatMetadataPrefix.size && SourceSchemaFormatMetadataPrefix.indices.all {
+            key[it] == SourceSchemaFormatMetadataPrefix[it]
+        }
+
+/** Successful-open baseline. Native revision changes trigger full metadata validation. */
 internal class IndexedDbSchemaSnapshot(
-    private val definitionKeys: List<ByteArray>,
+    definitionKeys: List<ByteArray>,
     private val definitions: List<ByteArray?>,
-    private val migrationStateKeys: List<ByteArray>,
+    migrationStateKeys: List<ByteArray>,
+    private val tracksRevision: Boolean = false,
+    private var revision: ByteArray? = null,
 ) {
+    private val metadataKeyCount = definitionKeys.size + migrationStateKeys.size
+    private val keys = definitionKeys + migrationStateKeys +
+        if (tracksRevision) listOf(SchemaRevisionMetadataKey) else emptyList()
+
+    val validatedReadRevision: ByteArray? get() = revision
+
+    /** Multi-read requests must finish in the generation validated before their first read. */
+    suspend fun matchesReadRevision(store: IndexedDbByteStore, startingRevision: ByteArray?): Boolean =
+        if (tracksRevision) {
+            startingRevision != null && startingRevision.contentEquals(store.get("meta", SchemaRevisionMetadataKey))
+        } else matches(store)
+
     suspend fun matches(store: IndexedDbByteStore): Boolean {
-        val current = store.getBatch("meta", definitionKeys + migrationStateKeys)
-        return definitions.indices.all { current[it].contentEquals(definitions[it]) } &&
-            current.drop(definitions.size).all { it == null }
+        return checkSnapshot(store, if (tracksRevision) store.get("meta", SchemaRevisionMetadataKey) else null, false)
+    }
+
+    /** Validate the generation co-read with record heads, rather than a later generation. */
+    suspend fun matches(store: IndexedDbByteStore, observedRevision: ByteArray?): Boolean =
+        checkSnapshot(store, observedRevision, true)
+
+    private suspend fun checkSnapshot(
+        store: IndexedDbByteStore, observedRevision: ByteArray?, requireStableRevision: Boolean,
+    ): Boolean {
+        if (tracksRevision && revision != null && observedRevision.contentEquals(revision)) return true
+        val current = store.getBatch("meta", keys)
+        val matches = definitions.indices.all { current[it].contentEquals(definitions[it]) } &&
+            (definitions.size until metadataKeyCount).all { current[it] == null }
+        // Large registries span native batches. Even matching bytes cannot
+        // validate a mixed-generation collection: an earlier batch may already
+        // have changed again by the time the revision is read.
+        if (matches && tracksRevision && observedRevision.contentEquals(current.last())) {
+            revision = current.last()?.copyOf()
+        }
+        return matches && (!tracksRevision || observedRevision.contentEquals(current.last())) &&
+            (!requireStableRevision || observedRevision != null)
     }
 }
 
+@OptIn(ExperimentalUuidApi::class)
 internal suspend fun IndexedDbByteStore.captureSchemaSnapshot(modelIds: Set<UInt>): IndexedDbSchemaSnapshot {
     val definitionKeys = listOf(OptionsMetadataKey, StorageFormatMetadataKey) + modelIds.flatMap { modelId ->
         listOf(modelDefinitionMetadataKey(modelId), modelDependentsMetadataKey(modelId), sourceSchemaFormatMetadataKey(modelId))
     }
+    val migrationKeys = listOf(StorageFormatUpgradeStateKey) + modelIds.map(::migrationStateMetadataKey)
+    val tracksRevision = this is SchemaRevisionAwareIndexedDbStore
+    var revisionBefore = if (tracksRevision) get("meta", SchemaRevisionMetadataKey) else null
+    if (tracksRevision && revisionBefore == null) {
+        revisionBefore = Uuid.random().toByteArray()
+        put("meta", SchemaRevisionMetadataKey, revisionBefore)
+    }
+    val current = getBatch("meta", definitionKeys + migrationKeys +
+        if (tracksRevision) listOf(SchemaRevisionMetadataKey) else emptyList())
+    if (tracksRevision && !revisionBefore.contentEquals(current.last())) {
+        throw RequestException("IndexedDB schema changed while capturing its baseline; reopen this datastore")
+    }
+    val noPendingMigration = (definitionKeys.size until definitionKeys.size + migrationKeys.size).all { current[it] == null }
     return IndexedDbSchemaSnapshot(
         definitionKeys,
-        getBatch("meta", definitionKeys).map { it?.copyOf() },
-        listOf(StorageFormatUpgradeStateKey) + modelIds.map(::migrationStateMetadataKey),
+        current.take(definitionKeys.size).map { it?.copyOf() },
+        migrationKeys,
+        tracksRevision,
+        if (tracksRevision && noPendingMigration) current.last()?.copyOf() else null,
     )
 }
 

@@ -14,7 +14,9 @@ case "$target" in
 esac
 
 for target in "${targets[@]}"; do
-  args=()
+  # Bash 3.2 treats an empty array as unset under nounset. Keep the command
+  # nonempty even for targets which need no additional compiler arguments.
+  args=(./gradlew :store:rocksdb:prepareJvmNativeComparator --console=plain --no-configuration-cache)
   case "$target" in
     macos-*) cc=${CC:-cc}; cpp=${CXX:-c++} ;;
     windows-*)
@@ -53,6 +55,6 @@ for target in "${targets[@]}"; do
       args+=("-Pmaryk.rocksdbNativeCompilerArguments=--target=$triple;--sysroot=$toolchain/$triple/sysroot;--gcc-toolchain=$toolchain;-fuse-ld=$linker")
       ;;
   esac
-  ./gradlew :store:rocksdb:prepareJvmNativeComparator --console=plain --no-configuration-cache \
-    "-Pmaryk.rocksdbNativeTarget=$target" "-Pmaryk.rocksdbNativeCC=$cc" "-Pmaryk.rocksdbNativeCXX=$cpp" "${args[@]}" "$@"
+  "${args[@]}" \
+    "-Pmaryk.rocksdbNativeTarget=$target" "-Pmaryk.rocksdbNativeCC=$cc" "-Pmaryk.rocksdbNativeCXX=$cpp" "$@"
 done

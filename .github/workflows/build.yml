@@ -170,120 +170,28 @@ jobs:
           if-no-files-found: error
 
   cross-native-jvm-comparator:
-    name: Cross-compile JVM comparator (${{ matrix.platform }})
-    runs-on: macos-latest
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [linux-aarch64, linux-x86_64-musl, linux-aarch64-musl, windows-x86_64]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: zulu
-          java-version: 21
-      - uses: gradle/actions/setup-gradle@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
-      - name: Prepare glibc cross-toolchain
-        if: matrix.platform == 'linux-aarch64'
-        run: |
-          brew install llvm lld
-          ./gradlew :store:rocksdb:compileKotlinLinuxArm64 --dependency-verification=strict --no-configuration-cache
-          echo "LLVM_LINKER=$(brew --prefix lld)/bin/ld.lld" >> "$GITHUB_ENV"
-      - name: Prepare musl cross-toolchains
-        if: contains(matrix.platform, 'musl')
-        run: brew install FiloSottile/musl-cross/musl-cross
-      - name: Prepare MSVC cross-toolchain
-        if: matrix.platform == 'windows-x86_64'
-        run: |
-          brew install llvm lld
-          mkdir -p "$RUNNER_TEMP/xwin"
-          curl --fail --location --retry 3 \
-            https://github.com/Jake-Shadle/xwin/releases/download/0.6.5/xwin-0.6.5-aarch64-apple-darwin.tar.gz \
-            -o "$RUNNER_TEMP/xwin.tar.gz"
-          echo "21acd1e35d23b72efc8c47cbeda5028989f98089174b8c87074f892b65adbc01  $RUNNER_TEMP/xwin.tar.gz" | shasum -a 256 -c -
-          tar -xzf "$RUNNER_TEMP/xwin.tar.gz" -C "$RUNNER_TEMP/xwin"
-          "$RUNNER_TEMP/xwin/xwin-0.6.5-aarch64-apple-darwin/xwin" \
-            --accept-license --cache-dir "$RUNNER_TEMP/xwin-cache" --arch x86_64 \
-            --sdk-version 10.0.22621 --crt-version 14.44.17.14 \
-            splat --output "$RUNNER_TEMP/msvc-sdk"
-          echo "WINDOWS_SDK_ROOT=$RUNNER_TEMP/msvc-sdk" >> "$GITHUB_ENV"
-          echo "WINDOWS_LINKER=$(brew --prefix lld)/bin/lld-link" >> "$GITHUB_ENV"
-      - name: Compile without running target code
-        run: bash store/rocksdb/scripts/compile-jvm-comparator.sh '${{ matrix.platform }}' --dependency-verification=strict
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: rocksdb-jvm-cross-${{ matrix.platform }}
-          path: store/rocksdb/build/generated/jvmNativeComparatorCrossResources/${{ matrix.platform }}/
-          if-no-files-found: error
-
-  test-cross-native-jvm-comparator:
-    name: Test cross-compiled comparator (${{ matrix.platform }})
-    needs: cross-native-jvm-comparator
-    timeout-minutes: 60
+    name: Cross-built JVM comparator (${{ matrix.platform }})
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-24.04-arm
-            platform: linux-aarch64
+          - platform: linux-aarch64
+            runner: ubuntu-24.04-arm
             musl: false
-          - os: ubuntu-latest
-            platform: linux-x86_64-musl
+          - platform: linux-x86_64-musl
+            runner: ubuntu-latest
             musl: true
-          - os: ubuntu-24.04-arm
-            platform: linux-aarch64-musl
+          - platform: linux-aarch64-musl
+            runner: ubuntu-24.04-arm
             musl: true
-          - os: windows-latest
-            platform: windows-x86_64
+          - platform: windows-x86_64
+            runner: windows-latest
             musl: false
-    runs-on: ${{ matrix.os }}
-    env:
-      MARYK_REQUIRE_NATIVE_COMPARATOR: '1'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: rocksdb-jvm-cross-${{ matrix.platform }}
-          path: cross-native-resources
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        if: ${{ !matrix.musl }}
-        with:
-          distribution: zulu
-          java-version: 21
-      - uses: gradle/actions/setup-gradle@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
-        if: ${{ !matrix.musl }}
-      - name: Test exact cross-built binaries on the target JVM
-        if: ${{ !matrix.musl }}
-        shell: bash
-        run: |
-          artifact_dir="$PWD/cross-native-resources"
-          if [[ "$RUNNER_OS" == Windows ]]; then artifact_dir=$(cygpath -m "$artifact_dir"); fi
-          ./gradlew :store:rocksdb:jvmTest --dependency-verification=strict --no-configuration-cache \
-            "-Pmaryk.rocksdbNativeTestArtifactsDir=$artifact_dir"
-      - name: Test exact cross-built binaries on Alpine
-        if: matrix.musl
-        run: |
-          docker run --rm -v "$PWD:/workspace" -w /workspace \
-            -v maryk-alpine-gradle:/root/.gradle -e MARYK_REQUIRE_NATIVE_COMPARATOR=1 \
-            alpine:3.23 sh -ec '
-              apk add --no-cache bash openjdk21-jdk libstdc++
-              ./gradlew :store:rocksdb:jvmTest --dependency-verification=strict --no-configuration-cache \
-                -Pmaryk.rocksdbNativeTestArtifactsDir=/workspace/cross-native-resources
-            '
-      - name: Upload tested cross-built resources
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: rocksdb-jvm-native-${{ matrix.platform }}
-          path: cross-native-resources/
-          if-no-files-found: error
-      - name: Upload comparator test reports
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: rocksdb-comparator-reports-${{ matrix.platform }}
-          path: store/rocksdb/build/test-results/jvmTest/
-          if-no-files-found: ignore
+    uses: ./.github/workflows/rocksdb-jvm-comparator.yml
+    with:
+      platform: ${{ matrix.platform }}
+      runner: ${{ matrix.runner }}
+      musl: ${{ matrix.musl }}
 
   browser-smoke:
     name: Linux WebKit Maryk IndexedDB smoke

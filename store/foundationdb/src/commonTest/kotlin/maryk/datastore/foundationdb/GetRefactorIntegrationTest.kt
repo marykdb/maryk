@@ -28,6 +28,7 @@ import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionContext
+import maryk.foundationdb.FDBException
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -102,30 +103,45 @@ class GetRefactorIntegrationTest {
         val store = openStore(provider)
         try {
             for (size in listOf(8192, 17000)) {
-                val status = assertIs<AddSuccess<RefactorRecord>>(store.execute(RefactorRecord.add(RefactorRecord.create {
+                val status = assertIs<AddSuccess<RefactorRecord>>(phase("create $size entries") { store.execute(RefactorRecord.add(RefactorRecord.create {
                     title with "record"; entries with List(size) { "entry-$it" }; amount with 7
-                })).statuses.single())
-                val repeated = Array(16) { status.key }
+                })).statuses.single() })
+                // Reuse must cross an eight-key window; fallback only needs two
+                // independently decoded responses to prove its ownership contract.
+                // Repeating a rejected 17k-node graph sixteen times makes this
+                // correctness test depend on the runner's native transaction speed.
+                val repeated = Array(if (size == 8192) 16 else 2) { status.key }
                 provider.decryptions.value = 0
-                val current = store.unpooled(RefactorRecord.get(*repeated))
-                assertEquals(16, current.values.size)
-                assertEquals(if (size == 8192) 1 else 16, provider.decryptions.value)
+                val current = phase("current $size entries") { store.unpooled(RefactorRecord.get(*repeated)) }
+                assertEquals(repeated.size, current.values.size)
+                assertEquals(if (size == 8192) 1 else repeated.size, provider.decryptions.value)
                 @Suppress("UNCHECKED_CAST")
                 (current.values[0].values { entries } as MutableList<String>)[0] = "changed"
                 assertEquals("entry-0", current.values[1].values { entries }!!.first())
                 assertEquals("entry-0", store.execute(RefactorRecord.get(status.key)).values.single().values { entries }!!.first())
                 if (size == 8192) {
+                    val fallbackKeys = arrayOf(status.key, status.key)
                     provider.decryptions.value = 0
-                    val filtered = store.unpooled(RefactorRecord.get(*repeated, where = Equals(RefactorRecord.title.ref() with "record")))
-                    assertEquals(16, filtered.values.size)
-                    assertEquals(16, provider.decryptions.value, "Filtered requests retain the default graph bound")
+                    val filtered = phase("filtered $size entries") {
+                        store.unpooled(RefactorRecord.get(*fallbackKeys, where = Equals(RefactorRecord.title.ref() with "record")))
+                    }
+                    assertEquals(fallbackKeys.size, filtered.values.size)
+                    assertEquals(fallbackKeys.size, provider.decryptions.value, "Filtered requests retain the default graph bound")
                     provider.decryptions.value = 0
-                    val historical = store.unpooled(RefactorRecord.get(*repeated, toVersion = status.version))
-                    assertEquals(16, historical.values.size)
-                    assertEquals(16, provider.decryptions.value, "Historical requests retain the default graph bound")
+                    val historical = phase("historical $size entries") {
+                        store.unpooled(RefactorRecord.get(*fallbackKeys, toVersion = status.version))
+                    }
+                    assertEquals(fallbackKeys.size, historical.values.size)
+                    assertEquals(fallbackKeys.size, provider.decryptions.value, "Historical requests retain the default graph bound")
                 }
             }
         } finally { store.close() }
+    }
+
+    private suspend fun <T> phase(name: String, block: suspend () -> T): T = try {
+        block()
+    } catch (error: FDBException) {
+        throw AssertionError("FoundationDB large-graph phase failed: $name", error)
     }
 
     private suspend fun openStore(provider: CountingRefactorProvider) = FoundationDBDataStore.open(

@@ -1,0 +1,22 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+import type { ComponentProps } from 'astro/types';
+
+interface Props {
+    title: string;
+    description: string;
+    href: string;
+    icon: ComponentProps<typeof Icon>['name'];
+}
+
+const { title, description, href, icon } = Astro.props;
+---
+
+<a class="explore-card not-content" {href}>
+    <Icon name={icon} class="explore-icon" size="1.6rem" />
+    <span class="explore-copy">
+        <span class="explore-title">{title}</span>
+        <span class="explore-description">{description}</span>
+    </span>
+    <Icon name="right-arrow" class="explore-arrow" size="1.2rem" />
+</a>

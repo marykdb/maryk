@@ -56,9 +56,11 @@ val def = DateTimeDefinition(
 ## Storage Byte representation
 It depends on the precision of the Time how it will be stored
 
-- `SECONDS` - 7 byte integer counting the seconds from midnight January 1st 1970
-- `MILLIS` - 9 byte combined integer with 7 bytes counting the seconds from midnight January 1st 1970 and 2 bytes for the milliseconds
-- `NANOS` - 11 byte integer with 7 bytes counting the seconds from midnight January 1st 1970 and 4 bytes for the nanoseconds
+| Precision | Storage representation |
+| --- | --- |
+| `SECONDS` | 7 byte integer counting the seconds from midnight January 1st 1970 |
+| `MILLIS` | 9 byte combined integer with 7 bytes counting the seconds from midnight January 1st 1970 and 2 bytes for the milliseconds |
+| `NANOS` | 11 byte integer with 7 bytes counting the seconds from midnight January 1st 1970 and 4 bytes for the nanoseconds |
 
 Stored fractional fields must be within one second: milliseconds `0..999` and
 nanoseconds `0..999999999`. Invalid fractions are rejected rather than carried
@@ -67,13 +69,11 @@ into another second.
 ## Transport Byte representation
 The bytes are transported in a different way depending on the precision of time.
 
-- `SECONDS` - VarInt integer counting the seconds from midnight January 1st 1970
-- `MILLIS` - VarInt integer counting the milliseconds from midnight January 1st 1970
-- `NANOS` - a length-delimited message with `int64 seconds = 1` and
-  `uint32 nanos = 2`, using UTC epoch seconds and 0..999,999,999 nanoseconds.
-  Readers also accept the legacy scalar VAR_INT seconds/nanos pair when the
-  NANOS definition is known; writers always use the framed message. See
-  [ProtoBuf compatibility](../../serialization/protobuf.md#nanos-datetime-compatibility).
+| Precision | Transport representation |
+| --- | --- |
+| `SECONDS` | VarInt integer counting the seconds from midnight January 1st 1970 |
+| `MILLIS` | VarInt integer counting the milliseconds from midnight January 1st 1970 |
+| `NANOS` | a length-delimited message with `int64 seconds = 1` and `uint32 nanos = 2`, using UTC epoch seconds and 0..999,999,999 nanoseconds. Readers also accept the legacy scalar VAR_INT seconds/nanos pair when the NANOS definition is known; writers always use the framed message. See [ProtoBuf compatibility](../../serialization/protobuf.md#nanos-datetime-compatibility). |
 
 ## String representation
 ISO8601 String YYYY-MM-DDTHH:MM:SS.SSSSSSSSS

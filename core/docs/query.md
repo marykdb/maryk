@@ -15,17 +15,17 @@ val response = store.execute(request)
 
 The same request shape works against every store engine. That is why the CLI, App, Remote Store and embedded stores can share behavior.
 
-Use:
-
-- `Add`, `Change`, `Delete` for writes.
-- `Get` when you know keys.
-- `Scan` when you need a range, filter, index order or page.
-- `GetChanges` / `ScanChanges` for object history.
-- `GetUpdateHistory` / `ScanUpdateHistory` for bounded, newest-first historical update entries.
-- `GetUpdates` / `ScanUpdates` for chronological sync.
-- `executeFlow(...)` for live views.
-- `executeAtomic(...)` for a fixed write set with initial-state guards.
-- `transaction { ... }` for serializable reads and ordered writes.
+| Request or API | Use it for |
+| --- | --- |
+| `Add`, `Change`, `Delete` | Writes |
+| `Get` | Reads when you know keys |
+| `Scan` | A range, filter, index order or page |
+| `GetChanges` / `ScanChanges` | Object history |
+| `GetUpdateHistory` / `ScanUpdateHistory` | Bounded, newest-first historical update entries |
+| `GetUpdates` / `ScanUpdates` | Chronological sync |
+| `executeFlow(...)` | Live views |
+| `executeAtomic(...)` | A fixed write set with initial-state guards |
+| `transaction { ... }` | Serializable reads and ordered writes |
 
 Use reference graphs with reads to fetch only the fields you need.
 
@@ -50,6 +50,18 @@ Start with `add`, `get`, and `scan`. Add filters, ordering, reference graphs, an
 Atomic execution and transactions share the backend commit engine, but expose
 different contracts. Choose a fixed write set when values and guards are known;
 choose a transaction when reads determine the writes.
+
+
+```mermaid
+flowchart TB
+    accTitle: Choose the write boundary for the operation
+    accDescr: Protected reads, repeated writes, hard deletion or savepoints require a transaction. A fixed guarded write set fits an atomic request. Otherwise use ordinary requests with their existing semantics.
+    Needs{"Protected reads, repeated writes, hard deletes or savepoints?"}
+    Needs -->|Yes| Transaction["Transaction scope"]
+    Needs -->|No| Together{"Known writes and guards must commit together?"}
+    Together -->|Yes| Atomic["Atomic request"]
+    Together -->|No| Ordinary["Ordinary requests; inspect per-record statuses"]
+```
 
 | Requirement | Atomic request | Transaction scope |
 | --- | --- | --- |

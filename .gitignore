@@ -90,3 +90,7 @@ Icon
 
 
 ###########################
+
+# Brand exports are generated from the canonical branding sources.
+/website/src/generated/brand/
+/website/public/brand/

@@ -3,7 +3,13 @@ title: Getting Started
 description: Add Maryk, define your first model, validate values, serialize them, and run a store request.
 ---
 
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
 Maryk runs on Kotlin Multiplatform and ships as modular artifacts. This guide shows the shortest path from model → value → validation → serialization → storage.
+
+<Aside type="tip" title="Prefer a complete example?">
+  The [First Store Tutorial](../tutorials/first-store/) takes you from a model to stored records, queries, and history. This page introduces each piece first.
+</Aside>
 
 ## Dependency
 
@@ -116,12 +122,9 @@ Use the [Maryk App](../app/) for a desktop UI to browse models and edit records.
 
 ## Next steps
 
-- Run the complete [First Store Tutorial](../tutorials/first-store/).
-- See [In Practice](../in-practice/) for CLI and App workflows.
-- Learn how models and properties work in [Data design](../data-modeling/data-design/).
-- Learn how indexes are composed in [Index design](../data-modeling/index-design/).
-- Learn how to change existing models in [Changing Models Safely](../guides/change-models-safely/).
-- Understand fit and tradeoffs in [Tradeoffs](../tradeoffs/).
-- Explore queries, filters, and aggregations in [Querying](../querying/).
-- Check out how to persist data in [Stores](../stores/).
-- Browse and edit data interactively with the [CLI](../cli/).
+<CardGrid>
+<LinkCard title="Run the first store tutorial" description="Put these pieces together: add records, query them, and read history." href="../tutorials/first-store/" />
+<LinkCard title="Choose a store" description="Compare deployment targets, persistence, and engine capabilities." href="../stores/" />
+<LinkCard title="Design your data model" description="Learn about properties, stable field IDs, keys, and indexes." href="../data-modeling/" />
+<LinkCard title="Follow a practical guide" description="Apply Maryk to local-first apps, search, schema changes, and remote access." href="../guides/" />
+</CardGrid>

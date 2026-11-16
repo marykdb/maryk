@@ -7,15 +7,29 @@ Maryk is a Kotlin Multiplatform data toolkit built around one idea: the data mod
 
 You define the model once in Kotlin. Maryk uses it to validate values, serialize values, build typed requests, execute those requests against stores, retain history, stream updates, and drive tooling.
 
+
+```mermaid
+flowchart TB
+    accTitle: One model connects the data layers
+    accDescr: A Kotlin model defines validation, serialization, requests and tooling. Stores execute the typed requests.
+    Model["Kotlin data model"] --> Values["Create and validate values"]
+    Model --> Serialization["JSON, YAML and ProtoBuf"]
+    Model --> Requests["Typed requests"]
+    Model --> Tools["App, CLI and generators"]
+    Requests --> Stores["Memory, IndexedDB, RocksDB, FoundationDB or Remote"]
+```
+
 ## The pieces
 
-- **Data models** define properties, indexes, validations, keys, and references.
-- **Values** are typed records created and validated through those models.
-- **Requests** describe add/change/delete/get/scan/history/update operations, atomic change sets and serializable transaction journals.
-- **SQL** provides optional bounded queries, joins, reporting and mutations over those same models and requests.
-- **Stores** execute requests through one API: Memory, IndexedDB, RocksDB, FoundationDB, Remote.
-- **Serialization** writes the same values and requests as YAML, JSON, or ProtoBuf.
-- **Tools** let you inspect and edit records through the [CLI](../cli/) and [App](../app/).
+| Layer | Role |
+| --- | --- |
+| Data models | define properties, indexes, validations, keys, and references. |
+| Values | are typed records created and validated through those models. |
+| Requests | describe add/change/delete/get/scan/history/update operations, atomic change sets and serializable transaction journals. |
+| SQL | provides optional bounded queries, joins, reporting and mutations over those same models and requests. |
+| Stores | execute requests through one API: Memory, IndexedDB, RocksDB, FoundationDB, Remote. |
+| Serialization | writes the same values and requests as YAML, JSON, or ProtoBuf. |
+| Tools | let you inspect and edit records through the [CLI](../cli/) and [App](../app/). |
 
 ## A tiny taste
 
@@ -23,7 +37,6 @@ You define the model once in Kotlin. Maryk uses it to validate values, serialize
 object Person : RootDataModel<Person>() {
   val firstName by string(index = 1u)
   val lastName by string(index = 2u)
-  val dateOfBirth by date(index = 3u)
 }
 
 val john = Person.create { firstName with "John"; lastName with "Smith" }

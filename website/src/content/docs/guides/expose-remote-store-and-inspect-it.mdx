@@ -11,6 +11,17 @@ Use this when:
 - code using `RemoteDataStore` needs access over a network boundary
 - you want a thin operational endpoint without rewriting store logic
 
+
+```mermaid
+flowchart TB
+    accTitle: Remote access keeps the storage on the server
+    accDescr: The App or a programmatic RemoteDataStore client connects through TLS termination or an SSH tunnel to a loopback-bound Maryk HTTP server backed by RocksDB or FoundationDB.
+    Client["App or RemoteDataStore client"] --> Transport["TLS termination or SSH tunnel"]
+    Transport --> Server["Maryk HTTP server bound to loopback"]
+    Server --> RocksDB["RocksDB"]
+    Server --> FoundationDB["FoundationDB"]
+```
+
 ## Start with local-only serving
 
 For RocksDB:
@@ -134,11 +145,13 @@ Before editing remote data:
 
 ## Troubleshooting
 
-- Cannot connect: verify `serve` is still running and the port matches.
-- Empty scan: check selected model and filters.
-- SSH tunnel fails: verify SSH user, identity file, host, and remote port.
-- RocksDB open fails: another process may already hold the local store lock.
-- FoundationDB fails: check `libfdb_c` and cluster file.
+| Symptom | What to check |
+| --- | --- |
+| Cannot connect | verify `serve` is still running and the port matches. |
+| Empty scan | check selected model and filters. |
+| SSH tunnel fails | verify SSH user, identity file, host, and remote port. |
+| RocksDB open fails | another process may already hold the local store lock. |
+| FoundationDB fails | check `libfdb_c` and cluster file. |
 
 ## Checklist
 

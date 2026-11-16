@@ -38,8 +38,12 @@ Observability:
 
 ## Configuration reference
 
-- `clusterUpdateLogConfiguration.enableClusterUpdateLog`: Persist each local write (add/change/delete) into an FDB-backed update log and tail that log back into this process to drive `executeFlow` listeners across a whole cluster (multi-writer, multi-reader). It cannot be enabled when a registered model contains sensitive properties because cluster-log payload encryption is not yet supported.
-- `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId`: Required when cluster update logging is enabled. Must be unique per node/process (cursor stored under `__updates__/v1/consumers/<id>`).
-- `clusterUpdateLogConfiguration.clusterUpdateLogOriginId`: Optional. Defaults to the consumer id. Used to skip “echo” of updates written by this same node when tailing.
-- `clusterUpdateLogConfiguration.clusterUpdateLogShardCount`: Number of log shards (per store root). Higher spreads write hot-spotting; tailers read per-shard cursors. The first enabled open persists this value; later opens must match it. Changing it requires an explicit offline log migration so backlog and retention GC remain reachable.
-- `clusterUpdateLogConfiguration.clusterUpdateLogRetention`: Time window to keep log entries (default 1 hour). A background job clears old ranges by timestamp.
+All options below belong to `clusterUpdateLogConfiguration`.
+
+| Configuration | Behavior |
+| --- | --- |
+| `enableClusterUpdateLog` | Persist each local write (add/change/delete) into an FDB-backed update log and tail that log back into this process to drive `executeFlow` listeners across a whole cluster (multi-writer, multi-reader). It cannot be enabled when a registered model contains sensitive properties because cluster-log payload encryption is not yet supported. |
+| `clusterUpdateLogConsumerId` | Required when cluster update logging is enabled. Must be unique per node/process (cursor stored under `__updates__/v1/consumers/<id>`). |
+| `clusterUpdateLogOriginId` | Optional. Defaults to the consumer id. Used to skip “echo” of updates written by this same node when tailing. |
+| `clusterUpdateLogShardCount` | Number of log shards (per store root). Higher spreads write hot-spotting; tailers read per-shard cursors. The first enabled open persists this value; later opens must match it. Changing it requires an explicit offline log migration so backlog and retention GC remain reachable. |
+| `clusterUpdateLogRetention` | Time window to keep log entries (default 1 hour). A background job clears old ranges by timestamp. |

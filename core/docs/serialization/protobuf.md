@@ -3,9 +3,12 @@
 Maryk uses the [ProtoBuf v3](https://developers.google.com/protocol-buffers/) encoding for compact, fast, binary transport of data values. You don’t need `.proto` files: encoding is implemented directly against your Maryk models with stable property indexes.
 
 ## What You Can Serialize
-- Data: values for any RootDataModel.
-- Requests & Responses: compactly encode `Requests` envelopes and typed responses for store interactions.
-- Models: use YAML/JSON to exchange model definitions. The [generator](../../../generator/README.md) can export Proto3 schemas for interoperability; Maryk-to-Maryk encoding does not require generated `.proto` files. See [Serialization Overview](README.md).
+
+| Payload | Use |
+| --- | --- |
+| Data | values for any RootDataModel. |
+| Requests & Responses | compactly encode `Requests` envelopes and typed responses for store interactions. |
+| Models | use YAML/JSON to exchange model definitions. The [generator](../../../generator/README.md) can export Proto3 schemas for interoperability; Maryk-to-Maryk encoding does not require generated `.proto` files. See [Serialization Overview](README.md). |
 
 ## When to Use
 - Service‑to‑service or store transport where both ends are Maryk‑aware.
@@ -18,10 +21,13 @@ ProtoBuf messages consist of key–value pairs. Each key combines a field tag (h
 
 ### Wire Types
 Maryk uses the standard ProtoBuf wire types:
-- VarInt — variable‑length integers for numeric values.
-- Length‑Delimited — values prefixed by byte length; also used for embedded messages.
-- 32‑bit — fixed‑width 4‑byte values.
-- 64‑bit — fixed‑width 8‑byte values.
+
+| Wire type | Representation |
+| --- | --- |
+| VarInt | variable‑length integers for numeric values. |
+| Length‑Delimited | values prefixed by byte length; also used for embedded messages. |
+| 32‑bit | fixed‑width 4‑byte values. |
+| 64‑bit | fixed‑width 8‑byte values. |
 
 For background details and examples, see the official [ProtoBuf encoding documentation](https://developers.google.com/protocol-buffers/docs/encoding).
 

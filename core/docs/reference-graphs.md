@@ -5,12 +5,14 @@ Property reference graphs define which properties to retrieve in a query. They a
 The examples below use a fictitious `User` model for a social application. It contains the
 following properties:
 
-- `name`: String
-- `age`: Int
-- `address`: embedded `Address` with `street` and `city`
-- `preferences`: Map<String, Preference> where `Preference` has a `value` field
-- `contact`: multi-type with variants like `Email` (property `address`) and `Phone` (property `number`)
-- `roles`: Set<String>
+| Property | Type or structure |
+| --- | --- |
+| `name` | String |
+| `age` | Int |
+| `address` | embedded `Address` with `street` and `city` |
+| `preferences` | Map<String, Preference> where `Preference` has a `value` field |
+| `contact` | multi-type with variants like `Email` (property `address`) and `Phone` (property `number`) |
+| `roles` | Set<String> |
 
 ## Basic usage
 

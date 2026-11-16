@@ -3,18 +3,19 @@ import {defineConfig, passthroughImageService} from 'astro/config';
 import {unified} from '@astrojs/markdown-remark';
 import starlight from '@astrojs/starlight';
 import remarkGfm from 'remark-gfm';
+import propertyReference from './scripts/rehype-property-reference.mjs';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 
 // https://astro.build/config
 export default defineConfig({
-    site: 'https://marykdb.github.io/',
-    base: '/maryk/',
+    site: 'https://maryk.io/',
+    base: '/',
     image: {
         service: passthroughImageService(),
     },
     markdown: {
-        processor: unified({remarkPlugins: [remarkGfm]}),
+        processor: unified({remarkPlugins: [remarkGfm], rehypePlugins: [propertyReference]}),
     },
     vite: {
         resolve: {
@@ -27,15 +28,17 @@ export default defineConfig({
     integrations: [
         starlight({
             title: 'Maryk',
-            logo: {src: './src/assets/maryk-logo-optimized.webp', alt: 'Maryk'},
+            favicon: '/brand/favicon.svg',
+            logo: {src: './src/generated/brand/maryk-logo.svg', alt: 'Maryk'},
             description: 'Kotlin Multiplatform data modeling, versioned storage, and querying.',
             customCss: ['./src/styles/override.css'],
+            components: {MarkdownContent: './src/components/MarkdownContent.astro'},
             social: [
                 {icon: 'github', label: 'GitHub', href: 'https://github.com/marykdb/maryk'},
             ],
             sidebar: [
                 {
-                    label: 'Introduction',
+                    label: 'Start here',
                     items: [
                         {label: 'What is Maryk?', slug: 'what'},
                         {label: 'Getting Started', slug: 'getting-started'},
@@ -47,6 +50,7 @@ export default defineConfig({
                 },
                 {
                     label: 'Guides',
+                    collapsed: false,
                     items: [
                         {label: 'Overview', slug: 'guides'},
                         {label: 'Model a Local-First App', slug: 'guides/model-a-local-first-app'},
@@ -58,7 +62,9 @@ export default defineConfig({
                 },
                 {
                     label: 'Data Modeling',
+                    collapsed: false,
                     items: [
+                        {label: 'Overview', slug: 'data-modeling'},
                         {label: 'Data Design', slug: 'data-modeling/data-design'},
                         {label: 'Data Models', slug: 'data-modeling/datamodels'},
                         {label: 'Keys', slug: 'data-modeling/keys'},
@@ -99,6 +105,7 @@ export default defineConfig({
                 },
                 {
                     label: 'Querying',
+                    collapsed: false,
                     items: [
                         {label: 'Overview', slug: 'querying'},
                         {label: 'Reading and writing', slug: 'querying/reads-writes'},
@@ -124,6 +131,7 @@ export default defineConfig({
                 },
                 {
                     label: 'Serialization',
+                    collapsed: true,
                     items: [
                         {label: 'Overview', slug: 'serialization'},
                         {label: 'JSON', slug: 'serialization/json'},
@@ -134,6 +142,7 @@ export default defineConfig({
                 },
                 {
                     label: 'Stores',
+                    collapsed: false,
                     items: [
                         {label: 'Overview', slug: 'stores'},
                         {label: 'Performance (0.14)', slug: 'stores/performance'},
@@ -218,7 +227,7 @@ export default defineConfig({
                 },
                 {
                     label: 'Tools',
-                    collapsed: false,
+                    collapsed: true,
                     items: [
                         {
                             label: 'App',

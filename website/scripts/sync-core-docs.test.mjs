@@ -224,3 +224,25 @@ test('a closing fence requires an empty suffix and the matching marker', () => {
   assert.equal(rewriteLinks(md, '../', sourceFile('core/docs/README.md')),
     md.replace('[query](query.md)', '[query](../querying/)'));
 });
+
+test('reference tables preserve inline command syntax while prose stays MDX-safe', () => {
+  const root = mkdtempSync(join(tmpdir(), 'maryk-docs-sync-'));
+  const siteRoot = join(root, 'website');
+  const coreDocs = join(root, 'core', 'docs');
+  mkdirSync(coreDocs, { recursive: true });
+  const table = [
+    '| Command | Action |',
+    '| --- | --- |',
+    '| `model <name\\|id>` | Read `Map<String, Value>` and `{ value }`. |',
+    '| ``literal ` <T>{value}`` | Use double backticks. |',
+  ].join('\n');
+  writeFileSync(join(coreDocs, 'README.md'), `# Reference\n\n${table}\n\n<T>{value}\n`);
+  syncDocs({
+    siteRoot, repoRoot: root, coreDocs,
+    map: [['src/content/docs/data-modeling/index.mdx', 'README.md']],
+    removedTargets: [],
+  });
+  const generated = readFileSync(join(siteRoot, 'src/content/docs/data-modeling/index.mdx'), 'utf8');
+  assert.ok(generated.includes(table));
+  assert.ok(generated.includes('&lt;T&gt;&#123;value&#125;'));
+});

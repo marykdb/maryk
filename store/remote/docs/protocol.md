@@ -28,18 +28,18 @@ or [history](../../shared/docs/history-backups.md) guide. This page describes th
 
 ## Endpoints
 
-- `GET /v1/info` → `RemoteStoreInfo` (definitions + model id map + capabilities)
-- `GET /v1/state-backup?captureId=<uuid>&batchSize=250&maxChunkBytes=1048576` → one consistent state export
-- `POST /v1/state-backup-cancel?captureId=<uuid>` → cancel this caller's capture
-- `POST /v1/state-restore` → one validated state-v2 batch, committed atomically
-- `GET /v1/snapshot-version` → authoritative 8-byte point-in-time read boundary
-- `POST /v1/execute` → `Requests` in. Legacy single-request clients receive one
-  raw ProtoBuf response; clients requesting `X-Maryk-Execute-Protocol: 2`
-  receive length-prefixed response frames and may send batches.
-- `POST /v1/flow` → `Requests` (single fetch) in, stream of length-prefixed `UpdatesResponse`
-- `POST /v1/restore-version` → one complete source-version group, committed atomically
-- `POST /v1/process-update` → `UpdateResponse` in, `ProcessResponse` out
-- `POST /v1/admin/migrations` → versioned migration status/control payloads
+| Endpoint | Contract |
+| --- | --- |
+| `GET /v1/info` | `RemoteStoreInfo` (definitions + model id map + capabilities) |
+| `GET /v1/state-backup?captureId=<uuid>&batchSize=250&maxChunkBytes=1048576` | one consistent state export |
+| `POST /v1/state-backup-cancel?captureId=<uuid>` | cancel this caller's capture |
+| `POST /v1/state-restore` | one validated state-v2 batch, committed atomically |
+| `GET /v1/snapshot-version` | authoritative 8-byte point-in-time read boundary |
+| `POST /v1/execute` | `Requests` in. Legacy single-request clients receive one raw ProtoBuf response; clients requesting `X-Maryk-Execute-Protocol: 2` receive length-prefixed response frames and may send batches. |
+| `POST /v1/flow` | `Requests` (single fetch) in, stream of length-prefixed `UpdatesResponse` |
+| `POST /v1/restore-version` | one complete source-version group, committed atomically |
+| `POST /v1/process-update` | `UpdateResponse` in, `ProcessResponse` out |
+| `POST /v1/admin/migrations` | versioned migration status/control payloads |
 
 Retained-history point-in-time export and backup require `GET /v1/snapshot-version`. Upgrade the
 Remote client and server together before relying on that guarantee: a newer

@@ -3,14 +3,36 @@ title: Guides
 description: Task-oriented Maryk guides for modeling, keys, search, schema changes, and remote inspection.
 ---
 
-Guides are task paths. Use them after the introduction pages and before diving into reference docs.
+import { Card, CardGrid } from '@astrojs/starlight/components';
 
-Recommended order:
+Choose a guide for the task in front of you. Start with the [First Store Tutorial](../tutorials/first-store/) if you have not yet stored and queried a record.
 
-1. [Model a Local-First App](./model-a-local-first-app/)
-2. [Design Sync-Friendly Keys](./design-sync-friendly-keys/)
-3. [Build a Searchable Catalog](./build-searchable-catalog/)
-4. [Changing Models Safely](./change-models-safely/)
-5. [Expose a Remote Store and Inspect It](./expose-remote-store-and-inspect-it/)
+<CardGrid>
+<Card title="Model a local-first app" icon="laptop">
+  Start with shared models and decide what belongs on the device and server.
 
-These pages avoid duplicating reference docs. They point to references when the task needs deeper API detail.
+  [Follow the modeling guide](./model-a-local-first-app/)
+</Card>
+<Card title="Design sync-friendly keys" icon="code-branch">
+  Choose stable identities that work when data is created on different clients.
+
+  [Design your keys](./design-sync-friendly-keys/)
+</Card>
+<Card title="Build a searchable catalog" icon="magnifier">
+  Design indexes and queries around the records your users need to find.
+
+  [Build the catalog](./build-searchable-catalog/)
+</Card>
+<Card title="Change models safely" icon="approve-check-circle">
+  Evolve a data contract while preserving stored data and field identities.
+
+  [Plan a model change](./change-models-safely/)
+</Card>
+<Card title="Expose and inspect a remote store" icon="server">
+  Connect a client to a Maryk store and explore its models and records.
+
+  [Set up remote access](./expose-remote-store-and-inspect-it/)
+</Card>
+</CardGrid>
+
+Each guide links to the relevant API references when you need more detail.

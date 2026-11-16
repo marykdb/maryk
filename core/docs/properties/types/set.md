@@ -94,8 +94,10 @@ the value as their normal transport byte representation.
 ### Tag value pairs
 ``` T V  T V  T V  T V  T V ```
 
-- `T` = Tag + wiretype
-- `V` = Value encoded as LENGTH_DELIMITED or START_GROUP (Until end group)
+| Symbol | Tag-value encoding |
+| --- | --- |
+| `T` | Tag + wiretype |
+| `V` | Value encoded as LENGTH_DELIMITED or START_GROUP (Until end group) |
  
 In Packed encoding multiple values are encoded with one tag representing the specific 
 set and a Length Delimiter. This is only available and is automatically applied for values
@@ -104,6 +106,8 @@ of BIT_32, BIT_64 or VAR_INT wiretype encoding since the sizes of each item are 
 ### Packed encoding
 ``` T L V V V V V ```
 
-- `T` = Tag + wiretype of Length Delimited
-- `L` = VarInt with Length
-- `V` = Value encoded as  BIT_32, BIT_64 or VAR_INT
+| Symbol | Packed encoding |
+| --- | --- |
+| `T` | Tag + wiretype of Length Delimited |
+| `L` | VarInt with Length |
+| `V` | Value encoded as  BIT_32, BIT_64 or VAR_INT |

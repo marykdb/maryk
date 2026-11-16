@@ -2,20 +2,22 @@
 
 ## Global commands
 
-- `help [command]` — show available commands or details for one command.
-- `connect` — connect to a store.
-- `serve` — serve a store over HTTP.
-- `disconnect` — close the current store connection.
-- `list` — list available data models.
-- `model [--with-deps] [--key-index-format] [<name|id>]` — render the schema for a model.
-- `model --all [--with-deps] [--key-index-format]` — render schemas for all models.
-- `add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]` — add a new record from a file.
-- `get <model> <key> [--include-deleted] [subcommand ...]` — fetch a record and open the viewer, or run a record action inline.
-- `undelete <model> <key> [--if-version <n>]` — restore a soft-deleted record.
-- `changes <model> <key> [options]` — show versioned changes for a record.
-- `scan <model> [options]` — browse records in a scrolling list.
-- `sql [options] SELECT ...` or `sql [options] --file <path>` — run a bounded SQL query; `--write` enables row mutations.
-- `migrations [status|pause|resume|cancel]` — inspect or control managed migrations.
+| Command | Action |
+| --- | --- |
+| `help [command]` | show available commands or details for one command. |
+| `connect` | connect to a store. |
+| `serve` | serve a store over HTTP. |
+| `disconnect` | close the current store connection. |
+| `list` | list available data models. |
+| `model [--with-deps] [--key-index-format] [<name\|id>]` | render the schema for a model. |
+| `model --all [--with-deps] [--key-index-format]` | render schemas for all models. |
+| `add <model> <file> [--yaml\|--json\|--proto] [--meta] [--key <base64>]` | add a new record from a file. |
+| `get <model> <key> [--include-deleted] [subcommand ...]` | fetch a record and open the viewer, or run a record action inline. |
+| `undelete <model> <key> [--if-version <n>]` | restore a soft-deleted record. |
+| `changes <model> <key> [options]` | show versioned changes for a record. |
+| `scan <model> [options]` | browse records in a scrolling list. |
+| `sql [options] SELECT ...` or `sql [options] --file <path>` | run a bounded SQL query; `--write` enables row mutations. |
+| `migrations [status\|pause\|resume\|cancel]` | inspect or control managed migrations. |
 
 ## Quick example
 
@@ -193,10 +195,12 @@ Notes:
 
 Many commands take property references (for `set`, `show`, `select`, `order`, etc.). Use dot notation:
 
-- `info.name.firstNames` — nested fields
-- `addresses.@0` — list item at index 0
-- `addresses.*` — list/map wildcard
-- `moment.*ShiftMetaDataType.executor` — multi-type list/map with type name
+| Reference path | Selects |
+| --- | --- |
+| `info.name.firstNames` | nested fields |
+| `addresses.@0` | list item at index 0 |
+| `addresses.*` | list/map wildcard |
+| `moment.*ShiftMetaDataType.executor` | multi-type list/map with type name |
 
 For `select`, nested paths such as `embeddedValues.value` build a graph. Selecting
 an entire parent includes its children, even when a child is also listed.
@@ -210,16 +214,19 @@ For `order`, `$key` selects primary-key order and `-$key` reverses it.
 When `get` returns data, you enter a viewer with scrolling output.
 
 Commands:
-- `save <dir> [--yaml|--json|--proto] [--meta] [--legacy-direct]` — export the record.
-- `load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]` — apply values from a file.
-- `set <ref> <value> [--if-version <n>]` — set or replace a value.
-- `unset <ref> [--if-version <n>]` — clear a value.
-- `append <ref> <value> [--if-version <n>]` — append to a list or add to a set.
-- `remove <ref> <value> [--if-version <n>]` — remove from a list or set.
-- `delete [--hard]` — soft delete (default) or hard delete.
-- `undelete [--if-version <n>]` — restore a soft-deleted record.
-- `close` (when opened from a scan) — return to the scan list.
-- `q|quit|exit` — leave the viewer.
+
+| Viewer command | Action |
+| --- | --- |
+| `save <dir> [--yaml\|--json\|--proto] [--meta] [--legacy-direct]` | export the record. |
+| `load <file> [--yaml\|--json\|--proto] [--if-version <n>] [--meta]` | apply values from a file. |
+| `set <ref> <value> [--if-version <n>]` | set or replace a value. |
+| `unset <ref> [--if-version <n>]` | clear a value. |
+| `append <ref> <value> [--if-version <n>]` | append to a list or add to a set. |
+| `remove <ref> <value> [--if-version <n>]` | remove from a list or set. |
+| `delete [--hard]` | soft delete (default) or hard delete. |
+| `undelete [--if-version <n>]` | restore a soft-deleted record. |
+| `close` (when opened from a scan) | return to the scan list. |
+| `q\|quit\|exit` | leave the viewer. |
 
 If the viewer was opened from a scan, `close` returns to the scan list.
 
@@ -246,20 +253,26 @@ Additional pages resume with the datastore-issued opaque cursor, so index-ordere
 paging stays stable when the previous boundary record changes.
 
 Navigation:
-- Up/Down: move the selection
-- PgUp/PgDn: page
-- Home/End: jump to start/end
+
+| Navigation | Action |
+| --- | --- |
+| Up/Down | move the selection |
+| PgUp/PgDn | page |
+| Home/End | jump to start/end |
 
 Commands:
-- `get` — open the selected record in the viewer.
-- `show <ref,...>` — choose fields to display (also updates the select graph).
-- `filter <expr>` — add another `where` clause (Maryk YAML format).
-- `save <dir> [--yaml|--json|--proto] [--meta] [--legacy-direct]` — export the selected record.
-- `load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]` — apply values to the selected record.
-- `delete [--hard]` — soft delete (default) or hard delete.
-- `undelete [--if-version <n>]` — restore a soft-deleted record.
-- `close` — leave the scan viewer.
-- `q|quit|exit` — leave the scan.
+
+| Scan command | Action |
+| --- | --- |
+| `get` | open the selected record in the viewer. |
+| `show <ref,...>` | choose fields to display (also updates the select graph). |
+| `filter <expr>` | add another `where` clause (Maryk YAML format). |
+| `save <dir> [--yaml\|--json\|--proto] [--meta] [--legacy-direct]` | export the selected record. |
+| `load <file> [--yaml\|--json\|--proto] [--if-version <n>] [--meta]` | apply values to the selected record. |
+| `delete [--hard]` | soft delete (default) or hard delete. |
+| `undelete [--if-version <n>]` | restore a soft-deleted record. |
+| `close` | leave the scan viewer. |
+| `q\|quit\|exit` | leave the scan. |
 
 Filtering examples (Maryk YAML tags):
 
@@ -279,16 +292,18 @@ scan Client --order info.name.familyName:desc
 ```
 
 Scan options (from the `scan` command):
-- `--start-key <base64>`
-- `--limit <n>`
-- `--include-start` / `--exclude-start`
-- `--to-version <n>`
-- `--include-deleted`
-- `--where <expr>`
-- `--order <ref,...>`
-- `--select <ref,...>`
-- `--show <ref,...>`
-- `--max-chars <n>`
+| Option | Effect |
+| --- | --- |
+| `--start-key <base64>` | Start scanning from this key. |
+| `--limit <n>` | Page size per fetch (default 100). |
+| `--include-start` / `--exclude-start` | Include the start key (default), or exclude it. |
+| `--to-version <n>` | Scan as of a version. |
+| `--include-deleted` | Include soft-deleted records. |
+| `--where <expr>` | Filter expression in Maryk YAML. |
+| `--order <ref,...>` | Order by references; prefix with `-` for descending order. |
+| `--select <ref,...>` | Fetch only these fields. |
+| `--show <ref,...>` | Show these fields first. |
+| `--max-chars <n>` | Maximum characters per row (default 160). |
 
 ## Undelete
 

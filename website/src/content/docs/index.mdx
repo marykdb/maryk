@@ -1,93 +1,200 @@
 ---
 title: Maryk
-description: Kotlin Multiplatform data models with validation, serialization, version-aware storage, and one query API.
+description: Define your data once in Kotlin. Reuse the same model for validation, serialization, querying, and versioned storage across platforms.
 template: splash
 hero:
-  tagline: Define data once in Kotlin. Validate it, serialize it, store it, query it, inspect it, and sync changes across platforms.
+  title: 'One model.<br /><span class="hero-accent">Every layer.</span>'
+  tagline: A Kotlin Multiplatform data toolkit. Define your model once, then use it to validate, serialize, query, and store your data across clients and servers.
   image:
-    file: ../../assets/maryk-logo-optimized.webp
+    file: ../../assets/maryk-hero.webp
+    alt: Maryk’s layered M with a browser window and data-storage blocks
   actions:
-    - text: Get Started
+    - text: Get started
       link: getting-started/
-    - text: First Tutorial
-      link: tutorials/first-store/
+      icon: right-arrow
+    - text: Why Maryk?
+      link: why/
       variant: secondary
-    - text: View on GitHub
-      link: https://github.com/marykdb/maryk/
-      icon: external
-      variant: minimal
-      attrs:
-        rel: me
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, LinkCard, Icon, Tabs, TabItem } from '@astrojs/starlight/components';
+import ExploreCard from '../../components/ExploreCard.astro';
 
-## Build Typed Data Once
+<div class="platform-strip" aria-label="Maryk at a glance">
+  <span><Icon name="seti:kotlin" /> Kotlin Multiplatform</span>
+  <span><Icon name="database" /> Local & distributed stores</span>
+  <span><Icon name="clock" /> Version-aware data</span>
+  <a href="https://github.com/marykdb/maryk"><Icon name="github" /> <span>Apache 2.0 · GitHub</span> <Icon name="external" size="0.9em" /></a>
+</div>
 
-Maryk is a Kotlin Multiplatform data toolkit for teams that want one durable data contract across clients, servers, tools, and tests.
+<div class="section-intro">
+<p class="section-label">The idea</p>
 
-Define the model in Kotlin. Reuse it for validation, serialization, storage, history, tooling, and sync.
+## Your data contract, from app to storage
 
-## Highlights
+Keep validation, transport, and persistence working from the same typed model. Start with the pieces you need; add storage and tooling as your application grows.
+</div>
 
-<CardGrid>
-	<Card title="One Model" icon="seti:csv">
-		Define your schema once in Kotlin and reuse it across storage, transport, tools, and tests.
-	</Card>
-	<Card title="Versioned Storage" icon="seti:clock">
-		Ask for “only changes” or “as of time T”. Stream live updates without extra infrastructure.
-	</Card>
-	<Card title="Portable Serialization" icon="seti:json">
-		Streaming YAML/JSON and compact ProtoBuf with consistent encoders/decoders across platforms.
-	</Card>
-	<Card title="Typed Store API" icon="seti:plan">
-		Run typed requests, atomic write sets and serializable scopes across local stores; Remote advertises its backend capabilities.
-	</Card>
-	<Card title="Pluggable Stores" icon="seti:db">
-		Start in‑memory for tests, use IndexedDB in browsers, embed RocksDB for apps, or run FoundationDB for distributed storage and scale — same API.
-	</Card>
-	<Card title="Kotlin Multiplatform" icon="seti:kotlin">
-		Run on JVM, Android, iOS, macOS, Linux, Windows, and JS — share your model and logic.
-	</Card>
-	<Card title="Desktop App" icon="laptop">
-		Inspect models and edit records in the [Maryk App](app/).
-	</Card>
-</CardGrid>
+<div class="feature-grid">
+<Card title="Model with confidence" icon="puzzle">
+  Define properties, validation rules, keys, and indexes in Kotlin. Share the contract across your application.
 
-## Quick start
+  [Explore data modeling](data-modeling/)
+</Card>
+<Card title="Keep the history" icon="clock">
+  Read earlier versions, query changes, and watch updates. Configure the history your store needs to retain.
 
-1) **Add the dependency**
+  [Understand history & updates](querying/history/)
+</Card>
+<Card title="Use one request API" icon="database">
+  Read and write through typed requests across Memory, IndexedDB, RocksDB, FoundationDB, and Remote.
 
-```kotlin
-implementation("io.maryk:maryk-core:<maryk-version>")
-```
+  [Compare the stores](stores/)
+</Card>
+</div>
 
-2) **Define a model**
+<div class="example-grid">
+<div>
+<p class="section-label">In Kotlin</p>
+
+## Small model. Shared foundation.
+
+Start with a model, store and query its values, then look back through its history. Each tab shows another part of the same data flow.
+
+The same model also drives JSON, YAML, and ProtoBuf serialization. Stable field IDs let your data contract evolve over time.
+
+[Set up your first model →](getting-started/)
+</div>
+<div>
+
+<Tabs>
+<TabItem label="Person.kt" icon="puzzle">
 
 ```kotlin
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.string
 
 object Person : RootDataModel<Person>() {
-  val firstName by string(index = 1u)
-  val lastName by string(index = 2u)
+    val firstName by string(index = 1u)
+    val lastName by string(index = 2u)
+}
+
+val jane = Person.create {
+    firstName with "Jane"
+    lastName with "Doe"
+}
+
+Person.validate(jane)
+val json = Person.Serializer.writeJson(jane)
+```
+
+</TabItem>
+<TabItem label="Store.kt" icon="database">
+
+```kotlin
+import kotlinx.coroutines.runBlocking
+import maryk.core.models.key
+import maryk.core.query.requests.add
+import maryk.core.query.requests.get
+import maryk.datastore.memory.InMemoryDataStore
+
+// Uses Person and jane from Person.kt.
+fun storePerson() = runBlocking {
+    InMemoryDataStore.open(
+        dataModelsById = mapOf(1u to Person)
+    ).use {
+        val key = Person.key(jane)
+        execute(Person.add(key to jane))
+        val current = execute(Person.get(key))
+        println(current.values.single().values)
+    }
 }
 ```
 
-3) **Create, validate, serialize**
+</TabItem>
+<TabItem label="History.kt" icon="clock">
 
 ```kotlin
-val jane = Person.create { firstName with "Jane"; lastName with "Doe" }
-Person.validate(jane)
-val json = Person.Serializer.writeJson(jane, pretty = true)
+import kotlinx.coroutines.runBlocking
+import maryk.core.models.key
+import maryk.core.query.requests.add
+import maryk.core.query.requests.get
+import maryk.core.query.requests.getChanges
+import maryk.datastore.memory.InMemoryDataStore
+
+// Uses Person and jane from Person.kt.
+fun readPersonHistory() = runBlocking {
+    InMemoryDataStore.open(
+        keepAllVersions = true,
+        dataModelsById = mapOf(1u to Person)
+    ).use {
+        val key = Person.key(jane)
+        execute(Person.add(key to jane))
+        val changes = execute(Person.getChanges(key))
+        val version = changes.changes.first()
+            .changes.first().version
+        val earlier = execute(
+            Person.get(key, toVersion = version)
+        )
+        println(earlier.values.single().values)
+    }
+}
 ```
 
-## Reading path
+</TabItem>
+</Tabs>
 
-Start with [Getting Started](getting-started/), then run the complete [First Store Tutorial](tutorials/first-store/).
+</div>
+</div>
 
-Browse the reference sections: [Data Modeling](data-modeling/), [Querying](querying/), [Serialization](serialization/), [Stores](stores/), [CLI](cli/), and [App](app/).
+<div class="section-intro">
+<p class="section-label">Start here</p>
 
-Use Maryk's [typed request API](querying/) as the main API for application reads, writes, history, and sync. The [SQL layer](querying/sql/) is optional, for reporting, ad hoc queries, and tabular integrations. You can use every Maryk store without adding SQL.
+## A clear path to your first store
 
-Picking storage? See [Stores](stores/) for the overview, or jump straight to [In‑Memory](stores/memory/), [IndexedDB](stores/indexeddb/), [RocksDB](stores/rocksdb/), [FoundationDB](stores/foundationdb/), or [Remote](stores/remote/).
+New to Maryk? Follow these three steps. Already building? Jump to the reference below.
+</div>
+
+<div class="journey-grid">
+<LinkCard title="01 · Understand the pieces" description="See how models, requests, stores, and serialization fit together." href="what/" />
+<LinkCard title="02 · Set up your project" description="Add dependencies, define a model, and validate your first values." href="getting-started/" />
+<LinkCard title="03 · Run your first store" description="Store records in memory, query them, and read versioned changes." href="tutorials/first-store/" />
+</div>
+
+<div class="section-intro">
+<p class="section-label">Choose your storage</p>
+
+## Same models. Different places to run.
+
+Choose an engine for your deployment. Platform support and capabilities vary by module; the store guide explains the differences.
+</div>
+
+<div class="store-list">
+<a href="stores/memory/"><Icon name="rocket" /><span><strong>Memory</strong><small>Tests & fast local feedback</small></span><Icon name="right-arrow" /></a>
+<a href="stores/indexeddb/"><Icon name="window" /><span><strong>IndexedDB</strong><small>Persistent browser apps</small></span><Icon name="right-arrow" /></a>
+<a href="stores/rocksdb/"><Icon name="database" /><span><strong>RocksDB</strong><small>Embedded app & server storage</small></span><Icon name="right-arrow" /></a>
+<a href="stores/foundationdb/"><Icon name="server" /><span><strong>FoundationDB</strong><small>Distributed transactional storage</small></span><Icon name="right-arrow" /></a>
+<a href="stores/remote/"><Icon name="cloud-download" /><span><strong>Remote</strong><small>Access a Maryk store over HTTP</small></span><Icon name="right-arrow" /></a>
+</div>
+
+[Compare platforms, capabilities, and tradeoffs →](stores/)
+
+<div class="section-intro">
+<p class="section-label">Explore the reference</p>
+
+## Go deeper
+</div>
+
+<div class="explore-grid">
+<ExploreCard icon="puzzle" title="Data modeling" description="Properties, keys, indexes, and safe schema evolution." href="data-modeling/" />
+<ExploreCard icon="magnifier" title="Querying" description="Typed reads, writes, filters, history, and live updates." href="querying/" />
+<ExploreCard icon="seti:json" title="Serialization" description="Use your models with JSON, YAML, and ProtoBuf." href="serialization/" />
+<ExploreCard icon="open-book" title="Practical guides" description="Work through local-first modeling, search, sync, and migrations." href="guides/" />
+<ExploreCard icon="laptop" title="App & CLI" description="Inspect your models and explore or edit records." href="in-practice/" />
+<ExploreCard icon="list-format" title="Fit & tradeoffs" description="Understand where Maryk fits and what to consider before adopting it." href="tradeoffs/" />
+</div>
+
+<div class="landing-footer">
+  <p>Build on a data model you can share.</p>
+  <a href="tutorials/first-store/">Try the first store tutorial <Icon name="right-arrow" /></a>
+</div>

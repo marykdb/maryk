@@ -8,8 +8,10 @@ If no key definition is provided the model generates 128‑bit UUIDv4 keys. They
 
 ## UUIDv4 vs UUIDv7
 
-- **UUIDv4:** Random distribution. Better write spread. Lower hotspot risk in distributed mode. No natural time order for scans.
-- **UUIDv7:** Time-ordered prefix. Better temporal scan locality. Can hotspot on write-heavy distributed shards because many new keys land near each other.
+| Key type | Ordering | Write distribution |
+| --- | --- | --- |
+| UUIDv4 | Random; no natural time order for scans | Better write spread and lower hotspot risk in distributed mode |
+| UUIDv7 | Time-ordered prefix; better temporal scan locality | Can hotspot on write-heavy distributed shards because many new keys land near each other |
 
 Choose UUIDv4 for high write concurrency on distributed backends. Choose UUIDv7 when time-order scans are primary and hotspotting is acceptable.
 

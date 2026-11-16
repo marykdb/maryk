@@ -4,9 +4,11 @@ JSON is widely supported and easy to integrate with external services, tools, an
 
 ## What You Can Serialize
 
-- Models: define and exchange DataModels in JSON.
-- Data: serialize/deserialize values for any model.
-- Requests & Responses: encode `Requests` envelopes and typed responses (e.g., `ValuesResponse`) to interact with stores.
+| Payload | Use |
+| --- | --- |
+| Models | define and exchange DataModels in JSON. |
+| Data | serialize/deserialize values for any model. |
+| Requests & Responses | encode `Requests` envelopes and typed responses (e.g., `ValuesResponse`) to interact with stores. |
 
 ## Why JSON
 

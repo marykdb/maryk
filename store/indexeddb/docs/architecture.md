@@ -58,6 +58,25 @@ commit-journal rows, the clock, and the retry receipt are sent to one native
 The browser adapters explicitly implement `AtomicIndexedDbByteStore`; the generic
 byte-store interface's sequential batch fallback does not establish this guarantee.
 
+
+```mermaid
+sequenceDiagram
+    accTitle: An atomic request ends in one native batch
+    accDescr: Maryk holds writer ownership while planning an atomic request, then commits its writes in one short native IndexedDB batch rather than holding a native transaction across coroutine suspension.
+    participant App
+    participant Maryk
+    participant IDB as IndexedDB
+    App->>Maryk: Atomic request
+    Maryk->>Maryk: Acquire writer lock or fenced lease
+    Maryk->>IDB: Bounded reads for validation and planning
+    IDB-->>Maryk: Current values
+    Maryk->>Maryk: Stage writes in a private overlay
+    Maryk->>IDB: One native batch: verify lease if used and apply writes
+    IDB-->>Maryk: Commit
+    Maryk->>Maryk: Release writer ownership
+    Maryk-->>App: Response
+```
+
 ## Serializable transaction scopes
 
 Interactive scopes replay an ordered read/write journal into the same private

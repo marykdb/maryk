@@ -4,9 +4,11 @@ YAML is a human‑readable format suited for model definitions and example data.
 
 ## What You Can Serialize
 
-- Models: author and exchange DataModel definitions (schemas). See [Data Models](../datamodel.md).
-- Data: serialize/deserialize values for any model.
-- Requests & Responses: encode `Requests` envelopes and typed responses (e.g., `ValuesResponse`) to interact with stores.
+| Payload | Use |
+| --- | --- |
+| Models | author and exchange DataModel definitions (schemas). See [Data Models](../datamodel.md). |
+| Data | serialize/deserialize values for any model. |
+| Requests & Responses | encode `Requests` envelopes and typed responses (e.g., `ValuesResponse`) to interact with stores. |
 
 ## Why YAML
 

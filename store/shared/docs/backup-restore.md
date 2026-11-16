@@ -5,6 +5,18 @@ or a portable backup to move application data between compatible Maryk stores.
 
 ## Which backup should I use?
 
+
+```mermaid
+flowchart TB
+    accTitle: Choose a recovery or data-transfer backup
+    accDescr: Recover a complete engine with its native tools. For portable application data, choose state backup for current records or history backup for retained revisions.
+    Goal{"What do you need to recover?"}
+    Goal -->|"Complete database or deployment"| Native["Native engine backup tools"]
+    Goal -->|"Portable application data"| Revisions{"Need earlier retained revisions?"}
+    Revisions -->|No| State["Portable state backup"]
+    Revisions -->|Yes| History["Portable history backup"]
+```
+
 | I need to… | Use | Read next |
 | --- | --- | --- |
 | Recover a RocksDB database | Native RocksDB backup | [RocksDB recovery guide](../../rocksdb/documentation/backups.md) |

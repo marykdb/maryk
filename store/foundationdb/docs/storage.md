@@ -25,17 +25,21 @@ The dedicated directory already isolates this metadata, so no extra prefix byte 
 
 Per DataModel (e.g. `Log`, `Person`) we create these subspaces:
 
-- `meta`          – stored schema and migration state for the DataModel.
-- `keys`          – existence + creation version per object key.
-- `table`         – latest property values per object key, plus a small “latest version” marker per key.
-- `unique`        – latest unique constraints (per unique property or composite).
-- `index`         – latest secondary indexes.
+| Subspace | Contents |
+| --- | --- |
+| `meta` | stored schema and migration state for the DataModel. |
+| `keys` | existence + creation version per object key. |
+| `table` | latest property values per object key, plus a small “latest version” marker per key. |
+| `unique` | latest unique constraints (per unique property or composite). |
+| `index` | latest secondary indexes. |
 
 If `keepAllVersions = true`, we also create historic subspaces:
 
-- `table_versioned`  – all historical values per object key.
-- `unique_versioned` – historic unique entries (tombstones and key snapshots).
-- `index_versioned`  – historic index entries (tombstones and value snapshots).
+| Historic subspace | Contents |
+| --- | --- |
+| `table_versioned` | all historical values per object key. |
+| `unique_versioned` | historic unique entries (tombstones and key snapshots). |
+| `index_versioned` | historic index entries (tombstones and value snapshots). |
 
 If `keepUpdateHistoryIndex = true`, we also create:
 
@@ -49,10 +53,12 @@ Maryk uses a “row/column” style: the full FDB key is the subspace prefix + t
 
 Examples (pseudocode):
 
-- Latest value for property: `tablePrefix + key + propertyQualifier` → `(version || value)`
-- Object soft‑delete flag:  `tablePrefix + key + [0x00]`             → `(version || [0x01])`
-- Creation timestamp:       `keysPrefix + key` → `version` (no value payload)
-- Latest version marker:    `tablePrefix + key` → `version` (no qualifier; used to derive lastVersion)
+| Entry | Encoding |
+| --- | --- |
+| Latest value for property | `tablePrefix + key + propertyQualifier` → `(version \|\| value)` |
+| Object soft‑delete flag | `tablePrefix + key + [0x00]`             → `(version \|\| [0x01])` |
+| Creation timestamp | `keysPrefix + key` → `version` (no value payload) |
+| Latest version marker | `tablePrefix + key` → `version` (no qualifier; used to derive lastVersion) |
 
 The “qualifier” is generated from Maryk’s property references. Collections (list/set/map) qualify by index or element key. Embedded/object markers use small type markers.
 
@@ -126,11 +132,13 @@ This design enables:
 
 ## Get, Scan, and Changes
 
-- Get by key: check `keys` for existence and creation version, apply filters (including soft delete), then read values out of `table` or `table_versioned` depending on `toVersion`.
-- Scan by key: compute key ranges from the model and filters, walk `keys` in ASC or DESC, apply filters, and collect up to `limit`.
-- Scan by index: build index ranges from the filter and order, scan `index` (value+key) and map back to primary keys. When `toVersion` is provided, perform a historic index scan by computing the index value at that version per key and applying the same ordering and range filters.
-- Scan updates with no explicit order: if `keepUpdateHistoryIndex = true`, scan `update_history` newest-first and map entries back to current records.
-- Changes APIs (GetChanges/ScanChanges): instead of returning full values, we stream `VersionedChanges` (creation + field changes) between `fromVersion`..`toVersion`, with `maxVersions` limiting per field.
+| Read operation | Behavior |
+| --- | --- |
+| Get by key | check `keys` for existence and creation version, apply filters (including soft delete), then read values out of `table` or `table_versioned` depending on `toVersion`. |
+| Scan by key | compute key ranges from the model and filters, walk `keys` in ASC or DESC, apply filters, and collect up to `limit`. |
+| Scan by index | build index ranges from the filter and order, scan `index` (value+key) and map back to primary keys. When `toVersion` is provided, perform a historic index scan by computing the index value at that version per key and applying the same ordering and range filters. |
+| Scan updates with no explicit order | if `keepUpdateHistoryIndex = true`, scan `update_history` newest-first and map entries back to current records. |
+| Changes APIs (GetChanges/ScanChanges) | instead of returning full values, we stream `VersionedChanges` (creation + field changes) between `fromVersion`..`toVersion`, with `maxVersions` limiting per field. |
 
 ## Filtering
 

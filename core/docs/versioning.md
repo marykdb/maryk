@@ -13,8 +13,10 @@ Versioning is store-backed behavior. To retain historic values, open the store w
 
 Maryk uses two different ideas that are easy to confuse:
 
-- Data versions: generated per write by the store. Used by `toVersion`, changes, updates and history.
-- Model versions: schema definition changes. Used by store migration logic and compatibility checks.
+| Version kind | Purpose |
+| --- | --- |
+| Data versions | generated per write by the store. Used by `toVersion`, changes, updates and history. |
+| Model versions | schema definition changes. Used by store migration logic and compatibility checks. |
 
 This page is about data versions.
 
@@ -148,8 +150,10 @@ This is useful when a UI edits a value that may have changed since it was loaded
 
 A version is an unsigned 64-bit integer containing a Hybrid Logical Clock:
 
-- upper 44 bits: physical UNIX millisecond timestamp,
-- lower 20 bits: logical counter for multiple events in the same millisecond.
+| Version bits | Contents |
+| --- | --- |
+| upper 44 bits | physical UNIX millisecond timestamp, |
+| lower 20 bits | logical counter for multiple events in the same millisecond. |
 
 The logical part supports high write density within a single millisecond while preserving total ordering for generated store versions.
 

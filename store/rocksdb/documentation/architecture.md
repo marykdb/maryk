@@ -20,17 +20,21 @@ All higher‑level request semantics (validation, update streaming, filtering, a
 
 For every registered DataModel (identified by `UInt` in `dataModelsById`), we create these column families:
 
-- `Model` – stored schema and migration state for the model.
-- `Keys` – existence + creation version per object key.
-- `Table` – latest property values per object, plus a “latest version” marker.
-- `Index` – latest secondary index entries.
-- `Unique` – latest unique constraint entries.
+| Column family | Contents |
+| --- | --- |
+| `Model` | stored schema and migration state for the model. |
+| `Keys` | existence + creation version per object key. |
+| `Table` | latest property values per object, plus a “latest version” marker. |
+| `Index` | latest secondary index entries. |
+| `Unique` | latest unique constraint entries. |
 
 If `keepAllVersions = true`:
 
-- `HistoricTable` – all historical values per object.
-- `HistoricIndex` – historical index entries.
-- `HistoricUnique` – historical unique entries.
+| Historic column family | Contents |
+| --- | --- |
+| `HistoricTable` | all historical values per object. |
+| `HistoricIndex` | historical index entries. |
+| `HistoricUnique` | historical unique entries. |
 
 Column family names are compact byte arrays: first byte is the `TableType` (1..8), followed by the varint-encoded model id. See `TableType.getDescriptor`.
 
@@ -50,10 +54,13 @@ RocksDB options:
 Maryk uses a row/column style encoding. The primary key (Maryk `Key`) is followed by a qualifier that identifies the property (and collection item if applicable).
 
 Latest data, in `Table`:
-- Object creation: `table[key] = version`
-- Latest version marker: `table[key || [LAST_VERSION_INDICATOR=0b1000]] = version`
-- Soft delete flag: `table[key || [SOFT_DELETE_INDICATOR=0x00]] = (version || [0x01])`
-- Property value: `table[key || qualifier] = (version || value)`
+
+| Entry | Encoding |
+| --- | --- |
+| Object creation | `table[key] = version` |
+| Latest version marker | `table[key \|\| [LAST_VERSION_INDICATOR=0b1000]] = version` |
+| Soft delete flag | `table[key \|\| [SOFT_DELETE_INDICATOR=0x00]] = (version \|\| [0x01])` |
+| Property value | `table[key \|\| qualifier] = (version \|\| value)` |
 
 Creation version, in `Keys`:
 - `keys[key] = version`
@@ -280,12 +287,14 @@ The `store/test` module contains a reusable test suite that the RocksDB store ru
 
 ## File Map (selected)
 
-- `RocksDBDataStore.kt` – open/init, CF creation, request actor, index backfill, close.
-- `TableType.kt` – column family naming (type byte + varint id).
-- `BasicTableColumnFamilies.kt`, `TableColumnFamilies.kt`, `HistoricTableColumnFamilies.kt` – handles per model.
-- `processors/*` – per-request processing and scan logic.
-- `processors/helpers/*` – version bytes, get/set value/index/unique, soft delete checks.
-- `Transaction.kt`, `DBAccessor.kt`, `DBIterator.kt` – local transaction and read wrappers.
+| File or directory | Responsibility |
+| --- | --- |
+| `RocksDBDataStore.kt` | open/init, CF creation, request actor, index backfill, close. |
+| `TableType.kt` | column family naming (type byte + varint id). |
+| `BasicTableColumnFamilies.kt`, `TableColumnFamilies.kt`, `HistoricTableColumnFamilies.kt` | handles per model. |
+| `processors/*` | per-request processing and scan logic. |
+| `processors/helpers/*` | version bytes, get/set value/index/unique, soft delete checks. |
+| `Transaction.kt`, `DBAccessor.kt`, `DBIterator.kt` | local transaction and read wrappers. |
 
 ### Complete-value checks and empty collection removal
 

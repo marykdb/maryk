@@ -15,15 +15,17 @@ Each DataModel is represented by multiple column families that hold the actual d
 
 The column family name is a compact byte array made of two parts: a single type byte followed by the varint‑encoded model id. The type byte values are:
 
-- Model (1)
-- Keys (2)
-- Table (3)
-- Index (4)
-- Unique (5)
-- Historic Table (6) – only when `keepAllVersions = true`
-- Historic Index (7) – only when `keepAllVersions = true`
-- Historic Unique (8) – only when `keepAllVersions = true`
-- Update History (9) – only when `keepUpdateHistoryIndex = true`
+| Column family | Type byte | Created when |
+| --- | --- | --- |
+| Model | 1 | Always |
+| Keys | 2 | Always |
+| Table | 3 | Always |
+| Index | 4 | Always |
+| Unique | 5 | Always |
+| Historic Table | 6 | `keepAllVersions = true` |
+| Historic Index | 7 | `keepAllVersions = true` |
+| Historic Unique | 8 | `keepAllVersions = true` |
+| Update History | 9 | `keepUpdateHistoryIndex = true` |
 
 The model id is the `UInt` key from `dataModelsById` passed to `RocksDBDataStore.open`.
 
@@ -42,10 +44,12 @@ Each record is represented by multiple key/value pairs across the families. The 
 ## Table (latest values)
 A record is stored with the following structure within the `Table` family.
 
-- `KEY` → `VERSION` – Creation version. Written once, never changed.
-- `KEY || SOFT_DELETE_INDICATOR(0x00)` → `VERSION || Boolean` – Object‑level soft delete flag.
-- `KEY || LAST_VERSION_INDICATOR(0b1000)` → `VERSION` – Last write version; updated on any add/change/delete.
-- `KEY || QUALIFIER` → `VERSION || VALUE` – Property values. The qualifier encodes the property reference (and collection item, where applicable).
+| Key → value | Meaning |
+| --- | --- |
+| `KEY` → `VERSION` | Creation version. Written once, never changed. |
+| `KEY \|\| SOFT_DELETE_INDICATOR(0x00)` → `VERSION \|\| Boolean` | Object‑level soft delete flag. |
+| `KEY \|\| LAST_VERSION_INDICATOR(0b1000)` → `VERSION` | Last write version; updated on any add/change/delete. |
+| `KEY \|\| QUALIFIER` → `VERSION \|\| VALUE` | Property values. The qualifier encodes the property reference (and collection item, where applicable). |
 
 Current property tombstones use an exact two-byte `00 00` payload. This is
 distinct from the canonical one-byte zero count of a present empty collection.

@@ -102,11 +102,13 @@ first one with `tag=1` the key and secondly the value with `tag=2`.
 Map encoding
 ``` T L Tk Vk Tv Vv  T L Tk Vk Tv Vv ```
 
-- `T` is the tag index of the map
-- `L` is length of encoded key value pair
-- `Tk` is the tag for key and is 1
-- `Vk` is the value of the key
-- `Tv` is the tag for the value which is 2
-- `Vv` is the encoded value of the value
+| Symbol | Map entry encoding |
+| --- | --- |
+| `T` | the tag index of the map |
+| `L` | length of encoded key value pair |
+| `Tk` | the tag for key and is 1 |
+| `Vk` | the value of the key |
+| `Tv` | the tag for the value which is 2 |
+| `Vv` | the encoded value of the value |
 
 (The encoded values could be encoded Length delimited and thus also contain lengths of the bytes)

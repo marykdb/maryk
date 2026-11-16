@@ -8,11 +8,13 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 
 ## Selecting an Engine
 
-- Need a store without external setup for tests or CI? Use Memory.
-- Need durable browser-local storage for JS/WasmJS apps? Use IndexedDB.
-- Want durable, embedded storage across desktop/mobile/server without running a service? Use RocksDB.
-- Need distributed ACID storage and scale‑out (JVM or native with `libfdb_c` present)? Use FoundationDB.
-- Need remote access to a local store over HTTP or SSH? Use Remote Store.
+| Deployment need | Engine |
+| --- | --- |
+| No external setup for tests or CI | Memory |
+| Durable browser-local storage for JS/WasmJS apps | IndexedDB |
+| Durable, embedded storage across desktop/mobile/server without running a service | RocksDB |
+| Distributed ACID storage and scale‑out (JVM or native with `libfdb_c` present) | FoundationDB |
+| Remote access to a local store over HTTP or SSH | Remote Store |
 
 All engines share the same API surface, so you can start with Memory in tests, use IndexedDB in browser apps, use RocksDB for embedded persistence, and move to FoundationDB on the server without changing your models or queries.
 

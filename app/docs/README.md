@@ -88,15 +88,11 @@ and the [write reference](../../sql/docs/writes.md) for mutations and conflict h
 
 ## Store types
 
-- RocksDB:
-  - Local directory path.
-  - Single process lock applies.
-- FoundationDB:
-  - Directory path.
-  - Optional cluster file.
-- Remote:
-  - HTTP URL to CLI `serve` endpoint.
-  - Optional SSH tunnel.
+| Store type | Connection details |
+| --- | --- |
+| RocksDB | Local directory path. Single process lock applies. |
+| FoundationDB | Directory path. Optional cluster file. |
+| Remote | HTTP URL to CLI `serve` endpoint. Optional SSH tunnel. |
 
 Saved configs: `~/.maryk/app/stores.conf`.
 
@@ -147,16 +143,11 @@ Notes:
 
 ## Record inspector
 
-- Data tab:
-  - Structured tree view.
-  - Search.
-  - Reference navigation and preview.
-- Raw tab:
-  - YAML.
-  - Search/copy.
-- History tab:
-  - Version timeline.
-  - Diff view.
+| Inspector tab | Contents and actions |
+| --- | --- |
+| Data | Structured tree view, search, reference navigation and preview. |
+| Raw | YAML, search and copy. |
+| History | Version timeline and diff view. |
 
 ## Record editor
 
@@ -190,28 +181,29 @@ The form editor provides:
 
 ## Shortcuts
 
-- Cmd/Ctrl+R: reload scan.
-- Cmd/Ctrl+B: toggle catalog.
-- Cmd/Ctrl+I: toggle inspector.
-- Esc: close drawer/dialog.
-- Arrow/PageUp/PageDown: move selection.
-- Enter/Space: open selected record.
-- Cmd/Ctrl+click: multi-select.
-- Shift+click: range select.
+| Shortcut | Action |
+| --- | --- |
+| Cmd/Ctrl+R | reload scan. |
+| Cmd/Ctrl+B | toggle catalog. |
+| Cmd/Ctrl+I | toggle inspector. |
+| Esc | close drawer/dialog. |
+| Arrow/PageUp/PageDown | move selection. |
+| Enter/Space | open selected record. |
+| Cmd/Ctrl+click | multi-select. |
+| Shift+click | range select. |
 
 ## Troubleshooting
 
-- Cannot open RocksDB:
-  - Ensure no other process has the DB open.
-- FoundationDB connect fails:
-  - Check `libfdb_c`, cluster file.
-- Remote connect fails:
-  - Verify CLI `serve` running.
-  - Check URL/port/tunnel target.
-- Empty scans:
-  - Confirm selected model and filter expression.
+| Symptom | What to check |
+| --- | --- |
+| Cannot open RocksDB | Ensure no other process has the DB open. |
+| FoundationDB connect fails | Check `libfdb_c` and the cluster file. |
+| Remote connect fails | Verify CLI `serve` is running. Check URL, port and tunnel target. |
+| Empty scans | Confirm the selected model and filter expression. |
 
 ## Local state paths
 
-- Store configs: `~/.maryk/app/stores.conf`.
-- UI prefs (panel/pins): Java Preferences node `io.maryk.app.ui`.
+| Local state | Location |
+| --- | --- |
+| Store configs | `~/.maryk/app/stores.conf`. |
+| UI prefs (panel/pins) | Java Preferences node `io.maryk.app.ui`. |

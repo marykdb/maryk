@@ -9,9 +9,11 @@ The core rule: property indexes are the contract. A property index is the `index
 
 Do not confuse property indexes with query indexes:
 
-- **Property index**: the stable field number in a model, for example `val name by string(index = 1u)`.
-- **Secondary ordered index**: an `indexes = { ... }` entry used for sorting, range scans, and exact secondary lookups.
-- **Search index**: a named token/search surface used for matching text-like values.
+| Index kind | Meaning |
+| --- | --- |
+| **Property index** | the stable field number in a model, for example `val name by string(index = 1u)`. |
+| **Secondary ordered index** | an `indexes = { ... }` entry used for sorting, range scans, and exact secondary lookups. |
+| **Search index** | a named token/search surface used for matching text-like values. |
 
 ## Safe change path
 
@@ -23,6 +25,17 @@ Do not confuse property indexes with query indexes:
 6. Backfill existing records with store requests.
 7. Add secondary ordered indexes or search indexes only for access patterns you actually need.
 8. Test the same request flow against Memory Store and one persistent store.
+
+
+```mermaid
+flowchart TB
+    accTitle: Roll out a new field without losing older readers
+    accDescr: Add an optional field with a new index, deploy compatible readers, introduce writers, then backfill and verify stored records.
+    Add["New optional field, new property index"] --> Readers["Deploy compatible readers"]
+    Readers --> Writers["Let writers use the new field"]
+    Writers --> Backfill["Backfill with guarded, paged writes"]
+    Backfill --> Verify["Verify old and new records on a persistent store"]
+```
 
 ## Start model
 

@@ -91,16 +91,19 @@ maryk --exec "serve --config ./serve.conf"
 ```
 
 Accepted config keys:
-- `store` or `type`: `rocksdb` | `foundationdb`
-- `dir` or `directory`: store path
-- `cluster` or `clusterFile`: FoundationDB cluster file
-- `host`: bind host (default `127.0.0.1`)
-- `port`: bind port (default `8210`)
-- `bearer-token-env`: name of an environment variable containing the credential
-- `bearer-token-file`: path to a UTF-8 credential file
-- `bearer-token-stdin`: read the credential from stdin (use a blank value in config)
-- `bearer-token`: literal credential retained for compatibility
-- `allow-insecure-remote-binding`: explicit unsafe opt-in for any non-loopback plaintext bind, including bearer or custom authentication
+
+| Config key | Value or behavior |
+| --- | --- |
+| `store` or `type` | `rocksdb` \| `foundationdb` |
+| `dir` or `directory` | store path |
+| `cluster` or `clusterFile` | FoundationDB cluster file |
+| `host` | bind host (default `127.0.0.1`) |
+| `port` | bind port (default `8210`) |
+| `bearer-token-env` | name of an environment variable containing the credential |
+| `bearer-token-file` | path to a UTF-8 credential file |
+| `bearer-token-stdin` | read the credential from stdin (use a blank value in config) |
+| `bearer-token` | literal credential retained for compatibility |
+| `allow-insecure-remote-binding` | explicit unsafe opt-in for any non-loopback plaintext bind, including bearer or custom authentication |
 
 Choose at most one token source. Prefer environment, file, or stdin to a literal
 command-line token; see the [CLI reference](../../../cli/docs/commands.md#serve).

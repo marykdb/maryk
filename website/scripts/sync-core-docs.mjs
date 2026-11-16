@@ -144,6 +144,25 @@ function outsideCodeFences(md, transform) {
   }).join('\n');
 }
 
+/** Inline code is already literal in MDX; escaping it displays entity names. */
+function outsideCodeSpans(line, transform) {
+  const runs = [...line.matchAll(/`+/g)];
+  let result = '';
+  let cursor = 0;
+  for (let i = 0; i < runs.length; i++) {
+    const opening = runs[i];
+    const backslashes = line.slice(0, opening.index).match(/\\+$/)?.[0].length ?? 0;
+    if (backslashes % 2) continue;
+    const closingIndex = runs.findIndex((run, index) => index > i && run[0] === opening[0]);
+    if (closingIndex < 0) continue;
+    const end = runs[closingIndex].index + opening[0].length;
+    result += transform(line.slice(cursor, opening.index)) + line.slice(opening.index, end);
+    cursor = end;
+    i = closingIndex;
+  }
+  return result + transform(line.slice(cursor));
+}
+
 /** Resolve links from their repository source, using the same map that generates pages. */
 export function rewriteLinks(md, prefix, source, routes = documentationRoutes(repoRoot, coreDocs), repositoryRoot = repoRoot) {
   return outsideCodeFences(md, line => {
@@ -204,11 +223,11 @@ export function syncDocs({
     const prefix = '../'.repeat(routeDepth);
     let md = rewriteLinks(srcMd, prefix, src, routes, repoRoot);
     // Escape prose for MDX without changing examples inside either fence style.
-    md = outsideCodeFences(md, line => line
+    md = outsideCodeFences(md, line => outsideCodeSpans(line, prose => prose
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
       .replaceAll('{', '&#123;')
-      .replaceAll('}', '&#125;'));
+      .replaceAll('}', '&#125;')));
     const out = `${fm}\n${md.trim()}\n`;
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, out, 'utf8');

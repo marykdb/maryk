@@ -56,10 +56,12 @@ tunneling outside localhost.
 
 ## Browse
 
-- `list` shows data models.
-- `model <name|id>` prints the schema.
-- `get <model> <key>` opens a record viewer.
-- `scan <model> [options]` opens a scrollable list; use `show` and `filter` to shape the list.
+| Command | Action |
+| --- | --- |
+| `list` | Show data models. |
+| `model <name\|id>` | Print the schema. |
+| `get <model> <key>` | Open a record viewer. |
+| `scan <model> [options]` | Open a scrollable list; use `show` and `filter` to shape the list. |
 
 Example session:
 
@@ -77,16 +79,18 @@ Inline values are parsed as Maryk YAML scalars; quote strings with spaces or YAM
 
 ## Scan options
 
-- `--start-key <base64>`
-- `--limit <n>` (default 100)
-- `--include-start` / `--exclude-start`
-- `--to-version <n>`
-- `--include-deleted`
-- `--where <expr>`
-- `--order <ref,...>`
-- `--select <ref,...>`
-- `--show <ref,...>`
-- `--max-chars <n>`
+| Option | Effect |
+| --- | --- |
+| `--start-key <base64>` | Start scanning from this key. |
+| `--limit <n>` | Page size per fetch (default 100). |
+| `--include-start` / `--exclude-start` | Include the start key (default), or exclude it. |
+| `--to-version <n>` | Scan as of a version. |
+| `--include-deleted` | Include soft-deleted records. |
+| `--where <expr>` | Filter expression in Maryk YAML. |
+| `--order <ref,...>` | Order by references; prefix with `-` for descending order. |
+| `--select <ref,...>` | Fetch only these fields. |
+| `--show <ref,...>` | Show these fields first. |
+| `--max-chars <n>` | Maximum characters per row (default 160). |
 
 For large datasets, prefer `--order` on an indexed property or add filters to keep scans efficient.
 

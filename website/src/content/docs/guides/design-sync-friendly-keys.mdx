@@ -137,10 +137,12 @@ newest-first record-version pages with cursor continuation. Use `getUpdates` or
 
 A sync loop should know which range it is scanning:
 
-- one owner: owner reference first in key
-- latest first: `Reversed(timestamp.ref())`
-- all changes: update history enabled
-- alternate grouping: secondary ordered index
+| Access pattern | Design choice |
+| --- | --- |
+| one owner | owner reference first in key |
+| latest first | `Reversed(timestamp.ref())` |
+| all changes | update history enabled |
+| alternate grouping | secondary ordered index |
 
 Use `allowTableScan = true` only as an explicit escape hatch for small data, admin tools, or tests.
 

@@ -22,14 +22,30 @@ Most designs begin with four decisions:
 
 Keep the first model boring. Add references, secondary indexes, and MultiType only when the access pattern needs them.
 
+
+```mermaid
+flowchart TB
+    accTitle: Choose a root or an embedded model
+    accDescr: Independently edited or growing data belongs in a separate root. Bounded data sharing a parent lifecycle can be embedded.
+    Start{"Searched, synced or edited independently?"}
+    Start -->|Yes| Root["RootDataModel with its own key"]
+    Start -->|No| Bounded{"Bounded and read with its parent?"}
+    Bounded -->|Yes| Embed["Embed a DataModel in the parent"]
+    Bounded -->|No| Split["Separate root with a reference"]
+    Embed --> Graph["Use a reference graph to select fields"]
+    Split --> Graph
+```
+
 ## 1) The mental model
 
-- DataModel: the schema for a record, with named properties that each have a stable `UInt` property index for fast, reflection‑free serialization. See [Data Models](datamodel.md).
-- RootDataModel: a top‑level model that can be stored and queried. Roots define keys and optional secondary ordered/search indexes. See [Keys](key.md).
-- Secondary indexes: ordered tuple indexes and search indexes built from composable index operators. See [Index Design](index-design.md).
-- Properties: rich types including embedded objects, lists/sets/maps, references, and [MultiType](properties/types/multiType.md).
-- Queries: filter using property references and select fields with reference graphs. See [Property References](properties/references.md) and [Reference Graphs](reference-graphs.md).
-- Versioning: evolve safely with built‑in schema/data versioning. See [Versioning](versioning.md).
+| Concept | Role |
+| --- | --- |
+| DataModel | the schema for a record, with named properties that each have a stable `UInt` property index for fast, reflection‑free serialization. See [Data Models](datamodel.md). |
+| RootDataModel | a top‑level model that can be stored and queried. Roots define keys and optional secondary ordered/search indexes. See [Keys](key.md). |
+| Secondary indexes | ordered tuple indexes and search indexes built from composable index operators. See [Index Design](index-design.md). |
+| Properties | rich types including embedded objects, lists/sets/maps, references, and [MultiType](properties/types/multiType.md). |
+| Queries | filter using property references and select fields with reference graphs. See [Property References](properties/references.md) and [Reference Graphs](reference-graphs.md). |
+| Versioning | evolve safely with built‑in schema/data versioning. See [Versioning](versioning.md). |
 
 Maryk rewards colocating related data, then using graphs to fetch only what you need.
 
@@ -119,9 +135,11 @@ See the full [MultiType](properties/types/multiType.md) reference for API detail
 Use `ValueDataModel` when the composite can be represented in fixed bytes and you need it as a compact value, map key, or index component. Use `embed` / `EmbeddedValuesDefinition` for richer stored sub-records.
 `EmbeddedObjectDefinition` is for Kotlin object models and request/response serialization.
 
-- ValueDataModel: great for ranges, periods, coordinates, composite keys.
-- Embedded object: great for readable sub‑records and larger nested data.
-- MultiType: great for compact polymorphic sub‑records.
+| Model form | Good fit |
+| --- | --- |
+| ValueDataModel | great for ranges, periods, coordinates, composite keys. |
+| Embedded object | great for readable sub‑records and larger nested data. |
+| MultiType | great for compact polymorphic sub‑records. |
 
 ## 7) Splitting into roots: references and indexes
 

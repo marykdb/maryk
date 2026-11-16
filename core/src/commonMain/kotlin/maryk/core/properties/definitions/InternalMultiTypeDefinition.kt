@@ -64,7 +64,7 @@ data class InternalMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsProper
         if (typeIsFinal != other.typeIsFinal) return false
         if (definitionMap != other.definitionMap) {
             if (definitionMap.size != other.definitionMap.size) return false
-            definitionMap.entries.zip(other.definitionMap.entries).map {
+            definitionMap.entries.zip(other.definitionMap.entries).forEach {
                 if (it.first.key.index != it.second.key.index
                     || it.first.key.name != it.second.key.name
                     || it.first.value != it.second.value

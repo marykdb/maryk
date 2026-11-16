@@ -20,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 private object StoredDeclarationOrderModel : RootDataModel<StoredDeclarationOrderModel>(name = "DeclarationOrderModel") {
@@ -109,7 +110,7 @@ class IsMigrationNeededTest {
     @Test
     fun newIndexAddedOnExistingProperties() {
         assertIs<NewIndicesOnExistingProperties>(ModelV2ExtraIndex.isMigrationNeeded(ModelV2)).apply {
-            indexesToIndex.containsAll(listOf(ModelV2ExtraIndex.ref { newNumber }))
+            assertTrue(indexesToIndex.containsAll(listOf(ModelV2ExtraIndex.ref { newNumber })))
         }
     }
 

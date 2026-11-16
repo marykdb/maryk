@@ -662,7 +662,7 @@ class InMemoryDataStoreTest {
             val deleteResponse = dataStore.execute(
                 SimpleMarykModel.delete(addStatus.key, hardDelete = true)
             )
-            deleteResponse.statuses.single() as DeleteSuccess<SimpleMarykModel>
+            assertIs<DeleteSuccess<SimpleMarykModel>>(deleteResponse.statuses.single())
 
             val updatesResponse = dataStore.execute(
                 SimpleMarykModel.getUpdates(addStatus.key, toVersion = addStatus.version)
@@ -698,7 +698,7 @@ class InMemoryDataStoreTest {
             val deleteResponse = dataStore.execute(
                 Log.delete(addStatus.key, hardDelete = true)
             )
-            deleteResponse.statuses.single() as DeleteSuccess<Log>
+            assertIs<DeleteSuccess<Log>>(deleteResponse.statuses.single())
 
             val scanResponse = dataStore.execute(
                 Log.scan(
@@ -813,7 +813,7 @@ class InMemoryDataStoreTest {
             val deleteResponse = dataStore.execute(
                 SimpleMarykModel.delete(addStatus.key, hardDelete = true)
             )
-            deleteResponse.statuses.single() as DeleteSuccess<SimpleMarykModel>
+            assertIs<DeleteSuccess<SimpleMarykModel>>(deleteResponse.statuses.single())
 
             val scanResponse = dataStore.execute(
                 SimpleMarykModel.scan(toVersion = addStatus.version)
@@ -845,7 +845,7 @@ class InMemoryDataStoreTest {
             val deleteResponse = dataStore.execute(
                 Log.delete(addStatus.key, hardDelete = true)
             )
-            deleteResponse.statuses.single() as DeleteSuccess<Log>
+            assertIs<DeleteSuccess<Log>>(deleteResponse.statuses.single())
 
             val scanResponse = dataStore.execute(
                 Log.scan(
@@ -879,7 +879,7 @@ class InMemoryDataStoreTest {
             val deleteResponse = dataStore.execute(
                 UniqueModel.delete(addStatus.key, hardDelete = true)
             )
-            deleteResponse.statuses.single() as DeleteSuccess<UniqueModel>
+            assertIs<DeleteSuccess<UniqueModel>>(deleteResponse.statuses.single())
 
             val scanResponse = dataStore.execute(
                 UniqueModel.scan(
@@ -1219,14 +1219,14 @@ class InMemoryDataStoreTest {
             val deleteResponse = dataStore.execute(
                 SimpleMarykModel.delete(key, hardDelete = true)
             )
-            deleteResponse.statuses.single() as DeleteSuccess<SimpleMarykModel>
+            assertIs<DeleteSuccess<SimpleMarykModel>>(deleteResponse.statuses.single())
 
             val secondAddResponse = dataStore.execute(
                 SimpleMarykModel.add(
                     key to SimpleMarykModel.create { value with "ha second current value" }
                 )
             )
-            secondAddResponse.statuses.single() as AddSuccess<SimpleMarykModel>
+            assertIs<AddSuccess<SimpleMarykModel>>(secondAddResponse.statuses.single())
 
             val getResponse = dataStore.execute(
                 SimpleMarykModel.get(key, toVersion = firstAddStatus.version)
@@ -1354,9 +1354,11 @@ class InMemoryDataStoreTest {
             ).statuses.single() as AddSuccess<SimpleMarykModel>).version
 
             val firstChange = Change(SimpleMarykModel.ref { value } with "ha first get changes update")
-            dataStore.execute(
-                SimpleMarykModel.change(key.change(firstChange))
-            ).statuses.single() as ChangeSuccess<SimpleMarykModel>
+            assertIs<ChangeSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.change(key.change(firstChange))
+                ).statuses.single()
+            )
 
             dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true))
 
@@ -1397,7 +1399,7 @@ class InMemoryDataStoreTest {
             ).statuses.single() as AddSuccess<SimpleMarykModel>).version
 
             val firstChange = Change(SimpleMarykModel.ref { value } with "ha first scan changes update")
-            dataStore.execute(SimpleMarykModel.change(key.change(firstChange))).statuses.single() as ChangeSuccess<SimpleMarykModel>
+            assertIs<ChangeSuccess<SimpleMarykModel>>(dataStore.execute(SimpleMarykModel.change(key.change(firstChange))).statuses.single())
 
             dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true))
 
@@ -1433,18 +1435,22 @@ class InMemoryDataStoreTest {
             dataModelsById = mapOf(1u to SimpleMarykModel)
         )
         try {
-            dataStore.execute(
-                SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha first get updates value" })
-            ).statuses.single() as AddSuccess<SimpleMarykModel>
+            assertIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha first get updates value" })
+                ).statuses.single()
+            )
 
             val firstChange = Change(SimpleMarykModel.ref { value } with "ha first get updates update")
-            dataStore.execute(SimpleMarykModel.change(key.change(firstChange))).statuses.single() as ChangeSuccess<SimpleMarykModel>
+            assertIs<ChangeSuccess<SimpleMarykModel>>(dataStore.execute(SimpleMarykModel.change(key.change(firstChange))).statuses.single())
 
             dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true))
 
-            dataStore.execute(
-                SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha second get updates value" })
-            ).statuses.single() as AddSuccess<SimpleMarykModel>
+            assertIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha second get updates value" })
+                ).statuses.single()
+            )
 
             val secondChange = Change(SimpleMarykModel.ref { value } with "ha second get updates update")
             val secondChangeVersion = (dataStore.execute(
@@ -1477,18 +1483,22 @@ class InMemoryDataStoreTest {
             dataModelsById = mapOf(1u to SimpleMarykModel)
         )
         try {
-            dataStore.execute(
-                SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha first scan updates limited value" })
-            ).statuses.single() as AddSuccess<SimpleMarykModel>
+            assertIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha first scan updates limited value" })
+                ).statuses.single()
+            )
 
             val firstChange = Change(SimpleMarykModel.ref { value } with "ha first scan updates limited update")
-            dataStore.execute(SimpleMarykModel.change(key.change(firstChange))).statuses.single() as ChangeSuccess<SimpleMarykModel>
+            assertIs<ChangeSuccess<SimpleMarykModel>>(dataStore.execute(SimpleMarykModel.change(key.change(firstChange))).statuses.single())
 
             dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true))
 
-            dataStore.execute(
-                SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha second scan updates limited value" })
-            ).statuses.single() as AddSuccess<SimpleMarykModel>
+            assertIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha second scan updates limited value" })
+                ).statuses.single()
+            )
 
             val secondChange = Change(SimpleMarykModel.ref { value } with "ha second scan updates limited update")
             val secondChangeVersion = (dataStore.execute(

@@ -182,13 +182,10 @@ private fun indexableToScan(
 
             // When order is native Table order
             if (currentOrderPart.propertyReference == null) {
-                when {
-                    index != indexable.references.lastIndex ->
-                        throw RequestException("An Order on Table is only allowed to be the last or only one")
-                    currentOrderPart.direction == direction ->
-                        createScan(direction)
-                    else -> return null
+                if (index != indexable.references.lastIndex) {
+                    throw RequestException("An Order on Table is only allowed to be the last or only one")
                 }
+                if (currentOrderPart.direction != direction) return null
             }
 
             val propertyReference = currentOrderPart.propertyReference

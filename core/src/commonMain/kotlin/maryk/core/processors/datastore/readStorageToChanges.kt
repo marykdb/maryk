@@ -302,7 +302,7 @@ private fun <DM : IsRootDataModel> DM.readStorageToChangesImpl(
 /** Adds change to existing list or creates a new change*/
 private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: Any) {
     @Suppress("UNCHECKED_CAST")
-    when (changeType) {
+    val existingChange = when (changeType) {
         OBJECT_CREATE -> this.find { it is ObjectCreate }
         OBJECT_DELETE -> this.find { it is ObjectSoftDeleteChange }
         CHANGE, EMBED_EXISTS -> this.find { it is Change }?.also { change ->
@@ -346,7 +346,8 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
                 }
             }
         }
-    } ?: this.add(createChange(changeType, changePart))
+    }
+    if (existingChange == null) this.add(createChange(changeType, changePart))
 }
 
 @Suppress("UNCHECKED_CAST")

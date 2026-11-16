@@ -278,7 +278,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 ) {
                     tokensToReadLater?.let { jsonTokens ->
                         val lateReader = if (reader is IsYamlReader) {
-                            jsonTokens.map { reader.pushToken(it) }
+                            jsonTokens.forEach { reader.pushToken(it) }
                             reader.pushToken(reader.currentToken)
                             reader.nextToken()
                             reader

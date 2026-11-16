@@ -26,8 +26,6 @@ class KeyScanRangesUniqueTest {
                 it.definition as StringDefinition
             }
             expect("🦄") { it.value }
-
-            true
         } ?: fail("Should be defined")
     }
 
@@ -57,8 +55,6 @@ class KeyScanRangesUniqueTest {
                 it.definition as StringDefinition
             }
             expect("🦄") { it.value }
-
-            true
         }
 
     }

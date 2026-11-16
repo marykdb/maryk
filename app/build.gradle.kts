@@ -3,6 +3,10 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.JavaExec
+import org.gradle.language.jvm.tasks.ProcessResources
 
 fun nativePackageVersionFor(releaseVersionParts: List<Int>): String {
     check(releaseVersionParts.size == 3) {
@@ -107,6 +111,44 @@ dependencies {
     add(protocForJvmTests.name, "${libs.protoc.get()}:$protocPlatform@exe")
 }
 
+// Reuse Compose's verified Skia renderer without introducing Node/Python tools
+// or another rendering dependency into the desktop build.
+val brandRenderer = configurations.named("jvmRuntimeClasspath").get().incoming.artifactView {
+    componentFilter { component ->
+        component is ModuleComponentIdentifier &&
+            (component.group == "org.jetbrains.skiko" ||
+                (component.group == "org.jetbrains.kotlin" && component.module.startsWith("kotlin-stdlib")) ||
+                (component.group == "org.jetbrains.kotlinx" && component.module.startsWith("kotlinx-coroutines")))
+    }
+}.files
+val brandDirectory = rootProject.layout.buildDirectory.dir("generated/brand")
+val brandGeneratorClasses = layout.buildDirectory.dir("brand-generator/classes")
+val compileBrandAssetGenerator = tasks.register<JavaCompile>("compileBrandAssetGenerator") {
+    source(rootProject.file("branding/GenerateBrandAssets.java"))
+    classpath = brandRenderer
+    destinationDirectory.set(brandGeneratorClasses)
+    options.release.set(17)
+}
+val generateBrandAssets = tasks.register<JavaExec>("generateBrandAssets") {
+    group = "build"
+    description = "Generates desktop icons and logo exports from the canonical branding sources."
+    dependsOn(compileBrandAssetGenerator)
+    classpath = files(brandGeneratorClasses) + brandRenderer
+    mainClass.set("GenerateBrandAssets")
+    inputs.files(rootProject.file("branding/maryk-logo.svg"), rootProject.file("branding/maryk-logo.webp"))
+    outputs.dir(brandDirectory)
+    args(
+        rootProject.file("branding/maryk-logo.svg").absolutePath,
+        rootProject.file("branding/maryk-logo.webp").absolutePath,
+        brandDirectory.get().asFile.absolutePath,
+    )
+    systemProperty("java.awt.headless", "true")
+}
+tasks.named<ProcessResources>("jvmProcessResources") {
+    dependsOn(generateBrandAssets)
+    from(brandDirectory.map { it.dir("resources") })
+}
+
 val prepareProtocForJvmTests = tasks.register("prepareProtocForJvmTests") {
     val destination = layout.buildDirectory.file("protoc/protoc.exe")
     inputs.files(protocForJvmTests)
@@ -134,6 +176,15 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Maryk"
             packageVersion = nativePackageVersion
+            macOS {
+                iconFile.set(generateBrandAssets.map { brandDirectory.get().file("app/maryk-app.icns") })
+            }
+            windows {
+                iconFile.set(generateBrandAssets.map { brandDirectory.get().file("app/maryk-app.ico") })
+            }
+            linux {
+                iconFile.set(generateBrandAssets.map { brandDirectory.get().file("app/maryk-app.png") })
+            }
         }
         buildTypes.release.proguard {
             isEnabled.set(true)

@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
@@ -23,6 +25,8 @@ import io.maryk.app.config.StoreRepository
 import io.maryk.app.state.BrowserState
 import io.maryk.app.state.StoresState
 import java.awt.Toolkit
+import java.awt.Taskbar
+import javax.imageio.ImageIO
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.number
@@ -90,6 +94,20 @@ private object PackagedStoreSmokeModel : RootDataModel<PackagedStoreSmokeModel>(
 }
 
 private fun runMarykApp() = application {
+    val appIconImage = remember {
+        requireNotNull(StoreRepository::class.java.getResourceAsStream("/maryk/app-icon.png")) {
+            "Generated app icon is missing from the application resources"
+        }.use { requireNotNull(ImageIO.read(it)) }
+    }
+    val appIcon = remember(appIconImage) { BitmapPainter(appIconImage.toComposeImageBitmap()) }
+    LaunchedEffect(appIconImage) {
+        if (Taskbar.isTaskbarSupported()) {
+            val taskbar = Taskbar.getTaskbar()
+            if (taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) {
+                taskbar.iconImage = appIconImage
+            }
+        }
+    }
     val repository = remember { StoreRepository() }
     val storesState = remember { StoresState(repository) }
     val storesWindowState = rememberWindowState(
@@ -140,6 +158,7 @@ private fun runMarykApp() = application {
             Window(
                 onCloseRequest = { closeStoresWindow() },
                 title = "Maryk Stores",
+                icon = appIcon,
                 state = storesWindowState,
             ) {
                 MenuBar {
@@ -176,6 +195,7 @@ private fun runMarykApp() = application {
             Window(
                 onCloseRequest = closeWindow,
                 title = "Maryk - ${session.store.name}",
+                icon = appIcon,
                 state = sessionWindowState,
             ) {
                 LaunchedEffect(session.id) {

@@ -29,3 +29,9 @@ Notes:
 ## Full guide
 
 See [App guide](docs/README.md).
+
+## Application icon
+
+Window, Dock/taskbar, and native installer icons are generated from the original
+raster logo on a padded gradient background. Resource processing and packaging
+run the generation task automatically. See [brand sources and generation](../branding/README.md).

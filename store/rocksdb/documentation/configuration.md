@@ -166,6 +166,32 @@ Row caching adds memory beyond the default budgets and is opt-in. Supplied
 `DBOptions` remain caller-owned, including their statistics and write-buffer
 configuration. Maryk does not attach a custom logger, row cache or persistent cache by default.
 
+### Alpine JVM native thread stacks
+
+On Alpine/musl, reserve a 1 MiB default stack for native worker threads that
+call Java, including RocksDB logging callbacks. musl's 128 KiB default can
+prevent a worker from attaching to HotSpot, causing a crash in the upstream
+RocksDB JNI logger. This also affects deployments using the common comparator.
+`-Xss` controls Java-created threads and does not resize these native stacks.
+
+Build a small startup library in the Alpine image and preload it when launching
+the JVM:
+
+```sh
+apk add --no-cache --virtual .stack-build gcc musl-dev
+cc -shared -Wl,-z,noexecstack,-z,stack-size=1048576 -x c /dev/null -o /opt/jvm-native-stack.so
+apk del .stack-build
+LD_PRELOAD=/opt/jvm-native-stack.so${LD_PRELOAD:+:$LD_PRELOAD} java -jar application.jar
+```
+
+The library requests a non-executable stack through its ELF header. musl reads
+it at process startup and uses the larger default for subsequently created native
+threads; loading it later with `System.load` has no effect. This changes the
+process-wide native thread stack reservation, independently of Maryk's memory
+budgets. It leaves the RocksDB JNI library unchanged. Both Alpine CI targets
+use this setup and run the full RocksDB JVM suite, including the logger test.
+See [musl's thread stack documentation](https://wiki.musl-libc.org/functional-differences-from-glibc.html#thread-stack-size).
+
 ## Diagnostics and integrity checks
 
 Migration, repair, and index-building reads avoid inserting scanned data blocks

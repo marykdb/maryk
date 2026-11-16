@@ -95,7 +95,11 @@ jobs:
           docker run --rm -v "$PWD:/workspace" -w /workspace \
             -v maryk-alpine-gradle:/root/.gradle -e MARYK_REQUIRE_NATIVE_COMPARATOR=1 \
             alpine:3.23 sh -ec '
-              apk add --no-cache bash openjdk21-jdk libstdc++
+              apk add --no-cache bash openjdk21-jdk libstdc++ gcc musl-dev
+              # Default musl native stacks (128 KiB) cannot attach RocksDB workers to HotSpot.
+              # Only startup-loaded ELF headers change this default; -Xss does not.
+              cc -shared -Wl,-z,noexecstack,-z,stack-size=1048576 -x c /dev/null -o /tmp/jvm-native-stack.so
+              export LD_PRELOAD=/tmp/jvm-native-stack.so${LD_PRELOAD:+:$LD_PRELOAD}
               ./gradlew :store:rocksdb:jvmTest --dependency-verification=strict --no-configuration-cache \
                 -Pmaryk.rocksdbNativeTestArtifactsDir=/workspace/cross-native-resources
             '
@@ -110,5 +114,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: rocksdb-comparator-reports-${{ inputs.platform }}
-          path: store/rocksdb/build/test-results/jvmTest/
+          path: |
+            store/rocksdb/build/test-results/jvmTest/
+            store/rocksdb/hs_err_pid*.log
           if-no-files-found: ignore

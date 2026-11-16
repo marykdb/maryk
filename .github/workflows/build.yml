@@ -36,7 +36,7 @@ jobs:
         include:
           - os: macos-latest
             timeout_minutes: 75
-            gradle_task: ":store:rocksdb:allMetadataJar macosArm64Test compileKotlinIosArm64 compileKotlinIosX64 compileKotlinTvosArm64 compileKotlinWatchosArm32 compileKotlinWatchosArm64 compileKotlinWatchosDeviceArm64"
+            gradle_task: ":app:checkRuntime :store:rocksdb:allMetadataJar macosArm64Test compileKotlinIosArm64 compileKotlinIosX64 compileKotlinTvosArm64 compileKotlinWatchosArm32 compileKotlinWatchosArm64 compileKotlinWatchosDeviceArm64"
             job_name: macOS Apple Arm tests
           - os: macos-latest
             timeout_minutes: 60
@@ -56,10 +56,10 @@ jobs:
             gradle_args: "--max-workers=1"
             job_name: macOS Apple Intel tests
           - os: ubuntu-latest
-            gradle_task: linuxX64Test compileKotlinLinuxArm64 jvmTest :generator:jvmTest:test :generator:gradle-plugin:validatePlugins :generator:gradle-plugin:test
+            gradle_task: :app:checkRuntime linuxX64Test compileKotlinLinuxArm64 jvmTest :generator:jvmTest:test :generator:gradle-plugin:validatePlugins :generator:gradle-plugin:test
             job_name: Linux JVM/JS tests
           - os: windows-latest
-            gradle_task: mingwX64Test :core:jvmTest
+            gradle_task: :app:checkRuntime mingwX64Test :core:jvmTest
             job_name: Windows MinGW tests
       fail-fast: false
     name: ${{ matrix.job_name }}

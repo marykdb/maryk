@@ -129,13 +129,12 @@ abstract class AbstractDataStore(
         clock.calculateMaxTimeStamp(HLC(maxOf(committedVersion.value, observedVersion ?: 0uL)))
 
     private val updateSharedFlowHasStarted = CompletableDeferred<Unit>()
-    private val mutableUpdateSharedFlow: MutableSharedFlow<IsUpdateAction> =
-        MutableSharedFlow(extraBufferCapacity = 64)
-    val updateSharedFlow: Flow<IsUpdateAction> get() = mutableUpdateSharedFlow
+    val updateSharedFlow: Flow<IsUpdateAction>
+        field = MutableSharedFlow<IsUpdateAction>(extraBufferCapacity = 64)
 
     open fun startFlows() {
         this.launch {
-            startProcessUpdateFlow(mutableUpdateSharedFlow, updateSharedFlowHasStarted) { error ->
+            startProcessUpdateFlow(updateSharedFlow, updateSharedFlowHasStarted) { error ->
                 updateProcessorFailure.value = error
                 failPendingResponses(error)
             }
@@ -147,7 +146,7 @@ abstract class AbstractDataStore(
         if (!initIsDone.value) {
             storeActorHasStarted.await()
             updateSharedFlowHasStarted.await()
-            mutableUpdateSharedFlow.subscriptionCount.first { it > 0 }
+            updateSharedFlow.subscriptionCount.first { it > 0 }
             initIsDone.value = true
         }
         ensureOpen()
@@ -307,7 +306,7 @@ abstract class AbstractDataStore(
                             onBeforeReadContext = {
                                 val pendingListenerAdded = CompletableDeferred<Unit>()
                                 awaitPendingResponse(pendingListenerAdded) {
-                                    mutableUpdateSharedFlow.emit(
+                                    updateSharedFlow.emit(
                                         AddPendingUpdateListenerAction(
                                             dataModelId,
                                             pendingListener,
@@ -319,7 +318,7 @@ abstract class AbstractDataStore(
                             onFlowSnapshotBoundary = { boundary ->
                                 val boundarySet = CompletableDeferred<Unit>()
                                 awaitPendingResponse(boundarySet) {
-                                    mutableUpdateSharedFlow.emit(
+                                    updateSharedFlow.emit(
                                         SetPendingListenerBoundaryAction(
                                             dataModelId,
                                             pendingListener,
@@ -341,7 +340,7 @@ abstract class AbstractDataStore(
                 val listener = request.createUpdateListener(initialResponse)
                 val listenerActivated = CompletableDeferred<Unit>()
                 awaitPendingResponse(listenerActivated) {
-                    mutableUpdateSharedFlow.emit(
+                    updateSharedFlow.emit(
                         ActivatePendingUpdateListenerAction(
                             dataModelId,
                             pendingListener,
@@ -360,7 +359,7 @@ abstract class AbstractDataStore(
                     cleanupFlowListener {
                         val listenerRemoved = CompletableDeferred<Unit>()
                         awaitPendingResponse(listenerRemoved) {
-                            mutableUpdateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
+                            updateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
                         }
                         onUpdateListenerRemoved(dataModelId)
                         listenerCleanupComplete = true
@@ -371,7 +370,7 @@ abstract class AbstractDataStore(
                     if (!listenerCleanupComplete) {
                         val listenerRemoved = CompletableDeferred<Unit>()
                         awaitPendingResponse(listenerRemoved) {
-                            mutableUpdateSharedFlow.emit(RemovePendingUpdateListenerAction(dataModelId, pendingListener, listenerRemoved))
+                            updateSharedFlow.emit(RemovePendingUpdateListenerAction(dataModelId, pendingListener, listenerRemoved))
                         }
                         if (listenerAddedToStore) {
                             onUpdateListenerRemoved(dataModelId)
@@ -433,11 +432,11 @@ abstract class AbstractDataStore(
         update: Update<out IsRootDataModel>,
         foundationDbCommitVersion: Long? = null,
     ) {
-        mutableUpdateSharedFlow.emit(prepareFlowUpdate(update, foundationDbCommitVersion))
+        updateSharedFlow.emit(prepareFlowUpdate(update, foundationDbCommitVersion))
     }
 
     protected suspend fun emitFlowUpdate(update: FlowUpdate) {
-        mutableUpdateSharedFlow.emit(update)
+        updateSharedFlow.emit(update)
     }
 
     /** A committed write must never leave a live subscription silently missing its updates. */
@@ -719,7 +718,7 @@ abstract class AbstractDataStore(
 
             val listenersRemoved = CompletableDeferred<Unit>()
             awaitPendingResponse(listenersRemoved) {
-                mutableUpdateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
+                updateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
             }
             onAllUpdateListenersRemoved()
         } catch (error: Throwable) {
@@ -732,7 +731,7 @@ abstract class AbstractDataStore(
     /** Fail live listeners when a backend cannot safely continue an incremental stream. */
     protected suspend fun failAllListeners(cause: Throwable) {
         if (isClosed) return
-        mutableUpdateSharedFlow.emit(FailAllUpdateListenersAction(cause))
+        updateSharedFlow.emit(FailAllUpdateListenersAction(cause))
         onAllUpdateListenersRemoved()
     }
 

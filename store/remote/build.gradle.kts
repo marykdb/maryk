@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
     id("maryk.conventions.publishing")
@@ -10,7 +12,7 @@ kotlin {
     macosArm64()
     macosX64()
 
-    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
+    targets.withType<KotlinNativeTarget>().configureEach {
         compilations.getByName("main").cinterops.create("sshspawn") {
             defFile(project.file("src/nativeInterop/cinterop/sshspawn.def"))
             compilerOpts("-I${project.projectDir}/src/nativeInterop/cinterop")
@@ -24,7 +26,7 @@ kotlin {
                 api(projects.core)
                 api(projects.store.shared)
                 implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.ktor.client.core)
+                api(libs.ktor.client.core)
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.cio)
             }

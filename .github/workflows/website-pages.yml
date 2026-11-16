@@ -1,8 +1,8 @@
 name: Deploy website to Pages
 
 on:
-  push:
-    branches: ["main"]
+  release:
+    types: [published]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: "website-pages-${{ github.event.pull_request.number || github.ref }}"
+  group: "website-pages-${{ github.event.pull_request.number || 'deploy' }}"
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -30,7 +30,7 @@ jobs:
 
   build:
     name: Build deployment artifact
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -39,6 +39,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
@@ -47,7 +49,9 @@ jobs:
         run: |
           ORIGIN="${{ steps.pages.outputs.origin }}"
           ORIGIN="${ORIGIN/http:/https:}"
-          echo "astro_arguments=--site $ORIGIN --base ${{ steps.pages.outputs.base_path }}" >> "$GITHUB_OUTPUT"
+          BASE_PATH="${{ steps.pages.outputs.base_path }}"
+          BASE_PATH="${BASE_PATH:-/}"
+          echo "astro_arguments=--site $ORIGIN --base $BASE_PATH" >> "$GITHUB_OUTPUT"
       - name: Build synchronized website
         uses: ./.github/actions/build-website
         with:

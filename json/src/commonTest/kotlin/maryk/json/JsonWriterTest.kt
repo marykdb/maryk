@@ -168,7 +168,7 @@ internal class JsonWriterTest {
 
     @Test
     fun notStartWithUnallowedJSONTypes() {
-        buildString {
+        val _ = buildString {
             JsonWriter {
                 append(it)
             }.apply {
@@ -193,7 +193,7 @@ internal class JsonWriterTest {
 
     @Test
     fun notAllowIllegalOperationsInsideAnArray() {
-        buildString {
+        val _ = buildString {
             JsonWriter {
                 append(it)
             }.apply {
@@ -215,7 +215,7 @@ internal class JsonWriterTest {
 
     @Test
     fun notAllowIllegalOperationsInsideAnObject() {
-        buildString {
+        val _ = buildString {
             JsonWriter {
                 append(it)
             }.apply {
@@ -243,7 +243,7 @@ internal class JsonWriterTest {
 
     @Test
     fun notAllowIllegalOperationsInsideAnObjectFieldName() {
-        buildString {
+        val _ = buildString {
             JsonWriter {
                 append(it)
             }.apply {

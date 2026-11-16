@@ -1347,7 +1347,7 @@ internal class YamlWriterTest {
 
     @Test
     fun notStartWithUnallowedYAMLTypes() {
-        buildString {
+        val _ = buildString {
             YamlWriter {
                 append(it)
             }.apply {
@@ -1371,7 +1371,7 @@ internal class YamlWriterTest {
 
     @Test
     fun notAllowIllegalOperationsInsideAnArray() {
-        buildString {
+        val _ = buildString {
             YamlWriter {
                 append(it)
             }.apply {
@@ -1392,7 +1392,7 @@ internal class YamlWriterTest {
 
     @Test
     fun notAllowIllegalOperationsWithinAnObject() {
-        buildString {
+        val _ = buildString {
             YamlWriter {
                 append(it)
             }.apply {
@@ -1418,7 +1418,7 @@ internal class YamlWriterTest {
 
     @Test
     fun notAllowIllegalOperationsAfterAnObjectFieldName() {
-        buildString {
+        val _ = buildString {
             YamlWriter {
                 append(it)
             }.apply {

@@ -983,7 +983,7 @@ private suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processNormaliz
                         continue
                     }
 
-                    val (removed, added) = diffIndexValues(oldValues, finalValues)
+                    (val removed, val added) = diffIndexValues(oldValues, finalValues)
 
                     if (removed.size == 1 && added.size == 1) {
                         val oldValue = removed.first()

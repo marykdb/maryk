@@ -799,7 +799,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                 it.toStorageByteArraysForIndex(objectToChange, objectToChange.key.bytes)
             }
 
-            val (removed, added) = diffIndexValues(oldValues, newValues)
+            (val removed, val added) = diffIndexValues(oldValues, newValues)
 
             if (removed.size == 1 && added.size == 1) {
                 val oldValue = removed.first()

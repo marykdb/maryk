@@ -412,7 +412,7 @@ private fun FoundationDBDataStore.collectHistoricUniqueReferencesForHistoricalVa
 internal fun distinctHistoricUniqueReferences(references: Iterable<ByteArray>): List<ByteArray> {
     val referencesByContent = LinkedHashMap<ByteArrayKey, ByteArray>()
     for (reference in references) {
-        referencesByContent.getOrPut(reference.asByteArrayKey(copy = true)) { reference }
+        val _ = referencesByContent.getOrPut(reference.asByteArrayKey(copy = true)) { reference }
     }
     return referencesByContent.values.toList()
 }

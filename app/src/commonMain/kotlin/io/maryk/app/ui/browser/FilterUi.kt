@@ -1149,7 +1149,7 @@ private fun validateCondition(
                 } else {
                     if (condition.operator == FilterOperator.REGEX) {
                         val pattern = parsed.value?.toString().orEmpty()
-                        runCatchingNonFatal { Regex(pattern) }.getOrElse {
+                        val _ = runCatchingNonFatal { Regex(pattern) }.getOrElse {
                             return ConditionValidation("Invalid regex pattern.", null)
                         }
                     }

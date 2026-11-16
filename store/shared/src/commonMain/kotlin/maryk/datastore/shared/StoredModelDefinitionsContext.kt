@@ -20,7 +20,7 @@ class StoredModelDefinitionsContext : StorageDefinitionsConversionContext() {
 
     fun registerSourceRoot(model: RootDataModel<*>) {
         // Keep the opening baseline when a later migration publishes a replacement.
-        sourceRoots.getOrPut(model.Meta.name) { DataModelReference(model) }
+        val _ = sourceRoots.getOrPut(model.Meta.name) { DataModelReference(model) }
     }
 }
 

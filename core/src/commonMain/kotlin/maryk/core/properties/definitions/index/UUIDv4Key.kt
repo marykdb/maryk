@@ -19,6 +19,7 @@ import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
+import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /** A key with a Universally Unique ID v4 */
@@ -27,7 +28,7 @@ object UUIDv4Key : IsFixedBytesPropertyReference<Uuid> {
     override val byteSize = 16
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
-    @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+    @OptIn(ExperimentalUuidApi::class)
     override fun getValue(values: IsValuesGetter) = Uuid.generateV4()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): Uuid {

@@ -418,7 +418,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
     private fun skipUnknownField(key: ProtoBufKey, byteReader: () -> Byte, remainingLength: () -> Int) {
         val valueLength = readProtoBufValueLength(key, byteReader, remainingLength)
         when {
-            valueLength >= 0 -> repeat(valueLength) { byteReader() }
+            valueLength >= 0 -> repeat(valueLength) { val _ = byteReader() }
             else -> ProtoBuf.skipField(key, byteReader)
         }
     }

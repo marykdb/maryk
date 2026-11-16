@@ -38,7 +38,7 @@ class RecordValueReaderTest {
     fun protoInputReaderRejectsOverread() {
         assertFailsWith<IllegalArgumentException> {
             readProtoInputPayload(byteArrayOf(1), "test") { reader ->
-                reader()
+                val _ = reader()
                 reader()
             }
         }

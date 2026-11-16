@@ -225,7 +225,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 )
                 val indexChanges = buildList {
                     indexValues.forEach { (index, oldValues, newValues) ->
-                        val (removed, added) = diffIndexValues(oldValues, newValues)
+                        (val removed, val added) = diffIndexValues(oldValues, newValues)
                         if (removed.size == 1 && added.size == 1) {
                             add(IndexUpdate(index.referenceStorageByteArray, Bytes(added.first()), Bytes(removed.first())))
                         } else {
@@ -240,7 +240,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 }
                 val operations = watermarkWrites.operations.toMutableList()
                 val activeIndexRows = if (targetIsDeleted) emptyList() else storagePlan.indexRows
-                val (removedIndexRows, addedIndexRows) = diffIndexValues(if (currentMeta.isDeleted) emptyList() else oldIndexRows, activeIndexRows)
+                (val removedIndexRows = removed, val addedIndexRows = added) = diffIndexValues(if (currentMeta.isDeleted) emptyList() else oldIndexRows, activeIndexRows)
                 removedIndexRows.forEach { operations.delete(indexStoreName, it) }
                 addedIndexRows.forEach { operations.put(indexStoreName, it, keyBytes) }
 

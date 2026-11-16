@@ -2282,7 +2282,7 @@ private fun Application.reconnectingFlowModule(
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             val connection = connections.incrementAndGet()
             if (rejectFirstConnection && connection == 1) {
                 call.respondText("busy", status = HttpStatusCode.ServiceUnavailable)
@@ -2337,7 +2337,7 @@ private fun Application.progressOnEachConnectionFlowModule(
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             val connection = connections.incrementAndGet()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 val context = RequestContext(
@@ -2377,7 +2377,7 @@ private fun Application.indefinitelyOpenFlowModule(
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             connections.incrementAndGet()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 firstConnectionOpened.complete(Unit)
@@ -2397,7 +2397,7 @@ private fun Application.stalledHeaderThenUpdateFlowModule(
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             if (connections.incrementAndGet() == 1) {
                 firstConnectionAccepted.complete(Unit)
                 awaitCancellation()
@@ -2435,7 +2435,7 @@ private fun Application.stalledPayloadThenUpdateFlowModule(connections: AtomicIn
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             if (connections.incrementAndGet() == 1) {
                 call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                     writeFully(RemoteStoreCodec.lengthPrefix(1))
@@ -2480,7 +2480,7 @@ private fun Application.deliveredUpdateThenStalledPayloadFlowModule(
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             val connection = connections.incrementAndGet()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 val context = RequestContext(
@@ -2519,7 +2519,7 @@ private fun Application.sameVersionReconnectFlowModule(connections: AtomicIntege
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             val connection = connections.incrementAndGet()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 val context = RequestContext(
@@ -2564,7 +2564,7 @@ private fun Application.lowerHlcReconnectFlowModule(
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             val connection = connections.incrementAndGet()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 val context = RequestContext(
@@ -2611,7 +2611,7 @@ private fun Application.heartbeatThenUpdateFlowModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 writeFully(RemoteStoreCodec.lengthPrefix(0))
                 val context = RequestContext(
@@ -2650,7 +2650,7 @@ private fun Application.backpressuredFlowModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 val context = RequestContext(
                     definitionsContext = DefinitionsContext(
@@ -2686,7 +2686,7 @@ private fun Application.malformedExecuteModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.executePath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             val values = SimpleMarykModel.create {
                 value with "response"
             }
@@ -2720,7 +2720,7 @@ private fun Application.legacyExecuteModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.executePath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             val values = SimpleMarykModel.create { value with "legacy" }
             val response = AddResponse(
                 dataModel = SimpleMarykModel,
@@ -2757,7 +2757,7 @@ private fun Application.negativeLengthExecuteModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.executePath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytes(
                 byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()),
                 ContentType.parse(RemoteStoreProtocol.contentType),
@@ -2775,7 +2775,7 @@ private fun Application.negativeLengthFlowModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 writeFully(byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()))
                 flush()
@@ -2791,7 +2791,7 @@ private fun Application.zeroLengthExecuteModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.executePath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytes(
                 byteArrayOf(0x00, 0x00, 0x00, 0x00),
                 ContentType.parse(RemoteStoreProtocol.contentType),
@@ -2808,7 +2808,7 @@ private fun Application.oversizedLengthExecuteModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.executePath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytes(
                 byteArrayOf(0x01, 0x00, 0x00, 0x01),
                 ContentType.parse(RemoteStoreProtocol.contentType),
@@ -2825,7 +2825,7 @@ private fun Application.zeroLengthFlowModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 writeFully(byteArrayOf(0x00, 0x00, 0x00, 0x00))
                 flush()
@@ -2841,7 +2841,7 @@ private fun Application.oversizedLengthFlowModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 writeFully(byteArrayOf(0x01, 0x00, 0x00, 0x01))
                 flush()
@@ -2898,7 +2898,7 @@ private fun Application.wrongExecuteContentTypeModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.executePath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytes("not-proto".encodeToByteArray(), ContentType.Text.Plain, HttpStatusCode.OK)
         }
     }
@@ -2911,7 +2911,7 @@ private fun Application.emptyExecutePayloadModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.executePath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytes(byteArrayOf(), ContentType.parse(RemoteStoreProtocol.contentType), HttpStatusCode.OK)
         }
     }
@@ -2924,7 +2924,7 @@ private fun Application.wrongFlowContentTypeModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytes("oops".encodeToByteArray(), ContentType.Text.Plain, HttpStatusCode.OK)
         }
     }
@@ -2937,7 +2937,7 @@ private fun Application.emptyFlowUpdatesModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 val context = RequestContext(
                     definitionsContext = DefinitionsContext(
@@ -2965,7 +2965,7 @@ private fun Application.truncatedLengthFlowModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 writeFully(byteArrayOf(0x00, 0x00))
                 flush()
@@ -2981,7 +2981,7 @@ private fun Application.truncatedPayloadFlowModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 writeFully(byteArrayOf(0x00, 0x00, 0x00, 0x08))
                 writeFully(byteArrayOf(0x01, 0x02))
@@ -2998,7 +2998,7 @@ private fun Application.emptyFlowStreamModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 flush()
             }
@@ -3023,7 +3023,7 @@ private fun Application.mismatchedFlowDataModelModule() {
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.flowPath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 val context = RequestContext(
                     definitionsContext = DefinitionsContext(
@@ -3076,7 +3076,7 @@ private class RawRemoteServer(
         ),
     )
     private val thread = Thread {
-        runCatching {
+        val _ = runCatching {
             respondAll()
         }
     }.apply {
@@ -3209,7 +3209,7 @@ private fun Application.rejectingExecuteModule(
             call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
         post(RemoteStoreProtocol.executePath) {
-            call.receiveChannel().readBuffer().readByteArray()
+            val _ = call.receiveChannel().readBuffer().readByteArray()
             executeCalls.incrementAndGet()
             if (mutationOutcomeUnknown) {
                 call.response.header(RemoteStoreProtocol.mutationOutcomeHeader, "unknown")

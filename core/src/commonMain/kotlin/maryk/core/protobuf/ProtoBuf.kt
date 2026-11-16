@@ -82,17 +82,17 @@ internal object ProtoBuf {
                 }
                 throw ParseException("Malformed varInt")
             }
-            BIT_64 -> repeat(8) { reader() }
+            BIT_64 -> repeat(8) { val _ = reader() }
             LENGTH_DELIMITED -> {
                 val length = initIntByVar(reader)
                 if (length < 0) {
                     throw ParseException("Negative length for length-delimited field")
                 }
-                repeat(length) { reader() }
+                repeat(length) { val _ = reader() }
             }
             START_GROUP -> throw ParseException("Cannot skip a group without its tag")
             END_GROUP -> throw ParseException("Unexpected end group")
-            BIT_32 -> repeat(4) { reader() }
+            BIT_32 -> repeat(4) { val _ = reader() }
         }
     }
 

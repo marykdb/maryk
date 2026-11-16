@@ -37,7 +37,7 @@ interface IsSetDefinition<T : Any, CX : IsPropertyContext> :
         validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) -> Any
     ) {
         for (it in newValue) {
-            validator(it) {
+            val _ = validator(it) {
                 @Suppress("UNCHECKED_CAST")
                 this.itemRef(it, refGetter() as CanContainSetItemReference<*, *, *>?)
             }

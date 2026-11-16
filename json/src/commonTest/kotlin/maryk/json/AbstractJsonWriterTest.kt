@@ -8,7 +8,7 @@ internal abstract class AbstractJsonWriterTest {
 
     @Test
     fun notStartWithUnallowedJSONTypes() {
-        buildString {
+        val _ = buildString {
             createJsonWriter {
                 append(it)
             }.apply {
@@ -42,7 +42,7 @@ internal abstract class AbstractJsonWriterTest {
 
     @Test
     fun notAllowIllegalOperationsInsideAnArray() {
-        buildString {
+        val _ = buildString {
             createJsonWriter {
                 append(it)
             }.apply {
@@ -64,7 +64,7 @@ internal abstract class AbstractJsonWriterTest {
 
     @Test
     fun notAllowIllegalOperationsInsideAnObject() {
-        buildString {
+        val _ = buildString {
             createJsonWriter {
                 append(it)
             }.apply {
@@ -90,7 +90,7 @@ internal abstract class AbstractJsonWriterTest {
 
     @Test
     fun notAllowIllegalOperationsInsideAnObjectFieldName() {
-        buildString {
+        val _ = buildString {
             createJsonWriter {
                 append(it)
             }.apply {

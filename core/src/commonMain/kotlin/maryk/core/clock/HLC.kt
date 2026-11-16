@@ -10,7 +10,7 @@ import kotlin.time.Clock
 private const val LOGICAL_BYTE_SIZE = 20
 
 private const val LOGICAL_MASK = 0xFFFFFuL
-private val maxPhysicalTime = ULong.MAX_VALUE.shr(LOGICAL_BYTE_SIZE)
+private const val maxPhysicalTime = ULong.MAX_VALUE.shr(LOGICAL_BYTE_SIZE)
 
 private fun createTimestamp(physical: ULong, logical: UInt): ULong {
     require(physical <= maxPhysicalTime) { "Physical time does not fit in 44 bits" }

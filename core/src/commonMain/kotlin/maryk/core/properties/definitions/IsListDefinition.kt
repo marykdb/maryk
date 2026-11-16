@@ -35,7 +35,7 @@ interface IsListDefinition<T : Any, CX : IsPropertyContext> :
         validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) -> Any
     ) {
         newValue.forEachIndexed { index, item ->
-            validator(item) {
+            val _ = validator(item) {
                 @Suppress("UNCHECKED_CAST")
                 this.itemRef(index.toUInt(), refGetter() as CanContainListItemReference<*, *, *>?)
             }

@@ -87,7 +87,7 @@ data class IncMapKeyAdditions<K : Comparable<K>, V : Any>(
             context: RequestContext?
         ) {
             if (values[addedValues.index] == null) {
-                context?.getCollectedIncMapChanges()?.find { incMapChange ->
+                val _ = context?.getCollectedIncMapChanges()?.find { incMapChange ->
                     val foundValueChange = incMapChange.valueChanges.find {
                         it.reference == context.reference
                     }?.also {

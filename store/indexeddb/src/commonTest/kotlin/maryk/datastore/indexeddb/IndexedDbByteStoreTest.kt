@@ -368,7 +368,7 @@ class IndexedDbByteStoreTest {
             assertEquals(1, cursorContinueCalls())
             assertContentEquals(byteArrayOf(2), store.get("rows", byteArrayOf(2)))
         } finally {
-            cursorContinueCalls()
+            val _ = cursorContinueCalls()
             store.close()
         }
     }

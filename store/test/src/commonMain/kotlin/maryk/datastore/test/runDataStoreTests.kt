@@ -139,7 +139,7 @@ internal suspend fun runDataStoreTestClasses(
                 runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, printFailureStackTraces = printFailureStackTraces) {
                     testClass.initData()
                     phase = "test"
-                    test()
+                    val _ = test()
                 }
             } finally {
                 phase = "reset"
@@ -223,7 +223,7 @@ internal suspend fun runDataStoreTestClassesIsolated(
                 runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, printFailureStackTraces = printFailureStackTraces) {
                     testClass.initData()
                     phase = "test"
-                    test()
+                    val _ = test()
                 }
             } finally {
                 phase = "reset"

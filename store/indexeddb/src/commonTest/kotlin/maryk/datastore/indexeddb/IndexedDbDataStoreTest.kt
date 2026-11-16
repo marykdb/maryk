@@ -3301,7 +3301,7 @@ private suspend fun runTestCase(
     val test = testCase.allTests[name] ?: error("Missing datastore test `$name`.")
     testCase.initData()
     try {
-        test()
+        val _ = test()
     } catch (e: Throwable) {
         throw AssertionError("Shared datastore test `$name` failed: $e", e)
     } finally {

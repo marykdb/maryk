@@ -658,7 +658,7 @@ class DataImportProtoScopeTest {
                 length = 1,
                 label = "test",
             ) { reader ->
-                reader()
+                val _ = reader()
                 reader()
             }
         }

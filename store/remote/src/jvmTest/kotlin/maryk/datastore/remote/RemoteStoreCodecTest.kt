@@ -164,7 +164,7 @@ class RemoteStoreCodecTest {
         val serializer = object : ThrowingSerializer() {
             override fun readProtoBuf(length: Int, reader: () -> Byte, context: IsPropertyContext?): ObjectValues<Any, IsObjectDataModel<Any>> {
                 repeat(length + 1) {
-                    reader()
+                    val _ = reader()
                     consumed++
                 }
                 error("Reading past a frame must fail")

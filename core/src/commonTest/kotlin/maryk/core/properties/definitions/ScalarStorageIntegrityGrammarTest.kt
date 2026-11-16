@@ -157,7 +157,7 @@ class ScalarStorageIntegrityGrammarTest {
         assertEquals("", string.fromStorageBytes(bytes, offset = bytes.size))
         assertFailsWith<IllegalArgumentException> { string.fromStorageBytes(bytes, offset = -1) }
         val greedy = object : IsStorageBytesEncodable<Byte> {
-            override fun readStorageBytes(length: Int, reader: () -> Byte): Byte { reader(); return reader() }
+            override fun readStorageBytes(length: Int, reader: () -> Byte): Byte { val _ = reader(); return reader() }
             override fun calculateStorageByteLength(value: Byte) = 1
             override fun writeStorageBytes(value: Byte, writer: (Byte) -> Unit) = writer(value)
         }

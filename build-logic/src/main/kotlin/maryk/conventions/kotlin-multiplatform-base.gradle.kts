@@ -27,6 +27,13 @@ kotlin {
         apiVersion = KOTLIN_2_4
         languageVersion = KOTLIN_2_4
         allWarningsAsErrors = true
-        freeCompilerArgs.addAll("-progressive", "-Xconsistent-data-class-copy-visibility")
+        // Implementation-only experiments; public signatures use stable Kotlin types.
+        freeCompilerArgs.addAll(
+            "-progressive",
+            "-Xconsistent-data-class-copy-visibility",
+            "-Xreturn-value-checker=check",
+            "-Xname-based-destructuring=only-syntax",
+            "-Xintrinsic-const-evaluation",
+        )
     }
 }

@@ -53,6 +53,7 @@ export const map = [
 
   // Stores
   ['src/content/docs/stores/index.mdx', '../store/README.md'],
+  ['src/content/docs/stores/performance.mdx', '../store/PERFORMANCE.md'],
   ['src/content/docs/stores/shared.mdx', '../store/shared/README.md'],
   ['src/content/docs/stores/shared/encryption-key-rotation.mdx', '../store/shared/docs/encryption-key-rotation.md'],
   ['src/content/docs/stores/shared/backup-restore.mdx', '../store/shared/docs/backup-restore.md'],

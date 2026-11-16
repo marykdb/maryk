@@ -136,6 +136,7 @@ export default defineConfig({
                     label: 'Stores',
                     items: [
                         {label: 'Overview', slug: 'stores'},
+                        {label: 'Performance (0.14)', slug: 'stores/performance'},
                         {
                             label: 'Shared store',
                             collapsed: true,

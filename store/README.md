@@ -18,6 +18,9 @@ All engines share the same API surface, so you can start with Memory in tests, u
 
 For recovery and backend transfer, start with [Backup and restore](shared/docs/backup-restore.md).
 
+For measured request costs, batching and projection tradeoffs, and deployment
+considerations, see [Maryk 0.14 datastore performance](PERFORMANCE.md).
+
 ## Atomic changes across models
 
 `executeAtomic(AtomicRequest)` is an explicit, optional capability for bounded

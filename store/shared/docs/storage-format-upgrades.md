@@ -1,7 +1,7 @@
 # Storage format upgrades
 
-This guide covers opening a persistent store created by Maryk 0.13.0 with the
-current source branch (0.14.0-SNAPSHOT). New stores need no legacy conversion.
+This guide covers opening a persistent store created by Maryk 0.13.0 with
+Maryk 0.14.0. New stores need no legacy conversion.
 Storage formats are independent of application model versions and portable backup
 formats. Memory has no persisted layout; Remote uses its backend's layout.
 

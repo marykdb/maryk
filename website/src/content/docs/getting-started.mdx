@@ -13,10 +13,11 @@ Maryk runs on Kotlin Multiplatform and ships as modular artifacts. This guide sh
 
 ## Dependency
 
-These docs describe the Maryk 0.13 API. Use `0.13.0` for `<maryk-version>`
+These docs describe the Maryk 0.14 API. Use `0.14.0` for `<maryk-version>`
 in the examples and keep every Maryk module on the same version. For another
-release, read its matching tag. SQL, explicit atomic requests, and serializable
-transaction scopes are available in 0.13; they are absent in 0.12.1.
+release, read its matching tag. When upgrading a persistent store from 0.13,
+follow the [storage format upgrade guide](../stores/shared/storage-format-upgrades/)
+before opening it with 0.14.
 
 Add the core dependency to your target source set:
 

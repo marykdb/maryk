@@ -42,7 +42,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import maryk.core.properties.types.Bytes
 import maryk.core.query.requests.TransactionCapabilities
@@ -355,7 +354,6 @@ class FoundationDBDataStore private constructor(
 
     internal val transactionRevisionKey get() = transactionRevisionKeyBytes
 
-    @OptIn(ExperimentalUuidApi::class)
     internal fun advanceTransactionRevision(transaction: Transaction) {
         transaction.set(transactionRevisionKey, Uuid.random().toByteArray())
         tc.markMutation(transaction)

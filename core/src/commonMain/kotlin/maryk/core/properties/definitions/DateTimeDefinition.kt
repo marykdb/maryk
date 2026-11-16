@@ -39,13 +39,11 @@ import maryk.json.IsJsonLikeWriter
 import maryk.yaml.YamlWriter
 import maryk.lib.exceptions.ParseException
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 /**
  * Definition for DateTime properties
  */
-@OptIn(ExperimentalTime::class)
 data class DateTimeDefinition(
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -226,7 +224,6 @@ private fun requireValidNanos(nanos: Int) {
     if (nanos !in 0..999_999_999) throw ParseException("DateTime nanoseconds must be between 0 and 999999999")
 }
 
-@OptIn(ExperimentalTime::class)
 private fun readNanosMessage(length: Int, reader: () -> Byte, rejectUnknownFields: Boolean): Instant {
     if (length < 0) throw ParseException("Invalid NANOS DateTime message length")
     var remaining = length

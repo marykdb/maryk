@@ -1,7 +1,6 @@
 package maryk.datastore.remote
 
 import kotlin.uuid.Uuid
-import kotlin.uuid.ExperimentalUuidApi
 
 import maryk.core.query.ValuesWithMetaData
 
@@ -871,7 +870,6 @@ class RemoteDataStore private constructor(
         }
     }
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun writeStateBackup(writer: DataStoreStateBackupWriter, options: DataStoreStateBackupOptions): DataStoreStateBackupManifest {
         check(currentTransaction(this) == null) { "State backup is not a transaction operation" }
         requireOpen()

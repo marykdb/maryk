@@ -1,7 +1,6 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.delay
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.definitions.Definitions
@@ -104,7 +103,6 @@ internal class IndexedDbSchemaSnapshot(
     }
 }
 
-@OptIn(ExperimentalUuidApi::class)
 internal suspend fun IndexedDbByteStore.captureSchemaSnapshot(modelIds: Set<UInt>): IndexedDbSchemaSnapshot {
     val definitionKeys = listOf(OptionsMetadataKey, StorageFormatMetadataKey) + modelIds.flatMap { modelId ->
         listOf(modelDefinitionMetadataKey(modelId), modelDependentsMetadataKey(modelId), sourceSchemaFormatMetadataKey(modelId))

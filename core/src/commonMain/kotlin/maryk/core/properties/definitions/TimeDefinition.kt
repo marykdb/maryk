@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalTime::class)
-
 package maryk.core.properties.definitions
 
 import kotlinx.datetime.LocalTime
@@ -31,7 +29,6 @@ import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.lib.exceptions.ParseException
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 /** Definition for Time properties */
 data class TimeDefinition(

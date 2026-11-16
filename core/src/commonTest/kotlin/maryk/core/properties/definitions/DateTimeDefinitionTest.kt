@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalTime::class)
-
 package maryk.core.properties.definitions
 
 import kotlinx.datetime.LocalDateTime
@@ -20,7 +18,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.expect
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 internal class DateTimeDefinitionTest {
     private val dateTimesMillisToTest = arrayOf(

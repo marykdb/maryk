@@ -3,7 +3,6 @@ package maryk.datastore.remote
 
 import kotlin.time.TimeSource
 import kotlin.uuid.Uuid
-import kotlin.uuid.ExperimentalUuidApi
 
 import maryk.datastore.shared.StateBackupDataStore
 import maryk.datastore.shared.DataStoreStateBackupOptions
@@ -1174,7 +1173,6 @@ private fun resolveRequest(rawRequest: Any, operation: String): IsTransportableR
     )
 }
 
-@OptIn(ExperimentalUuidApi::class)
 private fun stateCaptureId(call: ApplicationCall): String =
     Uuid.parse(requireNotNull(call.request.queryParameters["captureId"]) { "Missing capture identity" }).toString()
 

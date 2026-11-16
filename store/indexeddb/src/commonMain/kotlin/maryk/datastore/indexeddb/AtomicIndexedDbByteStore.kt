@@ -1,6 +1,5 @@
 package maryk.datastore.indexeddb
 
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import maryk.core.properties.types.Bytes
 import maryk.datastore.shared.rejectAtomicLimit
@@ -34,7 +33,6 @@ internal class AtomicAwareIndexedDbByteStore(
         writeBatch(listOf(IndexedDbWriteOperation.Put(storeName, key, value)))
     override suspend fun delete(storeName: String, key: ByteArray) =
         writeBatch(listOf(IndexedDbWriteOperation.Delete(storeName, key)))
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun writeBatch(operations: List<IndexedDbWriteOperation>) {
         val target = active()
         val changesData = operations.any { it.storeName != "meta" && it.storeName != CommitJournalStoreName && it.storeName != CommitConsumerStoreName }

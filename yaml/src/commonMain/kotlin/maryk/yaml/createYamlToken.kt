@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalTime::class)
-
 package maryk.yaml
 
 import kotlinx.datetime.LocalDate
@@ -20,7 +18,6 @@ import maryk.yaml.YamlValueType.Binary
 import maryk.yaml.YamlValueType.TimeStamp
 import kotlin.io.encoding.Base64
 import kotlin.math.pow
-import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 private val trueValues = setOf("True", "TRUE", "true")

@@ -6,7 +6,6 @@ import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.lib.exceptions.ParseException
 import kotlin.jvm.JvmInline
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 private const val LOGICAL_BYTE_SIZE = 20
 
@@ -48,7 +47,6 @@ value class HLC(
     )
 
     /** Create HLC for the current time */
-    @OptIn(ExperimentalTime::class)
     constructor() : this(
         physical = Clock.System.now().toEpochMilliseconds().toULong(),
         logical = 0u

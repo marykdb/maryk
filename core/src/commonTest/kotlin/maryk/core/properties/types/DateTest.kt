@@ -9,9 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 internal class DateTest {
     private val datesToTest = arrayOf(
         Clock.System.now().toLocalDateTime(TimeZone.UTC).date,

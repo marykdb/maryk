@@ -1,5 +1,3 @@
-@file:OptIn(kotlin.time.ExperimentalTime::class)
-
 package maryk.datastore.test
 
 import maryk.core.clock.HLC

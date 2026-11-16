@@ -3,12 +3,10 @@ package maryk.datastore.foundationdb
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.foundationdb.tuple.Tuple
 
-@OptIn(ExperimentalUuidApi::class)
 class ReceiptKeyEncodingTest {
     @Test
     fun matchesCanonicalTupleEncodingAndOwnsItsBytes() {

@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalTime::class)
-
 package maryk.core.properties.types
 
 import kotlinx.datetime.LocalDateTime
@@ -14,7 +12,6 @@ import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.types.TimePrecision.MILLIS
 import maryk.core.properties.types.TimePrecision.NANOS
 import maryk.core.properties.types.TimePrecision.SECONDS
-import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 fun LocalDateTime.writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit) {

@@ -35,7 +35,6 @@ import kotlin.test.assertTrue
 import kotlin.test.assertEquals
 import kotlin.test.Test
 import kotlin.test.expect
-import kotlin.time.ExperimentalTime
 
 private object NanosTimeModel : RootDataModel<NanosTimeModel>() {
     val time by time(index = 1u, precision = NANOS)
@@ -204,7 +203,6 @@ class Proto3ConversionTest {
         expect(bc.bytes!!.toHexString()) { protoBufByteArray.toHexString() }
     }
 
-    @OptIn(ExperimentalTime::class)
     @Test
     fun testCompleteMarykObject(){
         // SimpleObject to convert

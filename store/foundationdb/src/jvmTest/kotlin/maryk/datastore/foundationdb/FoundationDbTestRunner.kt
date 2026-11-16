@@ -18,7 +18,6 @@ import java.nio.file.Paths
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
 
 private const val RECORDS_PER_TABLE = 30
 
@@ -65,7 +64,6 @@ private suspend fun seedSimpleValues(dataStore: FoundationDBDataStore) {
     addAll(dataStore, SimpleMarykModel, simples)
 }
 
-@OptIn(ExperimentalTime::class)
 private suspend fun seedLogs(dataStore: FoundationDBDataStore) {
     val start = Clock.System.now()
     val logs = (1..RECORDS_PER_TABLE).map { index ->

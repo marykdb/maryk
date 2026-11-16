@@ -25,7 +25,6 @@ import maryk.json.IsJsonLikeWriter
 import maryk.yaml.YamlWriter
 import maryk.lib.exceptions.ParseException
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 /** Definition for Date properties */
 data class DateDefinition(
@@ -116,7 +115,6 @@ data class DateDefinition(
         )
     }
 
-    @OptIn(ExperimentalTime::class)
     companion object {
         val MIN = LocalDate(-999_999, 1, 1)
         val MAX = LocalDate(999_999, 12, 31)

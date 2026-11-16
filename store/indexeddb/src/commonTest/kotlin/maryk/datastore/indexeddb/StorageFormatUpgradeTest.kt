@@ -45,7 +45,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.time.ExperimentalTime
 
 private object RetainedEncryptedUpgradeModel : RootDataModel<RetainedEncryptedUpgradeModel>() {
     val value by number(1u, type = Float64)
@@ -116,7 +115,6 @@ class StorageFormatUpgradeTest {
         } finally { resumed.close() }
     }
 
-    @OptIn(ExperimentalTime::class)
     @Test
     fun upgradesLegacyNanosOnlyChangeAndUpdateHistoryLogs() = runTest {
         installIndexedDbForTests()

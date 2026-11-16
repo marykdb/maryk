@@ -8,11 +8,9 @@ import maryk.core.extensions.bytes.toULong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.foundationdb.Range
 import maryk.foundationdb.tuple.Tuple
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /** A committed, monotonic owner ID makes every first-attempt receipt key fresh. */
-@OptIn(ExperimentalUuidApi::class)
 internal class OrdinaryReceiptSession(private val allocateSession: suspend () -> Long) {
     private val sessionBytes = atomic<ByteArray?>(null)
     private val sessionMutex = Mutex()

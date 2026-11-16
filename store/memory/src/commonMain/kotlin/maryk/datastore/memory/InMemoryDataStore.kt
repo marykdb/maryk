@@ -86,7 +86,6 @@ import maryk.datastore.shared.mutationKeys
 import maryk.core.query.requests.AtomicRequest
 import maryk.core.query.responses.AtomicResponse
 import maryk.core.query.responses.IsDataModelResponse
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import maryk.core.properties.types.Bytes
 import maryk.datastore.shared.rejectAtomicLimit
@@ -425,5 +424,4 @@ class InMemoryDataStore private constructor(
     }
 }
 
-@OptIn(ExperimentalUuidApi::class)
 private fun freshTransactionRevision() = Bytes(Uuid.random().toByteArray())

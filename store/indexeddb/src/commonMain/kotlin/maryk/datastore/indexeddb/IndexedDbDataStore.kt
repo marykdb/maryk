@@ -91,7 +91,6 @@ import maryk.datastore.indexeddb.processors.readTrailingVersion
 import maryk.datastore.indexeddb.processors.readTrailingInvertedVersion
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import kotlinx.coroutines.CompletableDeferred
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import maryk.core.properties.types.Bytes
 import maryk.core.query.requests.TransactionCapabilities
@@ -161,7 +160,6 @@ class IndexedDbDataStore private constructor(
 
     override val supportsVersionedRestore get() = supportsAtomicRequests
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun processRestoreVersionRequest(request: RestoreVersionRequest) {
         nativeByteStore.transaction(setOf("meta", CommitJournalStoreName), IndexedDbTransactionMode.READWRITE) {
             journalCursorMutex.withLock {
@@ -240,7 +238,6 @@ class IndexedDbDataStore private constructor(
         processTransactionRequest(TransactionRequest(request.changeSetId, request.requests, commit = true,
             initialGuards = request.guards, initialStateChecks = true), version).asAtomicResponse()
 
-    @OptIn(ExperimentalUuidApi::class)
     override suspend fun processTransactionRequest(request: TransactionRequest, version: HLC): TransactionResponse =
         nativeByteStore.transaction(setOf("meta", CommitJournalStoreName), IndexedDbTransactionMode.READWRITE) {
             journalCursorMutex.withLock {

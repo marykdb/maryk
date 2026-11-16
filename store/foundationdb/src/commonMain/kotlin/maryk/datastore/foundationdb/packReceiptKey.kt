@@ -1,10 +1,8 @@
 package maryk.datastore.foundationdb
 
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /** UUID text has no zero bytes, so its canonical tuple string needs no escaping. */
-@OptIn(ExperimentalUuidApi::class)
 internal fun packReceiptKey(prefix: ByteArray, session: ByteArray, requestId: Uuid): ByteArray {
     val bytes = requestId.toByteArray()
     return packReceiptKey(prefix, session) { bytes[it].toInt() and 0xff }

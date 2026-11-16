@@ -1,6 +1,5 @@
 package maryk.datastore.indexeddb
 
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /** Native adapters atomically stamp every change to guarded schema metadata. */
@@ -20,7 +19,6 @@ internal val SchemaRevisionMetadataKey = "maryk.schema/revision".encodeToByteArr
 internal fun IndexedDbWriteOperation.changesSchemaMetadata(): Boolean =
     storeName == "meta" && isSchemaMetadataKey(key)
 
-@OptIn(ExperimentalUuidApi::class)
 internal suspend fun IndexedDbByteStore.withSchemaRevision(
     operations: List<IndexedDbWriteOperation>,
 ): List<IndexedDbWriteOperation> {

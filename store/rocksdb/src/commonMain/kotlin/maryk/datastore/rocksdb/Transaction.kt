@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb
 
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import maryk.datastore.shared.MAX_ATOMIC_WORK_BYTES
 import maryk.datastore.shared.rejectAtomicLimit
@@ -133,7 +132,6 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         key: ByteArray
     ) = currentTransaction().getForUpdate(readOptions, columnFamilyHandle, key, true).also { budget(key.size + (it?.size ?: 0)) }
 
-    @OptIn(ExperimentalUuidApi::class)
     fun commit() {
         if (atomicOwner) return
         val transaction = nativeTransaction ?: return

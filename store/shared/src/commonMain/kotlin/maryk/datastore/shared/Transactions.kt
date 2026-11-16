@@ -3,7 +3,6 @@ package maryk.datastore.shared
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.TimeSource
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
@@ -266,7 +265,6 @@ class Transaction internal constructor(
     }
 }
 
-@OptIn(ExperimentalUuidApi::class)
 suspend fun IsDataStore.beginTransaction(id: String = Uuid.random().toString(), readOnly: Boolean = false): Transaction {
     check(currentTransaction(this) == null) { "Use a savepoint for nested transaction scopes" }
     val capabilities = transactionCapabilities ?: throw TransactionException(TransactionResponse(TransactionStatus.Unsupported))

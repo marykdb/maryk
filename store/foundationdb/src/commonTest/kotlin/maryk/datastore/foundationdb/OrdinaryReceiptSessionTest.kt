@@ -14,10 +14,8 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 class OrdinaryReceiptSessionTest {
     @Test
     fun allocatesOneOwnerLazilyAndProducesUniqueCanonicalKeysAcrossConcurrentCalls() = runTest {

@@ -16,7 +16,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.expect
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 internal class TimeDefinitionTest {
     private val timesToTestNanos = arrayOf(
@@ -103,7 +102,6 @@ internal class TimeDefinitionTest {
         }
     }
 
-    @OptIn(ExperimentalTime::class)
     @Test
     fun createNowTime() {
         val expected = Clock.System.now().toEpochMilliseconds() % (24 * 60 * 60 * 1000) / 1000

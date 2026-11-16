@@ -28,10 +28,8 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.minutes
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 class PortableStateBackupTest {
     @Test
     fun closeCancelsCapturesWithAndWithoutRegisteredModels() = runTest(timeout = 3.minutes) {

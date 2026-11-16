@@ -53,6 +53,7 @@ jobs:
           - os: macos-26-intel
             timeout_minutes: 75
             gradle_task: "macosX64Test"
+            gradle_args: "--max-workers=1"
             job_name: macOS Apple Intel tests
           - os: ubuntu-latest
             gradle_task: linuxX64Test compileKotlinLinuxArm64 jvmTest :generator:jvmTest:test :generator:gradle-plugin:validatePlugins :generator:gradle-plugin:test
@@ -120,7 +121,22 @@ jobs:
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g
         shell: bash
-        run: ./gradlew ${{ matrix.gradle_task }} --dependency-verification=strict --stacktrace --build-cache --no-parallel
+        run: |
+          if [[ "${{ matrix.os }}" == "macos-26-intel" ]]; then
+            # Keep host diagnostics in the live log even if the runner disconnects.
+            (
+              while true; do
+                date -u
+                memory_pressure -Q || true
+                sysctl vm.swapusage || true
+                df -h .
+                sleep 60
+              done
+            ) &
+            diagnostics_pid=$!
+            trap 'kill "$diagnostics_pid" 2>/dev/null || true' EXIT
+          fi
+          ./gradlew ${{ matrix.gradle_task }} ${{ matrix.gradle_args }} --dependency-verification=strict --stacktrace --build-cache --no-parallel
 
       - name: Upload build reports
         if: always()

@@ -33,10 +33,15 @@ kotlin {
         }
         getByName("jvmMain") {
             dependencies {
-                implementation(libs.ktor.client.java)
+                implementation(libs.ktor.client.okhttp)
             }
         }
-        getByName("nativeMain") {
+        getByName("macosMain") {
+            dependencies {
+                implementation(libs.ktor.client.darwin)
+            }
+        }
+        getByName("linuxMain") {
             dependencies {
                 implementation(libs.ktor.client.cio)
             }

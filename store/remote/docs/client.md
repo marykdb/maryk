@@ -25,6 +25,10 @@ Notes:
   Protocol-v2 clients negotiate server heartbeat frames; legacy clients never
   receive them.
 
+If you supply your own `RemoteStoreConfig.httpClient`, close it when you're done
+and configure it to avoid automatically replaying writes. A lost response can
+hide a committed write.
+
 Use it like any other store. This example assumes that the server registers the
 [Person model](../../../core/docs/datamodel.md) and the client uses the same definition:
 

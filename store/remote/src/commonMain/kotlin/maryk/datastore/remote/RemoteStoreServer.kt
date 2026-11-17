@@ -17,11 +17,13 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.install
 import io.ktor.server.application.serverConfig
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EngineConnectorBuilder
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.http.HttpRequestLifecycle
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondBytesWriter
@@ -568,6 +570,9 @@ internal fun Application.remoteStoreModule(
             } finally {
                 flowPermit.releaseUnlessDeferred()
             }
+        }.apply {
+            // Only read streams opt in; accepted mutations may outlive their connection.
+            install(HttpRequestLifecycle) { cancelCallOnClose = true }
         }
 
         get(RemoteStoreProtocol.stateBackupPath) {
@@ -606,6 +611,8 @@ internal fun Application.remoteStoreModule(
                     }
                 } catch (error: Throwable) { permit.release(); throw error }
             }
+        }.apply {
+            install(HttpRequestLifecycle) { cancelCallOnClose = true }
         }
 
         post(RemoteStoreProtocol.stateBackupCancelPath) {

@@ -15,6 +15,14 @@ val server = RemoteStoreServer(dataStore)
 server.start(host = "127.0.0.1", port = 8210, wait = true)
 ```
 
+Subscription and state-backup routes cancel their work when the CIO server detects
+a client disconnect, releasing listeners, captures and admission permits. This is
+cooperative cancellation; blocking backend work is not forcibly interrupted.
+Mutation routes do not opt into disconnect cancellation. An accepted write may
+finish after the client disconnects, and a missing response does not establish
+that the write failed. The client's explicit state-backup cancellation remains
+useful when its HTTP engine drains a response instead of closing the connection.
+
 Non-loopback plaintext binds require an explicit insecure opt-in, even when authentication is configured. Keep the Maryk server loopback-bound behind TLS termination or use SSH tunneling:
 
 ```kotlin

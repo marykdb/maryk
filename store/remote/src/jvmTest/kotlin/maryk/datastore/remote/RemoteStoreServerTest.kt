@@ -800,7 +800,13 @@ class RemoteStoreServerTest {
             val status = client.preparePost("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 setBody(terminalReferenceFilterFlowPayload())
-            }.execute { response -> response.status.also { response.call.cancel() } }
+            }.execute { response ->
+                val channel = response.bodyAsChannel()
+                val length = readFrameLength(channel, ByteArray(4))?.length
+                check(length != null && length > 0)
+                readFramePayload(channel, ByteArray(length))
+                response.status.also { response.call.cancel() }
+            }
 
             assertEquals(HttpStatusCode.OK, status)
         }
